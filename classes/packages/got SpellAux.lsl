@@ -87,7 +87,8 @@ default
     if(method$internal){
         if(METHOD == SpellAuxMethod$spellEnd){
             list_shift_each(SPELL_ANIMS, v, 
-                AnimHandler$anim(v, FALSE, 0);
+				if(isset(v))
+					AnimHandler$anim(v, FALSE, 0);
             )
         }
         else if(METHOD == SpellAuxMethod$startCast){
@@ -115,7 +116,7 @@ default
                 sounds = llJson2List((string)sounds);
             
             list_shift_each(anims, v,
-                if(v){
+                if(isset(v)){
                     AnimHandler$anim(v, TRUE, 0);
                     SPELL_ANIMS+=v;
                 }
@@ -203,7 +204,7 @@ default
                 sounds = llJson2List((string)sounds);
             
             list_shift_each(anims, v, 
-                if(v)
+                if(isset(v))
                     AnimHandler$anim(v, TRUE, 0);
                 
             )
