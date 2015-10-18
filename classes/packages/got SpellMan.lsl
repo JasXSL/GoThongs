@@ -56,7 +56,8 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     if(~flags&TARG_REQUIRE_NO_FACING){ \
         prAngX(targ, ang); \
         if(llFabs(ang)>PI_BY_TWO){ \
-            A$(ASpellMan$errTargInFront); \
+            llOwnerSay("Targ is: "+llKey2Name(targ)+" and angle is "+(string)llFabs(ang)+"\n"+"Targ pos is: "+(string)prPos(targ)+" and my pos is "+(string)llGetRootPosition()+" and my rot is "+(string)llGetRootRotation()); \
+			A$(ASpellMan$errTargInFront); \
             SpellMan$interrupt(); \
             return ret; \
         } \
@@ -213,17 +214,7 @@ integer castSpell(integer nr){
     
     SPELL_CASTED = nr;
     
-    if(casttime){
-        BFL = BFL|BFL_CASTING;
-        BFL = BFL|BFL_START_CAST;
-        multiTimer(["SC", "", .25, FALSE]);
     
-        GUI$setCastedAbility(nr, casttime);
-        multiTimer(["CAST", "", casttime, FALSE]);
-        
-        SpellAux$startCast(SPELL_CASTED);
-    }
-    else SpellMan$spellComplete();
     
     // Set global cooldown
     if(~spt&SpellMan$NO_GCD){
@@ -241,11 +232,58 @@ integer castSpell(integer nr){
         BFL = BFL|BFL_GLOBAL_CD;
         multiTimer(["GCD", "", 1.5*ctm, FALSE]);
     }
+	
+	
+	if(casttime){
+        BFL = BFL|BFL_CASTING;
+        BFL = BFL|BFL_START_CAST;
+        multiTimer(["SC", "", .25, FALSE]);
+    
+        GUI$setCastedAbility(nr, casttime);
+        multiTimer(["CAST", "", casttime, FALSE]);
+        
+        SpellAux$startCast(SPELL_CASTED);
+    }
+    else spellComplete();
+	
     
     return TRUE;
 }
 
+spellComplete(){
+	list data;
+    if(~SPELL_CASTED)data = nrToData(SPELL_CASTED);
+            
+    if(spellCasttime(data)>0){
+		CODE$VISION_CHECK()
+    }
+            
+    SpellAux$finishCast(SPELL_CASTED, mkarr(SPELL_TARGS));
+            
+    raiseEvent(SpellManEvt$complete, "");
+    //got_rest
+            
+            
+            
+    SpellFX$stopSound();
 
+            
+    // Set cooldown
+    float cooldown = spellCooldown(data);
+    if(SPELL_CASTED == -1)cooldown = 10*cdm;
+    else Status$addMana(-spellCost(data), "", false);
+            
+    if(cooldown){
+		GUI$setCooldown(SPELL_CASTED, cooldown);
+        if(llListFindList(COOLDOWNS, [SPELL_CASTED]) == -1)
+			COOLDOWNS+=[SPELL_CASTED, llGetTime()+cooldown];
+                
+            multiTimer(["CD_"+(string)SPELL_CASTED, "", cooldown, FALSE]);
+        }
+    else GUI$stopCast(SPELL_CASTED);
+            
+    spellEnd();
+}
 
 // Run from both complete and interrupt
 spellEnd(){
@@ -265,7 +303,7 @@ spellEnd(){
 }
 
 timerEvent(string id, string data){
-    if(id == "CAST")SpellMan$spellComplete();
+    if(id == "CAST")spellComplete();
     else if(llGetSubString(id,0,2) == "CD_"){
         integer rem = (integer)llGetSubString(id,3, -1);
         integer pos = llListFindList(COOLDOWNS, [rem]);
@@ -377,40 +415,6 @@ default
                     GUI$stopCast(n);
                 }
             }
-        }
-        else if(METHOD == SpellManMethod$spellComplete){
-            list data;
-            if(~SPELL_CASTED)data = nrToData(SPELL_CASTED);
-            
-            if(spellCasttime(data)>0){
-                CODE$VISION_CHECK()
-            }
-            
-            SpellAux$finishCast(SPELL_CASTED, mkarr(SPELL_TARGS));
-            
-            raiseEvent(SpellManEvt$complete, "");
-            //got_rest
-            
-            
-            
-            SpellFX$stopSound();
-
-            
-            // Set cooldown
-            float cooldown = spellCooldown(data);
-            if(SPELL_CASTED == -1)cooldown = 10*cdm;
-            else Status$addMana(-spellCost(data), "");
-            
-            if(cooldown){
-                GUI$setCooldown(SPELL_CASTED, cooldown);
-                if(llListFindList(COOLDOWNS, [SPELL_CASTED]) == -1)
-                    COOLDOWNS+=[SPELL_CASTED, llGetTime()+cooldown];
-                
-                multiTimer(["CD_"+(string)SPELL_CASTED, "", cooldown, FALSE]);
-            }
-            else GUI$stopCast(SPELL_CASTED);
-            
-            spellEnd();
         }
     }
     
