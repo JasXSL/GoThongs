@@ -77,7 +77,8 @@ string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs,
 #define WF_ALLOW_WHEN_DEAD 0x2
 #define WF_ALLOW_WHEN_QUICKRAPE 0x4
 #define WF_NO_DODGE 0x8
-#define WF_ALLOW_WHEN_RAPED 0x16
+#define WF_ALLOW_WHEN_RAPED 0x20
+#define WF_REQUIRE_LOS 0x40
 
 // Events are used to run additional wrappers on a target based on script events
 // For internal events use "" as evscript

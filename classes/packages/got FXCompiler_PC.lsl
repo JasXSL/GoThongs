@@ -32,18 +32,13 @@ runEffect(key caster, integer stacks, string package, integer pid){
         integer t = llList2Integer(fx, 0);
         string v = llList2String(fx, 1);
         
-        if(t == fx$RAND){
-            float chance = (float)v;
-            if(llList2Integer(fx,2))chance*=stacks;
-            if(llFrand(1)>chance)t = -1;
-            else{
-                fxs = llDeleteSubList(fx, 0, 2)+fxs;
-            }
-        }
-        else if(t == fx$DAMAGE_DURABILITY)Status$addDurability(-(float)v*stacks, jVal(package, [PACKAGE_NAME]));
+        // Shared between PC/NPC, defined in got FXCompiler header file
+		dumpFxInstants()
+		
+        else if(t == fx$DAMAGE_DURABILITY)Status$addDurability(-(float)v*stacks, jVal(package, [PACKAGE_NAME]), llList2Integer(fx,2));
         else if(t == fx$AROUSE)Status$addArousal((float)v*stacks, jVal(package, [PACKAGE_NAME]));
         else if(t == fx$PAIN)Status$addPain((float)v*stacks, jVal(package, [PACKAGE_NAME]));
-        else if(t == fx$MANA)Status$addMana((float)v*stacks, jVal(package, [PACKAGE_NAME]));
+        else if(t == fx$MANA)Status$addMana((float)v*stacks, jVal(package, [PACKAGE_NAME]), llList2Integer(fx, 2));
         else if(t == fx$HITFX){
             ThongMan$hit(v);
             // Also flags and stuff here
@@ -53,34 +48,15 @@ runEffect(key caster, integer stacks, string package, integer pid){
             }
             if(~flags&fxhfFlag$NOANIM)
                 AnimHandler$anim(mkarr((["got_takehit_highpri", "got_takehit"])), TRUE, 0);
-            
-            
-            
         }
         else if(t == fx$HUD_TEXT)
             runMethod((string)LINK_ROOT, "got Alert", AlertMethod$freetext, llList2List(fx, 1, -1), TNN);
         
         else if(t == fx$ANIM)AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0);
-        else if(t == fx$DEBUG){
-            qd(llList2String(fx,1));
-        }    
-        else if(t == fx$REM_BY_NAME)
-            FX$rem(llList2Integer(fx,2), v, "", "", 0, FALSE, 0, 0, 0);
-        
-        else if(t == fx$TRIGGER_SOUND){
-            list sounds = [v];
-            if(llJsonValueType(v, []) == JSON_ARRAY)sounds = llJson2List(v);
-            llTriggerSound(randElem(sounds), llList2Float(fx, 2));
-        }
+ 
         else if(t == fx$INTERRUPT)
             SpellMan$interrupt();
-        else if(t == fx$FULLREGEN)Status$fullregen();
-        else if(t == fx$DISPEL){
-            integer detrimental = (integer)v;
-            if(detrimental)detrimental = PF_DETRIMENTAL;
-            integer maxnr = llList2Integer(fx, 2);
-            FX$rem(FALSE, "", "", "", 0, FALSE, detrimental, TRUE, maxnr);
-        }
+        
         else if(t == fx$RESET_COOLDOWNS)
             SpellMan$resetCooldowns((integer)v);
         else if(t == fx$FORCE_SIT){

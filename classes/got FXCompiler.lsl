@@ -17,10 +17,41 @@
 	
 // LIBRARY
 
+// These are INSTNAT tasks that are shared
+#define dumpFxInstants() \
+	if(t == fx$RAND){ \
+        float chance = (float)v; \
+        if(llList2Integer(fx,2))chance*=stacks; \
+        if(llFrand(1)>chance)t = -1; \
+        else{ \
+            fxs = llDeleteSubList(fx, 0, 2)+fxs; \
+		} \
+    } \
+	else if(t == fx$DEBUG){ \
+        qd(llList2String(fx,1)); \
+	} \
+	else if(t == fx$REM_BY_NAME) \
+        FX$rem(llList2Integer(fx,2), v, "", "", 0, FALSE, 0,0,0); \
+	else if(t == fx$TRIGGER_SOUND){ \
+        list sounds = [v]; \
+        if(llJsonValueType(v, []) == JSON_ARRAY)sounds = llJson2List(v); \
+        llTriggerSound(randElem(sounds), llList2Float(fx, 2)); \
+    } \
+	else if(t == fx$FULLREGEN)Status$fullregen(); \
+	else if(t == fx$DISPEL){ \
+        integer detrimental = (integer)v; \
+        if(detrimental)detrimental = PF_DETRIMENTAL; \
+        integer maxnr = llList2Integer(fx, 2); \
+        FX$rem(FALSE, "", "", "", 0, FALSE, detrimental, TRUE, maxnr); \
+    } \
+		
+		
+
 // These are ADD tasks that are shared
 #define dumpFxAddsShared() \
-	if(t == fx$SET_FLAG) \
+	if(t == fx$SET_FLAG){ \
         SET_FLAGS = manageList(FALSE, SET_FLAGS, [pid,llList2Integer(fx, 1)]); \
+	} \
     else if(t == fx$UNSET_FLAG) \
         UNSET_FLAGS = manageList(FALSE, UNSET_FLAGS, [pid,llList2Integer(fx, 1)]); \
 	else if(t == fx$DAMAGE_TAKEN_MULTIPLIER) \
@@ -41,7 +72,6 @@
 
 // These are REM tasks that are shared
 #define dumpFxRemsShared() \
-	// Things that shouldn't happen if the effect was overwritten rather than ended \
 	if(t == fx$SET_FLAG) \
         SET_FLAGS = manageList(TRUE, SET_FLAGS, [pid, 0]); \
     else if(t == fx$UNSET_FLAG) \
@@ -52,8 +82,9 @@
         DAMAGE_DONE_MULTI = manageList(TRUE, DAMAGE_DONE_MULTI, [pid, 0]); \
     else if(t == fx$SPELL_DMG_TAKEN_MOD) \
         SET_FLAGS = manageList(TRUE, SET_FLAGS, [pid, 0, 0]); \
-    else if(t == fx$ICON) \
+    else if(t == fx$ICON){ \
         Status$remTextureDesc(llList2String(fx, 1)); \
+	}\
     else if(t == fx$DODGE) \
         DODGE_MULTI = manageList(TRUE, DODGE_MULTI, [pid, 0]); \
     else if(t == fx$CASTTIME_MULTIPLIER) \

@@ -1,3 +1,4 @@
+#define IS_NPC
 #include "got/_core.lsl"
 #define stacksIds() llList2ListStrided(STACKS, 0, -1, 2)
 
@@ -20,32 +21,26 @@ runEffect(key caster, integer stacks, string package, integer pid){
         fxs = llDeleteSubList(fxs,0,0);
         integer t = llList2Integer(fx, 0);
         string v = llList2String(fx, 1);
-        // Multiply by stacks
-        if(t == fx$DAMAGE_DURABILITY)Status$addHP(-(float)v*stacks, caster, jVal(package, [PACKAGE_NAME]));
-        else if(t == fx$ANIM){
+		
+		// Shared between PC/NPC, defined in got FXCompiler header file
+		dumpFxInstants()
+		
+		// NPC Specific
+        // Don't forget toMultiply by stacks
+        
+		else if(t == fx$DAMAGE_DURABILITY)
+			Status$addHP(-(float)v*stacks, caster, jVal(package, [PACKAGE_NAME]), llList2Integer(fx,2));
+        
+		else if(t == fx$ANIM){
             if(llList2Integer(fx,2))MeshAnim$startAnim(llList2String(fx, 1));
             else MeshAnim$stopAnim(llList2String(fx, 1));
         }
-        else if(t == fx$DEBUG)
-            qd(llList2String(fx,1));
         
-        else if(t == fx$REM_BY_NAME)
-            FX$rem(llList2Integer(fx,2), v, "", "", 0, FALSE, 0,0,0);
         
-        else if(t == fx$TRIGGER_SOUND){
-            list sounds = [v];
-            if(llJsonValueType(v, []) == JSON_ARRAY)sounds = llJson2List(v);
-            llTriggerSound(randElem(sounds), llList2Float(fx, 2));
-        }
         else if(t == fx$INTERRUPT)
             NPCSpells$interrupt();
-        else if(t == fx$FULLREGEN)Status$fullregen();
-        else if(t == fx$DISPEL){
-            integer detrimental = (integer)v;
-            if(detrimental)detrimental = PF_DETRIMENTAL;
-            integer maxnr = llList2Integer(fx, 2);
-            FX$rem(FALSE, "", "", "", 0, FALSE, detrimental, TRUE, maxnr);
-        }else if(t == fx$AGGRO)
+			
+        else if(t == fx$AGGRO)
             Status$monster_aggro(llGetOwnerKey(caster), (float)v);
         else if(t == fx$HITFX)
             Status$hitfx((string)LINK_ROOT);

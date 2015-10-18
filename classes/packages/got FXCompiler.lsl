@@ -62,14 +62,20 @@ list manageList(integer rem, list input, list data){
     if(rem && ~exists)
         input = llDeleteSubList(input, exists*stride, exists*stride+stride-1);
     else if(!rem && exists == -1)
-        input+=[PID, mkarr(llList2List(data, 1, -1))];
+        input+=data;
     
     return input;
 }
 
 default 
 {
-
+	#ifdef IS_NPC
+	state_entry(){
+		if(llGetStartParameter())
+			raiseEvent(evt$SCRIPT_INIT, "");
+	}
+	#endif
+	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
     /*
