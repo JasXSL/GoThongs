@@ -11,11 +11,7 @@ integer lcb;
 
 list PLAYERS;
 key TARG;
-key LAST_NPC_TARG;
-key LAST_NPC_TEXTURE;
 key THONG_ID;
-
-integer TARGET_SWITCH;  // 0 = LAST_NPC_TARG, 1 = me, 2 = coop
 
 // If you want to use listen override, it ends up here
 // onListenOverride(integer chan, key id, string message){}
@@ -41,25 +37,18 @@ timerEvent(string id, string data){
     }
 }
 
-#define setNpcTarg() \
-if(t != LAST_NPC_TARG)raiseEvent(RootEvt$monsterTarg, mkarr(([t, icon]))); \
-LAST_NPC_TARG = t; \
-LAST_NPC_TEXTURE = icon; 
-
 
 integer setTarget(key t, key icon, integer force){
     if(TARG == t)return FALSE;
     // Target is currently set but if last npc targ is not, then set it
     if(TARG != "" && t != "" && !force){
-        if(llGetAgentSize(t) == ZERO_VECTOR && LAST_NPC_TARG == ""){
-            setNpcTarg()
-        }
         return FALSE;
     }
     // ID not found
     if(llKey2Name(t) == "" && t != "")
         return FALSE;
     
+
     // Clear previous updates
     if(llGetAgentSize(TARG) == ZERO_VECTOR){
         Status$setTargeting(TARG, FALSE);
@@ -74,21 +63,12 @@ integer setTarget(key t, key icon, integer force){
     
     if(t)multiTimer(["T", "", 2, TRUE]);
     
-    if(TARG == llGetOwner())TARGET_SWITCH = 1;
-    else if(TARG == llList2String(PLAYERS, 1) && llGetListLength(PLAYERS)>1)TARGET_SWITCH = 2;
-    else{
-        // Also here
-        TARGET_SWITCH = 0;
-        setNpcTarg()
-    }
+    
     
     // Make sure your target knows you are targeting them
-    if(TARG != "" && TARG != llList2String(PLAYERS, 1) && TARG != llGetOwner())
-        Status$setTargeting(TARG, TRUE);
-    else if(TARG == llList2String(PLAYERS, 1)){
-        runMethod(TARG, "got Status", StatusMethod$outputStats, [], TNN);
-    }
-        
+	string t = TARG;
+	if(t == llGetOwner())t = (string)LINK_ROOT;
+    Status$setTargeting(t, TRUE);
     
     return TRUE;
 }
@@ -108,6 +88,7 @@ default
     // Start up the script
     state_entry()
     { 
+		llDialog(llGetOwner(), "Welcome to GoThongs!\nThis project is licensed under [https://creativecommons.org/licenses/by-nc-sa/4.0/ Creative Commons BY-NC-SA 4.0]\nThe [http://jasx.org/?JB=gme&JBv=%7B%22g%22%3A%22jasxhud%22%7D JasX HUD] is required for RLV and sex.\nUse the [https://github.com/JasXSL/GoThongs/ GoThongs GitHub] for issues and pull requests.", [], 123);
         clearDB2();
         PLAYERS = [llGetOwner()];
         savePlayers();
@@ -217,28 +198,14 @@ if(chan == 3){ \
     else if(message=="Join") \
         Bridge$dialog(message); \
     else if(message == "switch"){ \
-        integer i; \
-        for(i=0; i<3; i++){ \
-            TARGET_SWITCH ++; \
-            if(TARGET_SWITCH>2)TARGET_SWITCH = 0; \
-            key t = LAST_NPC_TARG; \
-            key texture = LAST_NPC_TEXTURE; \
-            integer continue; \
-            if(TARGET_SWITCH == 0 && LAST_NPC_TARG == "")continue = TRUE; \
-            else if(TARGET_SWITCH == 1){ \
-                setTarget(llGetOwner(), TEXTURE_PC, TRUE); \
-                return; \
-            }else if(TARGET_SWITCH == 2){ \
-                if(llGetListLength(PLAYERS)<2)continue = TRUE; \
-                else{ \
-                    t = llList2String(PLAYERS, 1); \
-                    texture = TEXTURE_COOP; \
-                } \
-            } \
-            if(!continue) \
-                if(setTarget(t, texture, TRUE))return; \
-        } \
+        Evts$cycleEnemy(); \
     } \
+	else if(message == "self"){ \
+		setTarget(llGetOwner(), TEXTURE_PC, TRUE);\
+	} \
+	else if(message == "coop"){\
+		setTarget(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE);\
+	} \
     else  \
         SpellMan$hotkey(message); \
 return; \
@@ -314,9 +281,9 @@ if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1) \
     if(METHOD == RootMethod$getPlayers)
         CB_DATA = [mkarr(PLAYERS)];
     
-    else if(METHOD == RootMethod$setTarget)
+    else if(METHOD == RootMethod$setTarget){
         setTarget(method_arg(0), method_arg(1), (integer)method_arg(2));
-    
+    }
 
     // Public code can be put here
 

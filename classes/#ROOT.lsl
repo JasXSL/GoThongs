@@ -30,7 +30,7 @@
 #define Root$targetThis(targ, texture, force) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setTarget, [targ, texture, force], TNN)
 #define Root$aggro(targ) runMethod(targ, "#ROOT", RootMethod$aggro, [], TNN)
 #define Root$setParty(uuid) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setParty, [uuid], TNN)
-
+#define Root$clearTargetOn(targ) runMethod(targ, "#ROOT", RootMethod$setTarget, ["", "", TRUE], TNN)
 
 #define THONG_KEY ((key)db2$get("#ROOT", [RootShared$thongUUID]))
 
