@@ -18,6 +18,7 @@ onEvt(string script, integer evt, string data){
         if(~pos)required = llDeleteSubList(required, pos, pos);
 		debugUncommon("Waiting for "+mkarr(required));
         if(required == []){
+			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
             BFL = BFL|BFL_SCRIPTS_INITIALIZED;
             checkIni() 
         }
@@ -32,8 +33,11 @@ timerEvent(string id, string data){
 default
 {
     on_rez(integer mew){
-        if(mew){
-            integer pin = llCeil(llFrand(0xFFFFFFF));
+        if(mew != 0){
+			#ifndef DISREGARD_TEMP
+				llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, TRUE]);
+            #endif
+			integer pin = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(pin);
             
 			
@@ -69,6 +73,8 @@ default
 			for(i=0; i<llGetListLength(required); i++)
 				Remoteloader$load(llList2String(required, i), pin, 2);
             
+			debugUncommon("Waiting for "+mkarr(required));
+			
             vector pos = (vector)llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);
 			if(pos != ZERO_VECTOR)llSetRegionPos(pos);
 			
