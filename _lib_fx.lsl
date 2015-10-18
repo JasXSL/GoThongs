@@ -1,7 +1,8 @@
 // Fxs
 // * = not implemented yet
-	#define fx$DAMAGE_DURABILITY 1				// [(int)amount_to_rem]
-	#define fx$AROUSE 2							// [(int)amount_to_add]
+	// The flags in the top 2 are the SMAFlags defined in got Status
+	#define fx$DAMAGE_DURABILITY 1				// [(int)amount_to_rem[, (int)flags]]
+	#define fx$AROUSE 2							// [(int)amount_to_add[, (int)flags]]
 	#define fx$PAIN 3							// [(int)amount_to_add]
 	#define fx$MANA 4							// [(int)amount_to_add]
 	#define fx$TRIGGER_SOUND 5					// [(key)uuid, (float)vol] - UUID can also be a JSON array of random sounds
@@ -49,7 +50,7 @@
 	#define fx$RESET_COOLDOWNS 29				// (int)flags, 0x1 = rest, 0x2 = abil1 etc - PC only
 	#define fx$RAND 30							// (float)chance, (bool)multiply_by_stacks, (arr)fxobj1, (arr)fxobj2... - Pseudo effect. If llFrand(1)<=chance, then the trailing fxobjs are run (fxobj is (int)fx, (var)data1.... Only works for instant effects. Multiply_by_stacks will make it so if you have a chance of .2, and 3 stacks, that's a chance of 0.6
 	#define fx$FORCE_SIT 31						// (key)object, (bool)allow_unsit 
-	
+
 // conditions
 	// Built in
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names

@@ -46,6 +46,7 @@
 #include "./classes/got Trap.lsl"
 #include "./classes/got SharedMedia.lsl"
 #include "./classes/got Interact.lsl"
+#include "./classes/got Evts.lsl"
 
 
 #include "got/classes/#ROOT.lsl"
