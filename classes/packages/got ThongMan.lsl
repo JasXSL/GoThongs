@@ -37,8 +37,9 @@ updateDefaults(){
         if(fxspecular != [])
             specular = [PRIM_SPECULAR, ALL_SIDES]+fxspecular;
     }
-    
-    
+    raiseEvent(ThongManEvt$ini, mkarr(([enhanced])));
+	
+    if(BFL&BFL_DEAD)return;
     list out;
     list all = jiggles;
 
@@ -57,11 +58,12 @@ updateDefaults(){
         out+=specular+glow;
     )
     llSetLinkPrimitiveParamsFast(0, out);
-	raiseEvent(ThongManEvt$ini, mkarr(([enhanced])));
+	
 }
 
 
 restore(){ 
+	if(BFL&BFL_DEAD)return;
     list set = [];
     integer i;
     for(i=0; i<llGetListLength(jiggles); i++){
@@ -279,6 +281,7 @@ default
 				multiTimer(["P_"+(string)prim, "", timeout, FALSE]);
 		}
 		else if(METHOD == ThongManMethod$dead){
+			multiTimer(["A"]); // Remove current fade effect
 			integer dead = (integer)method_arg(0);
 			if(dead){
 				BFL = BFL|BFL_DEAD;
