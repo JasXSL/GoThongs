@@ -1,6 +1,9 @@
 #define USE_EVENTS
+#define IS_NPC
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"
+
+#define initialized() (BFL&BFL_INITIALIZED)
 
 list PLAYERS;
 
@@ -29,6 +32,7 @@ integer BFL = 0;
 #define BFL_DEAD 0x1
 #define BFL_FRIENDLY 0x2
 #define BFL_STATUS_TIMER 0x4 
+#define BFL_INITIALIZED 0x8
 
 #define BFL_NOAGGRO (BFL_FRIENDLY|BFL_DEAD)
 
@@ -78,10 +82,12 @@ outputTextures(){
         GUI$setSpellTextures(llList2Key(OUTPUT_STATUS_TO, i), dta);
 }
 
-addHP(float amount, key attacker, string spellName){
+addHP(float amount, key attacker, string spellName, integer flags){
     if(STATUS_FLAGS&StatusFlag$dead)return;
     float pre = HP;
     amount*=spdmtm(spellName);
+	if(flags&SMAFlag$IS_PERCENTAGE)
+		amount*=maxHP;
     
     if(amount<0){
         amount*=fxModDmgTaken;
@@ -101,8 +107,9 @@ addHP(float amount, key attacker, string spellName){
         MeshAnim$stopAnim("idle");
         MeshAnim$stopAnim("walk");
         MeshAnim$stopAnim("attack");
-        
-        
+        BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
+		llSetObjectDesc("");			// Prevent targeting
+        list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
         
         
         if(deathsound)llTriggerSound(deathsound, 1);
@@ -209,6 +216,7 @@ onEvt(string script, integer evt, string data){
         }
     }
     else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
+		BFL = BFL|BFL_INITIALIZED;
         RUNTIME_FLAGS = (integer)j(data, MLC$RF);
         maxHP = (float)j(data, MLC$maxhp);
         aggro_range = (float)j(data, MLC$aggro_range);
@@ -280,10 +288,6 @@ timerEvent(string id, string data){
 
 default 
 {
-    on_rez(integer mew){
-        llResetScript();
-    }
-    
     state_entry(){
         llSetStatus(STATUS_PHANTOM, TRUE);
         if(llGetStartParameter()){
@@ -292,6 +296,7 @@ default
     }
     
     touch_start(integer total){
+		if(!initialized())return;
         Root$targetMe(llDetectedKey(0), icon, TRUE);
     }
     
@@ -308,6 +313,13 @@ default
     */ 
     
     // Here's where you receive callbacks from running methods
+	
+	// Methods that should be allowed even when not initialized
+	
+	
+	if(!initialized()){
+		return;
+	}
     if(method$isCallback){
         if(METHOD == StatusMethod$get && id!="" && SENDER_SCRIPT == "got Status"){
             if(CB == "aggro" || CB == "agc"){
@@ -336,6 +348,7 @@ default
     }
     
     if(id == ""){
+		// From FX, caches statuses
         if(METHOD == StatusMethod$addTextureDesc){
             key texture = (key)method_arg(0);
             string desc = method_arg(1);
@@ -353,17 +366,20 @@ default
     }
     
     if(method$byOwner){
+		// Sets runtime flags
         if(METHOD == StatusMethod$monster_setFlag){
             STATUS_FLAGS = STATUS_FLAGS|(integer)method_arg(0);
         }
-        if(METHOD == StatusMethod$monster_remFlag){
+        else if(METHOD == StatusMethod$monster_remFlag){
             STATUS_FLAGS = STATUS_FLAGS&~(integer)method_arg(0);
         }
-        if(METHOD == StatusMethod$addDurability)
-            addHP((float)method_arg(0), method_arg(1), method_arg(2));
+		// Handles health
+        else if(METHOD == StatusMethod$addDurability)
+            addHP((float)method_arg(0), method_arg(1), method_arg(2), 0);
         
     }
     
+	// This person has toggled targeting on you
     if(METHOD == StatusMethod$setTargeting){
         integer on = (integer)method_arg(0);
         integer pos = llListFindList(OUTPUT_STATUS_TO, [id]);
@@ -375,17 +391,23 @@ default
             outputStats();
             outputTextures();
         }
+		NPCSpells$setOutputStatusTo(OUTPUT_STATUS_TO);
     }
+	
+	// Get status
     else if(METHOD == StatusMethod$get){
         CB_DATA = [STATUS_FLAGS, FXFLAGS, HP/maxHP, 0, 0, 0];
     }
+	// Take hit animation
     else if(METHOD == StatusMethod$monster_takehit){
         MeshAnim$startAnim("hit");
         if(takehitsound)llTriggerSound(takehitsound, 1);
     }
+	// Whenever spell modifiers have changed
     else if(METHOD == StatusMethod$spellModifiers){
         SPELL_DMG_TAKEN_MOD = llJson2List(method_arg(0));
     }
+	// Get the description of an effect affecting me
     else if(METHOD == StatusMethod$getTextureDesc){
         if(id == "")id = llGetOwner();
         string out = "";
@@ -402,11 +424,14 @@ default
         if(out)
             llRegionSayTo(llGetOwnerKey(id), 0, out);
     }
+	// Drop aggro from this
     else if(METHOD == StatusMethod$monster_dropAggro)
         dropAggro(method_arg(0), (integer)method_arg(1));
-    else if(METHOD == StatusMethod$monster_attemptTarget)
-        Root$targetMe(id, icon, FALSE);
-    else if(METHOD == StatusMethod$monster_aggro)
+    // This person wants to target me
+	else if(METHOD == StatusMethod$monster_attemptTarget)
+        Root$targetMe(id, icon, (integer)method_arg(0));
+    // Add aggro
+	else if(METHOD == StatusMethod$monster_aggro)
         aggro(method_arg(0), (float)method_arg(1));
         
     // Public code can be put here
