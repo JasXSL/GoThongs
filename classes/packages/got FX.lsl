@@ -354,12 +354,17 @@ default
 			integer min_objs = llList2Integer(packages,1);
             integer max_objs = llList2Integer(packages,2);
 			
-			
-			
+			// PC only
 			#ifndef IS_NPC
 			if(_NPC_TARG == "" && flags&WF_DETRIMENTAL && llGetAgentSize(sender) == ZERO_VECTOR)
 				Status$monster_attemptTarget(sender, false);
-			
+			#else
+				integer RC = TRUE;
+				if(flags&WF_REQUIRE_LOS){
+					if(llList2Integer(llCastRay(llGetPos(), prPos(id), [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]), -1)> 0){
+						RC = FALSE;
+					}
+				}
 			#endif
 			
 			packages = llDeleteSubList(packages, 0, 2);
@@ -368,9 +373,15 @@ default
 				(~flags&WF_ALLOW_WHEN_QUICKRAPE && FX_FLAGS&fx$F_QUICKRAPE) || 
 				(~flags&WF_ALLOW_WHEN_RAPED && STATUS&StatusFlag$raped) ||
 				(range > 0 && llVecDist(llGetPos(), prPos(id))>range)
+				#ifdef IS_NPC
+				|| !RC
+				#endif
 			){
 				CB_DATA = [FALSE];
-			}			
+			}	
+			#ifdef IS_NPC
+			
+			#endif			
 			else if(~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != llGetOwner() && llFrand(1)<(dodge_chance+dodge_add)){
 				#ifndef IS_NPC
 				AnimHandler$anim(mkarr((["got_dodge_active", "got_dodge_active_ub"])), TRUE, 0);
