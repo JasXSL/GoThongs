@@ -30,6 +30,7 @@ float fxCTM = 1;
 float fxCDM = 1;
 
 list cooldowns;
+list OUTPUT_STATUS_TO;
 
 float CAST_START_TIME;
 float CAST_END_TIME;
@@ -38,15 +39,34 @@ string CACHE_NAME;              // Name of spell cast
 integer P_TXT;
 string CACHE_TEXT;
 updateText(){
+	integer i;
     integer p = llRound(hp*5);
-    string text = " 💓 ";
-    
-    integer i;
+	
+	list names = [];
+	for(i=0; i<llGetListLength(OUTPUT_STATUS_TO); i++){
+		string n = llGetSubString(
+			llList2String(
+				explode(" ", llGetDisplayName(llGetOwnerKey(llList2String(OUTPUT_STATUS_TO, i)))),
+				0
+			)
+			, 0, 15
+		);
+
+		if(n != ""){
+			names+= "["+n+"]\n";
+		}
+	}
+	string text = (string)names;
+    string middle =  " 💓 ";
     for(i=0; i<p; i++)
-        text = "▶️"+text+"◀️";
-    
+        middle = "▶️"+middle+"◀️";
+    text+= middle;
+	
     vector color = <1, .8, .8>;
     
+	
+	
+	
     if(BFL&BFL_CASTING){
         color = <.8,.6,1>;
         integer tBlocks = llRound((CAST_END_TIME-llGetTime())/(CAST_END_TIME-CAST_START_TIME)*5);
@@ -63,7 +83,11 @@ updateText(){
     }
     CACHE_TEXT = text;
     llSetLinkPrimitiveParamsFast(P_TXT, [PRIM_TEXT, CACHE_TEXT, color, 1]);
-    multiTimer(["FDE", 1, 2, TRUE]);
+	
+	list t = ["FDE"];
+	if(names == [])
+		t+=[1, 2, TRUE];
+	multiTimer(t);
 }
 
 onEvt(string script, integer evt, string data){
@@ -205,7 +229,7 @@ timerEvent(string id, string data){
                     p = llDeleteSubList(p, 0, 0);
                     vector ppos = prPos(targ);
                     float dist = llVecDist(llGetPos(), ppos);
-                    list ray = llCastRay(llGetPos(), ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+                    list ray = llCastRay(llGetPos()+<0,0,.5>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
                     if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0){
                         if(targ != aggro_target){
                             Status$get(targ, "SPL;"+llList2String(r, i));
@@ -293,9 +317,13 @@ default
         else if(METHOD == NPCSpellsMethod$interrupt){
             endCast(FALSE);
         }
+		else if(METHOD == NPCSpellsMethod$setOutputStatusTo){
+			OUTPUT_STATUS_TO = llJson2List(PARAMS);
+			updateText();
+		}
     }
-    
-    
+	
+
     // Public code can be put here
 
     // End link message code
