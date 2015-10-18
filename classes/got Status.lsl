@@ -1,5 +1,6 @@
-#define StatusMethod$addDurability 1		// [(float)durability, (key)caster, (str)spellName]
-#define StatusMethod$addMana 2		// [(float)durability, (str)spellName]
+#define StatusMethod$addDurability 1		// [(float)durability, (key)caster, (str)spellName, (int)flags]
+	#define SMAFlag$IS_PERCENTAGE 0x1			// multiply durability by total HP
+#define StatusMethod$addMana 2		// [(float)durability, (str)spellName[, (int)flags]]
 #define StatusMethod$addArousal 3		// [(float)durability, (str)spellName]
 #define StatusMethod$addPain 4		// [(float)durability, (str)spellName]
 #define StatusMethod$fullregen 5		// NULL
@@ -57,8 +58,8 @@
 #define StatusFlags$NON_VIABLE (StatusFlag$dead|StatusFlag$raped)		// For monsters to assume the PC can't be interacted with
 
 #define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
-#define Status$addDurability(amt, spellName) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addDurability, [amt, "", spellName], TNN)
-#define Status$addMana(amt, spellName) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addMana, [amt, spellName], TNN)
+#define Status$addDurability(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addDurability, [amt, "", spellName, flags], TNN)
+#define Status$addMana(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addMana, [amt, spellName, flags], TNN)
 #define Status$addArousal(amt, spellName) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addArousal, [amt, spellName], TNN)
 #define Status$addPain(amt, spellName) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addPain, [amt, spellName], TNN)
 #define Status$fullregen() runMethod((string)LINK_ROOT, "got Status", StatusMethod$fullregen, [], TNN)
@@ -72,7 +73,7 @@
 
 // Monster
 #define Status$dropAggro(targ) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ], TNN)
-#define Status$addHP(amt, attacker, spellname) runMethod((string)LINK_THIS, "got Status", StatusMethod$addDurability, [amt, attacker, spellname], TNN)
+#define Status$addHP(amt, attacker, spellname, flags) runMethod((string)LINK_THIS, "got Status", StatusMethod$addDurability, [amt, attacker, spellname, flags], TNN)
 #define Status$hitfx(targ) runMethod(targ, "got Status", StatusMethod$monster_takehit, [], TNN)
 #define Status$monster_attemptTarget(targ, force) runMethod(targ, "got Status", StatusMethod$monster_attemptTarget, [force], TNN)
 #define Status$monster_aggro(targ, amt) runMethod((string)LINK_THIS, "got Status", StatusMethod$monster_aggro, [targ, amt], TNN)

@@ -76,10 +76,13 @@ toggleClothes(integer showGenitals){
 }
         
 
-addDurability(float amount, string spellName){
+addDurability(float amount, string spellName, integer flags){
     if(STATUS_FLAGS&StatusFlag$dead)return;
     float pre = DURABILITY;
     amount*=spdmtm(spellName);
+	if(flags&SMAFlag$IS_PERCENTAGE)
+		amount*=maxDurability();
+	
     if(amount<0){
          if(STATUS_FLAGS&StatusFlag$pained)amount*=1.5;
          amount*=fxModDmgTaken;
@@ -112,10 +115,12 @@ addDurability(float amount, string spellName){
         outputStats();
     }
 }
-addMana(float amount, string spellName){
+addMana(float amount, string spellName, integer flags){
     if(STATUS_FLAGS&StatusFlag$dead)return;
     float pre = MANA;
     amount*=spdmtm(spellName);
+	if(flags&SMAFlag$IS_PERCENTAGE)
+		amount*=maxDurability();
     
     MANA += amount;
     if(MANA<=0)MANA = 0;
@@ -133,7 +138,8 @@ addArousal(float amount, string spellName){
     if(amount>0)amount*=fxModDmgTaken;
     AROUSAL += amount;
     if(AROUSAL<=0)AROUSAL = 0;
-    else if(AROUSAL >= maxArousal()){
+    
+	if(AROUSAL >= maxArousal()){
         AROUSAL = maxArousal();
         if(~STATUS_FLAGS&StatusFlag$aroused){
             STATUS_FLAGS = STATUS_FLAGS|StatusFlag$aroused;
@@ -156,7 +162,8 @@ addPain(float amount, string spellName){
     if(amount>0)amount*=fxModDmgTaken;
     PAIN += amount;
     if(PAIN<=0)PAIN = 0;
-    else if(PAIN >= maxPain()){
+    
+	if(PAIN >= maxPain()){
         PAIN = maxPain();
         if(~STATUS_FLAGS&StatusFlag$pained){
             STATUS_FLAGS = STATUS_FLAGS|StatusFlag$pained;
@@ -164,7 +171,6 @@ addPain(float amount, string spellName){
         }
     }else if(STATUS_FLAGS&StatusFlag$pained)
         STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$pained;
-    
     
     if(pre != PAIN){
         db2$set([StatusShared$pain], mkarr(([PAIN, maxPain()])));
@@ -265,6 +271,8 @@ outputStats(){
     }
     if(PRE_FLAGS != STATUS_FLAGS){
         integer c = StatusFlag$pained|StatusFlag$aroused;
+		
+		
         if((~PRE_FLAGS&c) == c && STATUS_FLAGS&c)
             AnimHandler$anim("got_pain", TRUE, 0);
         else if(PRE_FLAGS&c && (~STATUS_FLAGS&c) == c)
@@ -277,7 +285,7 @@ outputStats(){
 
 timerEvent(string id, string data){
     if(id == TIMER_REGEN)
-        addMana((maxMana()*.05)*fxModManaRegen, "");
+        addMana((maxMana()*.05)*fxModManaRegen, "", 0);
     else if(id == "S"){
        GUI$status(LINK_ROOT, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
         if(coop_player)
@@ -338,7 +346,6 @@ default
             integer pos = llListFindList(SPELL_ICONS, [texture]);
             if(pos == -1)return;
             SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos, pos+SPSTRIDE-1);
-            
             multiTimer(["OP", "", .1, FALSE]);
         }
         else if(METHOD == StatusMethod$setSex){
@@ -347,22 +354,15 @@ default
         }
     }
     
-    if(METHOD == StatusMethod$addDurability)addDurability((float)method_arg(0), method_arg(2));
-    else if(METHOD == StatusMethod$addMana)addMana((float)method_arg(0), method_arg(1));
+    if(METHOD == StatusMethod$addDurability)addDurability((float)method_arg(0), method_arg(2), (integer)method_arg(3));
+    else if(METHOD == StatusMethod$addMana)addMana((float)method_arg(0), method_arg(1), (integer)method_arg(2));
     else if(METHOD == StatusMethod$addArousal)addArousal((float)method_arg(0), method_arg(1));
     else if(METHOD == StatusMethod$addPain)addPain((float)method_arg(0), method_arg(1));
     else if(METHOD == StatusMethod$setTargeting){
-        integer on = (integer)method_arg(0);
-        integer pos = llListFindList(OUTPUT_STATUS_TO, [id]);
-        if(!on){
-            if(pos == -1)return;
-            OUTPUT_STATUS_TO = llDeleteSubList(OUTPUT_STATUS_TO, pos, pos);
-        }else{
-            if(~pos)return;
-            OUTPUT_STATUS_TO += id;
-            outputStats();
-        }
-    }
+		outputStats();
+		multiTimer(["OP", "", .2, FALSE]);
+	}
+    
     else if(METHOD == StatusMethod$fullregen){
         if(STATUS_FLAGS&StatusFlag$raped)Rape$end();
         
