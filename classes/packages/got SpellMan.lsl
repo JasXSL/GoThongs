@@ -1,5 +1,5 @@
 #define USE_EVENTS
-#define USE_SHARED [cls$name, "#ROOT", BridgeSpells$name, "got Status"]
+#define USE_SHARED [cls$name, "#ROOT", BridgeSpells$name, "got Status", "got Bridge"]
 #include "got/_core.lsl"
 
 #define spellCost(data) (llList2Float(data, 0)*mcm)
@@ -12,18 +12,15 @@
 #define spellOnCooldown(id) (~llListFindList(COOLDOWNS, [id]))
 #define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
 
-#define startSpell(spell) if(!castSpell(spell))llPlaySound("2967371a-f0ec-d8ad-4888-24b3f8f3365c", .2)
+#define startSpell(spell) if(castSpell(spell) == FALSE)llPlaySound("2967371a-f0ec-d8ad-4888-24b3f8f3365c", .2)
 
 #define CSTRIDE 6
 list CACHE;                     // [(int)id, (arr)wrapper, (float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (arr)fx, (arr)selfcastWrapper]
 list GCD_FREE;    // Spells that are freed from global cooldown        
-/*
-    FX is a generic array for visuals
-    Most these vals can be either a string or a JSON array
-    0 = spawn(s)
-    1 = anim(s)
-    
-*/
+
+float GCD = 1.5;
+
+
 
 #define CDSTRIDE 2
 list COOLDOWNS = [];            // (int)buttonID, (float)finish_time
@@ -40,7 +37,9 @@ integer SPELL_WRAPPER_FLAGS;
 integer SPELL_CASTED;
 list SPELL_TARGS;
 
+key CACHE_ROOT_TARGET;
 
+integer QUEUE_SPELL = -2;	// A spell to queue when target is changed
 
 list PLAYERS;
 
@@ -56,8 +55,7 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     if(~flags&TARG_REQUIRE_NO_FACING){ \
         prAngX(targ, ang); \
         if(llFabs(ang)>PI_BY_TWO){ \
-            llOwnerSay("Targ is: "+llKey2Name(targ)+" and angle is "+(string)llFabs(ang)+"\n"+"Targ pos is: "+(string)prPos(targ)+" and my pos is "+(string)llGetRootPosition()+" and my rot is "+(string)llGetRootRotation()); \
-			A$(ASpellMan$errTargInFront); \
+            A$(ASpellMan$errTargInFront); \
             SpellMan$interrupt(); \
             return ret; \
         } \
@@ -98,6 +96,12 @@ onEvt(string script, integer evt, string data){
             startSpell(nr);
         }else if(evt == RootEvt$players)
             PLAYERS = llJson2List(data);
+		else if(evt == RootEvt$targ){
+			CACHE_ROOT_TARGET = j(data,0);
+			if(QUEUE_SPELL != -2){
+				startSpell(QUEUE_SPELL);
+			}
+		}
         
     }else if(script == "got FXCompiler"){
         if(evt == FXCEvt$update){
@@ -112,14 +116,13 @@ onEvt(string script, integer evt, string data){
             }
         }
     }else if(script == "got Status" && evt == StatusEvt$flags)STATUS_FLAGS = (integer)data;
-    
 }
 
 #define flagsToTargets(targets, var) var = []; \
 if(targets & TARG_AOE)var = ["AOE"]; \
 else if(targets == TARG_CASTER)var = [LINK_ROOT]; \
 else{ \
-    string targ = db2$get("#ROOT", [RootShared$targ]); \
+	key targ = CACHE_ROOT_TARGET;\
     if(targ == llGetOwner())targ = ""; \
     key coop = llList2Key(PLAYERS, 1); \
     if(isset(targ)){ \
@@ -127,11 +130,14 @@ else{ \
         else if(targets&TARG_NPC && llListFindList(PLAYERS, [targ]) == -1)var = [targ]; \
     } \
     if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \
+	else if(targets&TARG_NPC && !isset(targ) && QUEUE_SPELL != -2){ \
+		var = ["Q"];\
+	}\
 }
 
 
 integer castSpell(integer nr){
-    
+    QUEUE_SPELL = -2;
 
     if(BFL&BFL_CASTING){
         A$(ASpellMan$errCastInProgress);
@@ -168,6 +174,13 @@ integer castSpell(integer nr){
     SPELL_TARGS = [LINK_ROOT];
     if(~nr){
         flagsToTargets(spt, SPELL_TARGS);
+		if((string)SPELL_TARGS == "Q"){
+			// Queue a spell
+			QUEUE_SPELL = nr;
+			multiTimer(["Q", "", 2, FALSE]);
+			Evts$cycleEnemy();
+			return -2;
+		}
     }
     if(SPELL_TARGS == []){
         A$(ASpellMan$errInvalidTarget);
@@ -225,12 +238,12 @@ integer castSpell(integer nr){
             float cdt = 0;
             integer pos = llListFindList(COOLDOWNS, [i-1]);
             if(~pos)cdt = llList2Float(COOLDOWNS, pos+1);
-            if(llList2Integer(GCD_FREE,i) || cdt-llGetTime()>1.5 || (i-1 == SPELL_CASTED && casttime>0))
+            if(llList2Integer(GCD_FREE,i) || cdt-llGetTime()>GCD*cdm || (i-1 == SPELL_CASTED && casttime>0))
                 CDS = llListReplaceList(CDS, [0], i, i);
         }
-        GUI$setGlobalCooldowns(1.5*ctm, CDS);
+        GUI$setGlobalCooldowns(GCD*cdm, CDS);
         BFL = BFL|BFL_GLOBAL_CD;
-        multiTimer(["GCD", "", 1.5*ctm, FALSE]);
+        multiTimer(["GCD", "", GCD*cdm, FALSE]);
     }
 	
 	
@@ -261,12 +274,13 @@ spellComplete(){
     SpellAux$finishCast(SPELL_CASTED, mkarr(SPELL_TARGS));
             
     raiseEvent(SpellManEvt$complete, "");
-    //got_rest
-            
-            
+           
             
     SpellFX$stopSound();
-
+	
+	
+	float casttime = spellCasttime(data);
+    if(SPELL_CASTED == -1)casttime = 1.5*ctm;
             
     // Set cooldown
     float cooldown = spellCooldown(data);
@@ -278,9 +292,12 @@ spellComplete(){
         if(llListFindList(COOLDOWNS, [SPELL_CASTED]) == -1)
 			COOLDOWNS+=[SPELL_CASTED, llGetTime()+cooldown];
                 
-            multiTimer(["CD_"+(string)SPELL_CASTED, "", cooldown, FALSE]);
-        }
-    else GUI$stopCast(SPELL_CASTED);
+        multiTimer(["CD_"+(string)SPELL_CASTED, "", cooldown, FALSE]);
+    }
+    else if(casttime<GCD*cdm)GUI$setCooldown(SPELL_CASTED, GCD*cdm-casttime);
+	else GUI$stopCast(SPELL_CASTED);
+	
+	
             
     spellEnd();
 }
@@ -322,8 +339,9 @@ timerEvent(string id, string data){
             if(llListFindList(COOLDOWNS, [i-1]) == -1 && (~BFL&BFL_CASTING|| i-1 != SPELL_CASTED))
                 CDS = llListReplaceList(CDS, [-1], i, i);
         }
-        GUI$setGlobalCooldowns(1.5*ctm, CDS);
+        GUI$setGlobalCooldowns(GCD*ctm, CDS);
     }
+	else if(id == "Q")QUEUE_SPELL = -2;
 }
 
 
@@ -386,7 +404,10 @@ default
             list spells = llJson2List(db2$get(BridgeSpells$name, []));
             SpellAux$cache();
             PARAMS = "";
-
+			
+			GCD = (float)db2$get("got Bridge", ([BridgeShared$data, 2]));
+			if(GCD<=0)GCD = 1.5;
+			
             integer i;
             for(i=0; i<llGetListLength(spells); i++){
                 list d = llJson2List(llList2String(spells, i));

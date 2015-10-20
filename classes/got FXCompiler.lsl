@@ -11,7 +11,8 @@
 	#define FXCUpd$CASTTIME 5
 	#define FXCUpd$COOLDOWN 6
 	#define FXCUpd$MANACOST 7
-
+	#define FXCUpd$CRIT 8
+	
 	
 	
 	
@@ -43,7 +44,7 @@
         if(detrimental)detrimental = PF_DETRIMENTAL; \
         integer maxnr = llList2Integer(fx, 2); \
         FX$rem(FALSE, "", "", "", 0, FALSE, detrimental, TRUE, maxnr); \
-    } \
+    } 
 		
 		
 
@@ -68,7 +69,9 @@
         CASTTIME_MULTIPLIER = manageList(FALSE, CASTTIME_MULTIPLIER, [pid,llList2Float(fx, 1)]); \
     else if(t == fx$COOLDOWN_MULTIPLIER) \
         COOLDOWN_MULTIPLIER = manageList(FALSE, COOLDOWN_MULTIPLIER, [pid,llList2Float(fx, 1)]); \
-
+	else if(t == fx$CRIT_MULTIPLIER)\
+		CRIT_MULTIPLIER = manageList(FALSE, CRIT_MULTIPLIER, [pid,llList2Float(fx, 1)]); \
+	
 
 // These are REM tasks that are shared
 #define dumpFxRemsShared() \
@@ -91,7 +94,8 @@
         CASTTIME_MULTIPLIER = manageList(TRUE, CASTTIME_MULTIPLIER, [pid, 0]); \
     else if(t == fx$COOLDOWN_MULTIPLIER) \
         COOLDOWN_MULTIPLIER = manageList(TRUE, COOLDOWN_MULTIPLIER, [pid, 0]); \
-	
+	else if(t == fx$CRIT_MULTIPLIER)\
+		CRIT_MULTIPLIER = manageList(TRUE, CRIT_MULTIPLIER, [pid,0]); \
 	
 	
 	

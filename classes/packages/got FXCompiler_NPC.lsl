@@ -10,6 +10,7 @@ list SPELL_DMG_TAKEN_MOD;   // [id, (str)spell, (float)multiplier]
 list DODGE_MULTI;           // [id, (float)data]
 list CASTTIME_MULTIPLIER;   // [id, (float)multiplier]
 list COOLDOWN_MULTIPLIER;   // [id, (float)multiplier]
+list CRIT_MULTIPLIER;		// [id, (float)multiplier]
 
 integer current_visual;
 
@@ -115,6 +116,11 @@ updateGame(){
     
     float cdm = compileList(COOLDOWN_MULTIPLIER, 0, 1, 2)+1;
     if(cdm<.1)cdm = .1;
+	
+	float cm = compileList(CRIT_MULTIPLIER, 0, 1, 2);
+    if(cm<0)cm = 0;
+	
+	
     
     // Compile lists of spell specific modifiers
     list spdmtm; // SPELL_DMG_TAKEN_MOD - [(str)spellName, (float)dmgmod]
@@ -128,7 +134,7 @@ updateGame(){
     
     
     Status$spellModifiers(spdmtm);    
-    raiseEvent(FXCEvt$update, mkarr(([flags, 0, ddm, dtm, dodge, ctm, cdm])));
+    raiseEvent(FXCEvt$update, mkarr(([flags, 0, ddm, dtm, dodge, ctm, cdm, cm])));
 }
 
 #include "got/classes/packages/got FXCompiler.lsl"

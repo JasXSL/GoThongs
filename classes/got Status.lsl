@@ -1,5 +1,5 @@
 #define StatusMethod$addDurability 1		// [(float)durability, (key)caster, (str)spellName, (int)flags]
-	#define SMAFlag$IS_PERCENTAGE 0x1			// multiply durability by total HP
+	#define SMAFlag$IS_PERCENTAGE 0x1			// multiply durability by total HP	
 #define StatusMethod$addMana 2		// [(float)durability, (str)spellName[, (int)flags]]
 #define StatusMethod$addArousal 3		// [(float)durability, (str)spellName]
 #define StatusMethod$addPain 4		// [(float)durability, (str)spellName]

@@ -14,6 +14,7 @@
 
 
 #define SpellMan$NO_GCD 0x80
+#define SpellMan$NO_CRITS 0x100
 
 #define SpellMan$hotkey(text) runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$hotkey, [text], TNN)
 #define SpellMan$interrupt() runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$interrupt, [], TNN)
@@ -21,5 +22,6 @@
 #define SpellMan$spellComplete() runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$spellComplete, [], TNN)
 #define SpellMan$purgeCache() runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$purgeCache, [], TNN)
 #define SpellMan$resetCooldowns(bitfield) runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$resetCooldowns, [bitfield], TNN)
+
 
 

@@ -1,14 +1,15 @@
 #define USE_EVENTS
-#define USE_SHARED [BridgeSpells$name]
+#define USE_SHARED [BridgeSpells$name, "got Status"]
 #include "got/_core.lsl"
 
 #define spellWrapper(data) llList2String(data, 0)
 #define spellSelfcast(data) llList2String(data, 1)
 #define spellRange(data) llList2Float(data, 2)
+#define spellFlags(data) llList2Integer(data, 3)
 
 #define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
 
-#define CSTRIDE 3
+#define CSTRIDE 4
 list CACHE;
 list FX_CACHE;
 #define FXSTRIDE 5
@@ -25,6 +26,9 @@ list PARTICLE_CACHE;
 #define PSTRIDE 3
 
 
+float CACHE_AROUSAL;
+float CACHE_PAIN;
+float CACHE_CRIT;
 
 
 integer STATUS_FLAGS;
@@ -34,6 +38,8 @@ list SPELL_ANIMS;
 
 // FX
 float dmdmod = 1;       // Damage done
+float critmod = 0;
+
 
 string runMath(string FX){
     list split = llParseString2List(FX, ["$MATH$"], []);
@@ -41,6 +47,13 @@ string runMath(string FX){
     if(llList2Key(PLAYERS, 1))pmod = .5;
     float aroused = 1;
     if(STATUS_FLAGS&StatusFlag$aroused)aroused = .5;
+	
+	string consts = llList2Json(JSON_OBJECT, [
+        "D", (dmdmod*pmod*aroused*CACHE_CRIT),
+		"A", CACHE_AROUSAL,
+		"P", CACHE_PAIN
+    ]);
+	
     integer i;
     for(i=1; i<llGetListLength(split); i++){
         split = llListReplaceList(split, [llGetSubString(llList2String(split, i-1), 0, -2)], i-1, i-1);
@@ -48,9 +61,8 @@ string runMath(string FX){
         integer q = llSubStringIndex(block, "\"");
         string math = llGetSubString(block, 0, q-1);
         block = llGetSubString(block, q+1, -1);
-        split = llListReplaceList(split, [(string)mathToFloat(math, 0, llList2Json(JSON_OBJECT, [
-            "D", (dmdmod*pmod*aroused)
-        ]))+block], i, i);
+        float m = mathToFloat(math, 0, consts);
+		split = llListReplaceList(split, [(string)m+block], i, i);
     }
     return llDumpList2String(split, "");
 }
@@ -59,10 +71,14 @@ onEvt(string script, integer evt, string data){
     if(script == "#ROOT"){
         if(evt == RootEvt$players)
             PLAYERS = llJson2List(data);
-    }else if(script == "got Status" && evt == StatusEvt$flags)
-        STATUS_FLAGS = (integer)data;
-    else if(script == "got FXCompiler" && evt == FXCEvt$update)
+    }else if(script == "got Status"){
+		if(evt == StatusEvt$flags)
+			STATUS_FLAGS = (integer)data;
+	}
+    else if(script == "got FXCompiler" && evt == FXCEvt$update){
         dmdmod = (float)j(data, FXCUpd$DAMAGE_DONE);
+		critmod = (float)j(data, FXCUpd$CRIT);
+	}
 
 }
 
@@ -70,6 +86,8 @@ onEvt(string script, integer evt, string data){
 
 default
 {
+	state_entry(){db2$ini();}
+
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
     /*
@@ -141,15 +159,27 @@ default
         else if(METHOD == SpellAuxMethod$finishCast){
             integer SPELL_CASTED = (integer)method_arg(0);
             list SPELL_TARGS = llJson2List(method_arg(1));
-            list data;
+            list data; integer flags = SpellMan$NO_CRITS;
             if(~SPELL_CASTED){
                 data = nrToData(SPELL_CASTED);
+				flags = spellFlags(data);
             }
+			
             
             string FX = "[0,0,0,0,[0,0,\"\",[[1,-20],[2,-20],[3,-20],[4,20]],[],[]]";
             string SELF = "[]";
             list visual;
             if(~SPELL_CASTED){
+				
+				CACHE_AROUSAL = (float)db2$get("got Status", ([StatusShared$arousal, 0]));
+				CACHE_PAIN = (float)db2$get("got Status", ([StatusShared$arousal, 0]));
+				CACHE_CRIT = 1;
+
+				if(llFrand(1)<critmod && ~flags&SpellMan$NO_CRITS){
+					CACHE_CRIT = 2;
+					llTriggerSound("e713ffed-c518-b1ed-fcde-166581c6ad17", .25);
+				}
+			
                 FX = runMath(spellWrapper(data));
                 SELF = runMath(spellSelfcast(data));
                 visual = llList2List(FX_CACHE, SPELL_CASTED*FXSTRIDE, SPELL_CASTED*FXSTRIDE+FXSTRIDE-1);
@@ -227,14 +257,14 @@ default
             PARTICLE_CACHE = [];
             list spells = llJson2List(db2$get(BridgeSpells$name, []));
             PARAMS = "";
-            
-            
+			            
             integer i;
             for(i=0; i<llGetListLength(spells); i++){
                 list d = llJson2List(llList2String(spells, i));
                 CACHE+= llList2String(d, 2); // Wrapper
                 CACHE+= llList2String(d, 9); // Selfcast
-                CACHE+= llList2Float(d, 5); // Range
+                CACHE+= llList2Float(d, 6); // Range
+				CACHE+= llList2Integer(d, 5); // Flags
                 
                 string visuals = llList2String(d, 8); // Visuals
                 string p = j(visuals, 3);

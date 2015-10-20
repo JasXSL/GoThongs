@@ -45,6 +45,7 @@ integer RUNTIME_FLAGS;
 integer FXFLAGS = 0;
 float fxModDmgTaken = 1;
 float fxModDmgDone = 1;
+float fxModCrit = 0;
 
 list SPELL_DMG_TAKEN_MOD;
 
@@ -209,9 +210,10 @@ aggro(key player, float ag){
 onEvt(string script, integer evt, string data){
     if(script == "got FXCompiler"){
         if(evt == FXCEvt$update){
-            FXFLAGS = (integer)jVal(data, [0]);
-            fxModDmgTaken = (float)jVal(data, [3]);
-            fxModDmgDone = (float)jVal(data, [2]);
+            FXFLAGS = (integer)j(data, FXCUpd$FLAGS);
+            fxModDmgTaken = (float)j(data, FXCUpd$DAMAGE_TAKEN);
+            fxModDmgDone = (float)j(data, FXCUpd$DAMAGE_DONE);
+			fxModCrit = (float)j(data, FXCUpd$CRIT);
             outputStats();
         }
     }
@@ -243,8 +245,9 @@ onEvt(string script, integer evt, string data){
             RUNTIME_FLAGS = (integer)data;
         }else if(evt == MonsterEvt$attack){
             key targ = jVal(data, [0]);
-            
-            FX$send(targ, llGetKey(), "[1,0,0,0,[0,1,\"\",[[1,"+(string)(dmg*fxModDmgDone)+"],[3,"+(string)(dmg*.2*fxModDmgDone)+"],[6,\"<1,.5,.5>\"]],[],[],[],0,0,0]]");
+            float crit = 1;
+			if(llFrand(1)<fxModCrit)crit = 2;
+            FX$send(targ, llGetKey(), "[1,0,0,0,[0,1,\"\",[[1,"+(string)(dmg*fxModDmgDone*crit)+"],[3,"+(string)(dmg*.2*fxModDmgDone*crit)+"],[6,\"<1,.5,.5>\"]],[],[],[],0,0,0]]");
             
         }else if(evt == MonsterEvt$attackStart){
             //qd("AttackStart");
