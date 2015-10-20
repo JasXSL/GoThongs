@@ -9,6 +9,7 @@ list nearby_cache = [];		// key, key...
 vector cache_pos;
 rotation cache_rot;
 
+
 #define descIsProper(id) llGetSubString(prDesc(id), 0, 2) == "$M$"
 
 output(){

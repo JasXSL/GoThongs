@@ -77,7 +77,8 @@ default
             boundsHeight(targ, b)
             if(llGetAgentSize(targ))b = 0;
             vector to = prPos(targ)+<0,0,b/2>+pos_offset;
-            llRezAtRoot(name, to, ZERO_VECTOR, rot_offset, 1);
+			vector vrot = llRot2Euler(llGetRootRotation());
+            llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(<0,0,vrot.z>)*rot_offset, 1);
 
         }
     }
