@@ -18,7 +18,6 @@
 #define RootEvt$flags 2							// (int)flags - Flags changed
 #define RootEvt$targ 3							// [(key)targ, (key)icon]
 #define RootEvt$players 4						// (arr)players
-#define RootEvt$monsterTarg 5					// [(key)targ, (key)icon] - ROOT has a monster target that stays in the background while cycling
 
 #define Root$refreshThong(phys) runMethod(llGetOwner(), "#ROOT", RootMethod$refreshThong, [phys], TNN)
 #define Root$setThongIni(on) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setThongIni, [on], TNN)
