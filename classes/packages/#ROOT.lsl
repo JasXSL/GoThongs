@@ -91,7 +91,7 @@ default
 		llDialog(llGetOwner(), "Welcome to GoThongs!\nThis project is licensed under [https://creativecommons.org/licenses/by-nc-sa/4.0/ Creative Commons BY-NC-SA 4.0]\nThe [http://jasx.org/?JB=gme&JBv=%7B%22g%22%3A%22jasxhud%22%7D JasX HUD] is required for RLV and sex.\nUse the [https://github.com/JasXSL/GoThongs/ GoThongs GitHub] for issues and pull requests.", [], 123);
         clearDB2();
         PLAYERS = [llGetOwner()];
-        savePlayers();
+        
         
         // If you use the RLV supportcube
         runOmniMethod("jas Supportcube", SupportcubeMethod$killall, [], TNN);
@@ -112,6 +112,8 @@ default
         raiseEvent(evt$SCRIPT_INIT, "");
         if(llGetAttached())
             llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
+			
+		savePlayers();
     }
     
     
