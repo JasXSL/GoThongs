@@ -2,6 +2,11 @@
 #define USE_SHARED [cls$name, "#ROOT", BridgeSpells$name, "got Status", "got Bridge"]
 #include "got/_core.lsl"
 
+/* This is the spell data cache */
+list CACHE;                     // [(int)id, (arr)wrapper, (float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (arr)fx, (arr)selfcastWrapper]
+list GCD_FREE;    				// Spells that are freed from global cooldown        
+
+#define CSTRIDE 6
 #define spellCost(data) (llList2Float(data, 0)*mcm)
 #define spellCooldown(data) (llList2Float(data, 1)*cdm)
 #define spellTargets(data) llList2Integer(data, 2)
@@ -9,45 +14,49 @@
 #define spellCasttime(data) (llList2Float(data, 4)*ctm)
 #define spellWrapperFlags(data) llList2Integer(data, 5)
 
-#define spellOnCooldown(id) (~llListFindList(COOLDOWNS, [id]))
+// Get a spell NR -1 to 3 data
 #define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
 
-#define startSpell(spell) if(castSpell(spell) == FALSE)llPlaySound("2967371a-f0ec-d8ad-4888-24b3f8f3365c", .2)
-
-#define CSTRIDE 6
-list CACHE;                     // [(int)id, (arr)wrapper, (float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (arr)fx, (arr)selfcastWrapper]
-list GCD_FREE;    // Spells that are freed from global cooldown        
-
-float GCD = 1.5;
-
-
-
+/* Additional macros */
+#define spellOnCooldown(id) (~llListFindList(COOLDOWNS, [id]))
 #define CDSTRIDE 2
 list COOLDOWNS = [];            // (int)buttonID, (float)finish_time
+#define getGlobalCD() (GCD*cdm)
+
+// Standard spell input
+// If castSpell is false, play interrupt sound
+#define startSpell(spell) if(castSpell(spell) == FALSE){llStopSound();llPlaySound("2967371a-f0ec-d8ad-4888-24b3f8f3365c", .2);}
 
 
+// Global cooldown. Set by bridge.
+float GCD = 1.5;
+
+// FX
 float cdm = 1;          // Cooldown mod
 float ctm = 1;          // Casttime mod
 float mcm = 1;          // Mana cost multiplier
-integer fxflags;
+integer fxflags;		
 
-integer STATUS_FLAGS;
 
-integer SPELL_WRAPPER_FLAGS;
-integer SPELL_CASTED;
-list SPELL_TARGS;
 
-key CACHE_ROOT_TARGET;
+// Cache
+integer STATUS_FLAGS;			// Flags from status
+integer SPELL_WRAPPER_FLAGS;	// Casted spell's wrapper flags
+integer SPELL_CASTED;			// -1 to 3 of casted spell
+list SPELL_TARGS;				// List of targets to cast on
+key CACHE_ROOT_TARGET;			// Cache of the player's current target
+integer QUEUE_SPELL = -2;		// A spell to queue when target is changed
+float CACHE_CASTTIME = 0;
 
-integer QUEUE_SPELL = -2;	// A spell to queue when target is changed
-
-list PLAYERS;
+list PLAYERS;					// Me and coop player
 
 integer BFL;
 #define BFL_CASTING 1
 #define BFL_START_CAST 2
 #define BFL_GLOBAL_CD 0x4
 
+
+// This is a code block that checks if a player is visible. Ret is an optional return value
 #define CODE$VISION_CHECK(ret) \
 string targ = llList2String(SPELL_TARGS, 0); \
 if(targ != (string)LINK_ROOT && targ != "AOE"){ \
@@ -71,19 +80,25 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     } \
 }
 
-
+// Default event handler
 onEvt(string script, integer evt, string data){
     if(script == "#ROOT"){
         if(evt == evt$BUTTON_PRESS){
             integer pressed = (integer)data;
+			
+			// interrupt if casting and pressing an arrow key
             if(BFL&BFL_CASTING && ~BFL&BFL_START_CAST)
                 if(pressed&(CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT))
                     SpellMan$interrupt();
             
+			// ON crouch, rest
             if(pressed&CONTROL_DOWN)
                 startSpell(-1);
             
-        }else if(evt == evt$TOUCH_START){
+        }
+		
+		// This is how spells are cast.
+		else if(evt == evt$TOUCH_START){
             string ln = llGetLinkName((integer)jVal(data, [0]));
             integer nr;
             if(llGetSubString(data, 0, 0) == ";"){
@@ -94,8 +109,13 @@ onEvt(string script, integer evt, string data){
             }
             nr--;
             startSpell(nr);
-        }else if(evt == RootEvt$players)
+        }
+		
+		// Set players
+		else if(evt == RootEvt$players)
             PLAYERS = llJson2List(data);
+			
+		// Update target cache
 		else if(evt == RootEvt$targ){
 			CACHE_ROOT_TARGET = j(data,0);
 			if(QUEUE_SPELL != -2){
@@ -103,21 +123,28 @@ onEvt(string script, integer evt, string data){
 			}
 		}
         
-    }else if(script == "got FXCompiler"){
-        if(evt == FXCEvt$update){
-            ctm = (float)j(data, FXCUpd$CASTTIME);
-            cdm = (float)j(data, FXCUpd$COOLDOWN);
-            mcm = (float)j(data, FXCUpd$MANACOST);
-            fxflags = (integer)jVal(data, [0]);
-            if(BFL&BFL_CASTING){
-                if(fxflags&fx$NOCAST)SpellMan$interrupt();
-                else if(fxflags&fx$F_PACIFIED && SPELL_WRAPPER_FLAGS&WF_DETRIMENTAL)
-                    SpellMan$interrupt();
-            }
+    }
+	
+	// Cache FX flags
+	else if(script == "got FXCompiler" && evt == FXCEvt$update){
+        ctm = (float)j(data, FXCUpd$CASTTIME);
+        cdm = (float)j(data, FXCUpd$COOLDOWN);
+        mcm = (float)j(data, FXCUpd$MANACOST);
+        fxflags = (integer)jVal(data, [0]);
+        if(BFL&BFL_CASTING){
+            if(fxflags&fx$NOCAST)SpellMan$interrupt();
+            else if(fxflags&fx$F_PACIFIED && SPELL_WRAPPER_FLAGS&WF_DETRIMENTAL)
+                SpellMan$interrupt();
         }
-    }else if(script == "got Status" && evt == StatusEvt$flags)STATUS_FLAGS = (integer)data;
+    }
+	
+	// Cache status flags
+	else if(script == "got Status" && evt == StatusEvt$flags)STATUS_FLAGS = (integer)data;
 }
 
+
+// This is a macro that turns flags into targets
+// Returns a list of targets or ["AOE"], or ["Q"] to queue on target change
 #define flagsToTargets(targets, var) var = []; \
 if(targets & TARG_AOE)var = ["AOE"]; \
 else if(targets == TARG_CASTER)var = [LINK_ROOT]; \
@@ -130,50 +157,63 @@ else{ \
         else if(targets&TARG_NPC && llListFindList(PLAYERS, [targ]) == -1)var = [targ]; \
     } \
     if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \
-	else if(targets&TARG_NPC && !isset(targ) && QUEUE_SPELL != -2){ \
+	else if(targets&TARG_NPC && !isset(targ) && QUEUE_SPELL == -2){ \
 		var = ["Q"];\
 	}\
 }
 
-
+// This attempts to start casting a spell
 integer castSpell(integer nr){
+	if(QUEUE_SPELL == -2)llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", .5);
     QUEUE_SPELL = -2;
-
+	// Play the click sound
+    
+	
+	// Already casting
     if(BFL&BFL_CASTING){
         A$(ASpellMan$errCastInProgress);
         return FALSE;
     }
     
+	// Grab data from cache
     list data;
     if(~nr)
         data = nrToData(nr);
-    integer spt = spellTargets(data);
+    
+	// Grab target flags
+	integer spt = spellTargets(data);
+	// Spell is on cooldown
     if(spellOnCooldown(nr) || (BFL&BFL_GLOBAL_CD && ~spt&SpellMan$NO_GCD)){
         A$(ASpellMan$errCantCastYet);
         return FALSE;
     }
+	// Cannot cast right now because of FX silence
     if(fxflags&fx$NOCAST){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
     
-    
-    
-    
+    // Cache the wrapper flags and check if player is pacified
     integer SPELL_WRAPPER_FLAGS = spellWrapperFlags(data);
     if(fxflags&fx$F_PACIFIED && SPELL_WRAPPER_FLAGS&WF_DETRIMENTAL){
         A$(ASpellMan$errPacified);
         return FALSE;
     }
     
+	// Check if player is in a quickrape
     if(fxflags&fx$F_QUICKRAPE){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
     
+	// Default to self on rest
     SPELL_TARGS = [LINK_ROOT];
     if(~nr){
+		// Not rest, so let's grab targets
+		
         flagsToTargets(spt, SPELL_TARGS);
+		
+		// If I don't have a target and the spell requires one, try to grab one and cast on it
 		if((string)SPELL_TARGS == "Q"){
 			// Queue a spell
 			QUEUE_SPELL = nr;
@@ -182,25 +222,32 @@ integer castSpell(integer nr){
 			return -2;
 		}
     }
+	
+	// No targets valid
     if(SPELL_TARGS == []){
         A$(ASpellMan$errInvalidTarget);
         return FALSE;
     }
     
+	// Check if I have enough mane
     float cost = spellCost(data);
     if(cost>(float)db2$get("got Status", ([StatusShared$mana,0]))){
         A$(ASpellMan$errInsufficientMana);
         return FALSE;
     }
     
+	// If I'm raped or dead
     if(STATUS_FLAGS&(StatusFlag$dead|StatusFlag$raped)){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
+	
+	// Run LOS check
     CODE$VISION_CHECK(FALSE)
     
-    llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", .5);
+	
     
+	// Check spell range
     float range = spellRange(data);
     integer hits = 0;
     integer i;
@@ -214,49 +261,55 @@ integer castSpell(integer nr){
         }
     }
     
+	// Nobody in range
     if(hits == 0){
         A$(ASpellMan$errOutOfRange);
         return FALSE;
     }
     
-    
+    // Grab the casttime and multiply it
     float casttime = spellCasttime(data);
     if(nr == -1)casttime = 1.5*ctm;
     
-    raiseEvent(SpellManEvt$cast, "["+(string)casttime+"]");
-    
+	
+	// Set the current spell being cast
     SPELL_CASTED = nr;
     
     
     
     // Set global cooldown
     if(~spt&SpellMan$NO_GCD){
-        list CDS = [1,1,1,1,1];
+        integer CDS = 682;		// 2bit array default 1010101010 (each value is 2)
         
         integer i;
         for(i=0; i<5; i++){
             float cdt = 0;
             integer pos = llListFindList(COOLDOWNS, [i-1]);
             if(~pos)cdt = llList2Float(COOLDOWNS, pos+1);
-            if(llList2Integer(GCD_FREE,i) || cdt-llGetTime()>GCD*cdm || (i-1 == SPELL_CASTED && casttime>0))
-                CDS = llListReplaceList(CDS, [0], i, i);
+            if(llList2Integer(GCD_FREE,i) || cdt-llGetTime()>getGlobalCD() || (i-1 == SPELL_CASTED && casttime>0)){
+				CDS = remBitArr(CDS, i, 2);	// Set to 0 (leave unchanged)
+			}
         }
-        GUI$setGlobalCooldowns(GCD*cdm, CDS);
+        SpellAux$setGlobalCooldowns(getGlobalCD(), CDS);
         BFL = BFL|BFL_GLOBAL_CD;
-        multiTimer(["GCD", "", GCD*cdm, FALSE]);
+        multiTimer(["GCD", "", getGlobalCD(), FALSE]);
     }
 	
-	
+	// Cache the casttime
+	CACHE_CASTTIME = casttime;
 	if(casttime){
+		// Only raise the start cast event on spells with a cast time
+		raiseEvent(SpellManEvt$cast, "["+(string)casttime+"]");
         BFL = BFL|BFL_CASTING;
         BFL = BFL|BFL_START_CAST;
         multiTimer(["SC", "", .25, FALSE]);
     
-        GUI$setCastedAbility(nr, casttime);
+        //SpellAux$setCastedAbility(nr, casttime);
         multiTimer(["CAST", "", casttime, FALSE]);
         
-        SpellAux$startCast(SPELL_CASTED);
+        SpellAux$startCast(SPELL_CASTED, casttime);
     }
+	// Immediately finish
     else spellComplete();
 	
     
@@ -264,41 +317,41 @@ integer castSpell(integer nr){
 }
 
 spellComplete(){
+	// Grab the data
 	list data;
     if(~SPELL_CASTED)data = nrToData(SPELL_CASTED);
-            
-    if(spellCasttime(data)>0){
+    float cooldown = spellCooldown(data);
+	integer tflags = spellTargets(data);
+	// Make sure LOS is proper unless it's instant cast
+    if(CACHE_CASTTIME>0){
 		CODE$VISION_CHECK()
+		SpellFX$stopSound();
     }
-            
-    SpellAux$finishCast(SPELL_CASTED, mkarr(SPELL_TARGS));
-            
-    raiseEvent(SpellManEvt$complete, "");
-           
-            
-    SpellFX$stopSound();
-	
-	
-	float casttime = spellCasttime(data);
-    if(SPELL_CASTED == -1)casttime = 1.5*ctm;
+    
+	// Send to AUX to finish the cast
+	// Don't wipe CD if there's no cooldown on a non-gcd spell OR if casttime is less than global cooldown
+	integer noWipe = ((tflags&SpellMan$NO_GCD && cooldown<=0) || CACHE_CASTTIME<getGlobalCD());
+    SpellAux$finishCast(SPELL_CASTED, mkarr(SPELL_TARGS), noWipe);
             
     // Set cooldown
-    float cooldown = spellCooldown(data);
+    
     if(SPELL_CASTED == -1)cooldown = 10*cdm;
     else Status$addMana(-spellCost(data), "", false);
-            
+    
+	
     if(cooldown){
-		GUI$setCooldown(SPELL_CASTED, cooldown);
+		SpellAux$setCooldown(SPELL_CASTED, cooldown);
         if(llListFindList(COOLDOWNS, [SPELL_CASTED]) == -1)
 			COOLDOWNS+=[SPELL_CASTED, llGetTime()+cooldown];
                 
         multiTimer(["CD_"+(string)SPELL_CASTED, "", cooldown, FALSE]);
     }
-    else if(casttime<GCD*cdm)GUI$setCooldown(SPELL_CASTED, GCD*cdm-casttime);
-	else GUI$stopCast(SPELL_CASTED);
+	// If it's a casted spell on global cooldown and the casttime is less than global cooldown
+    else if(CACHE_CASTTIME<getGlobalCD() && CACHE_CASTTIME>0 && ~tflags&SpellMan$NO_GCD)SpellAux$setCooldown(SPELL_CASTED, getGlobalCD()-CACHE_CASTTIME);
+	//else GUI$stopCast(SPELL_CASTED);
 	
 	
-            
+    raiseEvent(SpellManEvt$complete, (string)SPELL_CASTED);
     spellEnd();
 }
 
@@ -326,20 +379,21 @@ timerEvent(string id, string data){
         integer pos = llListFindList(COOLDOWNS, [rem]);
         if(~pos)COOLDOWNS = llDeleteSubList(COOLDOWNS, pos, pos+CDSTRIDE-1);
         
-        if(~BFL&BFL_GLOBAL_CD)GUI$stopCast(rem);
+        if(~BFL&BFL_GLOBAL_CD)SpellAux$stopCast(rem);
     }
     else if(id == "SC")
         BFL = BFL&~BFL_START_CAST;
     else if(id == "GCD"){
         BFL = BFL&~BFL_GLOBAL_CD;
-        list CDS = [0,0,0,0,0];
+        integer CDS = 0;		// 0	- Each value is 0 (disregard)
         integer i;
         list c = llList2ListStrided(COOLDOWNS, 0, -1, CDSTRIDE);
         for(i=0; i<5; i++){
-            if(llListFindList(COOLDOWNS, [i-1]) == -1 && (~BFL&BFL_CASTING|| i-1 != SPELL_CASTED))
-                CDS = llListReplaceList(CDS, [-1], i, i);
+            if(llListFindList(COOLDOWNS, [i-1]) == -1 && (~BFL&BFL_CASTING|| i-1 != SPELL_CASTED)){
+                CDS = setBitArr(CDS, 1, i, 2);	// set to 1 (wipe)
+			}
         }
-        GUI$setGlobalCooldowns(GCD*ctm, CDS);
+        SpellAux$setGlobalCooldowns(getGlobalCD(), CDS);
     }
 	else if(id == "Q")QUEUE_SPELL = -2;
 }
@@ -386,7 +440,7 @@ default
         }
         else if(METHOD == SpellManMethod$interrupt){
             if(BFL&BFL_CASTING){
-                GUI$stopCast(SPELL_CASTED);
+                SpellAux$stopCast(SPELL_CASTED);
                 multiTimer(["CAST"]);
                 integer casting = BFL&BFL_CASTING;
                 if(casting){
@@ -433,7 +487,7 @@ default
                     if(~pos)
                         COOLDOWNS = llDeleteSubList(COOLDOWNS, pos, pos+CDSTRIDE-1);
                     
-                    GUI$stopCast(n);
+                    SpellAux$stopCast(n);
                 }
             }
         }

@@ -4,6 +4,7 @@
 
 // PC_SALT is used to send data between players - Each player gets their own channel
 #define PC_SALT 23916
+#define GUI_CHAN(targ) playerChan(llGetOwnerKey(targ))+69 // Chan for rapid GUI calls
 
 // Include the XOBJ framework
 #include "xobj_core/_ROOT.lsl"

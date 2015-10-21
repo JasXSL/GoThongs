@@ -129,6 +129,7 @@ addMana(float amount, string spellName, integer flags){
     if(pre != MANA){
         db2$set([StatusShared$mana], mkarr(([MANA, maxMana()])));
         outputStats();
+		SpellAux$statusCache(MANA);
     }
 }
 addArousal(float amount, string spellName){
@@ -287,12 +288,12 @@ timerEvent(string id, string data){
     if(id == TIMER_REGEN)
         addMana((maxMana()*.05)*fxModManaRegen, "", 0);
     else if(id == "S"){
-       GUI$status(LINK_ROOT, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
+		GUI$myStatus(DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
         if(coop_player)
             GUI$status(coop_player, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
     }else if(id == "OP"){
-        string dta = mkarr(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE));
-        GUI$setSpellTextures(LINK_ROOT, dta);
+        list dta = llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE);
+        GUI$setMySpellTextures(dta);
         if(coop_player)
             GUI$setSpellTextures(coop_player, dta);
     }

@@ -25,7 +25,7 @@ evtListener(string script, integer evt, string data){
         if(evt == StatusEvt$flags)STATUS = (integer)data;
         else if(evt == StatusEvt$dead && (integer)data)FX$rem(FALSE, "", "", "", 0, FALSE, PF_DETRIMENTAL, 0, 0);
     }
-    else if(script == "#ROOT" && evt == RootEvt$monsterTarg)
+    else if(script == "#ROOT" && evt == RootEvt$targ)
         _NPC_TARG = j(data, 0);
 }
 

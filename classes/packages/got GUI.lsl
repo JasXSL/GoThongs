@@ -6,13 +6,9 @@
 integer BFL;
 #define BFL_BROWSER_SHOWN 0x1
 #define BFL_DEAD 0x2
-#define BFL_HAS_ABILITIES 0x4
 
 #define BAR_STRIDE 4
 list BARS = [0,0,0,0,0,0,0,0,0,0,0,0];  // [(int)portrait, (int)bars, (int)spells, (int)spells_overlays], self, friend, target
-list ABILS = [0,0,0,0,0];
-#define ABIL_BORDER_COLOR <.6, .6, .6>
-#define ABIL_BORDER_ALPHA .5
 
 key TARG;
 list PLAYERS;
@@ -38,6 +34,7 @@ onEvt(string script, integer evt, string data){
         if(evt == RootEvt$targ){
             updateTarget(jVal(data, [0]), jVal(data, [1]));
         }else if(evt == RootEvt$players){
+			
             toggle(TRUE);
             PLAYERS = llJson2List(data);
         }
@@ -58,7 +55,7 @@ onEvt(string script, integer evt, string data){
 
 // If show > 1 then show is a bitfild for things to hide
 toggle(integer show){
-    list players = _getPlayers();
+    list players = PLAYERS;
     
     list out;
     integer i;
@@ -124,29 +121,7 @@ toggle(integer show){
         }
     }
     
-    if(!show || BFL&BFL_DEAD || ~BFL&BFL_HAS_ABILITIES){
-        for(i=0; i<llGetListLength(ABILS); i++){
-            out += [
-                PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-                PRIM_POSITION, ZERO_VECTOR,
-                PRIM_COLOR, 2, <1,1,1>, 0
-            ];
-        }
-    }else{
-        for(i=0; i<llGetListLength(ABILS); i++){
-            vector pos = <0, 0.29586-0.073965-0.14793*(i-1), .31>;
-            if(i == 0)pos = <0,0,.27>;
-            out += [
-                PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-                PRIM_POSITION, pos,
-                PRIM_COLOR, 0, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA,
-                PRIM_COLOR, 1, <1,1,1>, 1,
-                PRIM_COLOR, 3, <0,0,0>, 0,
-                PRIM_COLOR, 4, <0,0,0>, 0,
-                PRIM_COLOR, 5, <0,0,0>, 0
-            ];
-        }
-    }
+    
     
     if(!show)
         updateTarget("", "");
@@ -214,6 +189,50 @@ ini(){
     toggle(TRUE);
 }
 
+
+updateBars(key id, list data){
+	id2bars(1)
+	if(bars == [])return;  
+			
+	list out = [];
+		
+	float ars = llList2Float(data, 2);
+	float pin = llList2Float(data, 3);
+				
+	list dta = [
+		PRIM_TEXTURE, 2, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*llList2Float(data, 0),0,0>, 0,
+		PRIM_TEXTURE, 3, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*llList2Float(data, 1),0,0>, 0,
+		PRIM_TEXTURE, 4, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*ars,0,0>, 0,
+		PRIM_COLOR, 4, <1,.5,1>*(.5+ars*.5), 0.5+(float)llFloor(ars)/2,
+		PRIM_TEXTURE, 5, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*pin,0,0>, 0,
+		PRIM_COLOR, 5, <.5,.5,1>*(.5+pin*.5), 0.5+(float)llFloor(pin)/2
+	];
+	
+	integer i;
+	for(i=0; i<llGetListLength(bars); i++){
+		out+=[PRIM_LINK_TARGET, llList2Integer(bars, i)]+dta;
+	}
+	llSetLinkPrimitiveParams(0, out);
+}
+
+updateSpellIcons(key id, list data){
+	id2bars(2)
+	list out = [];
+	integer a;
+	for(a = 0; a<llGetListLength(bars); a++){
+		out+=[PRIM_LINK_TARGET, llList2Integer(bars, a)];            
+		integer i;
+		for(i=0; i<8; i++){
+			if(llGetListLength(data)>i)
+				out += [PRIM_COLOR, i, <1,1,1>, 1, PRIM_TEXTURE, i, llList2String(data, i), <1,1,0>, ZERO_VECTOR, 0];
+			else
+				out += [PRIM_COLOR, i, <1,1,1>, 0];
+		}
+	}
+	llSetLinkPrimitiveParamsFast(0, out);
+}
+
+
 default 
 {
     state_entry(){
@@ -231,16 +250,30 @@ default
                 if(llGetSubString(name, 3, 3) == "O")pos++;
                 BARS = llListReplaceList(BARS, [nr], pos, pos);
             }
-            else if(llGetSubString(name, 0, 3) == "Abil"){
-                ABILS = llListReplaceList(ABILS, [nr], n, n);
-            }
             else if(name == "RETRY")P_RETRY = nr;
             else if(name == "QUIT")P_QUIT = nr;
             
-        )
+        ) 
         toggle(FALSE);
         db2$ini(); 
+		PLAYERS = [(string)llGetOwner()];
+		llListen(GUI_CHAN(llGetOwner()), "", "", "");
     } 
+	
+	listen(integer chan, string name, key id, string message){
+		if(llGetSubString(message, 0, 0) != "🐙"){ // Unicode U+1F419
+			return;
+		}
+		string owner = llGetOwnerKey(id);
+		if(llListFindList(PLAYERS, [owner]) == -1)return;
+		
+		string task = llGetSubString(message, 1, 1);
+		message = llDeleteSubString(message, 0, 1);
+		list split = llCSV2List(message);
+		if(llList2String(split, 0) == "")split = [];
+		if(task == "A")updateBars(id, split);
+		else if(task == "B")updateSpellIcons(id, split);
+	}
     
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -260,104 +293,23 @@ default
         return;
     }
     
-    if(id == ""){
-        if(METHOD == GUIMethod$setGlobalCooldowns){
-            list cds = llJson2List(PARAMS);
-            float time = llList2Float(cds, 0);
-            cds = llDeleteSubList(cds, 0, 0);
-            list out;
-            
-            integer i;
-            for(i=0; i<llGetListLength(cds); i++){
-                if(llList2Integer(cds, i) == 1){
-                    llSetLinkTextureAnim(llList2Integer(ABILS, i), 0, 2, 4,32, 0,32, 0);
-                    out+= [PRIM_LINK_TARGET, llList2Integer(ABILS, i), PRIM_COLOR,0,ZERO_VECTOR,.1, PRIM_COLOR, 2, ZERO_VECTOR, 1, PRIM_TEXTURE, 2, "0c2f81c7-8ecf-92ab-0351-6bbe109f0d0a", <1,1,0>, <0,0,0>, 0];
-                    llSetLinkTextureAnim(llList2Integer(ABILS, i), ANIM_ON|REVERSE, 2, 4,32, 0,0, (4.*32)/time);
-                }else if(llList2Integer(cds, i) == -1)
-                    out+= [PRIM_LINK_TARGET, llList2Integer(ABILS, i), PRIM_COLOR, 2, <1,1,1>, 0, PRIM_COLOR,0,ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA];
-            }
-            llSetLinkPrimitiveParamsFast(0, out);
-        }
-        
-        else if(METHOD == GUIMethod$setCooldown || METHOD == GUIMethod$setCastedAbility){
-            integer abil = (integer)method_arg(0)+1;
-            float time = (float)method_arg(1);
-            float total = (4.*32)/time;
-            
-            integer flags;
-            float borderalpha = 1;
-            vector border = <1,1,1>;
-            vector color = <.5,1,.5>;
-            if(METHOD == GUIMethod$setCooldown){
-                color = <0,0,0>;
-                border = <0,0,0>;
-                borderalpha = 0.1;
-                flags = REVERSE;
-            }
-            
-            llSetLinkTextureAnim(llList2Integer(ABILS, abil), 0, 2, 4,32, 0,32, total);
-            llSetLinkPrimitiveParamsFast(llList2Integer(ABILS, abil), [PRIM_COLOR,0,border,borderalpha, PRIM_COLOR, 2, color, 1, PRIM_TEXTURE, 2, "0c2f81c7-8ecf-92ab-0351-6bbe109f0d0a", <1,1,0>, <0,0,0>, 0]);
-            llSetLinkTextureAnim(llList2Integer(ABILS, abil), ANIM_ON|flags, 2, 4,32, 0,0, total);
-        }
-        else if(METHOD == GUIMethod$stopCast){
-            integer abil = (integer)method_arg(0)+1;
-            llSetLinkPrimitiveParamsFast(llList2Integer(ABILS, abil), [PRIM_COLOR, 2, <1,1,1>, 0, PRIM_COLOR,0,ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA]);
-        }
-        
+	// Updates status and stuff
+	if(method$internal){
+		if(METHOD == GUIMethod$status){
+			updateBars(id, llJson2List(PARAMS));
+		}
+		
+		// Sets spell icons
+		else if(METHOD == GUIMethod$setSpellTextures){
+			id2bars(2) // Fetches bars
+			updateSpellIcons(id, llJson2List(PARAMS));
+		}
+		
     }
+
     
-    if(METHOD == GUIMethod$status){
-        id2bars(1) // Fetches bars
-        
-        if(bars == [])return;  
-        
-        list out = [];
-        
-        float ars = (float)method_arg(2);
-        float pin = (float)method_arg(3);
-                
-        list dta = [
-            PRIM_TEXTURE, 2, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*(float)method_arg(0),0,0>, 0,
-            PRIM_TEXTURE, 3, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*(float)method_arg(1),0,0>, 0,
-            PRIM_TEXTURE, 4, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*ars,0,0>, 0,
-            PRIM_COLOR, 4, <1,.5,1>*(.5+ars*.5), 0.5+(float)llFloor(ars)/2,
-            PRIM_TEXTURE, 5, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*pin,0,0>, 0,
-            PRIM_COLOR, 5, <.5,.5,1>*(.5+pin*.5), 0.5+(float)llFloor(pin)/2
-        ];
-        
-        integer i;
-        for(i=0; i<llGetListLength(bars); i++){
-            out+=[PRIM_LINK_TARGET, llList2Integer(bars, i)]+dta;
-        }
-        llSetLinkPrimitiveParams(0, out);
-    }
-    
-    else if(METHOD == GUIMethod$setSpellTextures){
-        id2bars(2) // Fetches bars
-        
-        list data = llJson2List(method_arg(0));
-        
-        list out = [];
-        
-        
-        integer a;
-        for(a = 0; a<llGetListLength(bars); a++){
-            out+=[PRIM_LINK_TARGET, llList2Integer(bars, a)];            
-            integer i;
-            for(i=0; i<8; i++){
-                if(llGetListLength(data)>i)
-                    out += [PRIM_COLOR, i, <1,1,1>, 1, PRIM_TEXTURE, i, llList2String(data, i), <1,1,0>, ZERO_VECTOR, 0];
-                else
-                    out += [PRIM_COLOR, i, <1,1,1>, 0];
-            }
-        }
-        llSetLinkPrimitiveParamsFast(0, out);
-            
-    }
-    
-    
-    
-    else if(METHOD == GUIMethod$toggleQuit){
+    // This needs to show the proper breakfree messages
+    if(METHOD == GUIMethod$toggleQuit){
         integer on = (integer)method_arg(0);
         integer isHost = (integer)method_arg(0);
         list out;
@@ -387,30 +339,12 @@ default
         
         llSetLinkPrimitiveParamsFast(0,out);
     }
-    else if(METHOD == GUIMethod$setSpells){
-        list spells = llJson2List(db2$get(BridgeSpells$name, []));
-        
-        list set = [
-            PRIM_LINK_TARGET, llList2Integer(ABILS, 0),
-            PRIM_TEXTURE, 1, "46267af8-9c21-3c16-6afe-9861882009fd", <1,1,0>, <0,0,0>,0,
-            PRIM_COLOR, 1, <1,1,1>, 1
-        ];
-        
-        integer i;
-        for(i=0; i<llGetListLength(spells); i++){
-            string v = llList2String(spells, i);
-            set += [
-                PRIM_LINK_TARGET, llList2Integer(ABILS, i+1),
-                PRIM_TEXTURE, 1, jVal(v, [BSSAA$TEXTURE]), <1,1,0>, <0,0,0>,0,
-                PRIM_COLOR, 1, <1,1,1>, 1
-            ];
-        }
-        BFL = BFL|BFL_HAS_ABILITIES;
-        llSetLinkPrimitiveParamsFast(0, set);
-        toggle(TRUE);
-    }
+	
+	
+	
     
-    else if(METHOD == GUIMethod$close)toggle(FALSE);
+    
+    else if(METHOD == GUIMethod$toggle)toggle((integer)method_arg(0));
 
     // Public code can be put here
 

@@ -77,10 +77,9 @@ float spdmtm(string spellName){
 }
 
 outputTextures(){
-    string dta = mkarr(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE));
     integer i;
     for(i=0; i<llGetListLength(OUTPUT_STATUS_TO); i++)
-        GUI$setSpellTextures(llList2Key(OUTPUT_STATUS_TO, i), dta);
+        GUI$setSpellTextures(llList2Key(OUTPUT_STATUS_TO, i), llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE));
 }
 
 addHP(float amount, key attacker, string spellName, integer flags){
