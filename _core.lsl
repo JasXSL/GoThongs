@@ -17,6 +17,8 @@
 #include "xobj_core/classes/jas RLV.lsl"
 #include "xobj_core/classes/jas Supportcube.lsl"
 #include "xobj_core/classes/jas Climb.lsl"
+#include "xobj_core/classes/jas Primswim.lsl"
+#include "xobj_core/classes/jas Interact.lsl"
 
 
 #include "xobj_toonie/classes/ton MeshAnim.lsl"
@@ -46,7 +48,6 @@
 #include "./classes/got SpellAux.lsl"
 #include "./classes/got Trap.lsl"
 #include "./classes/got SharedMedia.lsl"
-#include "./classes/got Interact.lsl"
 #include "./classes/got Evts.lsl"
 
 

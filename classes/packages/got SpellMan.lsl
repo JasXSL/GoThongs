@@ -14,6 +14,7 @@ list GCD_FREE;    				// Spells that are freed from global cooldown
 #define spellCasttime(data) (llList2Float(data, 4)*ctm)
 #define spellWrapperFlags(data) llList2Integer(data, 5)
 
+
 // Get a spell NR -1 to 3 data
 #define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
 
@@ -56,6 +57,9 @@ integer BFL;
 #define BFL_GLOBAL_CD 0x4
 
 
+
+
+
 // This is a code block that checks if a player is visible. Ret is an optional return value
 #define CODE$VISION_CHECK(ret) \
 string targ = llList2String(SPELL_TARGS, 0); \
@@ -92,8 +96,9 @@ onEvt(string script, integer evt, string data){
                     SpellMan$interrupt();
             
 			// ON crouch, rest
-            if(pressed&CONTROL_DOWN)
+            if(pressed&CONTROL_DOWN && !(STATUS_FLAGS&(StatusFlags$noCast|StatusFlag$swimming))){
                 startSpell(-1);
+			}
             
         }
 		
@@ -237,7 +242,7 @@ integer castSpell(integer nr){
     }
     
 	// If I'm raped or dead
-    if(STATUS_FLAGS&(StatusFlag$dead|StatusFlag$raped)){
+    if(STATUS_FLAGS&StatusFlags$noCast || (nr == -1 && STATUS_FLAGS&StatusFlag$swimming)){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }

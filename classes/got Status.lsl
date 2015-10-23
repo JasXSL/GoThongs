@@ -30,12 +30,14 @@
 #define StatusShared$flags "g"		// (int)flags
 
 
+
 #define StatusEvt$flags 1					// (int)flags
 #define StatusEvt$monster_gotTarget 2		// [(key)id], Monster only
 // Monster doesn't have shared vars so status is sent this way
 #define StatusEvt$monster_hp_perc 3			// HP/maxHP
 #define StatusEvt$dead 4					// (int)dead
 #define StatusEvt$monster_targData 5		// contains same vars as StatusMethod$get returns
+
 
 /*
 #define StatusEvt$died 2
@@ -47,6 +49,7 @@
 // Shortcuts
 #define _statusFlags() (integer)db2$get("got Status", [StatusShared$flags])
 
+// GoThongs supports max 16 flags
 #define StatusFlag$dead 0x1			// (int)dead - Checked for automatically by fx
 #define StatusFlag$game_started 0x2	// 
 #define StatusFlag$casting 0x4		// 
@@ -54,6 +57,10 @@
 #define StatusFlag$inLevel 0x10		// If currently in a quest level. If not set it's just dicking around with the dev tools
 #define StatusFlag$pained 0x20		// Damage taken increased 50%
 #define StatusFlag$aroused 0x40		// Damage done reduced 50%
+#define StatusFlag$swimming 0x80	// Swimming
+#define StatusFlag$climbing 0x100	// Climbing
+
+#define StatusFlags$noCast (StatusFlag$dead|StatusFlag$raped|StatusFlag$climbing)
 
 #define StatusFlags$NON_VIABLE (StatusFlag$dead|StatusFlag$raped)		// For monsters to assume the PC can't be interacted with
 

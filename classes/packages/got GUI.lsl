@@ -34,9 +34,9 @@ onEvt(string script, integer evt, string data){
         if(evt == RootEvt$targ){
             updateTarget(jVal(data, [0]), jVal(data, [1]));
         }else if(evt == RootEvt$players){
-			
+			PLAYERS = llJson2List(data);
             toggle(TRUE);
-            PLAYERS = llJson2List(data);
+            
         }
     }else if(script == "got Status"){
         if(evt == StatusEvt$dead){

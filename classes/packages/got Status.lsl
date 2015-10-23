@@ -251,6 +251,24 @@ onEvt(string script, integer evt, string data){
             AnimHandler$anim("got_loss", FALSE, 0);
         }
     }
+	else if(script == "jas Primswim"){
+		if(evt == PrimswimEvt$onWaterEnter){
+			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$swimming;
+		}
+		else if(evt == PrimswimEvt$onWaterExit){
+			STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$swimming;
+		}
+		outputStats();
+	}
+	else if(script == "jas Climb"){
+		if(evt == ClimbEvt$start){
+			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$climbing;
+		}
+		else if(evt == ClimbEvt$end){
+			STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$climbing;
+		}
+		outputStats();
+	}
 }
 
 
@@ -260,11 +278,10 @@ outputStats(){
     
     
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
-    if(FXFLAGS&fx$F_STUNNED || (STATUS_FLAGS&StatusFlag$dead && ~STATUS_FLAGS&StatusFlag$raped))
+    if(FXFLAGS&fx$F_STUNNED || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing) && ~STATUS_FLAGS&StatusFlag$raped))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
-    if(FXFLAGS&fx$F_ROOTED || STATUS_FLAGS&StatusFlag$casting)
+    if(FXFLAGS&fx$F_ROOTED || STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
-
 
     if(PRE_CONTS != controls){
         PRE_CONTS = controls;
