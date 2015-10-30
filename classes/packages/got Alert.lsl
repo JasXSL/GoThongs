@@ -21,6 +21,18 @@ timerEvent(string id, string data){
     }
 }
 
+alert(string text, integer ownerSay, integer playSound){
+	if(ownerSay)llOwnerSay(text);
+    if(playSound)llPlaySound("09ba0e73-fcf6-ed22-e1a3-7fc600237711", .25);
+            
+    ALERTS+=text;
+    if(llGetListLength(ALERTS)>3)
+		ALERTS = llDeleteSubList(ALERTS, 0, 0);
+            
+    setText(1);        
+    multiTimer([TIMER_FADE, 1, llStringLength(text)*.02+2, FALSE]);
+}
+
 default
 {
     state_entry()
@@ -52,36 +64,23 @@ default
     
     // Internal means the method was sent from within the linkset
     if(method$internal){
-        if(METHOD == AlertMethod$alert || METHOD == AlertMethod$freetext){
+        if(METHOD == AlertMethod$alert){
             string text = method_arg(0);
-            if(METHOD == AlertMethod$alert){
-                integer id = (integer)text;
-                
-                if(SENDER_SCRIPT == "got SpellMan")text = llList2String(ASpellMan, id);
-                else if(SENDER_SCRIPT == "#ROOT")text = llList2String(ARoot, id);
-                else if(SENDER_SCRIPT == "got Bridge")text = llList2String(ABridge, id);
-                
-                
-                if(text == ""){
-                    qd("Text missing for "+SENDER_SCRIPT+" : "+(string)id);
-                    return;
-                }
+            integer id = (integer)text;
+            if(SENDER_SCRIPT == "got SpellMan")text = llList2String(ASpellMan, id);
+            else if(SENDER_SCRIPT == "#ROOT")text = llList2String(ARoot, id);
+            else if(SENDER_SCRIPT == "got Bridge")text = llList2String(ABridge, id);
+            if(text == ""){
+				qd("Text missing for "+SENDER_SCRIPT+" : "+(string)id);
+                return;
             }
-            if((integer)method_arg(1))llOwnerSay(text);
-            if((integer)method_arg(2))llPlaySound("09ba0e73-fcf6-ed22-e1a3-7fc600237711", .25);
-            
-            ALERTS+=text;
-            if(llGetListLength(ALERTS)>3)
-                ALERTS = llDeleteSubList(ALERTS, 0, 0);
-            
-            
-            setText(1);
-            
-            multiTimer([TIMER_FADE, 1, llStringLength(text)*.02+2, FALSE]);
+			alert(text, (integer)method_arg(1), (integer)method_arg(2));
         }
-        
-    }
+	}
     // Public code can be put here
+	if(METHOD == AlertMethod$freetext){
+		alert(method_arg(0), (integer)method_arg(1), (integer)method_arg(2));
+	}
 
     // End link message code
     #define LM_BOTTOM  

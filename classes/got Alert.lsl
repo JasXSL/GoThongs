@@ -7,6 +7,7 @@
 #define AS$(id) runMethod((string)LINK_ROOT, "got Alert", AlertMethod$alert, [id, false, true], TNN)
 #define AMS$(id) runMethod((string)LINK_ROOT, "got Alert", AlertMethod$alert, [id, true, true], TNN)
 
+#define Alert$freetext(targ, text, ownersay, sound) runMethod(targ, "got Alert", AlertMethod$freetext, [text, ownersay, sound], TNN)
 
 
 
