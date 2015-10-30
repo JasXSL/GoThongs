@@ -12,6 +12,7 @@ integer lcb;
 list PLAYERS;
 key TARG;
 key THONG_ID;
+key LEVEL;			// Current level being played
 
 // If you want to use listen override, it ends up here
 // onListenOverride(integer chan, key id, string message){}
@@ -286,6 +287,15 @@ if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1) \
     else if(METHOD == RootMethod$setTarget){
         setTarget(method_arg(0), method_arg(1), (integer)method_arg(2));
     }
+	else if(METHOD == RootMethod$setLevel){
+		LEVEL = id;
+		raiseEvent(RootEvt$level, mkarr([LEVEL]));
+		if(!method$byOwner){
+			//qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
+			return;
+		}
+		CB_DATA = PLAYERS;
+	}
 
     // Public code can be put here
 

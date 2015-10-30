@@ -6,13 +6,14 @@
 #define LocalConfMethod$finishSpell 3			// (int)id
 #define LocalConfMethod$testIdle 4				// null - Debug command only. Tests the monsters's idle animation
 #define LocalConfMethod$checkCastSpell 5		// (int)id, (key)targ, expects callback true on success
+#define LocalConfMethod$stdInteract 6			// (key)sender, (var)data - A player has interacted with the object. You can input anything you want as variables
 
 #define LocalConf$startSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$startSpell, [id], TNN)
 #define LocalConf$interruptSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$interruptSpell, [id], TNN)
 #define LocalConf$finishSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$finishSpell, [id], TNN)
 #define LocalConf$ini() runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$ini, [], TNN)
 #define LocalConf$checkCastSpell(id, targ, cb) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$checkCastSpell, [id, targ], cb)
-
+#define LocalConf$stdInteract(targ, sender, data) runMethod(targ, "got LocalConf", LocalConfMethod$stdInteract, [sender]+data, TNN)
 
 #define LocalConfEvt$iniData 1		// Separate from evt$SCRIPT_INIT in that this is raised on demand and contains script custom data
 									// This data will vary based on the object the conf is in

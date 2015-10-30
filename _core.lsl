@@ -49,6 +49,9 @@
 #include "./classes/got Trap.lsl"
 #include "./classes/got SharedMedia.lsl"
 #include "./classes/got Evts.lsl"
+#include "./classes/got Level.lsl"
+#include "./classes/got LevelAux.lsl"
+#include "./classes/got Devtool.lsl"
 
 
 #include "got/classes/#ROOT.lsl"

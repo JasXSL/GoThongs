@@ -159,7 +159,7 @@ else{ \
     key coop = llList2Key(PLAYERS, 1); \
     if(isset(targ)){ \
         if(targets&TARG_PC && targ == coop)var = [targ]; \
-        else if(targets&TARG_NPC && llListFindList(PLAYERS, [targ]) == -1)var = [targ]; \
+        else if(targets&TARG_NPC && llListFindList(PLAYERS, [(string)targ]) == -1)var = [targ]; \
     } \
     if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \
 	else if(targets&TARG_NPC && !isset(targ) && QUEUE_SPELL == -2){ \

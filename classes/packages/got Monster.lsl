@@ -108,6 +108,7 @@ timerEvent(string id, string data){
             
             // Find a random pos to go to maybe
             if(wander == 0 || llFrand(1)>.1 || ~BFL&BFL_PLAYERS_NEARBY)return;
+			
             vector a = llGetPos();
             vector b = llGetPos()+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
             if(llVecDist(b, rezpos)>wander)return;
@@ -245,18 +246,26 @@ onEvt(string script, integer evt, string data){
     else if(script == "got LocalConf"){
         if(evt == LocalConfEvt$iniData){
             list conf = llJson2List(data);
-    
+			string override = portalConf();
+			if(isset(override)){
+				list data = llJson2List(override);
+				override = "";
+				list_shift_each(data, v,
+					list d = llJson2List(v);
+					if(llGetListEntryType(d, 0) == TYPE_INTEGER)
+						conf = llListReplaceList(conf, llList2List(d,1,1), llList2Integer(d,0), llList2Integer(d,0));
+				)
+			}
+
             RUNTIME_FLAGS = llList2Integer(conf, 0);
             if(llList2Float(conf,1)>0)speed = llList2Float(conf, 1);
             if(llList2Float(conf,2)>0)hitbox = llList2Float(conf, 2);
             if(llList2Float(conf,3)>0)atkspeed = llList2Float(conf, 3);
-            if(llList2Float(conf,8)!=0)wander = llFabs(llList2Float(conf, 5));
+            if(llList2Float(conf,5)!=0)wander = llFabs(llList2Float(conf, 5));
             
             if(speed<=0)speed = 1;
             if(hitbox<=0)hitbox = 2;
             if(atkspeed<.5)atkspeed = .5;
-            
-
             
             BFL = BFL|BFL_INITIALIZED; 
             multiTimer([TIMER_FRAME, "", .25, TRUE]);
@@ -320,6 +329,7 @@ default
     timer(){multiTimer([]);}
     
     state_entry(){
+		llSetStatus(STATUS_PHANTOM, TRUE);
         PLAYERS = [(string)llGetOwner()];
         if(llGetStartParameter())raiseEvent(evt$SCRIPT_INIT, "");
     }

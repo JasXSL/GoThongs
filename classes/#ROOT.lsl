@@ -5,6 +5,7 @@
 #define RootMethod$setTarget 4					// (key)target, (key)texture, (int)force_override
 #define RootMethod$getPlayers 5					// NULL - Returns an array of players
 #define RootMethod$setParty 6					// (key)coop_player - 
+#define RootMethod$setLevel 7					// void - Returns players
 
 #define RootShared$thongUUID "a"				// UUID of last attached thong
 #define RootShared$flags "b"
@@ -18,6 +19,7 @@
 #define RootEvt$flags 2							// (int)flags - Flags changed
 #define RootEvt$targ 3							// [(key)targ, (key)icon]
 #define RootEvt$players 4						// (arr)players
+#define RootEvt$level 5							// [(key)id] - Whenever a new cell has been ressed
 
 #define Root$refreshThong(phys) runMethod(llGetOwner(), "#ROOT", RootMethod$refreshThong, [phys], TNN)
 #define Root$setThongIni(on) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setThongIni, [on], TNN)
@@ -30,6 +32,7 @@
 #define Root$aggro(targ) runMethod(targ, "#ROOT", RootMethod$aggro, [], TNN)
 #define Root$setParty(uuid) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setParty, [uuid], TNN)
 #define Root$clearTargetOn(targ) runMethod(targ, "#ROOT", RootMethod$setTarget, ["", "", TRUE], TNN)
+#define Root$setLevel() runMethod(llGetOwner(), "#ROOT", RootMethod$setLevel, [], "LV")
 
 #define THONG_KEY ((key)db2$get("#ROOT", [RootShared$thongUUID]))
 

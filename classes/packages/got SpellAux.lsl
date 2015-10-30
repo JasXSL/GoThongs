@@ -68,6 +68,7 @@ string runMath(string FX){
 		"P", CACHE_PAIN
     ]);
 	
+	
     integer i;
     for(i=1; i<llGetListLength(split); i++){
         split = llListReplaceList(split, [llGetSubString(llList2String(split, i-1), 0, -2)], i-1, i-1);
@@ -330,7 +331,7 @@ default
             if(~SPELL_CASTED){
 				
 				CACHE_AROUSAL = (float)db2$get("got Status", ([StatusShared$arousal, 0]));
-				CACHE_PAIN = (float)db2$get("got Status", ([StatusShared$arousal, 0]));
+				CACHE_PAIN = (float)db2$get("got Status", ([StatusShared$pain, 0]));
 				CACHE_CRIT = 1;
 
 				if(llFrand(1)<critmod && ~flags&SpellMan$NO_CRITS){

@@ -39,6 +39,9 @@
 #define StatusEvt$monster_targData 5		// contains same vars as StatusMethod$get returns
 
 
+// Turns off features to make this static like a door or something
+// #define STATUS_IS_STATIC
+
 /*
 #define StatusEvt$died 2
 #define StatusEvt$mana_full 3

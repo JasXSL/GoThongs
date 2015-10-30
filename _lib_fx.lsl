@@ -25,6 +25,7 @@
 	#define fx$THONG_VISUAL 12					// see ThongManMethod$fxVisual
 	#define fx$SET_FLAG 13						// [(int)flags]
 	#define fx$UNSET_FLAG 14					// [(int)flags] - Overrides fx$SET_FLAG
+		// Max 16 flags are supported
 		#define fx$F_STUNNED 0x1					// Unable to move or attack
 		#define fx$F_PACIFIED 0x2					// Unable to attack but can use friendly spells. For NPC it doesn't affect spells, but only auto attacks
 		#define fx$F_INVUL 0x4						// Cannot take damage

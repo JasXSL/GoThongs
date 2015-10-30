@@ -218,29 +218,43 @@ onEvt(string script, integer evt, string data){
     }
     else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
 		BFL = BFL|BFL_INITIALIZED;
-        RUNTIME_FLAGS = (integer)j(data, MLC$RF);
-        maxHP = (float)j(data, MLC$maxhp);
-        aggro_range = (float)j(data, MLC$aggro_range);
-        aggrosound = (key)j(data, MLC$aggro_sound);
-        dropaggrosound = (key)j(data, MLC$dropaggro_sound);
-        takehitsound = (key)j(data, MLC$takehit_sound);
-        attacksound = (key)j(data, MLC$attacksound);
-        deathsound = (key)j(data, MLC$deathsound);
-        icon = (key)j(data, MLC$icon);
-        dmg = (float)j(data, MLC$dmg);
+		list conf = llJson2List(data);
+		string override = portalConf();
+		if(isset(override)){
+			list d = llJson2List(override);
+			override = "";
+			list_shift_each(d, v,
+				list d = llJson2List(v);
+				if(llGetListEntryType(d, 0) == TYPE_INTEGER)
+					conf = llListReplaceList(conf, llList2List(d,1,1), llList2Integer(d,0), llList2Integer(d,0));
+			)
+		}
+		
+        RUNTIME_FLAGS = llList2Integer(conf, MLC$RF);
+        maxHP = llList2Float(conf, MLC$maxhp);
+        aggro_range = llList2Float(conf, MLC$aggro_range);
+        aggrosound = (key)llList2String(conf, MLC$aggro_sound);
+        dropaggrosound = (key)llList2String(conf, MLC$dropaggro_sound);
+        takehitsound = (key)llList2String(conf, MLC$takehit_sound);
+        attacksound = (key)llList2String(conf, MLC$attacksound);
+        deathsound = (key)llList2String(conf, MLC$deathsound);
+        icon = (key)llList2String(conf, MLC$icon);
+        dmg = llList2Float(conf, MLC$dmg);
         
-        rapeName = j(data, MLC$rapePackage);
+        rapeName = llList2String(conf, MLC$rapePackage);
         if(!isset(rapeName))rapeName = llGetObjectName();
         
         if(dmg<=0)dmg = 10; 
-        if(aggro_range<=0)aggro_range = 10;
         if(maxHP<=0)maxHP = 100;
         HP = maxHP;
+		
+		if(aggro_range > 0)multiTimer(["A", "", 1, TRUE]);
+		else multiTimer(["A"]);
     }else if(script == "got Portal" && evt == evt$SCRIPT_INIT){
         PLAYERS = llJson2List(data);
-        multiTimer(["A", "", 1, TRUE]);
+		if(aggro_range)multiTimer(["A", "", 1, TRUE]);
     }else if(script == "got Monster"){
-        if(evt == MonsterEvt$runtimeFlagsChanged){
+	    if(evt == MonsterEvt$runtimeFlagsChanged){
             RUNTIME_FLAGS = (integer)data;
         }else if(evt == MonsterEvt$attack){
             key targ = jVal(data, [0]);
@@ -249,7 +263,6 @@ onEvt(string script, integer evt, string data){
             FX$send(targ, llGetKey(), "[1,0,0,0,[0,1,\"\",[[1,"+(string)(dmg*fxModDmgDone*crit)+"],[3,"+(string)(dmg*.2*fxModDmgDone*crit)+"],[6,\"<1,.5,.5>\"]],[],[],[],0,0,0]]");
             
         }else if(evt == MonsterEvt$attackStart){
-            //qd("AttackStart");
             if(attacksound)
                 llTriggerSound(attacksound, 1);
             
@@ -291,7 +304,6 @@ timerEvent(string id, string data){
 default 
 {
     state_entry(){
-        llSetStatus(STATUS_PHANTOM, TRUE);
         if(llGetStartParameter()){
             raiseEvent(evt$SCRIPT_INIT, "");
         }

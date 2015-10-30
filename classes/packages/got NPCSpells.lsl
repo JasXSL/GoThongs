@@ -262,6 +262,9 @@ timerEvent(string id, string data){
     else if(id == "US")Monster$unsetFlags((integer)data);
 }
 
+
+
+
 default 
 {
     on_rez(integer mew){
