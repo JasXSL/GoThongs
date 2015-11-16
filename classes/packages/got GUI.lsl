@@ -19,7 +19,18 @@ integer P_RETRY;
 #define RPB_ROOT_POS <-0.074654, 0.0, 0.31>
 
 #define SPELLSCALE <0.14775, 0.01770, 0.01761>
- 
+
+
+integer P_BLIND;
+#define BLIND_SCALE <2.50000, 1.25000, 0.01000>
+#define BLIND_POS <0.204500, 0.000000, 0.660400>
+
+integer P_SPINNER;
+#define SPINNER_POS <-0.035507, -0.000000, 0.390417>
+
+integer P_LOADINGBAR;
+#define LOADING_SCALE <0.35011, 0.04376, 0.04376>
+#define LOADING_POS <-0.159409, -0.001064, 0.359453>
  
 #define id2bars(offs) \
 list bars; \
@@ -28,6 +39,9 @@ if(prAttachPoint(id))id = llGetOwnerKey(id); \
 if(id == llGetOwner())bars += llList2Integer(BARS, offs); \
 if(id == TARG)bars += llList2Integer(BARS, BAR_STRIDE*2+offs); \
 if(id == llList2Key(PLAYERS, 1))bars += llList2Integer(BARS, BAR_STRIDE+offs);
+
+
+integer CACHE_FX_FLAGS = 0;
 
 onEvt(string script, integer evt, string data){
     if(script == "#ROOT"){
@@ -50,6 +64,25 @@ onEvt(string script, integer evt, string data){
             toggle(TRUE);
         }
     }
+	else if(script == "got FXCompiler"){
+		if(evt == FXCEvt$update){
+			integer flags = (integer)j(data, 0);
+			if(flags == CACHE_FX_FLAGS)return;
+			
+			
+			if(
+				(flags&fx$F_BLINDED && ~CACHE_FX_FLAGS&fx$F_BLINDED) ||
+				(~flags&fx$F_BLINDED && CACHE_FX_FLAGS&fx$F_BLINDED)
+			){
+				integer on;
+				if(flags&fx$F_BLINDED)on = TRUE;
+				list data = [PRIM_POSITION, BLIND_POS, PRIM_SIZE, BLIND_SCALE];
+				if(!on)data = [PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR];
+				llSetLinkPrimitiveParams(P_BLIND, data);
+			}
+			CACHE_FX_FLAGS = flags;
+		}
+	}
 }
 
 
@@ -123,8 +156,12 @@ toggle(integer show){
     
     
     
-    if(!show)
+    if(!show){
         updateTarget("", "");
+		GUI$toggleLoadingBar((string)LINK_THIS, FALSE, 0);
+		GUI$toggleSpinner((string)LINK_THIS, FALSE, "");
+		out+= [PRIM_LINK_TARGET, P_BLIND, PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR];
+	}
     
     llSetLinkPrimitiveParamsFast(0, out);
 }
@@ -250,10 +287,15 @@ default
                 if(llGetSubString(name, 3, 3) == "O")pos++;
                 BARS = llListReplaceList(BARS, [nr], pos, pos);
             }
+			else if(name == "LOADING")P_LOADINGBAR = nr;
             else if(name == "RETRY")P_RETRY = nr;
             else if(name == "QUIT")P_QUIT = nr;
-            
+            else if(name == "SPINNER")P_SPINNER = nr;
+			else if(name == "BLIND")P_BLIND = nr;
         ) 
+		
+		//qd(mkarr(llGetLinkPrimitiveParams(P_BLIND, [PRIM_POS_LOCAL])));
+		
         toggle(FALSE);
         db2$ini(); 
 		PLAYERS = [(string)llGetOwner()];
@@ -311,23 +353,14 @@ default
     // This needs to show the proper breakfree messages
     if(METHOD == GUIMethod$toggleQuit){
         integer on = (integer)method_arg(0);
-        integer isHost = (integer)method_arg(0);
         list out;
         if(on){
             out+= [
                 PRIM_LINK_TARGET, P_QUIT,
-                PRIM_TEXTURE, 0, "a1370798-059b-a067-3bbb-cb4fbfd2e881", <1,.5,0>, <0.,-0.25,0>, 0,
+                PRIM_TEXTURE, 0, "d44be195-0e8a-1a25-c3ed-c5372b8e39ad", <1,.5,0>, <0.,0.25,0>, 0,
                 PRIM_POSITION, RPB_ROOT_POS,
                 PRIM_SIZE, RPB_SCALE
            ];
-           if(isHost && _statusFlags()&StatusFlag$inLevel){
-                out+=[
-                    PRIM_LINK_TARGET, P_RETRY,
-                    PRIM_TEXTURE, 0, "a1370798-059b-a067-3bbb-cb4fbfd2e881", <1,.5,0>, <0.,0.25,0>, 0,
-                    PRIM_POSITION, RPB_ROOT_POS+<0,0,.042>,
-                    PRIM_SIZE, RPB_SCALE
-                ];
-           }
         }else{
             out+= [
                 PRIM_LINK_TARGET, P_QUIT,
@@ -340,10 +373,40 @@ default
         llSetLinkPrimitiveParamsFast(0,out);
     }
 	
+	else if(METHOD == GUIMethod$toggleLoadingBar){
+		list out = [PRIM_SIZE, ZERO_VECTOR, PRIM_POSITION, ZERO_VECTOR, PRIM_TEXT, "", ZERO_VECTOR, 0];
+		if((integer)method_arg(0)){
+			float time = (float)method_arg(1);
+			float width = 1./4;
+			float height = 1./32;
+			out = [
+				PRIM_SIZE, LOADING_SCALE, PRIM_POSITION, LOADING_POS,
+				PRIM_COLOR, ALL_SIDES, ZERO_VECTOR, 1,
+				PRIM_COLOR, 2, ZERO_VECTOR, 0,
+				
+				PRIM_TEXT, "...regenerating...", <1,1,1>, 1,
+				PRIM_COLOR, 1, <1,1,1>, 1,
+				PRIM_TEXTURE, 1, "0c2f81c7-8ecf-92ab-0351-6bbe109f0d0a", <width,height,0>, <-2*width+width/2, 16*height-height/2, 0>, 0
+			];
+			float fps = 4*32/time;
+			llSetLinkTextureAnim(P_LOADINGBAR, ANIM_ON, 1, 4,32, 0,0, fps);
+		}
+		llSetLinkPrimitiveParamsFast(P_LOADINGBAR, out);
+	}
+	else if(METHOD == GUIMethod$toggleSpinner){
+		integer on = (integer)method_arg(0);
+		string text = method_arg(1);
+		if(!isset(text))text = "Loading...";
+		
+		list out = [PRIM_POSITION, ZERO_VECTOR, PRIM_TEXT, "", ZERO_VECTOR, 0];
+		if(on){
+			out = [PRIM_POSITION, SPINNER_POS, PRIM_TEXT, text, <1,1,1>, 1];
+		}
+		llSetLinkTextureAnim(P_SPINNER, ANIM_ON|SMOOTH|LOOP|ROTATE, 0, 0,0, 0,TWO_PI, -10);
+		llSetLinkPrimitiveParamsFast(P_SPINNER, out);
+	}
 	
-	
-    
-    
+
     else if(METHOD == GUIMethod$toggle)toggle((integer)method_arg(0));
 
     // Public code can be put here

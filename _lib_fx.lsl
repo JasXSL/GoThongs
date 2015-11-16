@@ -32,7 +32,8 @@
 		#define fx$F_ROOTED 0x8						// Unable to move but can attack
 		#define fx$F_QUICKRAPE 0x10					// Inside of a quickrape - This one is autochecked for in got FX and does not need a condition
 		#define fx$F_SILENCED 0x20					// Unable to cast any spells at all
-		
+		#define fx$F_BLINDED 0x40					// Makes screen black
+			
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 	#define fx$MANA_REGEN_MULTIPLIER 15			// (float)add
 	#define fx$DAMAGE_TAKEN_MULTIPLIER 16		// (float)add
@@ -52,6 +53,7 @@
 	#define fx$RAND 30							// (float)chance, (bool)multiply_by_stacks, (arr)fxobj1, (arr)fxobj2... - Pseudo effect. If llFrand(1)<=chance, then the trailing fxobjs are run (fxobj is (int)fx, (var)data1.... Only works for instant effects. Multiply_by_stacks will make it so if you have a chance of .2, and 3 stacks, that's a chance of 0.6
 	#define fx$FORCE_SIT 31						// (key)object, (bool)allow_unsit 
 	#define fx$CRIT_MULTIPLIER 32				// (float)amt - Increases chance of doing double damage
+
 	
 // conditions
 	// Built in

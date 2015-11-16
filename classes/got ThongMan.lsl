@@ -22,4 +22,5 @@
 #define ThongManEvt$hit 1					// [(vec)color]
 #define ThongManEvt$ini 2					// [(int)is_enhanced]
 #define ThongManEvt$getVisuals 3			// void - Get visuals from helper of custom thong
+#define ThongManEvt$death 4					// [(int)dead] - If the player lost their thong or not
 

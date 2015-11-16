@@ -8,8 +8,9 @@
 
 #define BIT_DEBUG 536870912			// This is the binary bit (29) that determines if it runs in debug mode or not
 #define BIT_GET_DESC 1073741824		// This is the binary bit (30) that determines if it needs to get custom data from the spawner or not
+#define BIT_TEMP 2147483648			// Binary bit (31) that determines if the object should be temp or not
 
-#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap"]
+#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "jas MaskAnim"]
 
 #define Portal$save() runOmniMethod("got Portal", PortalMethod$save, [], "SV")
 #define Portal$killAll() runOmniMethod("got Portal", PortalMethod$remove, [], TNN)
@@ -23,12 +24,13 @@
 
 #define PortalEvt$desc_updated 1		// Portal has received a custom desc from the level
 
-_portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, integer debug, integer reqDesc){
+_portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, integer debug, integer reqDesc, integer temp){
 	vector mpos = llGetPos();
 	vector local = vecFloor(mpos)+(pos-vecFloor(pos));
 	integer int = vec2int(pos);
 	if(debug)int = int|BIT_DEBUG;
 	if(reqDesc)int = int|BIT_GET_DESC;
+	if(temp)int = int|BIT_TEMP;
 	llRezAtRoot(name, local+spawnOffset, ZERO_VECTOR, rot, int);
 }
 

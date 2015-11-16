@@ -30,13 +30,14 @@
 #define ARoot$thongEquipped 1
 #define ARoot$nowInParty 2
 #define ARoot$coopDisband 3
-
+#define ARoot$continueQuest 4
 
 #define ARoot [ \
 "Thong Detached", \
 "Thong Equipped!\nYou can now start playing!", \
 "Coop joined", \
-"Your coop partner has disbanded." \
+"Your coop partner has disbanded.", \
+"Spawning cell. Please wait." \
 ]
 
  

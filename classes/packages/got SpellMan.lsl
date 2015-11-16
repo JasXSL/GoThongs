@@ -48,6 +48,7 @@ list SPELL_TARGS;				// List of targets to cast on
 key CACHE_ROOT_TARGET;			// Cache of the player's current target
 integer QUEUE_SPELL = -2;		// A spell to queue when target is changed
 float CACHE_CASTTIME = 0;
+key CACHE_THONG;
 
 list PLAYERS;					// Me and coop player
 
@@ -88,7 +89,8 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
 onEvt(string script, integer evt, string data){
     if(script == "#ROOT"){
         if(evt == evt$BUTTON_PRESS){
-            integer pressed = (integer)data;
+            if(CACHE_THONG == "")return;
+			integer pressed = (integer)data;
 			
 			// interrupt if casting and pressing an arrow key
             if(BFL&BFL_CASTING && ~BFL&BFL_START_CAST)
@@ -104,6 +106,7 @@ onEvt(string script, integer evt, string data){
 		
 		// This is how spells are cast.
 		else if(evt == evt$TOUCH_START){
+			if(CACHE_THONG == "")return;
             string ln = llGetLinkName((integer)jVal(data, [0]));
             integer nr;
             if(llGetSubString(data, 0, 0) == ";"){
@@ -122,12 +125,15 @@ onEvt(string script, integer evt, string data){
 			
 		// Update target cache
 		else if(evt == RootEvt$targ){
+			if(CACHE_THONG == "")return;
 			CACHE_ROOT_TARGET = j(data,0);
 			if(QUEUE_SPELL != -2){
 				startSpell(QUEUE_SPELL);
 			}
 		}
         
+		else if(evt == RootEvt$thongKey)
+			CACHE_THONG = data;
     }
 	
 	// Cache FX flags
@@ -159,7 +165,9 @@ else{ \
     key coop = llList2Key(PLAYERS, 1); \
     if(isset(targ)){ \
         if(targets&TARG_PC && targ == coop)var = [targ]; \
-        else if(targets&TARG_NPC && llListFindList(PLAYERS, [(string)targ]) == -1)var = [targ]; \
+        else if(targets&TARG_NPC && llListFindList(PLAYERS, [(string)targ]) == -1){ \
+			var = [targ]; \
+		}\
     } \
     if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \
 	else if(targets&TARG_NPC && !isset(targ) && QUEUE_SPELL == -2){ \
@@ -182,11 +190,12 @@ integer castSpell(integer nr){
     
 	// Grab data from cache
     list data;
-    if(~nr)
+    if(~nr){
         data = nrToData(nr);
-    
+    }
 	// Grab target flags
 	integer spt = spellTargets(data);
+	
 	// Spell is on cooldown
     if(spellOnCooldown(nr) || (BFL&BFL_GLOBAL_CD && ~spt&SpellMan$NO_GCD)){
         A$(ASpellMan$errCantCastYet);
@@ -215,7 +224,6 @@ integer castSpell(integer nr){
     SPELL_TARGS = [LINK_ROOT];
     if(~nr){
 		// Not rest, so let's grab targets
-		
         flagsToTargets(spt, SPELL_TARGS);
 		
 		// If I don't have a target and the spell requires one, try to grab one and cast on it
@@ -458,6 +466,7 @@ default
             }
         }
         else if(METHOD == SpellManMethod$rebuildCache){
+			if(!isset(CACHE_THONG))CACHE_THONG = db2$get("#ROOT", [RootShared$thongUUID]);
             CACHE = [];
             GCD_FREE = [FALSE];
             list spells = llJson2List(db2$get(BridgeSpells$name, []));

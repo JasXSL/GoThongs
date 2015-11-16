@@ -17,6 +17,7 @@ string base_anim;				// Loop
 integer max_anims = 0;
 integer cur_anim;
 
+
 onEvt(string script, integer evt, string data){
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
         LocalConf$ini();
@@ -25,7 +26,7 @@ onEvt(string script, integer evt, string data){
             cooldown = (float)j(data,0);
             cooldown_full = (float)j(data,1);
         }
-    }else if(script == "ton MeshAnim" && evt == MeshAnimEvt$frame){
+    }else if((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame){
 		list split = llParseString2List(data, [";"], []);
 		string type = llList2String(split, 0);
 		string val = llList2String(split, 1);

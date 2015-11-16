@@ -54,6 +54,8 @@ list SPELL_ICONS;   // [(key)texture, (int)desc]
 
 list OUTPUT_STATUS_TO; 
 
+list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
+
 dropAggro(key player, integer complete){
     integer pos = llListFindList(AGGRO, [player]);
     if(~pos){
@@ -98,15 +100,17 @@ addHP(float amount, key attacker, string spellName, integer flags){
     
     HP += amount;
     if(HP<=0){
+		Level$idEvent(LevelEvt$idDied, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)));
+	
         HP = 0;
         STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
         raiseEvent(StatusEvt$dead, "1");
-        MeshAnim$startAnim("die");
+		anim("die", TRUE);
         outputStats();
         llSleep(.1);
-        MeshAnim$stopAnim("idle");
-        MeshAnim$stopAnim("walk");
-        MeshAnim$stopAnim("attack");
+		anim("idle", FALSE);
+		anim("walk", FALSE);
+		anim("attack", FALSE);
         BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
 		llSetObjectDesc("");			// Prevent targeting
         list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
@@ -218,6 +222,7 @@ onEvt(string script, integer evt, string data){
     }
     else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
 		BFL = BFL|BFL_INITIALIZED;
+		
 		list conf = llJson2List(data);
 		string override = portalConf();
 		if(isset(override)){
@@ -227,6 +232,10 @@ onEvt(string script, integer evt, string data){
 				list d = llJson2List(v);
 				if(llGetListEntryType(d, 0) == TYPE_INTEGER)
 					conf = llListReplaceList(conf, llList2List(d,1,1), llList2Integer(d,0), llList2Integer(d,0));
+				else if(llList2String(d, 0) == "ID"){
+					CUSTOM_ID = llDeleteSubList(d, 0, 0);
+					Level$idEvent(LevelEvt$idSpawned, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)));
+				}
 			)
 		}
 		
@@ -250,6 +259,8 @@ onEvt(string script, integer evt, string data){
 		
 		if(aggro_range > 0)multiTimer(["A", "", 1, TRUE]);
 		else multiTimer(["A"]);
+		
+		raiseEvent(StatusEvt$monster_init, "");
     }else if(script == "got Portal" && evt == evt$SCRIPT_INIT){
         PLAYERS = llJson2List(data);
 		if(aggro_range)multiTimer(["A", "", 1, TRUE]);
@@ -299,6 +310,17 @@ timerEvent(string id, string data){
     }else if(id == "OT"){
         outputTextures();
     }
+}
+
+anim(string anim, integer start){
+	integer meshAnim = (llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT);
+	if(start){
+		if(meshAnim)MeshAnim$startAnim(anim);
+		else MaskAnim$start(anim);
+	}else{
+		if(meshAnim)MeshAnim$stopAnim(anim);
+		else MaskAnim$stop(anim);
+	}
 }
 
 default 
@@ -414,7 +436,7 @@ default
     }
 	// Take hit animation
     else if(METHOD == StatusMethod$monster_takehit){
-        MeshAnim$startAnim("hit");
+		anim("hit", TRUE);
         if(takehitsound)llTriggerSound(takehitsound, 1);
     }
 	// Whenever spell modifiers have changed

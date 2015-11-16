@@ -19,6 +19,7 @@
 #include "xobj_core/classes/jas Climb.lsl"
 #include "xobj_core/classes/jas Primswim.lsl"
 #include "xobj_core/classes/jas Interact.lsl"
+#include "xobj_core/classes/jas MaskAnim.lsl"
 
 
 #include "xobj_toonie/classes/ton MeshAnim.lsl"
@@ -52,6 +53,7 @@
 #include "./classes/got Level.lsl"
 #include "./classes/got LevelAux.lsl"
 #include "./classes/got Devtool.lsl"
+#include "./classes/got LevelSpawner.lsl"
 
 
 #include "got/classes/#ROOT.lsl"

@@ -1,6 +1,7 @@
 #define USE_EVENTS
-#define USE_SHARED [BridgeSpells$name, "got Status"]
+#define USE_SHARED [BridgeSpells$name, "#ROOT", "got Status"]
 #include "got/_core.lsl"
+
 
 // This is the actual spell data cached
 list CACHE;
@@ -39,6 +40,7 @@ list PARTICLE_CACHE;
 float CACHE_AROUSAL;
 float CACHE_PAIN;
 float CACHE_CRIT;
+key CACHE_THONG;
 
 // Flags from got Status
 integer STATUS_FLAGS;
@@ -86,21 +88,34 @@ onEvt(string script, integer evt, string data){
     if(script == "#ROOT"){
         if(evt == RootEvt$players)
             PLAYERS = llJson2List(data);
+		else if(evt == RootEvt$thongKey){
+			CACHE_THONG = data;
+			if(CACHE_THONG == ""){
+				toggleSpellButtons(FALSE);
+			}
+		}
     }else if(script == "got Status"){
-		if(evt == StatusEvt$flags)
+		if(evt == StatusEvt$flags){
+			integer pre = STATUS_FLAGS;
 			STATUS_FLAGS = (integer)data;
+			
+			integer hideOn = (StatusFlag$dead|StatusFlag$loading);
+			
+			if((!(pre&hideOn) && STATUS_FLAGS&hideOn) || (pre&hideOn && !(STATUS_FLAGS&hideOn))){
+				toggleSpellButtons(TRUE);		// Auto hides if dead. So we can just go with TRUE for both cases
+			}
+		}
 	}
     else if(script == "got FXCompiler" && evt == FXCEvt$update){
         dmdmod = (float)j(data, FXCUpd$DAMAGE_DONE);
 		critmod = (float)j(data, FXCUpd$CRIT);
 	}
-
 }
 
 
 toggleSpellButtons(integer show){
 	integer i; list out;
-	if(!show || STATUS_FLAGS&StatusFlag$dead){
+	if(!show || STATUS_FLAGS&(StatusFlag$dead|StatusFlag$loading)){
         for(i=0; i<llGetListLength(ABILS); i++){
             out += [
                 PRIM_LINK_TARGET, llList2Integer(ABILS, i),
@@ -459,7 +474,8 @@ default
             }
 
 			llSetLinkPrimitiveParamsFast(0, set);
-			toggleSpellButtons(TRUE);
+			if(!isset(CACHE_THONG))CACHE_THONG = db2$get("#ROOT", [RootShared$thongUUID]);
+			if(isset(CACHE_THONG))toggleSpellButtons(TRUE);
 			GUI$toggle(TRUE);
         }
     }

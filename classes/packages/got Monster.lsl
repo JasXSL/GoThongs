@@ -8,7 +8,7 @@
 #define TIMER_FRAME "a"
 #define TIMER_ATTACK "b" 
 
-#define preAtk() Status$get(chasetarg, "ATK")
+#define preAtk() if(atkspeed>0){Status$get(chasetarg, "ATK");}
 
 
 list PLAYERS;           // The players, should always contain owner
@@ -83,16 +83,27 @@ attack(){
     raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));
     BFL = BFL|BFL_ATTACK_CD;
     
-    MeshAnim$startAnim("attack");
+    anim("attack", TRUE);
+}
+
+anim(string anim, integer start){
+	integer meshAnim = (llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT);
+	if(start){
+		if(meshAnim)MeshAnim$startAnim(anim);
+		else MaskAnim$start(anim);
+	}else{
+		if(meshAnim)MeshAnim$stopAnim(anim);
+		else MaskAnim$stop(anim);
+	}
 }
 
 toggleMove(integer on){
     if(on && ~BFL&BFL_MOVING && ~BFL&BFL_STOPON){
         BFL = BFL|BFL_MOVING;
-        MeshAnim$startAnim("walk");
+        anim("walk", true);
     }else if(!on && BFL&BFL_MOVING){
         BFL = BFL&~BFL_MOVING;
-        MeshAnim$stopAnim("walk");
+        anim("walk", false);
         llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
     }
 }
@@ -259,21 +270,21 @@ onEvt(string script, integer evt, string data){
 
             RUNTIME_FLAGS = llList2Integer(conf, 0);
             if(llList2Float(conf,1)>0)speed = llList2Float(conf, 1);
-            if(llList2Float(conf,2)>0)hitbox = llList2Float(conf, 2);
-            if(llList2Float(conf,3)>0)atkspeed = llList2Float(conf, 3);
+            hitbox = llList2Float(conf, 2);
+            atkspeed = llList2Float(conf, 3);
             if(llList2Float(conf,5)!=0)wander = llFabs(llList2Float(conf, 5));
             
             if(speed<=0)speed = 1;
             if(hitbox<=0)hitbox = 2;
-            if(atkspeed<.5)atkspeed = .5;
-            
+            //if(atkspeed<.5)atkspeed = .5;
+			
             BFL = BFL|BFL_INITIALIZED; 
             multiTimer([TIMER_FRAME, "", .25, TRUE]);
             llSetObjectDesc("$M$");
         }
     }
     
-    else if(script == "ton MeshAnim" && evt == MeshAnimEvt$frame){
+    else if((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame){
         list split = llParseString2List(data, [";"], []);
         string task = llList2String(split, 0);
         
@@ -313,7 +324,7 @@ onEvt(string script, integer evt, string data){
         }
     }
     
-    else if(script == "ton MeshAnim"){
+    else if(script == "jas MaskAnim" || script == "ton MeshAnim"){
         if(evt == MeshAnimEvt$agentsInRange)
             BFL = BFL|BFL_PLAYERS_NEARBY;    
         else if(evt == MeshAnimEvt$agentsLost)
@@ -373,7 +384,6 @@ default
         }
     }
     else if(METHOD == MonsterMethod$lookOverride)look_override = method_arg(0);
-    
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"   
 }

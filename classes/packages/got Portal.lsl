@@ -45,9 +45,9 @@ default
 {
     on_rez(integer mew){
         if(mew != 0){
-			#ifndef DISREGARD_TEMP
+			if(mew&BIT_TEMP){
 				llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, TRUE]);
-            #endif
+			}
 			integer p = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(p);
 			setText((string)mew);

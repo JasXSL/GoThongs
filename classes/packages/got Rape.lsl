@@ -1,19 +1,17 @@
 #include "got/_core.lsl"
 
+#define TIMER_BREAKFREE "a"
+
 integer BFL;
 #define BFL_RAPE_STARTED 1
 
 list RAPE_ANIMS;
 list RAPE_ATTACHMENTS;
 
-timerEvent(string id, string data){
-    
-}
-
 default 
 {
     // Timer event
-    timer(){multiTimer([]);}
+    //timer(){multiTimer([]);}
     
     
     // This is the standard linkmessages
@@ -64,8 +62,10 @@ default
                 SupportcubeBuildTask(Supportcube$tForceSit, [true])
             ]));
             
+
             raiseEvent(RapeEvt$onStart, "");
-            if(~_statusFlags()&StatusFlag$inLevel)GUI$toggleQuit(TRUE);
+			
+            
         }
     }
     
@@ -73,7 +73,8 @@ default
         
     }
     
-    if(METHOD == RapeMethod$end){
+    if(METHOD == RapeMethod$end){ 
+	
         BFL = BFL&~BFL_RAPE_STARTED;
         
         list_shift_each(RAPE_ATTACHMENTS, val, 

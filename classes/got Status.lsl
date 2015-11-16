@@ -13,6 +13,7 @@
 #define StatusMethod$getTextureDesc 11	// (int)pos, (key)texture - Gets info about a spell by pos
 #define StatusMethod$setSex 12			// (int)sex - 
 #define StatusMethod$outputStats 13		// NULL - Forces stats update (pc only)
+#define StatusMethod$loading 14			// (bool)loading - Sets loading flag
 
 // Monster only
 #define StatusMethod$monster_dropAggro 100		// (key)target - Drops aggro
@@ -21,6 +22,8 @@
 #define StatusMethod$monster_takehit 103		// void - Triggers monster take hit visual
 #define StatusMethod$monster_aggro 104			// (key)targ, (float)amt
 #define StatusMethod$monster_attemptTarget 105	// (int)force - Same effect as clicking the monster
+
+
 
 #define StatusShared$dur "a"		// [(float)current, (float)max]
 #define StatusShared$mana "b"		// [(float)current, (float)max]
@@ -37,7 +40,7 @@
 #define StatusEvt$monster_hp_perc 3			// HP/maxHP
 #define StatusEvt$dead 4					// (int)dead
 #define StatusEvt$monster_targData 5		// contains same vars as StatusMethod$get returns
-
+#define StatusEvt$monster_init 6			// Sent once the config has loaded
 
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC
@@ -62,6 +65,7 @@
 #define StatusFlag$aroused 0x40		// Damage done reduced 50%
 #define StatusFlag$swimming 0x80	// Swimming
 #define StatusFlag$climbing 0x100	// Climbing
+#define StatusFlag$loading 0x200	// Loading a level
 
 #define StatusFlags$noCast (StatusFlag$dead|StatusFlag$raped|StatusFlag$climbing)
 
@@ -80,6 +84,8 @@
 #define Status$remTextureDesc(texture) runMethod((string)LINK_ROOT, "got Status", StatusMethod$remTextureDesc, [texture], TNN)
 #define Status$getTextureDesc(targ, pos, texture) runMethod(targ, "got Status", StatusMethod$getTextureDesc, [pos, texture], TNN)
 #define Status$setSex(sex) runMethod((string)LINK_ROOT, "got Status", StatusMethod$setSex, [sex], TNN)
+#define Status$loading(targ, loading) runMethod(targ, "got Status", StatusMethod$loading, [loading], TNN)
+
 
 // Monster
 #define Status$dropAggro(targ) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ], TNN)

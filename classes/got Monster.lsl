@@ -1,10 +1,11 @@
-#define MonsterMethod$toggleFlags 1	// [(int)flags_to_set, (int)flags_to_remove] - set will be ORed, remove will be and NOT ed
+#define MonsterMethod$toggleFlags 1		// [(int)flags_to_set, (int)flags_to_remove] - set will be ORed, remove will be and NOT ed
 #define MonsterMethod$lookOverride 2	// (key)id or "" - Forces the monster to look at this ID instead of aggro target
+#define MonsterMethod$KFM 3				// (arr)kfm_a, (arr)kfm_b - Runs a keyframed motion on an npc
 
 #define Monster$stop() runMethod((string)LINK_THIS, "got Monster", MonsterMethod$toggleFlags, [Monster$RF_IMMOBILE|Monster$RF_PACIFIED, 0], TNN)
 #define Monster$start() runMethod((string)LINK_THIS, "got Monster", MonsterMethod$toggleFlags, [0, Monster$RF_IMMOBILE|Monster$RF_PACIFIED], TNN)
 #define Monster$setFlags(flags) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$toggleFlags, [flags], TNN)
-#define Monster$unsetFlags(flags)runMethod((string)LINK_THIS, "got Monster", MonsterMethod$toggleFlags, [0, flags], TNN)
+#define Monster$unsetFlags(flags) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$toggleFlags, [0, flags], TNN)
 #define Monster$lookOverride(targ) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$lookOverride, [targ], TNN)
 
 

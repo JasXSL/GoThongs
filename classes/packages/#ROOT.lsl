@@ -209,6 +209,14 @@ if(chan == 3){ \
 	else if(message == "coop"){\
 		setTarget(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE);\
 	} \
+	else if(message == "wipeCells"){ \
+		Portal$killAll(); \
+	} \
+	else if(message == "continueQuest"){ \
+		AMS$(ARoot$continueQuest); \
+		Portal$killAll(); \
+		Bridge$continueQuest(); \
+	} \
     else  \
         SpellMan$hotkey(message); \
 return; \
@@ -289,9 +297,10 @@ if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1) \
     }
 	else if(METHOD == RootMethod$setLevel){
 		LEVEL = id;
+		db2$set([RootShared$level], (string)id);
 		raiseEvent(RootEvt$level, mkarr([LEVEL]));
 		if(!method$byOwner){
-			//qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
+			qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
 			return;
 		}
 		CB_DATA = PLAYERS;

@@ -13,7 +13,7 @@
 	#define RootFlag$game_started 2					// 
 #define RootShared$players "c"					// [(key)self, (key)coop_player]
 #define RootShared$targ "d"						// (key)selected_target
-
+#define RootShared$level "e"					// UUID of current level
 
 #define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed
@@ -33,6 +33,8 @@
 #define Root$setParty(uuid) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setParty, [uuid], TNN)
 #define Root$clearTargetOn(targ) runMethod(targ, "#ROOT", RootMethod$setTarget, ["", "", TRUE], TNN)
 #define Root$setLevel() runMethod(llGetOwner(), "#ROOT", RootMethod$setLevel, [], "LV")
+#define Root$setLevelOn(targ) runMethod(targ, "#ROOT", RootMethod$setLevel, [], TNN)
+
 
 #define THONG_KEY ((key)db2$get("#ROOT", [RootShared$thongUUID]))
 

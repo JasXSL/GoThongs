@@ -42,7 +42,6 @@ updateDefaults(){
     if(BFL&BFL_DEAD)return;
     list out;
     list all = jiggles;
-
     list_shift_each(all, val, 
         out+=([PRIM_LINK_TARGET, (integer)val]);
         out+=([PRIM_COLOR, ALL_SIDES, color]);
@@ -79,11 +78,16 @@ takeHit(vector col){
 	if(BFL&BFL_DEAD)return;
     raiseEvent(ThongManEvt$hit, mkarr([col]));
     hit = col;
-    MeshAnim$startAnim("Jiggle");
-    llSetLinkColor(LINK_SET, col, ALL_SIDES);
+	//restore();
+	multiTimer(["A"]);
+	setColorOnInvolved(col);
+	
 
+    MeshAnim$restartAnim("Jiggle");
+	multiTimer(["A",1., .1, FALSE]);
+	
     
-    multiTimer(["A",1., .1, FALSE]);
+    
 }
 
 
@@ -91,9 +95,12 @@ timerEvent(string id, string data){
     if(id == "A"){
         float d = (float)data;
         d-=.1;
-        if(d>0)multiTimer(["A", d, .05, FALSE]);
-        vector v = color*(1.-d)+hit*d;
-        llSetLinkColor(LINK_SET, v, ALL_SIDES);
+        
+		vector v = color*(1.-d)+hit*d;
+		setColorOnInvolved(v);
+		
+		if(d>0)multiTimer(["A", d, .05, FALSE]);
+        else restore();
     }
 	else if(llGetSubString(id, 0, 1) == "P_"){
 		llLinkParticleSystem((integer)llGetSubString(id, 2, -1), []);
@@ -104,10 +111,30 @@ onEvt(string script, integer evt, string data){
     if(script == "ton MeshAnim"){
         if(evt == evt$SCRIPT_INIT){
             llSetRemoteScriptAccessPin(0);
-        }else if(data == "OUT")
-            restore();
+        }else if(data == "OUT"){
+            //restore();
+			
+		}
     }
 } 
+
+setColorOnInvolved(vector col){
+	
+	integer i; list out;
+	for(i=0; i<llGetListLength(jiggles); i++){
+		
+		integer link = llList2Integer(jiggles, i);
+		llSetLinkColor(link, col, ALL_SIDES);
+		
+		/*
+		out+= [PRIM_LINK_TARGET, link];
+		integer x;
+		for(x=0; x<llGetLinkNumberOfSides(link); x++)
+			out+= [PRIM_COLOR, x, col, llList2Float(llGetLinkPrimitiveParams(link, [PRIM_COLOR, x]), 1)];
+		*/
+	}
+	//llSetLinkPrimitiveParamsFast(0, out);
+}
 
 setOnInvolved(list params){
 	// Sets primitive params on all the main prims
@@ -322,9 +349,10 @@ default
 				multiTimer(["P_2", "", 2, FALSE]);
 				MeshAnim$stopAnim("Jiggle");
 				llTriggerSound("a0f4e168-1eb0-465e-2db9-5beaa2e2891a", 1);
-				llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
+				
+				setOnInvolved([PRIM_COLOR, ALL_SIDES, <1,1,1>, 0]);
 				llSleep(2);
-				llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
+				setOnInvolved([PRIM_COLOR, ALL_SIDES, <1,1,1>, 0]);
 			}else{
 				BFL = BFL&~BFL_DEAD;
 				restore();

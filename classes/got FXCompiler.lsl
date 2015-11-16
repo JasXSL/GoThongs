@@ -61,9 +61,9 @@
         DAMAGE_DONE_MULTI = manageList(FALSE, DAMAGE_DONE_MULTI, [pid,llList2Float(fx, 1)]); \
     else if(t == fx$SPELL_DMG_TAKEN_MOD) \
         SPELL_DMG_TAKEN_MOD = manageList(FALSE, SPELL_DMG_TAKEN_MOD, [pid,llList2String(fx,1), llList2Float(fx, 2)]); \
-	else if(t == fx$ICON) \
+	else if(t == fx$ICON){ \
         Status$addTextureDesc(llList2String(fx, 1), llList2String(fx, 2)); \
-	else if(t == fx$DODGE) \
+	}else if(t == fx$DODGE) \
         DODGE_MULTI = manageList(FALSE, DODGE_MULTI, [pid,llList2Float(fx, 1)]); \
 	else if(t == fx$CASTTIME_MULTIPLIER) \
         CASTTIME_MULTIPLIER = manageList(FALSE, CASTTIME_MULTIPLIER, [pid,llList2Float(fx, 1)]); \

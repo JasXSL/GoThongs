@@ -1,5 +1,5 @@
 #define USE_EVENTS
-#define USE_SHARED [cls$name, "got Bridge"]
+#define USE_SHARED [cls$name, "got Bridge", "#ROOT"]
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"
 
@@ -11,7 +11,7 @@
 #define maxPain() ((DEFAULT_PAIN+THONG_LEVEL)*llPow(1.01+.01*(float)getBonusStat(STAT_PAIN), THONG_LEVEL))
 
 #define TIMER_REGEN "a"
-
+#define TIMER_BREAKFREE "b"
 
 // Cache
 integer PRE_CONTS;
@@ -89,6 +89,8 @@ addDurability(float amount, string spellName, integer flags){
     }
     DURABILITY += amount;
     if(DURABILITY<=0){
+		if(STATUS_FLAGS&StatusFlag$dead)return;
+		// DEATH HANDLED HERE
         SpellMan$interrupt();
         DURABILITY = 0;
         STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
@@ -97,17 +99,27 @@ addDurability(float amount, string spellName, integer flags){
         AnimHandler$anim("got_loss", TRUE, 0);
         ThongMan$dead(TRUE);
         toggleClothes(TRUE);
-        if(~STATUS_FLAGS&StatusFlag$inLevel)GUI$toggleQuit(TRUE);
+		
+		multiTimer([TIMER_BREAKFREE, "", 20, FALSE]);
+		GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, 20);
     }else{
         if(DURABILITY > maxDurability())DURABILITY = maxDurability();
         if(STATUS_FLAGS&StatusFlag$dead){
+			// REVIVED HANDLED HERE
+			
+			// Send to level here, counts as a loss
+			
             STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$dead;
             raiseEvent(StatusEvt$dead, "0");
             Rape$end();
             AnimHandler$anim("got_loss", FALSE, 0);
             ThongMan$dead(FALSE);
-            
             toggleClothes(FALSE);
+			
+			multiTimer([TIMER_BREAKFREE]);
+			GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
+			GUI$toggleQuit(FALSE);
+			qd("Healed");
         }
     }
     if(pre != DURABILITY){
@@ -212,9 +224,9 @@ onEvt(string script, integer evt, string data){
             if(~STATUS_FLAGS&StatusFlag$dead && ~STATUS_FLAGS&StatusFlag$raped)return;
             integer prim = (integer)j(data, 0);
             string ln = llGetLinkName(prim);
-            if(ln == "QUIT" || ln == "RETRY"){
-                if(ln == "RETRY")qd("Retry action here");
-                else qd("Quit action here");
+            if(ln == "QUIT"){
+				// Quit button hit.
+				Level$died();
                 Status$fullregen();
             }
         }
@@ -245,6 +257,7 @@ onEvt(string script, integer evt, string data){
                 outputStats();
             }
             else{
+				if(~STATUS_FLAGS&StatusFlag$raped)return;			// Prevent recursion
                 STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
                 Status$fullregen();
             }
@@ -278,7 +291,7 @@ outputStats(){
     
     
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
-    if(FXFLAGS&fx$F_STUNNED || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing) && ~STATUS_FLAGS&StatusFlag$raped))
+    if(FXFLAGS&fx$F_STUNNED || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading) && ~STATUS_FLAGS&StatusFlag$raped))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
     if(FXFLAGS&fx$F_ROOTED || STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
@@ -314,15 +327,16 @@ timerEvent(string id, string data){
         if(coop_player)
             GUI$setSpellTextures(coop_player, dta);
     }
+	else if(id == TIMER_BREAKFREE){
+		// Show breakfree button
+		GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
+		GUI$toggleQuit(TRUE);
+	}
 }
   
 
 default 
 {
-    on_rez(integer mew){
-        llResetScript();
-    }
-    
     state_entry(){
         db2$ini();
         coop_player = llList2String(_getPlayers(), 1);
@@ -331,6 +345,7 @@ default
         multiTimer([TIMER_REGEN, "", 2, TRUE]);
         llRegionSayTo(llGetOwner(), 1, "jasx.settings");
         toggleClothes(FALSE);
+		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
     }
     
     timer(){
@@ -382,7 +397,8 @@ default
 	}
     
     else if(METHOD == StatusMethod$fullregen){
-        if(STATUS_FLAGS&StatusFlag$raped)Rape$end();
+		
+        Rape$end();
         
         DURABILITY = maxDurability();
         MANA = maxMana();
@@ -402,7 +418,13 @@ default
         outputStats();
         ThongMan$dead(FALSE);
         toggleClothes(FALSE);
-        GUI$toggleQuit(FALSE);
+		
+		
+		
+		// Clear rape stuff
+		multiTimer([TIMER_BREAKFREE]);
+		GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
+		GUI$toggleQuit(FALSE);
     }
     else if(METHOD == StatusMethod$get){
         CB_DATA = [STATUS_FLAGS, FXFLAGS, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), GENITAL_FLAGS];
@@ -428,7 +450,18 @@ default
     }
     else if(METHOD == StatusMethod$outputStats)
         outputStats();
-    
+    else if(METHOD == StatusMethod$loading){
+		integer loading = (integer)method_arg(0);
+		integer pre = STATUS_FLAGS;
+		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$loading;
+		if(loading)STATUS_FLAGS = STATUS_FLAGS|StatusFlag$loading;
+		if(pre != STATUS_FLAGS){
+			integer divisor = 0;
+			if(loading)divisor = 6;
+			llOwnerSay("@setdebug_RenderResolutionDivisor:"+(string)divisor+"=force");
+			outputStats();
+		}
+	}
 
     
     // Public code can be put here
