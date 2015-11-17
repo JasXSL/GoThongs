@@ -295,7 +295,9 @@ outputStats(){
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
     if(FXFLAGS&fx$F_ROOTED || STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
-
+	if(FXFLAGS&fx$F_NOROT)
+		controls = controls|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
+	
     if(PRE_CONTS != controls){
         PRE_CONTS = controls;
         Root$statusControls(controls);

@@ -64,7 +64,9 @@ runEffect(key caster, integer stacks, string package, integer pid){
             if(llList2Integer(fx, 2))out+=",unsit=n";
             llOwnerSay(out);
         }
-            
+        else if(t == fx$ROT_TOWARDS){
+			RLV$turnTowards(v);
+		}
     }
     
     

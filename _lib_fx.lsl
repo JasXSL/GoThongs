@@ -25,7 +25,6 @@
 	#define fx$THONG_VISUAL 12					// see ThongManMethod$fxVisual
 	#define fx$SET_FLAG 13						// [(int)flags]
 	#define fx$UNSET_FLAG 14					// [(int)flags] - Overrides fx$SET_FLAG
-		// Max 16 flags are supported
 		#define fx$F_STUNNED 0x1					// Unable to move or attack
 		#define fx$F_PACIFIED 0x2					// Unable to attack but can use friendly spells. For NPC it doesn't affect spells, but only auto attacks
 		#define fx$F_INVUL 0x4						// Cannot take damage
@@ -33,7 +32,8 @@
 		#define fx$F_QUICKRAPE 0x10					// Inside of a quickrape - This one is autochecked for in got FX and does not need a condition
 		#define fx$F_SILENCED 0x20					// Unable to cast any spells at all
 		#define fx$F_BLINDED 0x40					// Makes screen black
-			
+		#define fx$F_NOROT 0x80						// Unable to rotate
+		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 	#define fx$MANA_REGEN_MULTIPLIER 15			// (float)add
 	#define fx$DAMAGE_TAKEN_MULTIPLIER 16		// (float)add
@@ -53,7 +53,7 @@
 	#define fx$RAND 30							// (float)chance, (bool)multiply_by_stacks, (arr)fxobj1, (arr)fxobj2... - Pseudo effect. If llFrand(1)<=chance, then the trailing fxobjs are run (fxobj is (int)fx, (var)data1.... Only works for instant effects. Multiply_by_stacks will make it so if you have a chance of .2, and 3 stacks, that's a chance of 0.6
 	#define fx$FORCE_SIT 31						// (key)object, (bool)allow_unsit 
 	#define fx$CRIT_MULTIPLIER 32				// (float)amt - Increases chance of doing double damage
-
+	#define fx$ROT_TOWARDS 33					// (vec)pos - PC ONLY, Rotates the player towards a global position
 	
 // conditions
 	// Built in
@@ -77,6 +77,6 @@
 	#define FXN$QUICKRAPE "_Q"					// Quickrape
 	
 // Tags
-						
+	#define fx$TAG_LEGS_SPREAD 1				// Used by skelcrawler
 	
 	

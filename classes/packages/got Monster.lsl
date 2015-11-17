@@ -90,7 +90,7 @@ anim(string anim, integer start){
 	integer meshAnim = (llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT);
 	if(start){
 		if(meshAnim)MeshAnim$startAnim(anim);
-		else MaskAnim$start(anim);
+		else MaskAnim$restart(anim);
 	}else{
 		if(meshAnim)MeshAnim$stopAnim(anim);
 		else MaskAnim$stop(anim);

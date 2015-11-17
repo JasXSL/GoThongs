@@ -28,7 +28,7 @@
 
 #define LevelEvt$players 0			// (arr)players - List of players has been updated
 #define LevelEvt$interact 1			// (key)player, (key)asset - When a player has attempted to interact with an item that needs to run a check with the server
-#define LevelEvt$load 2				// (int)debug - Loading of the level has begun
+#define LevelEvt$load 2				// (int)debug, (str)group - Loading monsters has begun. If group is JSON_INVALID it means the level has started loading main
 #define LevelEvt$trigger 3			// (key)player, (key)asset, (str)data - A trigger has been hit. Asset may have been removed from the sim by the time this is raised, don't rely too much on it
 
 // These require an ID to be set and got Status to be present. See https://github.com/JasXSL/GoThongs/wiki/LevelDev---Monster-Setting-Sheet
