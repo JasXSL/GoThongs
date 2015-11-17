@@ -22,7 +22,7 @@
 										// if sender is prefixed with ! it will remove everyone BUT that attacker
 #define FXMethod$setPCs 4				// (arr)pc_keys - Set PC keys on send to PC events
 #define FXMethod$setNPCs 5				// (arr)pc_keys - Set NPC keys to send to on NPC events
-
+#define FXMethod$hasTags 6				// (var)tag(s) - Callbacks TRUE/FALSE if the player has ANY of these tags
 
 
 #define FXEvt$runEffect 1				// [(key)caster, (int)stacks, (arr)package, (int)id, (int)flags]
@@ -37,7 +37,7 @@
 #define FX$refresh() runMethod((string)LINK_SET, "got FX", FXMethod$refresh, [], TNN)
 #define FX$rem(raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel) runMethod((string)LINK_SET, "got FX", FXMethod$rem, ([raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel]), TNN)
 #define FX$aoe(targ, range, sender, wrapper) runLimitMethod(targ, "got FX", FXMethod$run, ([sender, wrapper, range]), TNN, range)
-
+#define FX$hasTags(targ, tags, cb) runMethod(targ, "got FX", FXMethod$hasTags, [tags], cb)
 
 #ifndef fx$COND_HAS_PACKAGE_NAME
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names

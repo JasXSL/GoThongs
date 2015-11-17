@@ -501,9 +501,17 @@ default
             savePackages();
             #endif
         }
-        if(METHOD == FXMethod$setPCs)PCS = llJson2List(method_arg(0));
-        if(METHOD == FXMethod$setNPCs)NPCS = llJson2List(method_arg(0));
-        
+        else if(METHOD == FXMethod$setPCs)PCS = llJson2List(method_arg(0));
+        else if(METHOD == FXMethod$setNPCs)NPCS = llJson2List(method_arg(0));
+        else if(METHOD == FXMethod$hasTags){
+			list tags = [method_arg(0)];
+			if(llJsonValueType(PARAMS, [0]) == JSON_ARRAY)tags = llJson2List(method_arg(0));
+			integer i; integer c = FALSE;
+			for(i=0; i<llGetListLength(tags) && !c; i++){
+				if(~llListFindList(TAG_CACHE, [llList2Integer(tags, i)]))c = TRUE;
+			}
+			CB_DATA = [c];
+		}
         
     
     #define LM_BOTTOM  
