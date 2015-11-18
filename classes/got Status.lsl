@@ -14,9 +14,10 @@
 #define StatusMethod$setSex 12			// (int)sex - 
 #define StatusMethod$outputStats 13		// NULL - Forces stats update (pc only)
 #define StatusMethod$loading 14			// (bool)loading - Sets loading flag
+#define StatusMethod$setDifficulty 15	// (int)difficulty, (bool)sendToCoop - between 0->5
 
 // Monster only
-#define StatusMethod$monster_dropAggro 100		// (key)target - Drops aggro
+#define StatusMethod$monster_dropAggro 100		// (key)target, (int)complete - Drops aggro. If complete is 0, it removes the player from aggro list. If 1 it preserves the aggro until the enemy is seen/deals damage again, like if 2 players are fighting and the tank gets out of LOS it will not remove the aggro next time it sees the tank. If 2 it will just reset the aggro number to 1.
 #define StatusMethod$monster_setFlag 101		// (int)flag
 #define StatusMethod$monster_remFlag 102		// (int)flag - Can be used to set a status flag on a monster
 #define StatusMethod$monster_takehit 103		// void - Triggers monster take hit visual
@@ -41,6 +42,7 @@
 #define StatusEvt$dead 4					// (int)dead
 #define StatusEvt$monster_targData 5		// contains same vars as StatusMethod$get returns
 #define StatusEvt$monster_init 6			// Sent once the config has loaded
+#define StatusEvt$difficulty 7				// [(int)difficulty]
 
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC
@@ -85,6 +87,7 @@
 #define Status$getTextureDesc(targ, pos, texture) runMethod(targ, "got Status", StatusMethod$getTextureDesc, [pos, texture], TNN)
 #define Status$setSex(sex) runMethod((string)LINK_ROOT, "got Status", StatusMethod$setSex, [sex], TNN)
 #define Status$loading(targ, loading) runMethod(targ, "got Status", StatusMethod$loading, [loading], TNN)
+#define Status$setDifficulty(targ, difficulty, sendToCoop) runMethod(targ, "got Status", StatusMethod$setDifficulty, [difficulty, sendToCoop], TNN)
 
 
 // Monster
@@ -93,3 +96,5 @@
 #define Status$hitfx(targ) runMethod(targ, "got Status", StatusMethod$monster_takehit, [], TNN)
 #define Status$monster_attemptTarget(targ, force) runMethod(targ, "got Status", StatusMethod$monster_attemptTarget, [force], TNN)
 #define Status$monster_aggro(targ, amt) runMethod((string)LINK_THIS, "got Status", StatusMethod$monster_aggro, [targ, amt], TNN)
+#define Status$dropAggroConditional(targ, condition) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ, condition], TNN)
+

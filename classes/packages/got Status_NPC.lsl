@@ -59,7 +59,8 @@ list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 dropAggro(key player, integer complete){
     integer pos = llListFindList(AGGRO, [player]);
     if(~pos){
-        if(complete)AGGRO = llDeleteSubList(AGGRO, pos-1, pos+AGGRO_STRIDE-2);
+		if(complete == 2)AGGRO = llListReplaceList(AGGRO, [llFrand(10)], pos-1, pos-1);
+        else if(complete)AGGRO = llDeleteSubList(AGGRO, pos-1, pos+AGGRO_STRIDE-2);
         else AGGRO = llListReplaceList(AGGRO, [llList2Integer(AGGRO, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
     }
     aggro("",0);

@@ -45,6 +45,8 @@ float PAIN = 0;
 
 list OUTPUT_STATUS_TO; 
 
+integer DIFFICULTY = 1;	// 
+#define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.75)+DIFFICULTY*2)*0.1)-0.3)
 
 
 
@@ -80,12 +82,15 @@ addDurability(float amount, string spellName, integer flags){
     if(STATUS_FLAGS&StatusFlag$dead)return;
     float pre = DURABILITY;
     amount*=spdmtm(spellName);
+	
+	
 	if(flags&SMAFlag$IS_PERCENTAGE)
 		amount*=maxDurability();
 	
     if(amount<0){
          if(STATUS_FLAGS&StatusFlag$pained)amount*=1.5;
          amount*=fxModDmgTaken;
+		 amount*=difMod();
     }
     DURABILITY += amount;
     if(DURABILITY<=0){
@@ -463,6 +468,16 @@ default
 			llOwnerSay("@setdebug_RenderResolutionDivisor:"+(string)divisor+"=force");
 			outputStats();
 		}
+	}
+	else if(METHOD == StatusMethod$setDifficulty){
+		DIFFICULTY = (integer)method_arg(0);
+		if(DIFFICULTY < 0)DIFFICULTY = 0;
+		if(DIFFICULTY > 5)DIFFICULTY = 5;
+		if((integer)method_arg(1)){Status$setDifficulty(coop_player, DIFFICULTY, FALSE);}
+		raiseEvent(StatusEvt$difficulty, mkarr([DIFFICULTY]));
+		list names = ["Casual", "Normal", "Hard", "Very Hard", "Brutal", "Bukakke"];
+		
+		Alert$freetext((string)LINK_THIS, "Difficulty set to "+llList2String(names, DIFFICULTY), TRUE, TRUE);
 	}
 
     
