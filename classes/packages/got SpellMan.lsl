@@ -282,7 +282,7 @@ integer castSpell(integer nr){
     
     // Grab the casttime and multiply it
     float casttime = spellCasttime(data);
-    if(nr == -1)casttime = 1.5*ctm;
+    if(nr == -1)casttime = 1*ctm;
     
 	
 	// Set the current spell being cast
@@ -348,7 +348,7 @@ spellComplete(){
             
     // Set cooldown
     
-    if(SPELL_CASTED == -1)cooldown = 10*cdm;
+    if(SPELL_CASTED == -1)cooldown = 30*cdm;
     else Status$addMana(-spellCost(data), "", false);
     
 	
