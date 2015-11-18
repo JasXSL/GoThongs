@@ -102,6 +102,7 @@ addEffect(key caster, integer stacks, string package, integer pid){
         else if(t == fx$FORCE_SIT){
             string out = "@sit:"+llList2String(fx, 1)+"=force";
             if(llList2Integer(fx, 2))out+=",unsit=n";
+
             llOwnerSay(out);
         }
     }

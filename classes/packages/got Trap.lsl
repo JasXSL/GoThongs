@@ -127,7 +127,7 @@ default
                 multiTimer([TIMER_CD_RESET, "", cooldown, FALSE]);
             }
 			float dur = (float)method_arg(1);
-            FX$send(method_arg(0), llGetKey(), "[1,0,0,0,["+(string)dur+",65,\"_Q\",[[13,16],[31,"+(string)llGetLinkKey(P_SEAT)+",0]],[],[],[],0,0,0]]");
+            FX$send(method_arg(0), llGetKey(), "[1,0,0,0,["+(string)dur+",65,\"_Q\",[[13,16],[31,"+(string)llGetLinkKey(P_SEAT)+",1]],[],[],[],0,0,0]]");
             raiseEvent(TrapEvent$triggered, "");
         }
     }

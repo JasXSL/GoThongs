@@ -28,7 +28,8 @@ key look_override = ""; // Key to override looking at from current target
 
 // Conf
 float speed = 1;        // Movement speed, lower is faster
-float hitbox = 2;       // Range of melee attacks
+float hitbox = 3;       // Range of melee attacks
+#define HITBOX_DEFAULT 1.5		// if hitbox is this value, use default
 float atkspeed = 1;     // Time between melee attacks
 float wander;           // Range to roam
 
@@ -108,6 +109,14 @@ toggleMove(integer on){
     }
 }
 
+#define updateLookAt() \
+	if(~RUNTIME_FLAGS&Monster$RF_NOROT || FXFLAGS&fx$F_STUNNED){ \
+		vector pp = prPos(chasetarg); \
+		vector gpos = llGetPos(); \
+		if(look_override)pp = prPos(look_override); \
+		llLookAt(<pp.x, pp.y, gpos.z>,1,1); \
+	}\
+
 
 timerEvent(string id, string data){
     if(id == TIMER_FRAME){
@@ -171,35 +180,31 @@ timerEvent(string id, string data){
                 return;
             }
             
-            // Target reached
-            if(llVecDist(ppos, llGetPos())<=hitbox){
-                if(~BFL&BFL_IN_RANGE){
+            // Close enough to attack
+			if(llVecDist(ppos, llGetPos())<=hitbox){
+				if(~BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$inRange, chasetarg);
-                    toggleMove(FALSE);
-                    
                     if(~BFL&BFL_ATTACK_CD && ~RUNTIME_FLAGS&Monster$RF_PACIFIED){
                         preAtk();
                     }
                 }
                 BFL = BFL|BFL_IN_RANGE;
-                
-                
-                vector gpos = llGetPos();
-                if(~RUNTIME_FLAGS&Monster$RF_NOROT || FXFLAGS&fx$F_STUNNED){
-                    if(look_override)ppos = prPos(look_override);
-                    llLookAt(<ppos.x, ppos.y, gpos.z>,1,1);
-                }
-                
-                
-                
-            }
-            // NOt in range
-            else{
-                if(BFL&BFL_IN_RANGE){
+			}else{
+				if(BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$lostRange, chasetarg);
                     BFL = BFL&~BFL_IN_RANGE;
                 }
-                
+			}
+			
+			// Stop moving at half the hitbox
+            if(llVecDist(ppos, llGetPos())<=hitbox/2){
+                updateLookAt();
+				toggleMove(FALSE);
+            }
+            // Might be in range but should move closer
+            else{
+				
+			
                 vector add = <0,0,1>;
                 if(llGetAgentInfo(chasetarg)&AGENT_CROUCHING)add = ZERO_VECTOR;
                 
@@ -270,12 +275,13 @@ onEvt(string script, integer evt, string data){
 
             RUNTIME_FLAGS = llList2Integer(conf, 0);
             if(llList2Float(conf,1)>0)speed = llList2Float(conf, 1);
-            hitbox = llList2Float(conf, 2);
+			if(llList2Float(conf, 2) != HITBOX_DEFAULT)
+				hitbox = llList2Float(conf, 2);
             atkspeed = llList2Float(conf, 3);
             if(llList2Float(conf,5)!=0)wander = llFabs(llList2Float(conf, 5));
             
             if(speed<=0)speed = 1;
-            if(hitbox<=0)hitbox = 2;
+            if(hitbox<=0)hitbox = 3;
             //if(atkspeed<.5)atkspeed = .5;
 			
             BFL = BFL|BFL_INITIALIZED; 
@@ -383,7 +389,10 @@ default
             llStopLookAt();
         }
     }
-    else if(METHOD == MonsterMethod$lookOverride)look_override = method_arg(0);
+    else if(METHOD == MonsterMethod$lookOverride){
+		look_override = method_arg(0);
+		updateLookAt();
+	}
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"   
 }
