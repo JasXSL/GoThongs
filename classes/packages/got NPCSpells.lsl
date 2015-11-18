@@ -18,6 +18,9 @@ integer BFL;
 #define BFL_CASTING 1
 #define BFL_INTERRUPTED 2
 #define BFL_DEAD 4
+#define BFL_RECENT_CAST 0x8			// Used to limit spells from casting too often
+
+float spells_per_sec_limit;			// Max spells per sec that can be cast
 
 // Effects
 integer STATUS_FLAGS = 0; 
@@ -149,18 +152,34 @@ endCast(integer success){
     Monster$lookOverride("");
 }
 
-startCast(integer spid, key targ){
+startCast(integer spid, key targ, integer hasStatus){
+	if(BFL&BFL_RECENT_CAST)return;
+	if(targ != aggro_target && !hasStatus){
+        Status$get(targ, "SPL;"+(string)spid);
+		return;
+    }
     if(BFL&BFL_CASTING)return;
+	
+	if(spells_per_sec_limit){
+		BFL = BFL|BFL_RECENT_CAST;
+		multiTimer(["SPS", "", spells_per_sec_limit, FALSE]);
+	}
+	
     spell_targ = targ;
     list d = llJson2List(llList2String(CACHE, spid));
     integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
     float casttime = llList2Float(d, NPCS$SPELL_CASTTIME)*fxCTM;
     float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
     
-    if(flags&NPCS$FLAG_LOOK_OVERRIDE)
+    if(flags&NPCS$FLAG_LOOK_OVERRIDE){
         Monster$lookOverride(targ);
+		if(casttime<=0)multiTimer(["LAT", "", 1, FALSE]); // Stop lookat
+	}
     
-    if(casttime <=0)raiseEvent(NPCSpellsEvt$SPELL_CAST_FINISH, mkarr(([spid, spell_targ])));
+    if(casttime <=0){
+		raiseEvent(NPCSpellsEvt$SPELL_CAST_FINISH, mkarr(([spid, spell_targ])));
+		
+	}
     else{
         BFL = BFL&~BFL_INTERRUPTED;
         raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ])));
@@ -199,19 +218,20 @@ timerEvent(string id, string data){
         if(rem <= 0)return;
         multiTimer(["FDE", rem, .05, FALSE]);
     }
+	else if(id == "LAT")Monster$lookOverride("");
+	else if(id == "SPS")BFL = BFL&~BFL_RECENT_CAST;
     else if(id == "IR")BFL = BFL&~BFL_INTERRUPTED;
     else if(id == "F"){
-        if(aggro_target == "")return;
-        if(BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED))return;
-        if(FXFLAGS & fx$NOCAST)return;
+        if(aggro_target == ""){return;}
+        if(BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST)){ return;}
+        if(FXFLAGS & fx$NOCAST){return;}
         
-        
-        
+
         list r;
         integer i;
         for(i=0; i<llGetListLength(CACHE); i++)r+=[i, llList2String(CACHE, i)];
         r = llListRandomize(r, 2);
-        
+		
         for(i=0; i<llGetListLength(r); i+=2){
             integer spid = llList2Integer(r, i);
             if(llListFindList(cooldowns, [spid]) == -1){
@@ -223,7 +243,7 @@ timerEvent(string id, string data){
                 
                 list p = [aggro_target];
                 if(flags&NPCS$FLAG_CAST_AT_RANDOM)p = llListRandomize(PLAYERS, 1);
-                
+
                 while(llGetListLength(p)){
                     key targ = llList2Key(p, 0);
                     p = llDeleteSubList(p, 0, 0);
@@ -231,24 +251,23 @@ timerEvent(string id, string data){
                     float dist = llVecDist(llGetPos(), ppos);
                     list ray = llCastRay(llGetPos()+<0,0,.5>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
                     if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0){
-                        if(targ != aggro_target){
-                            Status$get(targ, "SPL;"+llList2String(r, i));
-                            return;
-                        }
-                        
                         if(flags&NPCS$FLAG_REQUEST_CASTSTART){
                             // Request start cast
                             LocalConf$checkCastSpell(llList2Integer(r, i), targ, "SPELL;"+llList2String(r,i)+";"+(string)targ);
-                            return;
                         }
-                        else startCast(spid, targ);
-                        return;
-                    }
+                        else{
+							startCast(spid, targ, FALSE);
+							return;
+						}
+                        if(~flags&(NPCS$ALLOW_MULTIPLE_CHECKS|NPCS$FLAG_REQUEST_CASTSTART)){
+							return;
+						}
+                    }//else qd(llGetDisplayName(targ)+", not allowed: Range: "+(string)range+" dist "+(string)dist+" Minrange: "+(string)minrange+" Ray: "+llList2String(ray,-1));
                 }
             }
         }
         
-        multiTimer(["F", "", 1+llFrand(4), TRUE]);
+        multiTimer(["F", "", 2, TRUE]);
     }
     else if(llGetSubString(id, 0, 2) == "CD_"){
         integer id = (integer)llGetSubString(id, 3, -1);
@@ -296,13 +315,13 @@ default
     if(method$isCallback){
         if(llGetSubString(CB, 0, 5) == "SPELL;" && SENDER_SCRIPT == "got LocalConf"){
             list split = llParseString2List(CB, [";"], []);
-            startCast(llList2Integer(split, 1), llList2String(split, 2));
+            startCast(llList2Integer(split, 1), llList2String(split, 2), FALSE);
         }
         if(llGetSubString(CB, 0, 3) == "SPL;" && SENDER_SCRIPT == "got Status"){
             integer f = (integer)method_arg(0);
             if(f&StatusFlags$NON_VIABLE)return;
             list split = llParseString2List(CB, [";"], []);
-            startCast(llList2Integer(split, 1), llGetOwnerKey(id));
+            startCast(llList2Integer(split, 1), llGetOwnerKey(id), TRUE);
         }
         return;
     }
@@ -323,6 +342,9 @@ default
 		else if(METHOD == NPCSpellsMethod$setOutputStatusTo){
 			OUTPUT_STATUS_TO = llJson2List(PARAMS);
 			updateText();
+		}
+		else if(METHOD == NPCSpellsMethod$setConf){
+			spells_per_sec_limit = (float)method_arg(0);
 		}
     }
 	
