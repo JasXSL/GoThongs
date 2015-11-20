@@ -41,6 +41,7 @@
 	#define BSUD$FLAGS 0
 	#define BSUD$BROWSER 1				// (arr)[pos, scale]
 	#define BSUD$GOLD 2
+	#define BSUD$LANG 3
 
 // It needs a separate frame for spells
 #define BridgeSpells$name "_BSS"

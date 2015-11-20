@@ -235,6 +235,7 @@ onEvt(string script, integer evt, string data){
 					conf = llListReplaceList(conf, llList2List(d,1,1), llList2Integer(d,0), llList2Integer(d,0));
 				else if(llList2String(d, 0) == "ID"){
 					CUSTOM_ID = llDeleteSubList(d, 0, 0);
+					//qd("Creating ID event");
 					Level$idEvent(LevelEvt$idSpawned, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)));
 				}
 			)

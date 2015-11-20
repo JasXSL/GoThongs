@@ -113,7 +113,8 @@ default
         raiseEvent(evt$SCRIPT_INIT, "");
         if(llGetAttached())
             llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
-			
+		
+		RLV$clearCamera((string)LINK_THIS);
 		savePlayers();
     }
     

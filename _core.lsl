@@ -54,6 +54,7 @@
 #include "./classes/got LevelAux.lsl"
 #include "./classes/got Devtool.lsl"
 #include "./classes/got LevelSpawner.lsl"
+#include "./classes/got Language.lsl"
 
 
 #include "got/classes/#ROOT.lsl"
