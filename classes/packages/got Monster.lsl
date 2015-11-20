@@ -301,7 +301,7 @@ onEvt(string script, integer evt, string data){
             vector pos = llList2Vector(odata,0);
             vector dpos = llList2Vector(ifdata, 0);
             
-            if(~RUNTIME_FLAGS&Monster$RF_NOROT)
+            if(~RUNTIME_FLAGS&Monster$RF_NOROT && chasetarg != "")
                 llLookAt(<dpos.x, dpos.y, pos.z>, 1,1);
             
             float dist = llVecDist(pos, dpos);

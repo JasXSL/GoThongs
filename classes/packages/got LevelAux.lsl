@@ -122,7 +122,10 @@ default
         llOwnerSay("Wiping all data");
         clearDB2()
     }
-
+	else if(METHOD == LevelAuxMethod$getOffset){
+		vector offs = (vector)method_arg(0);
+		CB_DATA = [offs-llGetRootPosition()];
+	}
     
     // Save level data
     else if(METHOD == LevelAuxMethod$save){

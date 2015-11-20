@@ -8,6 +8,7 @@
 #define LevelAuxMethod$setData 6	// (str)table, (arr)index, (arr)value - Changes shared data manually
 #define LevelAuxMethod$testSpawn 10	// (int)is_HUD, (int)storage_id, (int)live - Spawns an item by ID.
 #define LevelAuxMethod$assetVar 11	// (int)is_HUD, (int)ID, (int)index, (var)val - Sets item data.
+#define LevelAuxMethod$getOffset 12 // (vec)global_pos - Returns local pos
 
 #define LevelAux$save(add, group) runOmniMethod("got LevelAux", LevelAuxMethod$save, [add, group], TNN)
 #define LevelAux$purge() runOmniMethod("got LevelAux", LevelAuxMethod$purge, [], TNN)
@@ -17,7 +18,7 @@
 #define LevelAux$list(isHUD) runOmniMethod("got LevelAux", LevelAuxMethod$list, [isHUD], TNN)
 #define LevelAux$remove(isHUD, id) runOmniMethod("got LevelAux", LevelAuxMethod$remove, [isHUD, id], TNN)
 #define LevelAux$assetVar(isHUD, id, index, val) runOmniMethod("got LevelAux", LevelAuxMethod$assetVar, [isHUD, id, index, val], TNN)
-
+#define LevelAux$getOffset(pos, cb) runOmniMethod("got LevelAux", LevelAuxMethod$getOffset, [pos], cb)
 
 
 

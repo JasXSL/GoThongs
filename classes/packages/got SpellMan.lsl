@@ -202,7 +202,7 @@ integer castSpell(integer nr){
         return FALSE;
     }
 	// Cannot cast right now because of FX silence
-    if(fxflags&fx$NOCAST){
+    if(fxflags&fx$NOCAST || llGetAgentInfo(llGetOwner())&AGENT_SITTING){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
