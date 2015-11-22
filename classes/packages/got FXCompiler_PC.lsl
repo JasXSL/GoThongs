@@ -67,6 +67,9 @@ runEffect(key caster, integer stacks, string package, integer pid){
         else if(t == fx$ROT_TOWARDS){
 			RLV$turnTowards(v);
 		}
+		else if(t == fx$PARTICLES){
+			ThongMan$particles((float)v, llList2Integer(fx,2), llList2String(fx,3));
+		}
     }
     
     

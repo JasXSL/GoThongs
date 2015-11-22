@@ -54,6 +54,9 @@
 	#define fx$FORCE_SIT 31						// (key)object, (bool)allow_unsit 
 	#define fx$CRIT_MULTIPLIER 32				// (float)amt - Increases chance of doing double damage
 	#define fx$ROT_TOWARDS 33					// (vec)pos - PC ONLY, Rotates the player towards a global position
+	#define fx$PARTICLES 34						// (float)duration, (int)prim, (arr)particles - PC_ONLY - See ThongMan$particles
+	
+	
 	
 // conditions
 	// Built in
