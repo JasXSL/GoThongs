@@ -18,7 +18,6 @@
 #define ThongMan$dead(dead) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$dead, [dead], TNN)
 #define ThongMan$loopSound(sound, vol) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$loopSound, [sound, vol], TNN)
 
-
 #define ThongManEvt$hit 1					// [(vec)color]
 #define ThongManEvt$ini 2					// [(int)is_enhanced]
 #define ThongManEvt$getVisuals 3			// void - Get visuals from helper of custom thong

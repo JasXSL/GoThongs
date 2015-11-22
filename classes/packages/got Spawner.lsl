@@ -78,7 +78,7 @@ default
     if(method$byOwner){
         if(METHOD == SpawnerMethod$spawn){
             string object = method_arg(0);
-            if(llGetInventoryType(object) != INVENTORY_OBJECT)return;
+            if(llGetInventoryType(object) != INVENTORY_OBJECT){qd("Missing asset: "+object);return;}
             vector pos = (vector)method_arg(1);
             rotation rot = (rotation)method_arg(2);
 			string desc = (string)method_arg(3);		// DO something with this

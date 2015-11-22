@@ -142,12 +142,11 @@ timerEvent(string id, string data){
         
         
         else if(STATE == STATE_SEEKING){
-            
             if(RUNTIME_FLAGS&Monster$RF_IMMOBILE || FXFLAGS&fx$F_ROOTED)return;
             
             vector gpos = llGetPos();
             if(BFL & BFL_PLAYERS_NEARBY && llVecDist(<lastseen.x, lastseen.y, 0>, <gpos.x, gpos.y, 0>)>=hitbox/2){
-                list ray = llCastRay(llGetPos(), lastseen, []);
+                list ray = llCastRay(llGetPos()+<0,0,1>, lastseen, []);
                 
                 if(llList2Integer(ray, -1)==0){
                     moveInDir(llVecNorm(lastseen-llGetPos()));
@@ -167,6 +166,7 @@ timerEvent(string id, string data){
         
         else if(STATE == STATE_CHASING){
             BFL = BFL|BFL_CHASING;
+			
             vector ppos = prPos(chasetarg);
             
             // Player left sim
@@ -213,17 +213,7 @@ timerEvent(string id, string data){
                 if(llList2Integer(ray, -1)>0){
                     if(RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO)return;
                     string desc = prDesc(llList2Key(ray, 0));
-                    if(~llSubStringIndex(desc, "$M$")){
-                        BFL=BFL|BFL_MANEUVERING;
-                        //vector vrot = llRot2Euler(prRot(chasetarg));
-                        //vector left = llRot2Left(llEuler2Rot(<0,0,vrot.z>))*(hitbox*2);
-                        vector left = llVecNorm(llGetPos()-ppos)*llEuler2Rot(<0,0,PI_BY_TWO>);
-                        if(llFrand(1)<.5)left=-left;
-                        lastseen = ppos+left;
-                    }else{
-                        Status$dropAggro(chasetarg);
-                    }
-                    
+                    Status$dropAggro(chasetarg);                
                     STATE = STATE_SEEKING;
                     // dropAggro()
                     //raiseEvent(MonsterEvt$lostTarget, chasetarg);
@@ -323,10 +313,13 @@ onEvt(string script, integer evt, string data){
             if(jVal(data, [0]) != ""){
                 chasetarg = jVal(data, [0]);
                 STATE = STATE_CHASING;
-            }else{
+            }
+			/* You are probably seeking
+			else{
                 STATE = STATE_IDLE;
                 toggleMove(FALSE);
             }
+			*/
         }
     }
     

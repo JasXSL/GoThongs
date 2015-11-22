@@ -182,9 +182,9 @@ default
 			for(i=0; i<llGetListLength(PLAYERS); i++){
 				string msg = "secondlife:///app/agent/"+(string)method_arg(0)+"/about has reached the level exit.";
 				if(llListFindList(PLAYERS_COMPLETED, [llList2String(PLAYERS, i)]) == -1){
-					msg = " Waiting for you to do the same.";
+					msg += " Waiting for you to do the same.";
 				}else{
-					msg = " Waiting for coop player.";
+					msg += " Waiting for coop player.";
 				}
 				Alert$freetext(llList2Key(PLAYERS, i), msg, TRUE, TRUE);
 			}
