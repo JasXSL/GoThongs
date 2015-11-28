@@ -9,6 +9,7 @@
 #define BridgeMethod$completeCell 9		// *(int)deaths, (int)monsters_killed, (int)continue - Marks a cell for completed. If continue is set, it will load the next level. Needs to be sent from the current cell
 #define BridgeMethod$setQuestData 10	// *(var)data - Lets you store data (max-ish 1000 bytes due to SL max message length) for your current quest if you want to add parts where choices you make matter. Will be wiped whenever a quest is completed.
 #define BridgeMethod$continueQuest 11	// *(int)cell = -1 - Spawn a cell from your current quest, provided you have completed the previous steps.
+#define BridgeMethod$difficulty 12		// (int)difficulty - Sets difficulty
 
 #define Bridge$refreshThong(phys) runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$refreshThong, [phys], TNN)
 #define Bridge$getToken() runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$getToken, [], TNN)
@@ -22,6 +23,7 @@
 #define Bridge$setQuestData(targ, data) runMethod(targ, "got Bridge", BridgeMethod$setQuestData, [data], TNN)
 #define Bridge$continueQuest() runMethod((string)LINK_THIS, "got Bridge", BridgeMethod$continueQuest, [-1], TNN)
 #define Bridge$setQuestStage(stage) runMethod((string)LINK_THIS, "got Bridge", BridgeMethod$continueQuest, [stage], TNN)
+#define Bridge$setDifficulty(difficulty) runMethod((string)LINK_THIS, "got Bridge", BridgeMethod$difficulty, [difficulty], TNN)
 
 
 

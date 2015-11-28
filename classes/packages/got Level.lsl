@@ -41,7 +41,6 @@ onEvt(string script, integer evt, string data){
 
 #define runOnPlayers(pkey, code) {integer i; for(i=0; i<llGetListLength(PLAYERS); i++){key pkey = llList2Key(PLAYERS, i); code}}
 
-integer deaths;
 integer pin;
 default
 {
@@ -139,10 +138,6 @@ default
         raiseEvent(LevelEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
     }
     
-    else if(METHOD == LevelMethod$died){
-        deaths++;
-    }
-    
     else if(METHOD == LevelMethod$idEvent){
         list out = [id, method_arg(1), method_arg(2)];
         integer evt = (integer)method_arg(0);
@@ -180,7 +175,7 @@ default
         }else{
 			integer i;
 			for(i=0; i<llGetListLength(PLAYERS); i++){
-				string msg = "secondlife:///app/agent/"+(string)method_arg(0)+"/about has reached the level exit.";
+				string msg = "Someone has reached the level exit.";
 				if(llListFindList(PLAYERS_COMPLETED, [llList2String(PLAYERS, i)]) == -1){
 					msg += " Waiting for you to do the same.";
 				}else{

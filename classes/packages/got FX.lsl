@@ -21,17 +21,15 @@ if(script != cls$name){
 		if(evt == FXCEvt$update){
 			dodge_chance = (float)jVal(data, [4]);
 		}
-		return;
 	}
 	else if(script == "got Bridge"){
         if(evt == BridgeEvt$data_change){
-			list BONUS_STATS = llJson2List(jVal(data, [1]));
+			list BONUS_STATS = llJson2List(j(data, 0));
 			dodge_add = 0;
 			list_shift_each(BONUS_STATS, val, 
 				if((integer)val == STAT_DODGE)dodge_add+=.05;
 			)
 		}
-		return;
    }
 	
 	list packages = [];
@@ -423,6 +421,7 @@ default
 			if(amount<1)amount = -1;
 			integer is_dispel = (integer)method_arg(8);
 			
+
             if((string)sender == llGetOwner())sender = "s";
             
             #ifdef FXConf$useShared
@@ -439,9 +438,9 @@ default
                 if(tag)tags = llJson2List(jVal(p, [PACKAGE_TAGS]));
                     
                 if(
-                    (name=="" || name == n) &&
+                    (name=="" || name==JSON_INVALID || name == n) &&
                     (!tag || llListFindList(tags, [tag])) && 
-                    (sender=="" || (sender == llList2String(PACKAGES, i+1) || (llGetSubString(sender,0,0) == "!" && llList2String(PACKAGES, i+1) != llGetSubString(sender,1,-1)))) &&
+                    (sender=="" || sender == JSON_INVALID || (sender == llList2String(PACKAGES, i+1) || (llGetSubString(sender,0,0) == "!" && llList2String(PACKAGES, i+1) != llGetSubString(sender,1,-1)))) &&
                     (!pid || llList2Integer(PACKAGES, i) == pid) &&
 					(!flags || (integer)jVal(p, [PACKAGE_FLAGS])&flags)
                 ){

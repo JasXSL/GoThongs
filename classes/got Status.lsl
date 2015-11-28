@@ -23,8 +23,8 @@
 #define StatusMethod$monster_takehit 103		// void - Triggers monster take hit visual
 #define StatusMethod$monster_aggro 104			// (key)targ, (float)amt
 #define StatusMethod$monster_attemptTarget 105	// (int)force - Same effect as clicking the monster
-
-
+#define StatusMethod$monster_taunt 106			// (key)targ - Resets everyone but target's aggro 
+#define StatusMethod$monster_aggroed 107		// (key)targ, (float)range - Sent by monsters when they aggro a player naturally. Aggros everything in range.
 
 #define StatusShared$dur "a"		// [(float)current, (float)max]
 #define StatusShared$mana "b"		// [(float)current, (float)max]
@@ -97,4 +97,5 @@
 #define Status$monster_attemptTarget(targ, force) runMethod(targ, "got Status", StatusMethod$monster_attemptTarget, [force], TNN)
 #define Status$monster_aggro(targ, amt) runMethod((string)LINK_THIS, "got Status", StatusMethod$monster_aggro, [targ, amt], TNN)
 #define Status$dropAggroConditional(targ, condition) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ, condition], TNN)
-
+#define Status$monster_taunt(targ) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_taunt, [targ], TNN)
+#define Status$monster_aggroed(player, range) runLimitMethod(llGetOwner(), "got Status", StatusMethod$monster_aggroed, [player, range], TNN, range)

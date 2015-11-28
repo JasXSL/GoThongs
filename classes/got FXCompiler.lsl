@@ -29,7 +29,7 @@
 		} \
     } \
 	else if(t == fx$DEBUG){ \
-        qd(llList2String(fx,1)); \
+        qd("Debug FX: "+llList2String(fx,1)); \
 	} \
 	else if(t == fx$REM_BY_NAME) \
         FX$rem(llList2Integer(fx,2), v, "", "", 0, FALSE, 0,0,0); \
@@ -43,9 +43,12 @@
         integer detrimental = (integer)v; \
         if(detrimental)detrimental = PF_DETRIMENTAL; \
         integer maxnr = llList2Integer(fx, 2); \
-        FX$rem(FALSE, "", "", "", 0, FALSE, detrimental, TRUE, maxnr); \
-    } 
-		
+		FX$rem(FALSE, "", "", "", 0, FALSE, detrimental, TRUE, maxnr); \
+    } \
+	else if(t == fx$REM){ \
+		FX$rem(llList2String(fx, 1), llList2String(fx, 2), llList2String(fx, 3), llList2String(fx, 4), llList2String(fx, 5), llList2String(fx, 6), llList2String(fx, 7), llList2String(fx, 8), llList2String(fx, 9)); \
+	} 
+	
 		
 
 // These are ADD tasks that are shared

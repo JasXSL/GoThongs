@@ -28,7 +28,7 @@
 
 // Include all the project files
 #include "./_lib_fx.lsl"
-
+#include "./_lib_fx_macros.lsl"
 #include "./classes/got Bridge.lsl"
 #include "./classes/got ThongMan.lsl"
 #include "./classes/got FX.lsl"
@@ -56,6 +56,8 @@
 #include "./classes/got LevelSpawner.lsl"
 #include "./classes/got Language.lsl"
 
+// Helper function to run code on all players. Requires players to be stored in a global list named PLAYERS
+#define runOnPlayers(pkey, code) {integer i; for(i=0; i<llGetListLength(PLAYERS); i++){key pkey = llList2Key(PLAYERS, i); code}}
 
 #include "got/classes/#ROOT.lsl"
 

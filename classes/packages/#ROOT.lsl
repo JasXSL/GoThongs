@@ -212,11 +212,15 @@ if(chan == 3){ \
 	} \
 	else if(message == "wipeCells"){ \
 		Portal$killAll(); \
+		Level$despawn(); \
 	} \
 	else if(message == "continueQuest"){ \
 		AMS$(ARoot$continueQuest); \
 		Portal$killAll(); \
 		Bridge$continueQuest(); \
+	} \
+	else if(llGetSubString(message, 0,10) =="difficulty:"){ \
+		Status$setDifficulty((string)LINK_THIS, (integer)llGetSubString(message,11,-1), TRUE); \
 	} \
     else  \
         SpellMan$hotkey(message); \

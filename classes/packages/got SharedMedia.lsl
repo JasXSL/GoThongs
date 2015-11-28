@@ -141,10 +141,11 @@ default
     
     if(method$internal){
         if(METHOD == SharedMediaMethod$toggleBrowser){
-            if(method_arg(0) == ""){
+			string a = method_arg(0);
+            if(a == "" || a == "1" || a =="0"){
                 // Toggle
                 list out;
-                if(BFL&BFL_BROWSER_SHOWN){
+                if(BFL&BFL_BROWSER_SHOWN && a != "0"){
                     checkPos();
                     BFL = BFL&~BFL_BROWSER_SHOWN;
                     out+= [
@@ -170,7 +171,7 @@ default
             }else{
                 // Update the URL
                 llSetLinkMedia(P_BROWSER, 1, [
-                    PRIM_MEDIA_CURRENT_URL, SITE_URL+"?token="+method_arg(0)
+                    PRIM_MEDIA_CURRENT_URL, SITE_URL+"?token="+a
                 ]);
             }
         }

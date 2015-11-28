@@ -16,10 +16,12 @@
 // Bridge
 #define ABridge$loadingData 0
 #define ABridge$thongChangeFail 1
+#define ABridge$firstSetup 2
 
 #define ABridge [ \
 "Loading thong data...", \
-"Thong will be changed once you complete your current scene." \
+"Thong will be changed once you complete your current scene.", \
+"Enable prim media to create your first thong! Click the GoThongs button to toggle the browser!" \
 ]
 
 

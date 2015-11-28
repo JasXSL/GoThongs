@@ -153,7 +153,7 @@ endCast(integer success){
 }
 
 startCast(integer spid, key targ, integer hasStatus){
-	if(BFL&BFL_RECENT_CAST)return;
+	if(BFL&BFL_RECENT_CAST || RUNTIME_FLAGS&Monster$RF_NO_SPELLS)return;
 	if(targ != aggro_target && !hasStatus){
         Status$get(targ, "SPL;"+(string)spid);
 		return;
@@ -223,7 +223,7 @@ timerEvent(string id, string data){
     else if(id == "IR")BFL = BFL&~BFL_INTERRUPTED;
     else if(id == "F"){
         if(aggro_target == ""){return;}
-        if(BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST)){ return;}
+        if(BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST) || RUNTIME_FLAGS&Monster$RF_NO_SPELLS){ return;}
         if(FXFLAGS & fx$NOCAST){return;}
         
 

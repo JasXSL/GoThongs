@@ -93,6 +93,7 @@ addHP(float amount, key attacker, string spellName, integer flags){
 		amount*=maxHP;
     
     if(amount<0){
+		if(RUNTIME_FLAGS&Monster$RF_INVUL)return;
         amount*=fxModDmgTaken;
         if(attacker){
             aggro(attacker, llFabs(amount));
@@ -101,6 +102,7 @@ addHP(float amount, key attacker, string spellName, integer flags){
     
     HP += amount;
     if(HP<=0){
+		list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
 		Level$idEvent(LevelEvt$idDied, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)));
 	
         HP = 0;
@@ -114,7 +116,7 @@ addHP(float amount, key attacker, string spellName, integer flags){
 		anim("attack", FALSE);
         BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
 		llSetObjectDesc("");			// Prevent targeting
-        list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
+        
         
         
         if(deathsound)llTriggerSound(deathsound, 1);
@@ -186,8 +188,13 @@ aggro(key player, float ag){
             }
         }else if(ag>0)AGGRO += [ag, player, 0];
         
-        if(AGGRO != [] && !pre)
-            if(aggrosound)llTriggerSound(aggrosound, 1);
+		// First time aggoed
+        if(AGGRO != [] && !pre){
+            if(aggrosound){
+				llTriggerSound(aggrosound, 1);
+				Status$monster_aggroed(player, 10);
+			}
+		}
     }
     AGGRO = llListSort(AGGRO, AGGRO_STRIDE, FALSE);
     
@@ -206,7 +213,7 @@ aggro(key player, float ag){
         if(at == ""){
             if(dropaggrosound)
                 llTriggerSound(dropaggrosound, 1);
-        }else Root$targetMe(at, icon, FALSE);
+        }else if(~RUNTIME_FLAGS&Monster$RF_NO_TARGET) Root$targetMe(at, icon, FALSE);
         raiseEvent(StatusEvt$monster_gotTarget, mkarr([aggroTarg]));
     }
 }
@@ -268,7 +275,13 @@ onEvt(string script, integer evt, string data){
 		if(aggro_range)multiTimer(["A", "", 1, TRUE]);
     }else if(script == "got Monster"){
 	    if(evt == MonsterEvt$runtimeFlagsChanged){
-            RUNTIME_FLAGS = (integer)data;
+            integer pre = RUNTIME_FLAGS;
+			RUNTIME_FLAGS = (integer)data;
+			
+			if(pre&Monster$RF_NO_TARGET != RUNTIME_FLAGS&Monster$RF_NO_TARGET && RUNTIME_FLAGS&Monster$RF_NO_TARGET){
+				// Can no longer be targeted
+				list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
+			}
         }else if(evt == MonsterEvt$attack){
             key targ = jVal(data, [0]);
             float crit = 1;
@@ -337,7 +350,7 @@ default
     }
     
     touch_start(integer total){
-		if(!initialized())return;
+		if(!initialized() || RUNTIME_FLAGS&Monster$RF_NO_TARGET)return;
         Root$targetMe(llDetectedKey(0), icon, TRUE);
     }
     
@@ -469,12 +482,32 @@ default
     else if(METHOD == StatusMethod$monster_dropAggro)
         dropAggro(method_arg(0), (integer)method_arg(1));
     // This person wants to target me
-	else if(METHOD == StatusMethod$monster_attemptTarget)
+	else if(METHOD == StatusMethod$monster_attemptTarget && ~RUNTIME_FLAGS&Monster$RF_NO_TARGET)
         Root$targetMe(id, icon, (integer)method_arg(0));
     // Add aggro
 	else if(METHOD == StatusMethod$monster_aggro)
         aggro(method_arg(0), (float)method_arg(1));
-        
+    else if(METHOD == StatusMethod$monster_taunt){
+		key t = method_arg(0);
+		integer i;
+		for(i=0; i<llGetListLength(AGGRO); i+=AGGRO_STRIDE){
+			if(llList2Key(AGGRO, i+1) != t){
+				AGGRO = llListReplaceList(AGGRO, [1], i, i);
+			}
+		}
+		aggro("",0);
+	}   
+	else if(METHOD == StatusMethod$monster_aggroed){
+		key p = method_arg(0);
+		vector pp = prPos(p);
+		float r = (float)method_arg(1);
+		if(llVecDist(llGetPos(), pp) > r)return;
+		list ray = llCastRay(llGetPos()+<0,0,1>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
+		if(llList2Integer(ray, -1) == 0){
+			aggro(p,10);
+		}
+	}
+	
     // Public code can be put here
 
     // End link message code

@@ -45,7 +45,8 @@ runEffect(key caster, integer stacks, string package, integer pid){
             Status$monster_aggro(llGetOwnerKey(caster), (float)v);
         else if(t == fx$HITFX)
             Status$hitfx((string)LINK_ROOT);
-        
+        else if(t == fx$TAUNT)
+			Status$monster_taunt(caster);
     }
     
     

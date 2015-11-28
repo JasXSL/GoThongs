@@ -19,8 +19,10 @@ integer evtCheck(string script, integer evt, string data, string against){
     return TRUE;
 }
 
-evtListener(string script, integer evt, string data){
-    if(script == "got FXCompiler" && evt == FXCEvt$update)FX_FLAGS = (integer)jVal(data, [0]);
+evtListener(string script, integer evt, string data){ 
+    if(script == "got FXCompiler" && evt == FXCEvt$update){
+		FX_FLAGS = (integer)j(data, 0);
+	}
     else if(script == "got Status"){
         if(evt == StatusEvt$flags)STATUS = (integer)data;
         else if(evt == StatusEvt$monster_hp_perc)hp = (float)data;
@@ -49,6 +51,13 @@ integer checkCondition(key caster, integer cond, list data, integer flags){
         )
         return FALSE;
     }
+	
+	if(cond == fx$COND_CASTER_IS_BEHIND){
+		prAngZ(caster, ang);
+		if(llFabs(ang)<PI_BY_TWO && ~FX_FLAGS&fx$F_ALWAYS_BACKSTAB)return FALSE;
+		return TRUE;
+	}
+	
     if(cond == fx$COND_HP_GREATER_THAN){
         if(hp<=llList2Float(data, 0))return FALSE;
     }

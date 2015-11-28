@@ -52,6 +52,9 @@ list SPELL_ANIMS;
 float dmdmod = 1;       // Damage done
 float critmod = 0;
 
+// 
+float enchDmgMod = 1;	// Damage increase from enchant
+
 // Abil prims
 list ABILS = [0,0,0,0,0];
 #define ABIL_BORDER_COLOR <.6, .6, .6>
@@ -65,7 +68,7 @@ string runMath(string FX){
     if(STATUS_FLAGS&StatusFlag$aroused)aroused = .5;
 	
 	string consts = llList2Json(JSON_OBJECT, [
-        "D", (dmdmod*pmod*aroused*CACHE_CRIT),
+        "D", (dmdmod*pmod*aroused*CACHE_CRIT*enchDmgMod),
 		"A", CACHE_AROUSAL,
 		"P", CACHE_PAIN
     ]);
@@ -103,7 +106,13 @@ onEvt(string script, integer evt, string data){
 			
 			if((!(pre&hideOn) && STATUS_FLAGS&hideOn) || (pre&hideOn && !(STATUS_FLAGS&hideOn))){
 				toggleSpellButtons(TRUE);		// Auto hides if dead. So we can just go with TRUE for both cases
-			}
+			} 
+		}else if(evt == BridgeEvt$data_change){
+			list BONUS_STATS = llJson2List(j(data, [0]));
+			enchDmgMod = 1;
+			list_shift_each(BONUS_STATS, val, 
+				if((integer)val == STAT_DAMAGE)enchDmgMod+=.05;
+			)
 		}
 	}
     else if(script == "got FXCompiler" && evt == FXCEvt$update){

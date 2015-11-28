@@ -5,13 +5,17 @@
 
 #define saveFlags() db2$set([StatusShared$flags], (string)STATUS_FLAGS); raiseEvent(StatusEvt$flags, (string)STATUS_FLAGS)
 
-#define maxDurability() ((DEFAULT_DURABILITY+THONG_LEVEL)*llPow(1.01+.01*(float)getBonusStat(STAT_DURABILITY), THONG_LEVEL))
-#define maxMana() ((DEFAULT_MANA+THONG_LEVEL)*llPow(1.01+.01*(float)getBonusStat(STAT_MANA), THONG_LEVEL))
-#define maxArousal() ((DEFAULT_AROUSAL+THONG_LEVEL)*llPow(1.01+.01*(float)getBonusStat(STAT_AROUSAL), THONG_LEVEL))
-#define maxPain() ((DEFAULT_PAIN+THONG_LEVEL)*llPow(1.01+.01*(float)getBonusStat(STAT_PAIN), THONG_LEVEL))
+#define maxDurability() (DEFAULT_DURABILITY*(1+(float)getBonusStat(STAT_DURABILITY)*.1))
+#define maxMana() (DEFAULT_MANA*(1+(float)getBonusStat(STAT_MANA)*.1))
+#define maxArousal() (DEFAULT_AROUSAL*(1+(float)getBonusStat(STAT_AROUSAL)*0.5))
+#define maxPain() (DEFAULT_PAIN*(1+(float)getBonusStat(STAT_PAIN)*0.5))
 
 #define TIMER_REGEN "a"
 #define TIMER_BREAKFREE "b"
+#define TIMER_INVUL "c"
+
+integer BFL;
+#define BFL_TEMP_INVUL 1		// Temp invul after rez
 
 // Cache
 integer PRE_CONTS;
@@ -88,9 +92,10 @@ addDurability(float amount, string spellName, integer flags){
 		amount*=maxDurability();
 	
     if(amount<0){
-         if(STATUS_FLAGS&StatusFlag$pained)amount*=1.5;
-         amount*=fxModDmgTaken;
-		 amount*=difMod();
+		if(BFL&BFL_TEMP_INVUL)return;
+        if(STATUS_FLAGS&StatusFlag$pained)amount*=1.5;
+        amount*=fxModDmgTaken;
+		amount*=difMod();
     }
     DURABILITY += amount;
     if(DURABILITY<=0){
@@ -217,6 +222,13 @@ onEvt(string script, integer evt, string data){
     if(script == "got FXCompiler"){
         if(evt == FXCEvt$update){
             FXFLAGS = (integer)jVal(data, [0]);
+			
+			integer divisor = 0;
+			if(FXFLAGS&fx$F_BLURRED){
+				divisor = 8;
+			}
+			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force");
+			
             fxModDmgTaken = (float)jVal(data, [3]);
             fxModManaRegen = (float)jVal(data, [1]);
             outputStats();
@@ -252,7 +264,12 @@ onEvt(string script, integer evt, string data){
             data = db2$get("got Bridge", [BridgeShared$data]);
             BONUS_STATS = llJson2List(jVal(data, [1]));
             THONG_LEVEL = (integer)jVal(data, [2]);
-        }else if(evt == BridgeEvt$thong_initialized)toggleClothes(FALSE);
+			
+        }
+		else if(evt == BridgeEvt$userDataChanged){
+			DIFFICULTY = (integer)j(data, 4);
+		}
+		else if(evt == BridgeEvt$thong_initialized)toggleClothes(FALSE);
         
     }
     else if(script == "got Rape"){
@@ -262,9 +279,13 @@ onEvt(string script, integer evt, string data){
                 outputStats();
             }
             else{
+				BFL = BFL|BFL_TEMP_INVUL;
+				STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
+				multiTimer([TIMER_INVUL,"", 6, FALSE]);
+				
 				if(~STATUS_FLAGS&StatusFlag$raped)return;			// Prevent recursion
-                STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
                 Status$fullregen();
+				
             }
             AnimHandler$anim("got_loss", FALSE, 0);
         }
@@ -339,6 +360,9 @@ timerEvent(string id, string data){
 		GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
 		GUI$toggleQuit(TRUE);
 	}
+	else if(id == TIMER_INVUL){
+		BFL=BFL&~BFL_TEMP_INVUL;
+	}
 }
   
 
@@ -360,7 +384,7 @@ default
     }
     
     // This is the standard linkmessages
-    #include "xobj_core/_LM.lsl" 
+    #include "xobj_core/_LM.lsl"  
     /*
         Included in all these calls:
         METHOD - (int)method  
@@ -474,6 +498,10 @@ default
 		if(DIFFICULTY < 0)DIFFICULTY = 0;
 		if(DIFFICULTY > 5)DIFFICULTY = 5;
 		if((integer)method_arg(1)){Status$setDifficulty(coop_player, DIFFICULTY, FALSE);}
+		else{
+			// Other player changed difficulty. Set on server
+			Bridge$setDifficulty(DIFFICULTY);
+		}
 		raiseEvent(StatusEvt$difficulty, mkarr([DIFFICULTY]));
 		list names = ["Casual", "Normal", "Hard", "Very Hard", "Brutal", "Bukakke"];
 		

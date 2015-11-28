@@ -18,7 +18,7 @@
 		
 		
 	#define fx$ANIM 7							// [(str)anim, (int)start]
-	#define fx$DODGE 8							// *(int)chance_to_add - Adds a chance to dodge bad spells unless undodgable
+	#define fx$DODGE 8							// (float)chance_to_add - Adds a chance to dodge bad spells unless undodgable
 	#define fx$DEBUG 9							// [(str)message]
 	#define fx$REM_BY_NAME 10					// [(str)name, (int)raise_event]
 	#define fx$REM_THIS 11						// [(int)raise_event]
@@ -33,6 +33,8 @@
 		#define fx$F_SILENCED 0x20					// Unable to cast any spells at all
 		#define fx$F_BLINDED 0x40					// Makes screen black
 		#define fx$F_NOROT 0x80						// Unable to rotate
+		#define fx$F_BLURRED 0x100					// Blurry screen
+		#define fx$F_ALWAYS_BACKSTAB 0x200			// Attacks against affected target are always counted as behind
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 	#define fx$MANA_REGEN_MULTIPLIER 15			// (float)add
@@ -55,7 +57,8 @@
 	#define fx$CRIT_MULTIPLIER 32				// (float)amt - Increases chance of doing double damage
 	#define fx$ROT_TOWARDS 33					// (vec)pos - PC ONLY, Rotates the player towards a global position
 	#define fx$PARTICLES 34						// (float)duration, (int)prim, (arr)particles - PC_ONLY - See ThongMan$particles
-	
+	#define fx$TAUNT 35							// void - NPC ONLY, resets everyone but this player's aggro
+	#define fx$REM 36							// Accepts the same arguments as FX$rem at got FX.lsl
 	
 	
 // conditions
@@ -74,6 +77,9 @@
 	
 	#define fx$COND_IS_NPC 9					// NULL - Victim is NPC
 	#define fx$COND_TARGETING_CASTER 10			// NULL - NPC ONLY, If the victim currently has the sender as their target
+	
+	#define fx$COND_CASTER_IS_BEHIND 11			// NULL - If the caster is behind the victim
+	
 	
 // Reserved names:
 	#define FXN$INFUSION "_I"					// Bloodlust
