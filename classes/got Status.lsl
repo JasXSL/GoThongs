@@ -1,7 +1,7 @@
 #define StatusMethod$addDurability 1		// [(float)durability, (key)caster, (str)spellName, (int)flags]
 	#define SMAFlag$IS_PERCENTAGE 0x1			// multiply durability by total HP	
 #define StatusMethod$addMana 2		// [(float)durability, (str)spellName[, (int)flags]]
-#define StatusMethod$addArousal 3		// [(float)durability, (str)spellName]
+#define StatusMethod$addArousal 3		// [(float)durability, (str)spellName[, (int)flags]]
 #define StatusMethod$addPain 4		// [(float)durability, (str)spellName]
 #define StatusMethod$fullregen 5		// NULL
 #define StatusMethod$setTargeting 6		// (Bool)targeting - This sender is now targeting you. Send status updates to them
@@ -56,6 +56,8 @@
 
 // Shortcuts
 #define _statusFlags() (integer)db2$get("got Status", [StatusShared$flags])
+// Checks if target is attackable utilizing the data returned from Status$get
+#define _attackable(getData) (!((int)j(getData, 0)&StatusFlags$NON_VIABLE)&&!((int)j(getData,1)&fx$UNVIABLE))
 
 // GoThongs supports max 16 flags
 #define StatusFlag$dead 0x1			// (int)dead - Checked for automatically by fx
@@ -76,8 +78,8 @@
 #define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
 #define Status$addDurability(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addDurability, [amt, "", spellName, flags], TNN)
 #define Status$addMana(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addMana, [amt, spellName, flags], TNN)
-#define Status$addArousal(amt, spellName) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addArousal, [amt, spellName], TNN)
-#define Status$addPain(amt, spellName) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addPain, [amt, spellName], TNN)
+#define Status$addArousal(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addArousal, [amt, spellName, flags], TNN)
+#define Status$addPain(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addPain, [amt, spellName, flags], TNN)
 #define Status$fullregen() runMethod((string)LINK_ROOT, "got Status", StatusMethod$fullregen, [], TNN)
 #define Status$fullregenTarget(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [], TNN)
 #define Status$get(targ, cb) runMethod(targ, "got Status", StatusMethod$get, [], cb)

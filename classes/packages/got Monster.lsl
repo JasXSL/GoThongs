@@ -8,7 +8,7 @@
 #define TIMER_FRAME "a"
 #define TIMER_ATTACK "b" 
 
-#define preAtk() if(atkspeed>0){Status$get(chasetarg, "ATK");}
+#define preAtk() if(atkspeed>0 && llList2Integer(llCastRay(llGetPos()+<0,0,.5>, prPos(chasetarg), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0){Status$get(chasetarg, "ATK");}
 
 
 list PLAYERS;           // The players, should always contain owner
@@ -74,18 +74,6 @@ integer moveInDir(vector dir){
     return TRUE;
 }
 
-attack(){
-    multiTimer([TIMER_ATTACK, "", atkspeed+llFrand(atkspeed*.5), FALSE]);
-    if(BFL&BFL_STOPON || RUNTIME_FLAGS&Monster$RF_PACIFIED || FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED))return;
-    integer flags = llList2Integer(ctData, 0);
-    
-    if(flags&StatusFlag$raped)return;
-    
-    raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));
-    BFL = BFL|BFL_ATTACK_CD;
-    
-    anim("attack", TRUE);
-}
 
 anim(string anim, integer start){
 	integer meshAnim = (llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT);
@@ -129,11 +117,11 @@ timerEvent(string id, string data){
             // Find a random pos to go to maybe
             if(wander == 0 || llFrand(1)>.1 || ~BFL&BFL_PLAYERS_NEARBY)return;
 			
-            vector a = llGetPos();
-            vector b = llGetPos()+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
-            if(llVecDist(b, rezpos)>wander)return;
-            list ray = llCastRay(a, b, []);
+            vector a = llGetPos()+<0,0,.5>;
+            vector b = llGetPos()+<0,0,.5>+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
             
+			if(llVecDist(b, rezpos)>wander)return;
+            list ray = llCastRay(a, b, []);
             if(llList2Integer(ray, -1) == 0){
                 lastseen = b;
                 STATE = STATE_SEEKING;
@@ -185,7 +173,7 @@ timerEvent(string id, string data){
 				if(~BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$inRange, chasetarg);
                     if(~BFL&BFL_ATTACK_CD && ~RUNTIME_FLAGS&Monster$RF_PACIFIED){
-                        preAtk();
+						preAtk();
                     }
                 }
                 BFL = BFL|BFL_IN_RANGE;
@@ -249,43 +237,42 @@ onEvt(string script, integer evt, string data){
         }
     }
     
-    else if(script == "got LocalConf"){
-        if(evt == LocalConfEvt$iniData){
-            list conf = llJson2List(data);
-			string override = portalConf();
-			if(isset(override)){
-				list data = llJson2List(override);
-				override = "";
-				list_shift_each(data, v,
-					list d = llJson2List(v);
-					if(llGetListEntryType(d, 0) == TYPE_INTEGER)
-						conf = llListReplaceList(conf, llList2List(d,1,1), llList2Integer(d,0), llList2Integer(d,0));
-				)
-			}
+    else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
 
-            RUNTIME_FLAGS = llList2Integer(conf, 0);
-            if(llList2Float(conf,1)>0)speed = llList2Float(conf, 1);
-			if(llList2Float(conf, 2) != HITBOX_DEFAULT)
-				hitbox = llList2Float(conf, 2);
-            atkspeed = llList2Float(conf, 3);
-            if(llList2Float(conf,5)!=0)wander = llFabs(llList2Float(conf, 5));
-            
-            if(speed<=0)speed = 1;
-            if(hitbox<=0)hitbox = 3;
-            //if(atkspeed<.5)atkspeed = .5;
-			
-            BFL = BFL|BFL_INITIALIZED; 
-            multiTimer([TIMER_FRAME, "", .25, TRUE]);
-            llSetObjectDesc("$M$");
-        }
+        list conf = llJson2List(data);
+		string override = portalConf();
+		if(isset(override)){
+			list data = llJson2List(override);
+			override = "";
+			list_shift_each(data, v,
+				list d = llJson2List(v);
+				if(llGetListEntryType(d, 0) == TYPE_INTEGER)
+					conf = llListReplaceList(conf, llList2List(d,1,1), llList2Integer(d,0), llList2Integer(d,0));
+			)
+		}
+        RUNTIME_FLAGS = llList2Integer(conf, 0);
+        if(llList2Float(conf,1)>0)speed = llList2Float(conf, 1);
+		if(llList2Float(conf, 2) != HITBOX_DEFAULT)
+			hitbox = llList2Float(conf, 2);
+        atkspeed = llList2Float(conf, 3);
+        if(llList2Float(conf,5)!=0)wander = llFabs(llList2Float(conf, 5));
+           
+        if(speed<=0)speed = 1;
+        if(hitbox<=0)hitbox = 3;
+        //if(atkspeed<.5)atkspeed = .5;
+		
+        BFL = BFL|BFL_INITIALIZED; 
+        multiTimer([TIMER_FRAME, "", .25, TRUE]);
+        llSetObjectDesc("$M$");
     }
     
-    else if((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame){
-        list split = llParseString2List(data, [";"], []);
+    else if(((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame) || (script == "got LocalConf" && evt==LocalConfEvt$emulateAttack)){
+        
+		list split = llParseString2List(data, [";"], []);
         string task = llList2String(split, 0);
         
         if(task == FRAME_AUDIO)llPlaySound(llList2String(split,1), llList2Float(split,2));
-        else if(task == Monster$atkFrame){
+        else if(task == Monster$atkFrame || (script == "got LocalConf" && evt == LocalConfEvt$emulateAttack)){
             list odata = llGetPrimitiveParams([PRIM_POSITION, PRIM_ROTATION]);
             list ifdata = llGetObjectDetails(chasetarg, [OBJECT_POS, OBJECT_ROT]);
             vector pos = llList2Vector(odata,0);
@@ -360,8 +347,18 @@ default
     if(method$isCallback){ 
         if(METHOD == StatusMethod$get && id!="" && SENDER_SCRIPT == "got Status"){
             ctData = llJson2List(PARAMS);
-            if(CB == "ATK")
-                attack(); 
+            if(CB == "ATK"){
+                multiTimer([TIMER_ATTACK, "", atkspeed+llFrand(atkspeed*.5), FALSE]);
+				if(BFL&BFL_STOPON || RUNTIME_FLAGS&Monster$RF_PACIFIED || FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED))return;
+				integer flags = llList2Integer(ctData, 0);
+				
+				if(flags&StatusFlag$raped)return;
+				
+				raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));
+				BFL = BFL|BFL_ATTACK_CD;
+				
+				anim("attack", TRUE);
+			}
             
         } 
         return;  

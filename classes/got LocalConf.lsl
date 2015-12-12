@@ -18,7 +18,7 @@
 #define LocalConfEvt$iniData 1		// Separate from evt$SCRIPT_INIT in that this is raised on demand and contains script custom data
 									// This data will vary based on the object the conf is in
 									// For monster data see got Monster
-
+#define LocalConfEvt$emulateAttack 2// Emulates an attack for monsters without mesh anims
 
 
 // These can be used in monsters if you want									

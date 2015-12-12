@@ -1,3 +1,4 @@
+#define USE_SHARED ["got Status"]
 #include "got/_core.lsl"
 
 #define TIMER_BREAKFREE "a"
@@ -12,7 +13,7 @@ default
 {
     // Timer event
     //timer(){multiTimer([]);}
-    
+    state_entry(){db2$ini(); memLim(2);}
     
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -30,7 +31,7 @@ default
     
     if(method$internal){
         if(METHOD == RapeMethod$start){
-            if(BFL&BFL_RAPE_STARTED)return;
+            if(BFL&BFL_RAPE_STARTED || ~_statusFlags()&StatusFlag$dead)return;
             
             BFL = BFL|BFL_RAPE_STARTED;
             

@@ -16,6 +16,9 @@
 
 integer BFL;
 #define BFL_TEMP_INVUL 1		// Temp invul after rez
+#define BFL_CAM 2				// Cam is overridden
+#define BFL_STATUS_QUEUE 0x10		// Send status on timeout
+#define BFL_STATUS_SENT 0x20		// Status sent
 
 // Cache
 integer PRE_CONTS;
@@ -83,7 +86,7 @@ toggleClothes(integer showGenitals){
         
 
 addDurability(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead)return;
+    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
     float pre = DURABILITY;
     amount*=spdmtm(spellName);
 	
@@ -129,7 +132,6 @@ addDurability(float amount, string spellName, integer flags){
 			multiTimer([TIMER_BREAKFREE]);
 			GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
 			GUI$toggleQuit(FALSE);
-			qd("Healed");
         }
     }
     if(pre != DURABILITY){
@@ -138,7 +140,7 @@ addDurability(float amount, string spellName, integer flags){
     }
 }
 addMana(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead)return;
+    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
     float pre = MANA;
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE)
@@ -154,10 +156,13 @@ addMana(float amount, string spellName, integer flags){
 		SpellAux$statusCache(MANA);
     }
 }
-addArousal(float amount, string spellName){
-    if(STATUS_FLAGS&StatusFlag$dead)return;
+addArousal(float amount, string spellName, integer flags){
+    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
     float pre = AROUSAL;    
     amount*=spdmtm(spellName);
+	if(flags&SMAFlag$IS_PERCENTAGE){
+		amount*=maxArousal();
+	}
     if(amount>0)amount*=fxModDmgTaken;
     AROUSAL += amount;
     if(AROUSAL<=0)AROUSAL = 0;
@@ -178,10 +183,14 @@ addArousal(float amount, string spellName){
         
     }
 }
-addPain(float amount, string spellName){
-    if(STATUS_FLAGS&StatusFlag$dead)return;
+addPain(float amount, string spellName, integer flags){
+    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
     float pre = PAIN;
     amount*=spdmtm(spellName);
+	if(flags&SMAFlag$IS_PERCENTAGE){
+		amount*=maxPain();
+	}
+		
     if(amount>0)amount*=fxModDmgTaken;
     PAIN += amount;
     if(PAIN<=0)PAIN = 0;
@@ -279,13 +288,11 @@ onEvt(string script, integer evt, string data){
                 outputStats();
             }
             else{
-				BFL = BFL|BFL_TEMP_INVUL;
-				STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
-				multiTimer([TIMER_INVUL,"", 6, FALSE]);
-				
 				if(~STATUS_FLAGS&StatusFlag$raped)return;			// Prevent recursion
-                Status$fullregen();
-				
+                STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
+				Status$fullregen();
+				BFL = BFL|BFL_TEMP_INVUL;
+				multiTimer([TIMER_INVUL,"", 6, FALSE]);
             }
             AnimHandler$anim("got_loss", FALSE, 0);
         }
@@ -308,16 +315,31 @@ onEvt(string script, integer evt, string data){
 		}
 		outputStats();
 	}
+	else if(script == "jas RLV" && (evt == RLVevt$cam_set || evt == RLVevt$cam_unset)){
+		BFL = BFL&~BFL_CAM;
+		if(evt == RLVevt$cam_set)BFL = BFL|BFL_CAM;
+		outputStats();
+	}
 }
 
-
+dumpStats(){
+	if(BFL&BFL_STATUS_SENT){
+		BFL = BFL|BFL_STATUS_QUEUE;
+		return;
+	}
+	BFL = BFL|BFL_STATUS_SENT;
+    multiTimer(["_", "", 1, FALSE]);
+	
+	GUI$myStatus(DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
+    if(coop_player)
+        GUI$status(coop_player, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
+}
 
 outputStats(){ 
-    multiTimer(["S", "", .2, FALSE]);
-    
-    
+    dumpStats();
+	
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
-    if(FXFLAGS&fx$F_STUNNED || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading) && ~STATUS_FLAGS&StatusFlag$raped))
+    if(FXFLAGS&fx$F_STUNNED || BFL&BFL_CAM || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading) && ~STATUS_FLAGS&StatusFlag$raped))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
     if(FXFLAGS&fx$F_ROOTED || STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
@@ -345,15 +367,18 @@ outputStats(){
 timerEvent(string id, string data){
     if(id == TIMER_REGEN)
         addMana((maxMana()*.05)*fxModManaRegen, "", 0);
-    else if(id == "S"){
-		GUI$myStatus(DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
-        if(coop_player)
-            GUI$status(coop_player, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), STATUS_FLAGS, FXFLAGS);
+    else if(id == "_"){
+		BFL = BFL&~BFL_STATUS_SENT;
+		if(BFL&BFL_STATUS_QUEUE){
+			BFL = BFL&~BFL_STATUS_QUEUE;
+			dumpStats();
+		}
+		
     }else if(id == "OP"){
-        list dta = llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE);
-        GUI$setMySpellTextures(dta);
-        if(coop_player)
-            GUI$setSpellTextures(coop_player, dta);
+		list dta = llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE);
+		GUI$setMySpellTextures(dta);
+		if(coop_player)
+			GUI$setSpellTextures(coop_player, dta);
     }
 	else if(id == TIMER_BREAKFREE){
 		// Show breakfree button
@@ -420,8 +445,8 @@ default
     
     if(METHOD == StatusMethod$addDurability)addDurability((float)method_arg(0), method_arg(2), (integer)method_arg(3));
     else if(METHOD == StatusMethod$addMana)addMana((float)method_arg(0), method_arg(1), (integer)method_arg(2));
-    else if(METHOD == StatusMethod$addArousal)addArousal((float)method_arg(0), method_arg(1));
-    else if(METHOD == StatusMethod$addPain)addPain((float)method_arg(0), method_arg(1));
+    else if(METHOD == StatusMethod$addArousal)addArousal((float)method_arg(0), method_arg(1), (integer)method_arg(2));
+    else if(METHOD == StatusMethod$addPain)addPain((float)method_arg(0), method_arg(1), (integer)method_arg(2));
     else if(METHOD == StatusMethod$setTargeting){
 		outputStats();
 		multiTimer(["OP", "", .2, FALSE]);

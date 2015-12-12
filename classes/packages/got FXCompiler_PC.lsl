@@ -15,6 +15,7 @@ list COOLDOWN_MULTIPLIER;   // [id, (float)multiplier]
 list MANA_COST_MULTIPLIER;  // [id, (float)multiplier]
 list CRIT_MULTIPLIER;		// [id, (float)multiplier]
 
+
 integer current_visual;
 
 // Adds to a standard list where PID is the first element
@@ -36,8 +37,8 @@ runEffect(key caster, integer stacks, string package, integer pid){
 		dumpFxInstants()
 		
         else if(t == fx$DAMAGE_DURABILITY)Status$addDurability(-(float)v*stacks, jVal(package, [PACKAGE_NAME]), llList2Integer(fx,2));
-        else if(t == fx$AROUSE)Status$addArousal((float)v*stacks, jVal(package, [PACKAGE_NAME]));
-        else if(t == fx$PAIN)Status$addPain((float)v*stacks, jVal(package, [PACKAGE_NAME]));
+        else if(t == fx$AROUSE)Status$addArousal((float)v*stacks, jVal(package, [PACKAGE_NAME]), llList2Integer(fx,2));
+        else if(t == fx$PAIN)Status$addPain((float)v*stacks, jVal(package, [PACKAGE_NAME]), llList2Integer(fx, 2));
         else if(t == fx$MANA)Status$addMana((float)v*stacks, jVal(package, [PACKAGE_NAME]), llList2Integer(fx, 2));
         else if(t == fx$HITFX){
             ThongMan$hit(v);
@@ -69,6 +70,18 @@ runEffect(key caster, integer stacks, string package, integer pid){
 		}
 		else if(t == fx$PARTICLES){
 			ThongMan$particles((float)v, llList2Integer(fx,2), llList2String(fx,3));
+		}
+		else if(t == fx$PULL){
+			if((vector)v == ZERO_VECTOR){
+				raiseEvent(FXCEvt$pullEnd, "");
+				llStopMoveToTarget();
+			}else{
+				llMoveToTarget((vector)v, llList2Float(fx,2));
+				raiseEvent(FXCEvt$pullStart, "");
+			}
+		}
+		else if(t == fx$SPAWN_VFX){
+			SpellFX$spawnInstant(mkarr(llDeleteSubList(fx,0,0)), llGetOwner());
 		}
     }
     
@@ -142,6 +155,10 @@ remEffect(key caster, integer stacks, string package, integer pid, integer overw
             MANA_COST_MULTIPLIER = manageList(TRUE, MANA_COST_MULTIPLIER, [pid, 0]);
         
         else if(t == fx$FORCE_SIT)llOwnerSay("@unsit=y,unsit=force");
+		else if(t == fx$PULL){
+			raiseEvent(FXCEvt$pullEnd, "");
+			llStopMoveToTarget();
+		}
     }
     updateGame();
 }

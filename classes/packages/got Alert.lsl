@@ -30,7 +30,7 @@ alert(string text, integer ownerSay, integer playSound){
 		ALERTS = llDeleteSubList(ALERTS, 0, 0);
             
     setText(1);        
-    multiTimer([TIMER_FADE, 1, llStringLength(text)*.02+2, FALSE]);
+    multiTimer([TIMER_FADE, 1, llStringLength(text)*.05+2, FALSE]);
 }
 
 default

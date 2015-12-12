@@ -112,7 +112,7 @@ string FX_buildCondition(integer cond, list vars){
 #define PF_EVENT_ON_OVERWRITE 0x4		// Raises the removal event even when overwritten. Only works together with PF_UNIQUE
 #define PF_ALLOW_WHEN_DEAD 0x8			// 
 #define PF_ALLOW_WHEN_QUICKRAPE 0x10	// 
-#define PF_NO_DODGE 0x20				// Cannot be dodged
+
 #define PF_FULL_UNIQUE 0x40				// Only allow one no matter the sender. Exclusive with PF_NOT_UNIQUE
 #define PF_TRIGGER_IMMEDIATE 0x80		// Runs as an instant effect once when it's added
 

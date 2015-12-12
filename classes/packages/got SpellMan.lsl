@@ -156,6 +156,7 @@ onEvt(string script, integer evt, string data){
 
 // This is a macro that turns flags into targets
 // Returns a list of targets or ["AOE"], or ["Q"] to queue on target change
+
 #define flagsToTargets(targets, var) var = []; \
 if(targets & TARG_AOE)var = ["AOE"]; \
 else if(targets == TARG_CASTER)var = [LINK_ROOT]; \
@@ -174,6 +175,22 @@ else{ \
 		var = ["Q"];\
 	}\
 }
+/*
+// PVP
+#define flagsToTargets(targets, var) var = []; \
+if(targets & TARG_AOE)var = ["AOE"]; \
+else if(targets == TARG_CASTER)var = [LINK_ROOT]; \
+else{ \
+	key targ = CACHE_ROOT_TARGET;\
+    if(targ == llGetOwner())targ = ""; \
+    key coop = llList2Key(PLAYERS, 1); \
+    if(isset(targ))var = [targ]; \
+    if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \
+	else if(targets&TARG_NPC && !isset(targ) && QUEUE_SPELL == -2){ \
+		var = ["Q"];\
+	}\
+}
+*/
 
 // This attempts to start casting a spell
 integer castSpell(integer nr){

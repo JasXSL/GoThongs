@@ -20,6 +20,7 @@ key attacksound;        //
 key deathsound;         // 
 key icon;
 string rapeName;        // Usually prim name
+string drops;			// JSON array of sub arrays of [(str)asset, (float)drop_chance]
 
 // (float)aggro, (key)id, (int)flags
 #define AGGRO_STRIDE 3
@@ -33,6 +34,8 @@ integer BFL = 0;
 #define BFL_FRIENDLY 0x2
 #define BFL_STATUS_TIMER 0x4 
 #define BFL_INITIALIZED 0x8
+#define BFL_STATUS_QUEUE 0x10		// Send status on timeout
+#define BFL_STATUS_SENT 0x20		// Status sent
 
 #define BFL_NOAGGRO (BFL_FRIENDLY|BFL_DEAD)
 
@@ -117,6 +120,13 @@ addHP(float amount, key attacker, string spellName, integer flags){
         BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
 		llSetObjectDesc("");			// Prevent targeting
         
+		list d = llListRandomize(llJson2List(drops), 1);
+		list_shift_each(d, val,
+			if(llFrand(1)<(float)j(val, 1)){ 
+				Spawner$spawn(j(val,0), (llGetPos()+<0,0,.5>), llGetRot(), "", FALSE, TRUE);
+				d = [];
+			}
+		)
         
         
         if(deathsound)llTriggerSound(deathsound, 1);
@@ -261,6 +271,8 @@ onEvt(string script, integer evt, string data){
         
         rapeName = llList2String(conf, MLC$rapePackage);
         if(!isset(rapeName))rapeName = llGetObjectName();
+		drops = llList2String(conf, MLC$drops);
+		if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]";
         
         if(dmg<=0)dmg = 10; 
         if(maxHP<=0)maxHP = 100;
@@ -297,6 +309,11 @@ onEvt(string script, integer evt, string data){
 }
 
 outputStats(){
+	if(BFL&BFL_STATUS_SENT){
+		BFL = BFL|BFL_STATUS_QUEUE;
+		return;
+	}
+	
     integer i;
     for(i=0; i<llGetListLength(OUTPUT_STATUS_TO); i++){
         GUI$status(llList2Key(OUTPUT_STATUS_TO, i), HP/maxHP, 0, 0, 0, STATUS_FLAGS, FXFLAGS);
@@ -304,11 +321,20 @@ outputStats(){
     
     raiseEvent(StatusEvt$flags, (string)STATUS_FLAGS);
     raiseEvent(StatusEvt$monster_hp_perc, (string)(HP/maxHP));
+	BFL = BFL|BFL_STATUS_SENT;
+	multiTimer(["_", "", 1, FALSE]);
 }
 
 
 timerEvent(string id, string data){
-    if(id == "A"){
+	if(id == "_"){
+		BFL = BFL&~BFL_STATUS_SENT;
+		if(BFL&BFL_STATUS_QUEUE){
+			BFL = BFL&~BFL_STATUS_QUEUE;
+			outputStats();
+		}
+	}
+    else if(id == "A"){
         if(BFL&BFL_NOAGGRO)return;
         if(aggroTarg != ""){
             // Check the specific player instead
@@ -381,7 +407,7 @@ default
                 // agc checks if it should rape or not
                 integer flags = (integer)method_arg(0);
 
-                if(flags&(StatusFlag$raped|StatusFlag$dead)){
+                if(!_attackable(PARAMS)){
                     if(~flags&StatusFlag$raped){
                         Bridge$fetchRape(llGetOwnerKey(id), rapeName);
                     }
@@ -492,7 +518,7 @@ default
 		integer i;
 		for(i=0; i<llGetListLength(AGGRO); i+=AGGRO_STRIDE){
 			if(llList2Key(AGGRO, i+1) != t){
-				AGGRO = llListReplaceList(AGGRO, [1], i, i);
+				AGGRO = llListReplaceList(AGGRO, [1.0], i, i);
 			}
 		}
 		aggro("",0);

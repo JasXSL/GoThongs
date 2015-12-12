@@ -26,10 +26,10 @@
 _portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, integer debug, integer reqDesc, integer temp){
 	vector mpos = llGetPos();
 	vector local = vecFloor(mpos)+(pos-vecFloor(pos));
-	integer int = vec2int(pos);
-	if(debug)int = int|BIT_DEBUG;
-	if(reqDesc)int = int|BIT_GET_DESC;
-	if(temp)int = int|BIT_TEMP;
-	llRezAtRoot(name, local+spawnOffset, ZERO_VECTOR, rot, int);
+	integer in = vec2int(pos);
+	if(debug)in = in|BIT_DEBUG;
+	if(reqDesc)in = in|BIT_GET_DESC;
+	if(temp)in = in|BIT_TEMP;
+	llRezAtRoot(name, local+spawnOffset, ZERO_VECTOR, rot, in);
 }
 

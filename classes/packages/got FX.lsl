@@ -359,7 +359,7 @@ default
 			#else
 				integer RC = TRUE;
 				if(flags&WF_REQUIRE_LOS){
-					if(llList2Integer(llCastRay(llGetPos(), prPos(id), [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]), -1)> 0){
+					if(llList2Integer(llCastRay(llGetPos()+<0,0,.5>, prPos(id), [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]), -1)> 0){
 						RC = FALSE;
 					}
 				}

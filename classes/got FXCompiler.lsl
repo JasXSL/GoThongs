@@ -12,7 +12,8 @@
 	#define FXCUpd$COOLDOWN 6
 	#define FXCUpd$MANACOST 7
 	#define FXCUpd$CRIT 8
-	
+#define FXCEvt$pullStart 2				// void - Pull has started
+#define FXCEvt$pullEnd 3				// void - A pull effect has ended
 	
 	
 	
@@ -47,8 +48,10 @@
     } \
 	else if(t == fx$REM){ \
 		FX$rem(llList2String(fx, 1), llList2String(fx, 2), llList2String(fx, 3), llList2String(fx, 4), llList2String(fx, 5), llList2String(fx, 6), llList2String(fx, 7), llList2String(fx, 8), llList2String(fx, 9)); \
-	} 
-	
+	} \
+	else if(t == fx$REGION_SAY){ \
+		llRegionSay((integer)v, llList2String(fx,2)); \
+	} \
 		
 
 // These are ADD tasks that are shared

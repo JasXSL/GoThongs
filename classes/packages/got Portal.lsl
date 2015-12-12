@@ -13,7 +13,7 @@ integer BFL;
 #define BFL_INITIALIZED 0x10
 
 #define BFL_INI 11
-#define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){llSleep(.2); BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS));}
+#define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){llSleep(.2); BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); debugUncommon("Portal initialized");}
 
 string INI_DATA = "";
 
@@ -24,8 +24,10 @@ onEvt(string script, integer evt, string data){
 		debugUncommon("Waiting for "+mkarr(required));
         if(required == []){
 			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
-            BFL = BFL|BFL_SCRIPTS_INITIALIZED;
+			//qd(BFL);
+			BFL = BFL|BFL_SCRIPTS_INITIALIZED;
 			checkIni() 
+			
         }
     }
 }

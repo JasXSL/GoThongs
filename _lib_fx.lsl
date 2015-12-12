@@ -37,6 +37,7 @@
 		#define fx$F_ALWAYS_BACKSTAB 0x200			// Attacks against affected target are always counted as behind
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
+		#define fx$UNVIABLE (fx$F_INVUL|fx$F_QUICKRAPE)
 	#define fx$MANA_REGEN_MULTIPLIER 15			// (float)add
 	#define fx$DAMAGE_TAKEN_MULTIPLIER 16		// (float)add
 	#define fx$DAMAGE_DONE_MULTIPLIER 17		// (float)add
@@ -59,7 +60,9 @@
 	#define fx$PARTICLES 34						// (float)duration, (int)prim, (arr)particles - PC_ONLY - See ThongMan$particles
 	#define fx$TAUNT 35							// void - NPC ONLY, resets everyone but this player's aggro
 	#define fx$REM 36							// Accepts the same arguments as FX$rem at got FX.lsl
-	
+	#define fx$PULL 37							// (vec)pos, (float)speed - PC only. Instant effect but is cleared on effect fade for duration effects
+	#define fx$SPAWN_VFX 38						// (str)name, (vec)posOffset, (rot)rotoffset - PC only. Spawns a visual effect from the SpellFX container on the HUD
+	#define fx$REGION_SAY 39					// (int)chan, (str)message - Does what it says on the box
 	
 // conditions
 	// Built in
@@ -84,6 +87,7 @@
 // Reserved names:
 	#define FXN$INFUSION "_I"					// Bloodlust
 	#define FXN$QUICKRAPE "_Q"					// Quickrape
+	#define FXN$PULL "_P"						// Used in effects that pull a player towards a location
 	
 // Tags
 	#define fx$TAG_LEGS_SPREAD 1				// Used by skelcrawler
