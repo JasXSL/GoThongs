@@ -53,6 +53,6 @@
 #define MLC$deathsound 12
 #define MLC$icon 13
 #define MLC$rapePackage 14			// lets you use a rape from another monster, useful for monsters that share the same visual
-
+#define MLC$drops 15				// [[(str)name, (float)chance]...]
 
 

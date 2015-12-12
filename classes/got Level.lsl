@@ -12,7 +12,7 @@
 #define LevelMethod$idEvent 10		// (int)event, (str)id, (arr)data - Raises a LevelEvt$id* event
 #define LevelMethod$cellData 11		// (var)questData - QuestData received from database 
 #define LevelMethod$cellDesc 12		// (str)description - Cell Description received from database
-
+#define LevelMethod$getObjectives 13// void - Updates the sender on quest progress
 
 
 #define LevelMethod$despawn 0x71771E5	// Deletes a level
@@ -39,6 +39,9 @@
 #define LevelEvt$questData 7	// (var)questdata - Questdata has been received
 #define LevelEvt$levelCompleted 8	// Used when you feed setFinished with the evtOnFinish variable
 
+#define LevelEvt$fetchObjectives 9	// (key)clicker - Try to fetch objectives if there are any
+
+
 #define Level$loadDebug(group) runOmniMethod("got Level", LevelMethod$load, [1,group], TNN)
 #define Level$loadSharp(group) runOmniMethod("got Level", LevelMethod$load, [0,group], TNN)
 #define Level$intLoadSharp(group) runMethod((string)LINK_THIS, "got Level", LevelMethod$load, [0,group], TNN)
@@ -58,6 +61,9 @@
 #define Level$cellData(data) runMethod(db2$get("#ROOT", [RootShared$level]), "got Level", LevelMethod$cellData, [data], TNN)
 #define Level$cellDesc(desc) runMethod(db2$get("#ROOT", [RootShared$level]), "got Level", LevelMethod$cellDesc, [desc], TNN)
 #define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)
+#define Level$getObjectives() runMethod(db2$get("#ROOT", [RootShared$level]), "got Level", LevelMethod$getObjectives, [], TNN)
+#define Level$spawnLive(asset, pos, rot) runOmniMethod("got Level", LevelMethod$spawn, [asset, pos, rot, FALSE], TNN)
+
 
 #define _lSharp() ((integer)db2$get("got Level", [LevelShared$isSharp]))
 

@@ -149,7 +149,9 @@ default
 	else if(METHOD == LevelMethod$died){
 		DEATHS++;
 	}
-	
+	else if(METHOD == LevelMethod$getObjectives){
+		raiseEvent(LevelEvt$fetchObjectives, mkarr([llGetOwnerKey(id)]));
+	}
     
 // OWNER ONLY BELOW THIS LINE
     if(!method$byOwner)return;
@@ -172,6 +174,9 @@ default
             }else{
                 llOwnerSay("Cell test completed!");
             }
+			runOnPlayers(targ,
+				GUI$toggleObjectives(targ, FALSE); // Clear objectives
+			)
         }else{
 			integer i;
 			for(i=0; i<llGetListLength(PLAYERS); i++){
@@ -294,6 +299,7 @@ default
 		}
 	}
 
+	
     
     else if(METHOD == LevelMethod$loadFinished){
         llSetTimerEvent(0);
@@ -324,7 +330,7 @@ default
         integer debug = (integer)method_arg(3);
         
         if(llGetInventoryType(asset) == INVENTORY_OBJECT){
-            llOwnerSay("Spawning local asset: "+asset);
+            if(debug)llOwnerSay("Spawning local asset: "+asset);
             _portal_spawn_std(asset, pos, rot, <0,0,-8>, debug, FALSE, FALSE);
         }else{
             llOwnerSay("Item '"+asset+"' not found in level. Loading from HUD.");

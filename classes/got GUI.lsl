@@ -1,8 +1,9 @@
-
+#define GUIMethod$toggleObjectives 1	// (bool)on - Shows or hides the objectives 
 #define GUIMethod$status 2				// [(float)hp_perc, (float)mana_perc, (float)arousal_perc, (float)pain_perc, (int)flags, (int)fxflags]
 #define GUIMethod$toggleLoadingBar 3	// (int)on, (float)time - Turns the loading bar on or off
 #define GUIMethod$toggleSpinner 4		// (int)on, (str)loadingText - Sets a spinner
-
+#define GUIMethod$togglePotion 5		// (key)texture || "", (int)stacks - Toggles a potion. If texture is not a key, it hides instead
+#define GUIMethod$potionCD 7			// (float)cooldown || 0 - Sets cooldown overlay over potion
 #define GUIMethod$setSpellTextures 6	// (arr)textures - Targ: 0 = self, 1 = friend, 2 = target - Sets little spell icons
 #define GUIMethod$toggleQuit 8			// (bool)show
 #define GUIMethod$toggle 10				// (bool)show - opens or Closes the GUI
@@ -20,5 +21,9 @@
 #define GUI$toggle(on) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$toggle, [on], TNN)
 #define GUI$toggleLoadingBar(targ, on, time) runMethod(targ, "got GUI", GUIMethod$toggleLoadingBar, [on, time], TNN)
 #define GUI$toggleSpinner(targ, on, loadingText) runMethod(targ, "got GUI", GUIMethod$toggleSpinner, [on, loadingText], TNN)
+
+#define GUI$togglePotion(texture, stacks) runMethod((str)LINK_ROOT, "got GUI", GUIMethod$togglePotion, [texture, stacks], TNN)
+#define GUI$potionCD(cd) runMethod((str)LINK_ROOT, "got GUI", GUIMethod$potionCD, [cd], TNN)
+#define GUI$toggleObjectives(targ, on) runMethod(targ, "got GUI", GUIMethod$toggleObjectives, [on], TNN)
 
 

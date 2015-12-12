@@ -138,6 +138,7 @@ default
         else if((ln == "OP2" || ln == "OPB2") && llList2Key(PLAYERS, 1) != "")
             setTarget(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE); // Add coop partner texture
         else if(ln == "FRB1" || ln == "FR1")setTarget("", "", TRUE);
+		else if(ln == "PROGRESS")Level$getObjectives();
         else if(ln == "OPS1" || ln == "OPS2" || ln == "FRS1"){
             string targ = "";
             if(ln == "OPS1")targ = (string)LINK_ROOT;
@@ -147,7 +148,6 @@ default
             
             Status$getTextureDesc(targ, llDetectedTouchFace(0), llList2String(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_TEXTURE, llDetectedTouchFace(0)]), 0));
         }
-        
         raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0)]));
     }
     /*
@@ -212,6 +212,7 @@ if(chan == 3){ \
 	} \
 	else if(message == "wipeCells"){ \
 		Portal$killAll(); \
+		GUI$toggleObjectives((string)LINK_ROOT, FALSE); \
 		Level$despawn(); \
 	} \
 	else if(message == "continueQuest"){ \
@@ -222,9 +223,12 @@ if(chan == 3){ \
 	else if(llGetSubString(message, 0,10) =="difficulty:"){ \
 		Status$setDifficulty((string)LINK_THIS, (integer)llGetSubString(message,11,-1), TRUE); \
 	} \
+	else if(message == "potion"){ \
+		Potions$use((string)LINK_ROOT); \
+	} \
     else  \
         SpellMan$hotkey(message); \
-return; \
+	return; \
 } \
 if(chan == 2){ \
     if(llGetSubString(message, 0, 8) == "settings:") \
