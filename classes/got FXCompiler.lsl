@@ -3,7 +3,7 @@
 #define FXCFlag$STUNNED 1
 
 #define FXCEvt$update 1					// Array of below values
-	#define FXCUpd$FLAGS 0
+	#define FXCUpd$FLAGS 0 
 	#define FXCUpd$MANA_REGEN 1
 	#define FXCUpd$DAMAGE_DONE 2
 	#define FXCUpd$DAMAGE_TAKEN 3
@@ -12,12 +12,25 @@
 	#define FXCUpd$COOLDOWN 6
 	#define FXCUpd$MANACOST 7
 	#define FXCUpd$CRIT 8
+	#define FXCUpd$PAIN_MULTI 9
+	#define FXCUpd$AROUSAL_MULTI 10
+	
 #define FXCEvt$pullStart 2				// void - Pull has started
 #define FXCEvt$pullEnd 3				// void - A pull effect has ended
 	
 	
 	
 // LIBRARY
+recacheFlags(){
+	integer pre = CACHE_FLAGS;
+	integer i; CACHE_FLAGS = 0;
+    for(i=0; i<llGetListLength(SET_FLAGS); i+=2)CACHE_FLAGS = CACHE_FLAGS|llList2Integer(SET_FLAGS,i+1);
+    for(i=0; i<llGetListLength(UNSET_FLAGS); i+=2)CACHE_FLAGS = CACHE_FLAGS&~llList2Integer(UNSET_FLAGS,i+1);
+	#ifndef IS_NPC
+	if(~pre&fx$F_NO_PULL && CACHE_FLAGS&fx$F_NO_PULL)llStopMoveToTarget();
+	#endif
+}
+
 
 // These are INSTNAT tasks that are shared
 #define dumpFxInstants() \
@@ -58,9 +71,12 @@
 #define dumpFxAddsShared() \
 	if(t == fx$SET_FLAG){ \
         SET_FLAGS = manageList(FALSE, SET_FLAGS, [pid,llList2Integer(fx, 1)]); \
+		recacheFlags(); \
 	} \
-    else if(t == fx$UNSET_FLAG) \
+    else if(t == fx$UNSET_FLAG){ \
         UNSET_FLAGS = manageList(FALSE, UNSET_FLAGS, [pid,llList2Integer(fx, 1)]); \
+		recacheFlags(); \
+	} \
 	else if(t == fx$DAMAGE_TAKEN_MULTIPLIER) \
         DAMAGE_TAKEN_MULTI = manageList(FALSE, DAMAGE_TAKEN_MULTI, [pid,llList2Float(fx, 1)]);   \
     else if(t == fx$DAMAGE_DONE_MULTIPLIER) \
@@ -81,10 +97,14 @@
 
 // These are REM tasks that are shared
 #define dumpFxRemsShared() \
-	if(t == fx$SET_FLAG) \
+	if(t == fx$SET_FLAG){ \
         SET_FLAGS = manageList(TRUE, SET_FLAGS, [pid, 0]); \
-    else if(t == fx$UNSET_FLAG) \
+		recacheFlags(); \
+	}\
+    else if(t == fx$UNSET_FLAG){ \
         UNSET_FLAGS = manageList(TRUE, UNSET_FLAGS, [pid, 0]); \
+		recacheFlags(); \
+	}\
     else if(t == fx$DAMAGE_TAKEN_MULTIPLIER) \
         DAMAGE_TAKEN_MULTI = manageList(TRUE, DAMAGE_TAKEN_MULTI, [pid, 0]); \
     else if(t == fx$DAMAGE_DONE_MULTIPLIER) \

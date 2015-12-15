@@ -177,7 +177,8 @@ aggroCheck(key k, float mod){
 
 
 aggro(key player, float ag){
-    if(BFL&BFL_NOAGGRO)return;
+	//qd(RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO);
+    if(BFL&BFL_NOAGGRO || RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO)return;
     
     if(player){
         integer pre = llGetListLength(AGGRO);
@@ -413,9 +414,7 @@ default
                     }
                     dropAggro(llGetOwnerKey(id), TRUE);
                     return;
-                }
-                if(flags&StatusFlag$raped)return;
-                
+                }                
                 
                 if(CB == "aggro")
                     aggro(llGetOwnerKey(id), 10);
@@ -523,7 +522,7 @@ default
 		}
 		aggro("",0);
 	}   
-	else if(METHOD == StatusMethod$monster_aggroed){
+	else if(METHOD == StatusMethod$monster_aggroed && ~RUNTIME_FLAGS&Monster$RF_NOAGGRO){
 		key p = method_arg(0);
 		vector pp = prPos(p);
 		float r = (float)method_arg(1);

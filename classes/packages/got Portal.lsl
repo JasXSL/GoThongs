@@ -172,11 +172,11 @@ default
 				integer i;
 				for(i=0; i<llGetListLength(ini) && ini != []; i++){
 					list v = llJson2List(llList2String(ini, i));
-					if(llList2String(v, 0) == "SC"){
+					if(llList2String(v, 0) == "SC" || llList2String(v,0) == "PR"){
 					
 						v = llDeleteSubList(v, 0, 0);
 						BFL=BFL&~BFL_SCRIPTS_INITIALIZED;
-						required+=v;
+						if(llList2String(v,0) == "SC")required+=v;
 						
 						Level$getScripts(pin, mkarr(v));
 						

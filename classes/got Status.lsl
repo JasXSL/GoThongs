@@ -34,6 +34,11 @@
 #define StatusShared$flags "g"		// (int)flags
 
 
+// CLIMBABLE DOCUMENTATION
+// Climbable items onStart and onEnd events can contain a JSON array: [(int)flags]
+#define StatusClimbFlag$root_at_end 1		// Set onEnd to root for 1.5 sec after dropping off the ladder or thing
+
+
 
 #define StatusEvt$flags 1					// (int)flags
 #define StatusEvt$monster_gotTarget 2		// [(key)id], Monster only

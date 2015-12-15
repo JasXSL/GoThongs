@@ -351,8 +351,7 @@ default
                 multiTimer([TIMER_ATTACK, "", atkspeed+llFrand(atkspeed*.5), FALSE]);
 				if(BFL&BFL_STOPON || RUNTIME_FLAGS&Monster$RF_PACIFIED || FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED))return;
 				integer flags = llList2Integer(ctData, 0);
-				
-				if(flags&StatusFlag$raped)return;
+				if(!_attackable(PARAMS))return; 
 				
 				raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));
 				BFL = BFL|BFL_ATTACK_CD;

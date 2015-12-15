@@ -35,6 +35,7 @@
 		#define fx$F_NOROT 0x80						// Unable to rotate
 		#define fx$F_BLURRED 0x100					// Blurry screen
 		#define fx$F_ALWAYS_BACKSTAB 0x200			// Attacks against affected target are always counted as behind
+		#define fx$F_NO_PULL 0x400					// Blocks fx$PULL (37)
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_INVUL|fx$F_QUICKRAPE)
@@ -63,6 +64,9 @@
 	#define fx$PULL 37							// (vec)pos, (float)speed - PC only. Instant effect but is cleared on effect fade for duration effects
 	#define fx$SPAWN_VFX 38						// (str)name, (vec)posOffset, (rot)rotoffset - PC only. Spawns a visual effect from the SpellFX container on the HUD
 	#define fx$REGION_SAY 39					// (int)chan, (str)message - Does what it says on the box
+	#define fx$AROUSAL_MULTIPLIER 40			// (float)add - PC only, Increases or decreases arousal generation
+	#define fx$PAIN_MULTIPLIER 41				// (float)add - PC only, Increases or decreases pain generation
+	#define fx$ALERT 42							// (str)text, (bool)ownersay, (bool)sound - PC only, standard alert
 	
 // conditions
 	// Built in
@@ -91,5 +95,5 @@
 	
 // Tags
 	#define fx$TAG_LEGS_SPREAD 1				// Used by skelcrawler
-	
+	#define fx$TAG_QUICKRAPE_A 2				//  
 	

@@ -98,6 +98,12 @@ string rarityToName(integer rarity){
 	return "Common";
 }
 
+rotation NormRot(rotation Q)
+{
+    float MagQ = llSqrt(Q.x*Q.x + Q.y*Q.y +Q.z*Q.z + Q.s*Q.s);
+    return <Q.x/MagQ, Q.y/MagQ, Q.z/MagQ, Q.s/MagQ>;
+}
+
 string statsToText(list stats){
 	list out = [];
 	list n = STAT_NAMES;

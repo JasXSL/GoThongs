@@ -14,6 +14,8 @@ list CASTTIME_MULTIPLIER;   // [id, (float)multiplier]
 list COOLDOWN_MULTIPLIER;   // [id, (float)multiplier]
 list MANA_COST_MULTIPLIER;  // [id, (float)multiplier]
 list CRIT_MULTIPLIER;		// [id, (float)multiplier]
+list AROUSAL_MULTIPLIER;	// [id, (float)multiplier]
+list PAIN_MULTIPLIER;		// [id, (float)multiplier]
 
 
 integer current_visual;
@@ -71,18 +73,21 @@ runEffect(key caster, integer stacks, string package, integer pid){
 		else if(t == fx$PARTICLES){
 			ThongMan$particles((float)v, llList2Integer(fx,2), llList2String(fx,3));
 		}
-		else if(t == fx$PULL){
+		else if(t == fx$PULL && ~CACHE_FLAGS&fx$F_NO_PULL){
 			if((vector)v == ZERO_VECTOR){
 				raiseEvent(FXCEvt$pullEnd, "");
 				llStopMoveToTarget();
 			}else{
-				llMoveToTarget((vector)v, llList2Float(fx,2));
 				raiseEvent(FXCEvt$pullStart, "");
+				llSleep(.1);
+				llMoveToTarget((vector)v, llList2Float(fx,2));
+				
 			}
 		}
 		else if(t == fx$SPAWN_VFX){
 			SpellFX$spawnInstant(mkarr(llDeleteSubList(fx,0,0)), llGetOwner());
 		}
+		else if(t == fx$ALERT)Alert$freetext((string)LINK_ROOT, v, llList2Integer(fx,2), llList2Integer(fx, 3));
     }
     
     
@@ -113,7 +118,12 @@ addEffect(key caster, integer stacks, string package, integer pid){
         
         else if(t == fx$MANA_COST_MULTIPLIER)
             MANA_COST_MULTIPLIER = manageList(FALSE, MANA_COST_MULTIPLIER, [pid,llList2Float(fx, 1)]);
-            
+        
+		else if(t == fx$AROUSAL_MULTIPLIER)
+            AROUSAL_MULTIPLIER = manageList(FALSE, AROUSAL_MULTIPLIER, [pid,llList2Float(fx, 1)]);
+        else if(t == fx$PAIN_MULTIPLIER)
+            PAIN_MULTIPLIER = manageList(FALSE, PAIN_MULTIPLIER, [pid,llList2Float(fx, 1)]);
+        
         
         else if(t == fx$FORCE_SIT){
             string out = "@sit:"+llList2String(fx, 1)+"=force";
@@ -153,7 +163,12 @@ remEffect(key caster, integer stacks, string package, integer pid, integer overw
 			MANA_REGEN_MULTI = manageList(TRUE, MANA_REGEN_MULTI, [pid, 0]);
         else if(t == fx$MANA_COST_MULTIPLIER)
             MANA_COST_MULTIPLIER = manageList(TRUE, MANA_COST_MULTIPLIER, [pid, 0]);
+        else if(t == fx$AROUSAL_MULTIPLIER)
+            AROUSAL_MULTIPLIER = manageList(TRUE, AROUSAL_MULTIPLIER, [pid, 0]);
+        else if(t == fx$PAIN_MULTIPLIER)
+            PAIN_MULTIPLIER = manageList(TRUE, PAIN_MULTIPLIER, [pid, 0]);
         
+		
         else if(t == fx$FORCE_SIT)llOwnerSay("@unsit=y,unsit=force");
 		else if(t == fx$PULL){
 			raiseEvent(FXCEvt$pullEnd, "");
@@ -166,14 +181,12 @@ remEffect(key caster, integer stacks, string package, integer pid, integer overw
 
 
 
+	
 
 updateGame(){
     integer visual = llList2Integer(THONG_VISUALS, -2);
     
-    integer flags;
     integer i;
-    for(i=0; i<llGetListLength(SET_FLAGS); i+=2)flags = flags|llList2Integer(SET_FLAGS,i+1);
-    for(i=0; i<llGetListLength(UNSET_FLAGS); i+=2)flags = flags&~llList2Integer(UNSET_FLAGS,i+1);
     
     
     if(current_visual != visual){
@@ -204,7 +217,13 @@ updateGame(){
 	
     float cm = compileList(CRIT_MULTIPLIER, 0, 1, 2);
     if(cm<0)cm = 0;
-    
+	
+	float pm = compileList(PAIN_MULTIPLIER, 0, 1, 2)+1;
+    if(pm<0)pm = 0;
+	
+	float am = compileList(AROUSAL_MULTIPLIER, 0, 1, 2)+1;
+    if(am<0)am = 0;
+	
     // Compile lists of spell specific modifiers
     list spdmtm; // SPELL_DMG_TAKEN_MOD - [(str)spellName, (float)dmgmod]
     for(i=0; i<llGetListLength(SPELL_DMG_TAKEN_MOD); i+=3){
@@ -215,7 +234,7 @@ updateGame(){
     }
     
     Status$spellModifiers(spdmtm);
-    raiseEvent(FXCEvt$update, mkarr(([flags, regen, ddm, dtm, dodge, ctm, cdm, mcm, cm])));
+    raiseEvent(FXCEvt$update, mkarr(([CACHE_FLAGS, regen, ddm, dtm, dodge, ctm, cdm, mcm, cm, pm, am])));
 }
 
 #include "got/classes/packages/got FXCompiler.lsl"

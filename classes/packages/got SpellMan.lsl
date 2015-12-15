@@ -66,9 +66,12 @@ integer BFL;
 string targ = llList2String(SPELL_TARGS, 0); \
 if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     integer flags = spellTargets(data); \
+	vector pos = prPos(llList2String(SPELL_TARGS, 0));\
     if(~flags&TARG_REQUIRE_NO_FACING){ \
+		vector gpos = llGetPos();\
         prAngX(targ, ang); \
-        if(llFabs(ang)>PI_BY_TWO){ \
+		integer inRange = (llVecDist(pos, llGetPos())<3 && llVecDist(<gpos.x,gpos.y,0>,<pos.x,pos.y,0>)<0.5);\
+        if(llFabs(ang)>PI_BY_TWO && !inRange){ \
             A$(ASpellMan$errTargInFront); \
             SpellMan$interrupt(); \
             return ret; \
@@ -77,7 +80,7 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     list bounds = llGetBoundingBox(llList2String(SPELL_TARGS, 0));\
     vector b = llList2Vector(bounds, 0)-llList2Vector(bounds,1); \
     float h = llFabs(b.z/2); \
-    list ray = llCastRay(llGetPos()+<0,0,.5>, prPos(llList2String(SPELL_TARGS, 0))+<0,0,h>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]); \
+    list ray = llCastRay(llGetPos()+<0,0,.5>, pos+<0,0,h>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]); \
     if(llList2Integer(ray, -1) == 1 && llList2Key(ray,0) != targ){ \
         A$(ASpellMan$errVisionObscured); \
         SpellMan$interrupt(); \
@@ -213,7 +216,7 @@ integer castSpell(integer nr){
 	// Grab target flags
 	integer spt = spellTargets(data);
 	
-	// Spell is on cooldown
+	// Spell is on cooldown 
     if(spellOnCooldown(nr) || (BFL&BFL_GLOBAL_CD && ~spt&SpellMan$NO_GCD)){
         A$(ASpellMan$errCantCastYet);
         return FALSE;

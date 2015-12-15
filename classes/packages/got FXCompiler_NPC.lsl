@@ -98,10 +98,7 @@ remEffect(key caster, integer stacks, string package, integer pid, integer overw
 }
 
 updateGame(){
-    integer flags;
     integer i;
-    for(i=0; i<llGetListLength(SET_FLAGS); i+=2)flags = flags|llList2Integer(SET_FLAGS,i+1);
-    for(i=0; i<llGetListLength(UNSET_FLAGS); i+=2)flags = flags&~llList2Integer(UNSET_FLAGS,i+1);
     
     
     float ddm = compileList(DAMAGE_DONE_MULTI, 0, 1, 2)+1;
@@ -134,8 +131,8 @@ updateGame(){
     
     
     
-    Status$spellModifiers(spdmtm);    
-    raiseEvent(FXCEvt$update, mkarr(([flags, 0, ddm, dtm, dodge, ctm, cdm, cm])));
+    Status$spellModifiers(spdmtm);     
+    raiseEvent(FXCEvt$update, mkarr(([CACHE_FLAGS, 0, ddm, dtm, dodge, ctm, cdm, cm])));
 }
 
 #include "got/classes/packages/got FXCompiler.lsl"

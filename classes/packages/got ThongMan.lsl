@@ -16,7 +16,7 @@ integer BFL;
 integer PHYSID; // ID of physical thong. Should be in description
 
 list FACES_ENHANCED = [3];
-integer enhanced;
+integer enhanced = TRUE;
 
 // Defaults
 vector color = <1,1,1>;
@@ -268,7 +268,7 @@ default
 				specular = [PRIM_SPECULAR, ALL_SIDES, llList2String(specular, 0), (vector)llList2String(specular,1), (vector)llList2String(specular,2), llList2Float(specular,3), (vector)llList2String(specular,4), llList2Integer(specular,5), llList2Integer(specular,6)];
 
 
-            enhanced = (integer)method_arg(5);
+            enhanced = TRUE;//(integer)method_arg(5);
             
 			
 			setOnInvolved(diffuse+bump+specular);

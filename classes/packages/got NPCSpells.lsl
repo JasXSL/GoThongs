@@ -98,7 +98,7 @@ onEvt(string script, integer evt, string data){
         if(evt == FXCEvt$update){
             FXFLAGS = (integer)j(data, FXCUpd$FLAGS);
             fxModDmgDone = (float)j(data, FXCUpd$DAMAGE_DONE);
-            fxCTM = (float)j(data, FXCUpd$CASTTIME);
+            fxCTM = (float)j(data, FXCUpd$CASTTIME); 
             fxCDM = (float)j(data, FXCUpd$COOLDOWN);
             if(BFL&BFL_CASTING && FXFLAGS&fx$NOCAST)
                 endCast(FALSE);
@@ -176,7 +176,7 @@ startCast(integer spid, key targ, integer hasStatus){
 		if(casttime<=0)multiTimer(["LAT", "", 1, FALSE]); // Stop lookat
 	}
     
-    if(casttime <=0){
+    if(casttime <=0.1){
 		raiseEvent(NPCSpellsEvt$SPELL_CAST_FINISH, mkarr(([spid, spell_targ])));
 		
 	}

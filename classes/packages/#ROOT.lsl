@@ -116,6 +116,7 @@ default
 		
 		RLV$clearCamera((string)LINK_THIS);
 		savePlayers();
+		Level$bind(llGetOwner());
     }
     
     
@@ -215,6 +216,7 @@ if(chan == 3){ \
 		GUI$toggleObjectives((string)LINK_ROOT, FALSE); \
 		Level$despawn(); \
 	} \
+	else if(message == "reset"){resetAll();} \
 	else if(message == "continueQuest"){ \
 		AMS$(ARoot$continueQuest); \
 		Portal$killAll(); \
@@ -280,6 +282,7 @@ if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1) \
             if(targ){
                 AS$(ARoot$nowInParty);
                 llOwnerSay("You are now in a party with secondlife:///app/agent/"+(string)targ+"/about");
+				Level$bind(targ);
             }else
                 AMS$(ARoot$coopDisband);
             
@@ -311,6 +314,9 @@ if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1) \
 		if(!method$byOwner){
 			qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
 			return;
+		}
+		else{
+			Status$setDifficulty((string)LINK_ROOT, -1, TRUE);
 		}
 		CB_DATA = PLAYERS;
 	}

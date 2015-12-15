@@ -16,7 +16,7 @@
 #define Portal$killAll() runOmniMethod("got Portal", PortalMethod$remove, [], TNN)
 #define Portal$iniData(targ, data) runMethod(targ, "got Portal", PortalMethod$iniData, [data], TNN)
 
-#define portalLive() (~llList2Integer(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_TEXT]),0)&BIT_DEBUG)
+#define portalLive() (!(int)j(llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_TEXT]),0),1) && llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_TEXT]),0)!="")
 // Get spawn desc config
 #define portalConf() j(llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_TEXT]),0), 2)
 

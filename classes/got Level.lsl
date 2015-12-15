@@ -2,7 +2,7 @@
 #define LevelMethod$loaded 1		// (int)HUD_loaded - Whenever the loader has finished
 #define LevelMethod$died 2			// Add one to the death counter
 #define LevelMethod$load 3			// (bool)edit_mode[, (str)group=JSON_INVALID] - Edit mode will let you move monsters and stuff around. JSON_INVALID = spawn at level start. Otherwise lets you spawn by group.
-#define LevelMethod$setFinished 4	// (key)player[, (bool)evtOnFinished] - Set that this player has finished the level. Once all players have finished, the cell moves to the next unless evtOnFinished is set in which case it raises LevelEvt$levelCompleted. If using the latter. Send this command again with "" for user to finalize
+#define LevelMethod$setFinished 4	// (key)player||(int)-1[, (bool)evtOnFinished] - Set that this player has finished the level. Once all players have finished, the cell moves to the next unless evtOnFinished is set in which case it raises LevelEvt$levelCompleted. If using the latter. Send this command again with "" for user to finalize. If player is -1, then all players have finished
 #define LevelMethod$spawn 5			// (str)prim, (vec)pos, (rot)rotation, (int)debug
 #define LevelMethod$loadFinished 6	// void - Level has finished loading
 
@@ -13,7 +13,7 @@
 #define LevelMethod$cellData 11		// (var)questData - QuestData received from database 
 #define LevelMethod$cellDesc 12		// (str)description - Cell Description received from database
 #define LevelMethod$getObjectives 13// void - Updates the sender on quest progress
-
+#define LevelMethod$bindToLevel 14	// void - Bind my HUD to any level
 
 #define LevelMethod$despawn 0x71771E5	// Deletes a level
 
@@ -63,6 +63,7 @@
 #define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)
 #define Level$getObjectives() runMethod(db2$get("#ROOT", [RootShared$level]), "got Level", LevelMethod$getObjectives, [], TNN)
 #define Level$spawnLive(asset, pos, rot) runOmniMethod("got Level", LevelMethod$spawn, [asset, pos, rot, FALSE], TNN)
+#define Level$bind(player) runLimitMethod(player, "got Level", LevelMethod$bindToLevel, [], TNN, 100)
 
 
 #define _lSharp() ((integer)db2$get("got Level", [LevelShared$isSharp]))

@@ -13,7 +13,7 @@
 #include "got/_core.lsl"
 
 list STACKS;                // [id, stacks]
-
+integer CACHE_FLAGS;		// 
 
 onEvt(string script, integer evt, string data){
     if(script == "got FX"){

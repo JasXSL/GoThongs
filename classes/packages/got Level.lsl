@@ -152,13 +152,36 @@ default
 	else if(METHOD == LevelMethod$getObjectives){
 		raiseEvent(LevelEvt$fetchObjectives, mkarr([llGetOwnerKey(id)]));
 	}
+	else if(METHOD == LevelMethod$bindToLevel){
+		Root$setLevelOn(id);
+	}
+	else if(METHOD == LevelMethod$spawn){
+        string asset = method_arg(0);
+        vector pos = (vector)method_arg(1);
+        rotation rot = (rotation)method_arg(2);
+        integer debug = (integer)method_arg(3);
+        
+        if(llGetInventoryType(asset) == INVENTORY_OBJECT){
+            if(debug)llOwnerSay("Spawning local asset: "+asset);
+            _portal_spawn_std(asset, pos, rot, <0,0,-8>, debug, FALSE, FALSE);
+        }else{
+            llOwnerSay("Item '"+asset+"' not found in level. Loading from HUD.");
+            Spawner$spawn(asset, pos, rot, "", debug, FALSE);
+        }
+        
+    }
     
 // OWNER ONLY BELOW THIS LINE
-    if(!method$byOwner)return;
+    if(!method$byOwner)return; 
     
     if(METHOD == LevelMethod$setFinished){
-        if(~llListFindList(PLAYERS_COMPLETED, [method_arg(0)]))return;
-        if(method_arg(0) != "")PLAYERS_COMPLETED += [method_arg(0)];
+		if((integer)method_arg(0) == -1){
+			PLAYERS_COMPLETED = PLAYERS;
+		}
+        else{		
+			if(~llListFindList(PLAYERS_COMPLETED, [method_arg(0)]))return;
+			if(method_arg(0) != "")PLAYERS_COMPLETED += [method_arg(0)];
+		}
 		
         if(PLAYERS_COMPLETED == PLAYERS){
 			if((integer)method_arg(1)){
@@ -323,21 +346,7 @@ default
         Remoteloader$load(cls$name, pin, 2);
 	}
     
-    else if(METHOD == LevelMethod$spawn){
-        string asset = method_arg(0);
-        vector pos = (vector)method_arg(1);
-        rotation rot = (rotation)method_arg(2);
-        integer debug = (integer)method_arg(3);
-        
-        if(llGetInventoryType(asset) == INVENTORY_OBJECT){
-            if(debug)llOwnerSay("Spawning local asset: "+asset);
-            _portal_spawn_std(asset, pos, rot, <0,0,-8>, debug, FALSE, FALSE);
-        }else{
-            llOwnerSay("Item '"+asset+"' not found in level. Loading from HUD.");
-            Spawner$spawn(asset, pos, rot, "", debug, FALSE);
-        }
-        
-    }
+    
     
     
     

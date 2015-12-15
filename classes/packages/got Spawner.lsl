@@ -22,7 +22,7 @@ next(integer forceRetry){
 	
 	_portal_spawn_std(llList2String(queue, 0), llList2Vector(queue,1), llList2Rot(queue,2), -<0,0,8>, llList2Integer(queue, 4), reqDesc, llList2Integer(queue,5));
 	BFL = BFL|BFL_QUEUE;
-	multiTimer(["FORCE_NEXT", "", 60, FALSE]);
+	multiTimer(["FORCE_NEXT", "", 30, FALSE]);
 }
 
 // An item has been initialized, let's continue

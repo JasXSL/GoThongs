@@ -13,10 +13,12 @@
 #define TIMER_REGEN "a"
 #define TIMER_BREAKFREE "b"
 #define TIMER_INVUL "c"
+#define TIMER_CLIMB_ROOT "d"
 
 integer BFL;
 #define BFL_TEMP_INVUL 1		// Temp invul after rez
 #define BFL_CAM 2				// Cam is overridden
+#define BFL_CLIMB_ROOT 4		// Ended climb, root for a bit
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
 #define BFL_STATUS_SENT 0x20		// Status sent
 
@@ -41,6 +43,8 @@ integer GENITAL_FLAGS;
 integer FXFLAGS = 0;
 float fxModDmgTaken = 1;
 float fxModManaRegen = 1;
+float fxModArousalTaken = 1;
+float fxModPainTaken = 1;
 
 list SPELL_DMG_TAKEN_MOD;
 
@@ -53,7 +57,7 @@ float PAIN = 0;
 list OUTPUT_STATUS_TO; 
 
 integer DIFFICULTY = 1;	// 
-#define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.75)+DIFFICULTY*2)*0.1)-0.3)
+#define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.7)+DIFFICULTY*4)*0.1)-0.4)
 
 
 
@@ -86,7 +90,7 @@ toggleClothes(integer showGenitals){
         
 
 addDurability(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
+    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount<0))return;
     float pre = DURABILITY;
     amount*=spdmtm(spellName);
 	
@@ -140,7 +144,7 @@ addDurability(float amount, string spellName, integer flags){
     }
 }
 addMana(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
+    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount<0))return;
     float pre = MANA;
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE)
@@ -157,13 +161,13 @@ addMana(float amount, string spellName, integer flags){
     }
 }
 addArousal(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
+    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount>0))return;
     float pre = AROUSAL;    
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE){
 		amount*=maxArousal();
 	}
-    if(amount>0)amount*=fxModDmgTaken;
+    if(amount>0)amount*=fxModArousalTaken;
     AROUSAL += amount;
     if(AROUSAL<=0)AROUSAL = 0;
     
@@ -184,14 +188,14 @@ addArousal(float amount, string spellName, integer flags){
     }
 }
 addPain(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead || BFL&BFL_CAM)return;
+    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount>0))return;
     float pre = PAIN;
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE){
 		amount*=maxPain();
 	}
 		
-    if(amount>0)amount*=fxModDmgTaken;
+    if(amount>0)amount*=fxModPainTaken;
     PAIN += amount;
     if(PAIN<=0)PAIN = 0;
     
@@ -238,8 +242,11 @@ onEvt(string script, integer evt, string data){
 			}
 			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force");
 			
-            fxModDmgTaken = (float)jVal(data, [3]);
-            fxModManaRegen = (float)jVal(data, [1]);
+            fxModDmgTaken = (float)j(data, FXCUpd$DAMAGE_TAKEN);
+            fxModManaRegen = (float)j(data, FXCUpd$MANA_REGEN);
+			fxModPainTaken = (float)j(data,FXCUpd$PAIN_MULTI);
+			fxModArousalTaken = (float)j(data,FXCUpd$AROUSAL_MULTI);
+			
             outputStats();
         }
     }else if(script == "#ROOT"){
@@ -289,10 +296,8 @@ onEvt(string script, integer evt, string data){
             }
             else{
 				if(~STATUS_FLAGS&StatusFlag$raped)return;			// Prevent recursion
-                STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
+                STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped; 
 				Status$fullregen();
-				BFL = BFL|BFL_TEMP_INVUL;
-				multiTimer([TIMER_INVUL,"", 6, FALSE]);
             }
             AnimHandler$anim("got_loss", FALSE, 0);
         }
@@ -312,6 +317,11 @@ onEvt(string script, integer evt, string data){
 		}
 		else if(evt == ClimbEvt$end){
 			STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$climbing;
+			integer f = (int)jVal(data,([1,0]));
+			if(f&StatusClimbFlag$root_at_end){
+				multiTimer([TIMER_CLIMB_ROOT, "", 1.5, FALSE]);
+				BFL = BFL|BFL_CLIMB_ROOT;
+			}
 		}
 		outputStats();
 	}
@@ -337,11 +347,11 @@ dumpStats(){
 
 outputStats(){ 
     dumpStats();
-	
+	 
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
     if(FXFLAGS&fx$F_STUNNED || BFL&BFL_CAM || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading) && ~STATUS_FLAGS&StatusFlag$raped))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
-    if(FXFLAGS&fx$F_ROOTED || STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming))
+    if(FXFLAGS&fx$F_ROOTED || STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming) || BFL&BFL_CLIMB_ROOT)
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
 	if(FXFLAGS&fx$F_NOROT)
 		controls = controls|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
@@ -387,6 +397,10 @@ timerEvent(string id, string data){
 	}
 	else if(id == TIMER_INVUL){
 		BFL=BFL&~BFL_TEMP_INVUL;
+	}
+	else if(id == TIMER_CLIMB_ROOT){
+		BFL = BFL&~BFL_CLIMB_ROOT;
+		outputStats();
 	}
 }
   
@@ -456,6 +470,10 @@ default
 		
         Rape$end();
         
+		if(STATUS_FLAGS&StatusFlag$dead){
+			BFL = BFL|BFL_TEMP_INVUL; 
+			multiTimer([TIMER_INVUL,"", 6, FALSE]);
+		}
         DURABILITY = maxDurability();
         MANA = maxMana();
         AROUSAL = 0;
@@ -518,19 +536,24 @@ default
 			outputStats();
 		}
 	}
-	else if(METHOD == StatusMethod$setDifficulty){
-		DIFFICULTY = (integer)method_arg(0);
-		if(DIFFICULTY < 0)DIFFICULTY = 0;
-		if(DIFFICULTY > 5)DIFFICULTY = 5;
+	else if(METHOD == StatusMethod$setDifficulty){ 
+		// Difficulty can be -1 to just update your coop partner
+		if(~(integer)method_arg(0)){
+			DIFFICULTY = (integer)method_arg(0);
+			if(DIFFICULTY < 0)DIFFICULTY = 0;
+			if(DIFFICULTY > 5)DIFFICULTY = 5;
+		}
 		if((integer)method_arg(1)){Status$setDifficulty(coop_player, DIFFICULTY, FALSE);}
 		else{
 			// Other player changed difficulty. Set on server
 			Bridge$setDifficulty(DIFFICULTY);
 		}
 		raiseEvent(StatusEvt$difficulty, mkarr([DIFFICULTY]));
-		list names = ["Casual", "Normal", "Hard", "Very Hard", "Brutal", "Bukakke"];
 		
-		Alert$freetext((string)LINK_THIS, "Difficulty set to "+llList2String(names, DIFFICULTY), TRUE, TRUE);
+		if(~(integer)method_arg(0)){
+			list names = ["Casual", "Normal", "Hard", "Very Hard", "Brutal", "Bukakke"];
+			Alert$freetext((string)LINK_THIS, "Difficulty set to "+llList2String(names, DIFFICULTY), TRUE, TRUE);
+		}
 	}
 
     
