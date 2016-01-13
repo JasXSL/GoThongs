@@ -26,9 +26,9 @@
 
 
 #define FXEvt$runEffect 1				// [(key)caster, (int)stacks, (arr)package, (int)id, (int)flags]
-#define FXEvt$effectAdded 2				// [(key)caster, (int)stacks, (arr)package, (int)id]
+#define FXEvt$effectAdded 2				// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
 #define FXEvt$effectRemoved 3			// [(key)caster, (int)stacks, (arr)package, (int)id, (bool)overwrite]
-#define FXEvt$effectStacksChanged 4		// [(key)caster, (int)stacks, (arr)package, (int)id]
+#define FXEvt$effectStacksChanged 4		// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
 
 
 #define FX$send(target, sender, wrapper) runMethod(target, "got FX", FXMethod$run, ([sender, wrapper]), TNN)

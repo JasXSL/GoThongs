@@ -10,7 +10,7 @@
 
 #define SpellManEvt$interrupted 1	// NULL - NULL
 #define SpellManEvt$cast 2			// (float)casttime - Cast started - Not raised on instant cast
-#define SpellManEvt$complete 3 		// NULL - Spell finished casting
+#define SpellManEvt$complete 3 		// (int)spell_index - Spell finished casting
 
 
 #define SpellMan$NO_GCD 0x80

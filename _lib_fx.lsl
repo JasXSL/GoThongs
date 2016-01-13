@@ -3,8 +3,8 @@
 	// The flags in the top 2 are the SMAFlags defined in got Status
 	#define fx$DAMAGE_DURABILITY 1				// [(int)amount_to_rem[, (int)flags]]
 	#define fx$AROUSE 2							// [(int)amount_to_add[, (int)flags]]
-	#define fx$PAIN 3							// [(int)amount_to_add]
-	#define fx$MANA 4							// [(int)amount_to_add]
+	#define fx$PAIN 3							// [(int)amount_to_add[, (int)flags]]
+	#define fx$MANA 4							// [(int)amount_to_add[, (int)flags]]
 	#define fx$TRIGGER_SOUND 5					// [(key)uuid, (float)vol] - UUID can also be a JSON array of random sounds
 	#define fx$HITFX 6							// [(vec)color, (int)flags]
 		#define fxhfFlag$NOANIM 1					// Don't use standard takehit anim
@@ -38,7 +38,7 @@
 		#define fx$F_NO_PULL 0x400					// Blocks fx$PULL (37)
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
-		#define fx$UNVIABLE (fx$F_INVUL|fx$F_QUICKRAPE)
+		#define fx$UNVIABLE (fx$F_QUICKRAPE)
 	#define fx$MANA_REGEN_MULTIPLIER 15			// (float)add
 	#define fx$DAMAGE_TAKEN_MULTIPLIER 16		// (float)add
 	#define fx$DAMAGE_DONE_MULTIPLIER 17		// (float)add
@@ -95,5 +95,7 @@
 	
 // Tags
 	#define fx$TAG_LEGS_SPREAD 1				// Used by skelcrawler
-	#define fx$TAG_QUICKRAPE_A 2				//  
+	#define fx$TAG_QUICKRAPE_A 2				// Used by the trap script
+	#define fx$TAG_UNRAOUSED 3					// Used by anemone
+	
 	

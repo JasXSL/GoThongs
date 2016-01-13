@@ -4,9 +4,11 @@
 #define GUIMethod$toggleSpinner 4		// (int)on, (str)loadingText - Sets a spinner
 #define GUIMethod$togglePotion 5		// (key)texture || "", (int)stacks - Toggles a potion. If texture is not a key, it hides instead
 #define GUIMethod$potionCD 7			// (float)cooldown || 0 - Sets cooldown overlay over potion
-#define GUIMethod$setSpellTextures 6	// (arr)textures - Targ: 0 = self, 1 = friend, 2 = target - Sets little spell icons
+#define GUIMethod$setSpellTextures 6	// (arr)textures - Targ: 0 = self, 1 = friend, 2 = target - Sets little spell icons. Data is [(int)PID, (key)texture, (int)time_added_ms, (int)duration_ms, (int)stacks]
 #define GUIMethod$toggleQuit 8			// (bool)show
 #define GUIMethod$toggle 10				// (bool)show - opens or Closes the GUI
+#define GUIMethod$toggleBoss 11			// (key)texture OR "" - Toggles the boss portrait
+#define GUIMethod$bossHP 12				// (float)perc - Sets boss HP percentage
 
 #define GUI$myStatus(hp, mana, arousal, pain, flags, fxflags) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$status, [hp, mana, arousal, pain, flags, fxflags], TNN)
 #define GUI$setMySpellTextures(data) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$setSpellTextures, data, TNN)
@@ -25,5 +27,7 @@
 #define GUI$togglePotion(texture, stacks) runMethod((str)LINK_ROOT, "got GUI", GUIMethod$togglePotion, [texture, stacks], TNN)
 #define GUI$potionCD(cd) runMethod((str)LINK_ROOT, "got GUI", GUIMethod$potionCD, [cd], TNN)
 #define GUI$toggleObjectives(targ, on) runMethod(targ, "got GUI", GUIMethod$toggleObjectives, [on], TNN)
+#define GUI$toggleBoss(targ, texture) runMethod(targ, "got GUI", GUIMethod$toggleBoss, [texture], TNN)
+#define GUI$bossHP(targ, perc) runMethod(targ, "got GUI", GUIMethod$bossHP, [perc], TNN)
 
 

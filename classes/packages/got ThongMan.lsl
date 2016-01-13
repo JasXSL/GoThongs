@@ -12,12 +12,6 @@ integer BFL;
 #define BFL_DEAD 1
 #define BFL_INITIALIZED 2
 
-
-integer PHYSID; // ID of physical thong. Should be in description
-
-list FACES_ENHANCED = [3];
-integer enhanced = TRUE;
-
 // Defaults
 vector color = <1,1,1>;
 vector hit = <1,1,1>;
@@ -37,7 +31,7 @@ updateDefaults(){
         if(fxspecular != [])
             specular = [PRIM_SPECULAR, ALL_SIDES]+fxspecular;
     }
-    raiseEvent(ThongManEvt$ini, mkarr(([enhanced])));
+    raiseEvent(ThongManEvt$ini, "[]");
 	
     if(BFL&BFL_DEAD)return;
     list out;
@@ -48,16 +42,11 @@ updateDefaults(){
         if((integer)val != root)out+=0;
         else{
             out+=1;
-            if(!enhanced){
-				integer i;
-				for(i=0; i<llGetListLength(FACES_ENHANCED); i++)
-					out+=([PRIM_COLOR, llList2Integer(FACES_ENHANCED, i), <1,1,1>, 0]);
-			}
         }
         out+=specular+glow;
     )
     llSetLinkPrimitiveParamsFast(0, out);
-	
+	debugUncommon("Update defaults");
 }
 
 
@@ -70,6 +59,7 @@ restore(){
             set+=[linkAlpha(llList2Integer(jiggles,i), 0, ALL_SIDES)];
     }
     if(set)llSetLinkPrimitiveParamsFast(0, set); 
+	debugUncommon("Restore");
     updateDefaults();
 }
 
@@ -84,7 +74,7 @@ takeHit(vector col){
 	
 
     MeshAnim$restartAnim("Jiggle");
-	multiTimer(["A",1., .1, FALSE]);
+	multiTimer(["A",1., 0.5, FALSE]);
 	
     
     
@@ -100,7 +90,6 @@ timerEvent(string id, string data){
 		setColorOnInvolved(v);
 		
 		if(d>0)multiTimer(["A", d, .05, FALSE]);
-        else restore();
     }
 	else if(llGetSubString(id, 0, 1) == "P_"){
 		llLinkParticleSystem((integer)llGetSubString(id, 2, -1), []);
@@ -111,10 +100,7 @@ onEvt(string script, integer evt, string data){
     if(script == "ton MeshAnim"){
         if(evt == evt$SCRIPT_INIT){
             llSetRemoteScriptAccessPin(0);
-        }else if(data == "OUT"){
-            //restore();
-			
-		}
+        }
     }
 } 
 
@@ -125,26 +111,27 @@ setColorOnInvolved(vector col){
 		
 		integer link = llList2Integer(jiggles, i);
 		llSetLinkColor(link, col, ALL_SIDES);
-		
-		/*
-		out+= [PRIM_LINK_TARGET, link];
-		integer x;
-		for(x=0; x<llGetLinkNumberOfSides(link); x++)
-			out+= [PRIM_COLOR, x, col, llList2Float(llGetLinkPrimitiveParams(link, [PRIM_COLOR, x]), 1)];
-		*/
 	}
 	//llSetLinkPrimitiveParamsFast(0, out);
 }
 
-setOnInvolved(list params){
+setOnInvolved(list params){ // Also sets on prims that aren't involved in jiggling
 	// Sets primitive params on all the main prims
 	integer i; list out;
-	for(i=0; i<llGetListLength(jiggles); i++)out+=[PRIM_LINK_TARGET, llList2Integer(jiggles, i)]+params;
+	list all = jiggles;
+	for(i=0; i<llGetListLength(all); i++)out+=[PRIM_LINK_TARGET, llList2Integer(all, i)]+params;
 	llSetLinkPrimitiveParamsFast(0, out);
+	debugUncommon("Setting on involved: "+mkarr(params));
+}
+
+toggleOther(integer on){
+	integer i;
+	for(i=0; i<llGetListLength(other); i++)llSetLinkAlpha(llList2Integer(other, i), on, ALL_SIDES);
 }
 
 integer root;
 list jiggles;
+list other; // Don't animate, but toggle on rape
 default
 {
     on_rez(integer mew){llResetScript();}
@@ -176,31 +163,22 @@ default
         
         links_each(nr, name, 
 			string s = (string)llGetLinkPrimitiveParams(nr, [PRIM_DESC]);
-            if(llToLower(llGetSubString(name, 0, 3)) == "main"){
+            if(llToLower(llGetSubString(name, 0, 3)) == "main"){ 
                 jiggles += nr;
                 if((integer)llGetSubString(name, -1, -1) == 1){
                     root = nr;
-                    if(llJsonValueType(s, []) == JSON_ARRAY){
-                        list l = llJson2List(s);
-						if(llJsonValueType(llList2String(l, 0), []) == JSON_ARRAY)
-							FACES_ENHANCED = llJson2List(llList2String(l,0));
-                        else if(llList2Integer(l,0) != -1)
-							FACES_ENHANCED = [llList2Integer(l,0)];
-						else FACES_ENHANCED = [];
-							
-                    }
                 }
             }
+			else if(name != "DISREGARD" && nr>1)other+=nr;
 			
         )
 		
         
-        list desc = llJson2List(llStringTrim(llGetObjectDesc(), STRING_TRIM));
-        PHYSID = llList2Integer(desc, 0);
         raiseEvent(evt$SCRIPT_INIT, "");
         BFL = BFL|BFL_INITIALIZED;
         
-        Root$refreshThong(PHYSID);  
+        Root$refreshThong(llGetOwner());   
+		raiseEvent(ThongManEvt$getVisuals, "");
     }
     
     
@@ -240,13 +218,9 @@ default
         }
         else if(METHOD == ThongManMethod$get){
             if(!llGetStartParameter())llResetScript();
-            else Root$refreshThong(PHYSID);
+            else Root$refreshThong(id);
         }
         else if(METHOD == ThongManMethod$set){
-			if(PHYSID <= 0 && id != ""){
-				raiseEvent(ThongManEvt$getVisuals, "");
-				return;
-			}
             PARAMS = method_arg(0);
 			
 			if(method_arg(0) != "")
@@ -268,7 +242,6 @@ default
 				specular = [PRIM_SPECULAR, ALL_SIDES, llList2String(specular, 0), (vector)llList2String(specular,1), (vector)llList2String(specular,2), llList2Float(specular,3), (vector)llList2String(specular,4), llList2Integer(specular,5), llList2Integer(specular,6)];
 
 
-            enhanced = TRUE;//(integer)method_arg(5);
             
 			
 			setOnInvolved(diffuse+bump+specular);
@@ -351,13 +324,16 @@ default
 				llTriggerSound("a0f4e168-1eb0-465e-2db9-5beaa2e2891a", 1);
 				
 				setOnInvolved([PRIM_COLOR, ALL_SIDES, <1,1,1>, 0]);
+				toggleOther(FALSE);
 				llSleep(2);
 				setOnInvolved([PRIM_COLOR, ALL_SIDES, <1,1,1>, 0]);
 			}else{
 				BFL = BFL&~BFL_DEAD;
 				restore();
-				
+				toggleOther(TRUE);
 			}
+			
+			raiseEvent(ThongManEvt$death, mkarr([(BFL&BFL_DEAD)>0]));
 		}
     }
 

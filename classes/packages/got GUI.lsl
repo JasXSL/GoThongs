@@ -7,8 +7,9 @@ integer BFL;
 #define BFL_BROWSER_SHOWN 0x1
 #define BFL_DEAD 0x2
 
-#define BAR_STRIDE 4
-list BARS = [0,0,0,0,0,0,0,0,0,0,0,0];  // [(int)portrait, (int)bars, (int)spells, (int)spells_overlays], self, friend, target
+#define BAR_STRIDE 2
+list BARS = [0,0,0,0,0,0];  // [(int)portrait, (int)bars], self, friend, target
+list FX_PRIMS = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
 key TARG;
 list PLAYERS;
@@ -18,7 +19,10 @@ integer P_RETRY;
 #define RPB_SCALE <0.15643, 0.04446, 0.03635>*1.25
 #define RPB_ROOT_POS <-0.074654, 0.0, 0.31>
 
-#define SPELLSCALE <0.14775, 0.01770, 0.01761>
+integer P_BOSS_HP;
+#define P_BOSS_HP_POS <-0.036293, -0.023650, 1.0222>
+integer P_BOSS_PORTRAIT;
+#define P_BOSS_PORTRAIT_POS <-0.102600, 0.19054, 1.022949>
 
 integer P_POTION;
 #define POTION_POS <0.000000, 0.323226, 0.307781>
@@ -35,15 +39,18 @@ integer P_SPINNER;
 integer P_LOADINGBAR;
 #define LOADING_SCALE <0.35011, 0.04376, 0.04376>
 #define LOADING_POS <-0.159409, -0.001064, 0.359453>
+
+key boss;				// ID of boss (used if boss is a monster)
  
 #define id2bars(offs) \
 list bars; \
 if(id == "")id = llGetOwner(); \
 if(prAttachPoint(id))id = llGetOwnerKey(id); \
 if(id == llGetOwner())bars += llList2Integer(BARS, offs); \
-if(id == TARG)bars += llList2Integer(BARS, BAR_STRIDE*2+offs); \
+if(id == TARG){bars += llList2Integer(BARS, BAR_STRIDE*2+offs);} \
 if(id == llList2Key(PLAYERS, 1))bars += llList2Integer(BARS, BAR_STRIDE+offs);
 
+key default_tx = "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e";
 
 integer CACHE_FX_FLAGS = 0;
 
@@ -134,27 +141,44 @@ toggle(integer show){
                 PRIM_COLOR, 4, <1,.5,1>, 1,
                 PRIM_COLOR, 5, <.5,.5,1>, 1,
                 
-                PRIM_TEXTURE, 2, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <-.25,0,0>, 0,
-                PRIM_TEXTURE, 3, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <-.25,0,0>, 0,
-                PRIM_TEXTURE, 4, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25,0,0>, 0,
-                PRIM_TEXTURE, 5, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25,0,0>, 0,
+                PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <-.25,0,0>, 0,
+                PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <-.25,0,0>, 0,
+                PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25,0,0>, 0,
+                PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25,0,0>, 0
                 
-                PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE+2),
-                PRIM_SIZE, SPELLSCALE,
-                PRIM_POSITION, offs3,
-                PRIM_COLOR, ALL_SIDES, <1,1,1>,0 
             ];
+			integer x;
+			for(x=0; x<8; x++){
+				float a = x;
+				vector pos = <0.044754, 0.228554, 0.234596>;
+				if(i){
+					pos.y = -pos.y;
+					a = -a;
+				}
+				pos += <0,0.022*a,0>;
+				out+= [
+					PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i*8+x), 
+					PRIM_SIZE, <0.02184, 0.02191, 0.01312>,
+					PRIM_POSITION, pos,
+					PRIM_COLOR, ALL_SIDES, <1,1,1>, 0
+				];
+			}
         }else{ 
             out+= [
                 PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE), 
                 PRIM_POSITION, ZERO_VECTOR,
                 
                 PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE+1),
-                PRIM_POSITION, ZERO_VECTOR,
-                
-                PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE+2),
                 PRIM_POSITION, ZERO_VECTOR
             ];
+			integer x;
+			for(x=0; x<8; x++){
+				out+= [
+					PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i*8+x),
+					PRIM_POSITION, ZERO_VECTOR,
+					PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0
+				];
+			}
         }
     }
     
@@ -165,6 +189,9 @@ toggle(integer show){
 		GUI$toggleLoadingBar((string)LINK_THIS, FALSE, 0);
 		GUI$toggleSpinner((string)LINK_THIS, FALSE, "");
 		out+= [
+			PRIM_LINK_TARGET, P_BOSS_HP, PRIM_POSITION, ZERO_VECTOR,
+			PRIM_LINK_TARGET, P_BOSS_PORTRAIT, PRIM_POSITION, ZERO_VECTOR,
+			
 			PRIM_LINK_TARGET, P_BLIND, PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR,
 			PRIM_LINK_TARGET, P_POTION, PRIM_POSITION, ZERO_VECTOR,
 			PRIM_LINK_TARGET, P_PROGRESS, PRIM_POSITION, ZERO_VECTOR
@@ -202,30 +229,30 @@ updateTarget(key targ, key texture){
             PRIM_COLOR, 4, <1,.5,1>, 1,
             PRIM_COLOR, 5, <.5,.5,1>, 1,
             
-            PRIM_TEXTURE, 2, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25,0,0>, 0,
-            PRIM_TEXTURE, 3, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25,0,0>, 0,
-            PRIM_TEXTURE, 4, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25,0,0>, 0,
-            PRIM_TEXTURE, 5, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25,0,0>, 0
+            PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <.25,0,0>, 0,
+            PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <.25,0,0>, 0,
+            PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25,0,0>, 0,
+            PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25,0,0>, 0
         ];
-        
-        out+=[
-            PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2+2),
-            PRIM_POSITION, offs3,
-            PRIM_SIZE, SPELLSCALE,
-            PRIM_COLOR, ALL_SIDES, <1,1,1>,0 
-        ];
-        
+        integer i;
+		for(i=16; i<24; i++){
+			out+= [
+				PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), 
+				PRIM_POSITION, <0.044754, 0.048681+0.022*(i-16), 0.352110>,
+				PRIM_COLOR, ALL_SIDES, ZERO_VECTOR, 0
+			];
+		}
     }else{
         out+= [
             PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2), 
             PRIM_POSITION, ZERO_VECTOR,
-                
             PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2+1),
-            PRIM_POSITION, ZERO_VECTOR,
-            
-            PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2+2),
             PRIM_POSITION, ZERO_VECTOR
         ];
+		integer i;
+		for(i=16; i<24; i++){
+			out+= [PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), PRIM_POSITION, ZERO_VECTOR, PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0];
+		}
     }
     llSetLinkPrimitiveParamsFast(0, out);
 }
@@ -240,18 +267,27 @@ updateBars(key id, list data){
 	if(bars == [])return;  
 			
 	list out = [];
-		
+	
+	float hp = llList2Float(data, 0);
+	float mana = llList2Float(data, 1);
 	float ars = llList2Float(data, 2);
 	float pin = llList2Float(data, 3);
-				
 	list dta = [
-		PRIM_TEXTURE, 2, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*llList2Float(data, 0),0,0>, 0,
-		PRIM_TEXTURE, 3, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*llList2Float(data, 1),0,0>, 0,
-		PRIM_TEXTURE, 4, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*ars,0,0>, 0,
+		PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <.25-.5*hp,0,0>, 0,
+		PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <.25-.5*mana,0,0>, 0,
+		PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25-.5*ars,0,0>, 0,
 		PRIM_COLOR, 4, <1,.5,1>*(.5+ars*.5), 0.5+(float)llFloor(ars)/2,
-		PRIM_TEXTURE, 5, "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e", <.5,1,0>, <.25-.5*pin,0,0>, 0,
+		PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25-.5*pin,0,0>, 0,
 		PRIM_COLOR, 5, <.5,.5,1>*(.5+pin*.5), 0.5+(float)llFloor(pin)/2
 	];
+	
+
+	if(id == boss){
+		out+= [
+			PRIM_LINK_TARGET, P_BOSS_HP,
+			PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <0.25-(hp*.5),0,0>, 0
+		];
+	}
 	
 	integer i;
 	for(i=0; i<llGetListLength(bars); i++){
@@ -260,21 +296,67 @@ updateBars(key id, list data){
 	llSetLinkPrimitiveParams(0, out);
 }
 
+// Data is 
 updateSpellIcons(key id, list data){
-	id2bars(2)
+	list nrs = []; integer stride = 5;
+	// [(int)pid, (key)texture, (int)added_ms, (int)duration_ms, (int)stacks]
+	
+	if(prAttachPoint(id))id = llGetOwnerKey(id); 
+	if(id == "")id = llGetOwner();
+	if(id == llGetOwner())nrs+=0;
+	if(id == TARG)nrs += 2;
+	if(id == llList2Key(PLAYERS, 1))nrs += 1;
+	
+	
+	
+	integer snap = timeSnap();
 	list out = [];
-	integer a;
-	for(a = 0; a<llGetListLength(bars); a++){
-		out+=[PRIM_LINK_TARGET, llList2Integer(bars, a)];            
+	list_shift_each(nrs, val, 
+		integer n = (integer)val;
+		integer slot;
 		integer i;
-		for(i=0; i<8; i++){
-			if(llGetListLength(data)>i)
-				out += [PRIM_COLOR, i, <1,1,1>, 1, PRIM_TEXTURE, i, llList2String(data, i), <1,1,0>, ZERO_VECTOR, 0];
-			else
-				out += [PRIM_COLOR, i, <1,1,1>, 0];
+		for(i=0; i<llGetListLength(data); i+=stride){
+			key texture = llList2Key(data, i+1);
+			integer added = llList2Integer(data, i+2);
+			integer duration = llList2Integer(data, i+3);
+			float dur = (float)duration/10;
+			integer stacks = llList2Integer(data, i+4);
+			
+			// Make sure the effect hasn't already expired
+			if(duration+added > timeSnap()){
+				float percentage = ((float)(snap-added)/dur)/10;
+				integer link = llList2Integer(FX_PRIMS, 8*n+slot);
+				out+=([
+					PRIM_LINK_TARGET, link,
+					PRIM_COLOR, ALL_SIDES, <1,1,1>,0,
+					PRIM_COLOR, 0, <0,0,0>, 0.5,
+					PRIM_COLOR, 1, <1,1,1>, 1,
+					PRIM_COLOR, 2, ZERO_VECTOR, 0.8,
+					
+					PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0,
+					PRIM_DESC, llList2String(data, i)
+				]);
+				if(stacks>1){
+					if(stacks >10)stacks = 10;
+					out+= ([PRIM_COLOR, 3, <1,1,1>, .5, PRIM_TEXTURE, 3, "6c058895-b95f-1c19-4f28-2e13a5c0a609", <1./16, 1,0>, <-1./16*8+1./32+(1./16*stacks), 0,0>, 0]);
+				}
+				float end = 16*16;
+				integer start = llRound(end*percentage);
+				llSetLinkTextureAnim(link, 0, 2, 0, 0, 0, 0, 0);
+				llSetLinkTextureAnim(link, ANIM_ON, 2, 16, 16, start, end-start, end/dur);
+				slot++;
+			}
 		}
-	}
-	llSetLinkPrimitiveParamsFast(0, out);
+		for(i=llGetListLength(data)/stride; i<8; i++){
+			out+=([
+				PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, 8*n+i),
+				PRIM_COLOR, ALL_SIDES, <1,1,1>,0,
+				PRIM_DESC, "-1"
+			]);
+		}
+	)
+	PP(0,out);
+	
 }
 
 
@@ -291,10 +373,14 @@ default
                 integer pos = (n-1)*BAR_STRIDE; 
                 if(llGetSubString(name, 0, 1) == "FR")pos+=BAR_STRIDE*2;
                 if(llGetSubString(name, 2, 2) == "B")pos++;
-                if(llGetSubString(name, 2, 2) == "S")pos+=2;
                 if(llGetSubString(name, 3, 3) == "O")pos++;
                 BARS = llListReplaceList(BARS, [nr], pos, pos);
             }
+			else if(llGetSubString(name, 0, 1) == "FX"){
+				n = (int)llGetSubString(name, 2, -1);
+				FX_PRIMS = llListReplaceList(FX_PRIMS, [nr], n, n);
+			}
+			
 			else if(name == "LOADING")P_LOADINGBAR = nr;
             else if(name == "RETRY")P_RETRY = nr;
             else if(name == "QUIT")P_QUIT = nr;
@@ -302,10 +388,13 @@ default
 			else if(name == "BLIND")P_BLIND = nr;
 			else if(name == "POTION")P_POTION = nr;
 			else if(name == "PROGRESS")P_PROGRESS = nr;
+			else if(name == "BOSS_HEALTH")P_BOSS_HP = nr;
+			else if(name == "BOSS_PORTRAIT")P_BOSS_PORTRAIT = nr;
         ) 
 		
-		//qd(mkarr(llGetLinkPrimitiveParams(P_PROGRESS, [PRIM_POS_LOCAL])));
-		
+		//qd(mkarr(llGetLinkPrimitiveParams(P_BOSS_HP, [PRIM_POS_LOCAL])));
+		//return;
+
         toggle(FALSE);
         db2$ini(); 
 		PLAYERS = [(string)llGetOwner()];
@@ -358,10 +447,43 @@ default
 		}
 		
     }
-
-    
+	
+	// Toggles the boss portrait
+	if(METHOD == GUIMethod$toggleBoss){
+		list out = [
+			PRIM_LINK_TARGET, P_BOSS_PORTRAIT,
+			PRIM_POSITION, ZERO_VECTOR,
+			PRIM_LINK_TARGET, P_BOSS_HP,
+			PRIM_POSITION, ZERO_VECTOR
+		];
+		if((key)method_arg(0)){
+			boss = id;
+			out = [
+				PRIM_LINK_TARGET, P_BOSS_PORTRAIT,
+				PRIM_POSITION, P_BOSS_PORTRAIT_POS,
+				PRIM_COLOR, ALL_SIDES, <1,1,1>, 0,
+				PRIM_COLOR, 0, ZERO_VECTOR,1,
+				PRIM_COLOR, 1, <1,1,1>,1,
+				PRIM_TEXTURE, 1, method_arg(0), <1,1,1>, ZERO_VECTOR, 0,
+				PRIM_LINK_TARGET, P_BOSS_HP,
+				PRIM_POSITION, P_BOSS_HP_POS,
+				PRIM_COLOR, ALL_SIDES, <1,1,1>, 0,
+				PRIM_COLOR, 0, ZERO_VECTOR, 0.75,
+				PRIM_COLOR, 1, ZERO_VECTOR, 0.5,
+				PRIM_COLOR, 2, <1,.5,.5>, 1,
+				PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <-0.25,0,0>, 0
+			];
+		}
+		PP(0,out);
+	}
+	// Sets boss bar HP
+	else if(METHOD == GUIMethod$bossHP){
+		llSetLinkPrimitiveParamsFast(P_BOSS_HP, [
+			PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <0.25-((float)method_arg(0)*.5),0,0>, 0
+		]);
+	}
     // This needs to show the proper breakfree messages
-    if(METHOD == GUIMethod$toggleQuit){
+    else if(METHOD == GUIMethod$toggleQuit){
         integer on = (integer)method_arg(0);
         list out;
         if(on){

@@ -6,9 +6,10 @@
 #define ThongManMethod$fxVisual 6			// (vec)color, (float)glow, (arr)specular[texture,offsets,repeats,rot,color,gloss,world]
 #define ThongManMethod$particles 7			// (float)timeout, (int)prim, (arr)particle_list
 											// generally prim 1 is for casting, and prim 2 for received spell effects
-#define ThongManMethod$dead 8				// (int)dead - 
+#define ThongManMethod$dead 8				// [(int)dead] - 
 #define ThongManMethod$loopSound 9			// (key)sound, (float)vol - Or "" to stop sound
-						
+#define ThongManMethod$void 10				// Void function for getting callbacks
+
 #define ThongMan$attached() runOmniMethod("got ThongMan", ThongManMethod$attached, [], TNN)
 #define ThongMan$get() runMethod(llGetOwner(), "got ThongMan", ThongManMethod$get, [], TNN)
 #define ThongMan$set(targ, data) runMethod(targ, "got ThongMan", ThongManMethod$set, [data], TNN)
@@ -19,7 +20,7 @@
 #define ThongMan$loopSound(sound, vol) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$loopSound, [sound, vol], TNN)
 
 #define ThongManEvt$hit 1					// [(vec)color]
-#define ThongManEvt$ini 2					// [(int)is_enhanced]
+#define ThongManEvt$ini 2					// []
 #define ThongManEvt$getVisuals 3			// void - Get visuals from helper of custom thong
 #define ThongManEvt$death 4					// [(int)dead] - If the player lost their thong or not
 

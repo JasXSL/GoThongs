@@ -21,7 +21,7 @@
 #define RootEvt$players 4						// (arr)players
 #define RootEvt$level 5							// [(key)id] - Whenever a new cell has been ressed
 
-#define Root$refreshThong(phys) runMethod(llGetOwner(), "#ROOT", RootMethod$refreshThong, [phys], TNN)
+#define Root$refreshThong(targ) runMethod(targ, "#ROOT", RootMethod$refreshThong, [], TNN)
 #define Root$setThongIni(on) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setThongIni, [on], TNN)
 #define Root$getPlayers(cb) runMethod(llGetOwner(), "#ROOT", RootMethod$getPlayers, [], cb)
 #define Root$statusControls(conts) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$statusControls, [conts], TNN)

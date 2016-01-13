@@ -9,6 +9,8 @@ integer BFL;
 list RAPE_ANIMS;
 list RAPE_ATTACHMENTS;
 
+list TEMPLATES;
+
 default 
 {
     // Timer event
@@ -67,20 +69,37 @@ default
             raiseEvent(RapeEvt$onStart, "");
 			
             
-        }
+        }else if(METHOD == RapeMethod$remInventory){
+			list assets = llJson2List(method_arg(0));
+			list_shift_each(assets, val,
+				if(llGetInventoryType(val) == INVENTORY_OBJECT){
+					llRemoveInventory(val);
+				}
+			)
+		}
+		
+		else if(METHOD == RapeMethod$activateTemplate){
+			if(llGetListLength(TEMPLATES))
+				Bridge$fetchRape((str)LINK_ROOT, randElem(TEMPLATES));
+		}
     }
     
     if(method$byOwner){
-        
+        if(METHOD == RapeMethod$assetSpawned && ~BFL&BFL_RAPE_STARTED){
+			Attached$remove(llKey2Name(id));
+		}
     }
     
     if(METHOD == RapeMethod$end){ 
 	
         BFL = BFL&~BFL_RAPE_STARTED;
         
-        list_shift_each(RAPE_ATTACHMENTS, val, 
+		integer i;
+		for(i=0; i<llGetListLength(RAPE_ATTACHMENTS); i++){
+			string val = llList2String(RAPE_ATTACHMENTS, i);
             Attached$remove(val);
-        )
+        
+		}
         list_shift_each(RAPE_ANIMS, val,
             AnimHandler$anim(val, FALSE, 0);
         )
@@ -91,6 +110,9 @@ default
             SupportcubeBuildTask(Supportcube$tForceUnsit, [])
         ]);
     }
+	else if(METHOD == RapeMethod$setTemplates){
+		TEMPLATES = llJson2List(PARAMS);
+	}
     
     // Public code can be put here
 

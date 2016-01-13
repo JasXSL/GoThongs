@@ -1,6 +1,6 @@
 #define PotionsMethod$setPotion 1		// (str)name, (key)texture, (int)charges, (int)flags, (float)cooldown, (obj)spellData
 #define PotionsMethod$resetCooldown 2	// 
-#define PotionsMethod$remove 3			// (int)allow_drop
+#define PotionsMethod$remove 3			// (int)allow_drop, (int)force_remove_no_drop
 #define PotionsMethod$use 4				// 
 
 
@@ -10,7 +10,7 @@
 
 #define Potions$set(targ, name, texture, charges, flags, cooldown, spellData) runMethod(targ, "got Potions", PotionsMethod$setPotion, [name, texture, charges, flags, cooldown, spellData], NORET)
 #define Potions$resetCooldown(targ) runMethod(targ, "got Potions", PotionsMethod$resetCooldown, [], NORET)
-#define Potions$remove(targ, allow_drop) runMethod(targ, "got Potions", PotionsMethod$remove, [allow_drop], NORET)
+#define Potions$remove(targ, allow_drop, force_rem) runMethod(targ, "got Potions", PotionsMethod$remove, [allow_drop, force_rem], NORET)
 #define Potions$use(targ) runMethod(targ, "got Potions", PotionsMethod$use, [], NORET)
 
 

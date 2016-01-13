@@ -36,6 +36,7 @@ integer BFL = 0;
 #define BFL_INITIALIZED 0x8
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
 #define BFL_STATUS_SENT 0x20		// Status sent
+#define BFL_AGGROED_ONCE 0x40		// If aggroed at least once
 
 #define BFL_NOAGGRO (BFL_FRIENDLY|BFL_DEAD)
 
@@ -52,8 +53,9 @@ float fxModCrit = 0;
 
 list SPELL_DMG_TAKEN_MOD;
 
-#define SPSTRIDE 2
-list SPELL_ICONS;   // [(key)texture, (int)desc]
+#define SPSTRIDE 6
+list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
+
 
 list OUTPUT_STATUS_TO; 
 
@@ -83,9 +85,12 @@ float spdmtm(string spellName){
 }
 
 outputTextures(){
-    integer i;
+	integer i; list out;
+	for(i=0; i<llGetListLength(SPELL_ICONS); i+=SPSTRIDE){
+		out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
+	}
     for(i=0; i<llGetListLength(OUTPUT_STATUS_TO); i++)
-        GUI$setSpellTextures(llList2Key(OUTPUT_STATUS_TO, i), llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE));
+        GUI$setSpellTextures(llList2Key(OUTPUT_STATUS_TO, i), out);
 }
 
 addHP(float amount, key attacker, string spellName, integer flags){
@@ -94,7 +99,6 @@ addHP(float amount, key attacker, string spellName, integer flags){
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE)
 		amount*=maxHP;
-    
     if(amount<0){
 		if(RUNTIME_FLAGS&Monster$RF_INVUL)return;
         amount*=fxModDmgTaken;
@@ -105,9 +109,12 @@ addHP(float amount, key attacker, string spellName, integer flags){
     
     HP += amount;
     if(HP<=0){
+		if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
+			runOnPlayers(targ, GUI$toggleBoss(targ, "");)
+		}
 		list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
 		Level$idEvent(LevelEvt$idDied, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)));
-	
+		
         HP = 0;
         STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
         raiseEvent(StatusEvt$dead, "1");
@@ -178,7 +185,7 @@ aggroCheck(key k, float mod){
 
 aggro(key player, float ag){
 	//qd(RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO);
-    if(BFL&BFL_NOAGGRO || RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO)return;
+    if(BFL&BFL_NOAGGRO || RUNTIME_FLAGS&(Monster$RF_FREEZE_AGGRO|Monster$RF_NOAGGRO))return;
     
     if(player){
         integer pre = llGetListLength(AGGRO);
@@ -224,7 +231,15 @@ aggro(key player, float ag){
         if(at == ""){
             if(dropaggrosound)
                 llTriggerSound(dropaggrosound, 1);
-        }else if(~RUNTIME_FLAGS&Monster$RF_NO_TARGET) Root$targetMe(at, icon, FALSE);
+        }else{
+			if(~RUNTIME_FLAGS&Monster$RF_NO_TARGET) Root$targetMe(at, icon, FALSE);
+			if(RUNTIME_FLAGS&Monster$RF_IS_BOSS && ~BFL&BFL_AGGROED_ONCE){
+				runOnPlayers(targ,
+					GUI$toggleBoss(targ, icon);
+				)
+				BFL = BFL|BFL_AGGROED_ONCE;
+			}
+		}
         raiseEvent(StatusEvt$monster_gotTarget, mkarr([aggroTarg]));
     }
 }
@@ -260,6 +275,8 @@ onEvt(string script, integer evt, string data){
 		}
 		
         RUNTIME_FLAGS = llList2Integer(conf, MLC$RF);
+		
+		
         maxHP = llList2Float(conf, MLC$maxhp);
         aggro_range = llList2Float(conf, MLC$aggro_range);
         aggrosound = (key)llList2String(conf, MLC$aggro_sound);
@@ -272,11 +289,10 @@ onEvt(string script, integer evt, string data){
         
         rapeName = llList2String(conf, MLC$rapePackage);
         if(!isset(rapeName))rapeName = llGetObjectName();
+
 		drops = llList2String(conf, MLC$drops);
 		if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]";
-        
-        if(dmg<=0)dmg = 10; 
-        if(maxHP<=0)maxHP = 100;
+
         HP = maxHP;
 		
 		if(aggro_range > 0)multiTimer(["A", "", 1, TRUE]);
@@ -313,6 +329,9 @@ outputStats(){
 	if(BFL&BFL_STATUS_SENT){
 		BFL = BFL|BFL_STATUS_QUEUE;
 		return;
+	}
+	if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
+		OUTPUT_STATUS_TO = PLAYERS;
 	}
 	
     integer i;
@@ -409,9 +428,6 @@ default
                 integer flags = (integer)method_arg(0);
 
                 if(!_attackable(PARAMS)){
-                    if(~flags&StatusFlag$raped){
-                        Bridge$fetchRape(llGetOwnerKey(id), rapeName);
-                    }
                     dropAggro(llGetOwnerKey(id), TRUE);
                     return;
                 }                
@@ -425,23 +441,28 @@ default
         }  
         return;
     }
-    
     if(id == ""){
-		// From FX, caches statuses
-        if(METHOD == StatusMethod$addTextureDesc){
-            key texture = (key)method_arg(0);
-            string desc = method_arg(1);
-            SPELL_ICONS += [texture, desc];
-            multiTimer(["OT", "", .5, FALSE]);
+		if(METHOD == StatusMethod$addTextureDesc){
+            SPELL_ICONS += [(integer)method_arg(0), (key)method_arg(1), (str)method_arg(2), (int)method_arg(3), (int)method_arg(4), (int)method_arg(5)];
+			multiTimer(["OT", "", .1, FALSE]);
         }
         else if(METHOD == StatusMethod$remTextureDesc){
-            key texture = (key)method_arg(0);
-            integer pos = llListFindList(SPELL_ICONS, [texture]);
-            if(pos == -1)return;
-            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos, pos+SPSTRIDE-1);
+            integer pid = (integer)method_arg(0);
+            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if(pos == -1)return;
+			
+            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
             multiTimer(["OT", "", .1, FALSE]);
-            
         }
+		else if(METHOD == StatusMethod$stacksChanged){
+			integer pid = (integer)method_arg(0);
+            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if(pos == -1)return;
+			
+			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
+            //qd("Refreshing spell icons: "+mkarr(SPELL_ICONS));
+			multiTimer(["OT", "", .1, FALSE]);
+		}
     }
     
     if(method$byOwner){
@@ -454,7 +475,7 @@ default
         }
 		// Handles health
         else if(METHOD == StatusMethod$addDurability)
-            addHP((float)method_arg(0), method_arg(1), method_arg(2), 0);
+            addHP((float)method_arg(0), method_arg(1), method_arg(2), (integer)method_arg(3));
         
     }
     
@@ -473,6 +494,12 @@ default
 		NPCSpells$setOutputStatusTo(OUTPUT_STATUS_TO);
     }
 	
+	else if(METHOD == StatusMethod$monster_rapeMe){
+		list ray = llCastRay(llGetPos()+<0,0,1>, prPos(id), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+		if(llList2Integer(ray, -1) == 0)
+			Bridge$fetchRape(llGetOwnerKey(id), rapeName);
+	}
+	
 	// Get status
     else if(METHOD == StatusMethod$get){
         CB_DATA = [STATUS_FLAGS, FXFLAGS, HP/maxHP, 0, 0, 0];
@@ -489,19 +516,12 @@ default
 	// Get the description of an effect affecting me
     else if(METHOD == StatusMethod$getTextureDesc){
         if(id == "")id = llGetOwner();
-        string out = "";
-        
-        integer pos = (integer)method_arg(0);
-        string texture = method_arg(1);
-        
-        if(llList2String(SPELL_ICONS, pos*SPSTRIDE) == texture)out = llList2String(SPELL_ICONS, pos*SPSTRIDE+1);
-        else{
-            integer p = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [(key)texture]);
-            if(~p)out = llList2String(SPELL_ICONS, p*SPSTRIDE+1);
-        }
-        
-        if(out)
-            llRegionSayTo(llGetOwnerKey(id), 0, out);
+		
+		integer pid = (integer)method_arg(0);
+        integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+        if(pos == -1)return;
+		
+		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
     }
 	// Drop aggro from this
     else if(METHOD == StatusMethod$monster_dropAggro)

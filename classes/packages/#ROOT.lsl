@@ -106,8 +106,7 @@ default
         
         // Start listening
         initiateListen(); 
-        llListen(3, "", llGetOwner(), "");
-        llListen(2, "", "", "");
+        
         
         ThongMan$get();
         raiseEvent(evt$SCRIPT_INIT, "");
@@ -115,8 +114,9 @@ default
             llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
 		
 		RLV$clearCamera((string)LINK_THIS);
-		savePlayers();
 		Level$bind(llGetOwner());
+		llSleep(2);
+		savePlayers();
     }
     
     
@@ -140,14 +140,20 @@ default
             setTarget(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE); // Add coop partner texture
         else if(ln == "FRB1" || ln == "FR1")setTarget("", "", TRUE);
 		else if(ln == "PROGRESS")Level$getObjectives();
-        else if(ln == "OPS1" || ln == "OPS2" || ln == "FRS1"){
-            string targ = "";
-            if(ln == "OPS1")targ = (string)LINK_ROOT;
-            else if(ln == "OPS2" && llGetListLength(PLAYERS)>1)targ = llList2String(PLAYERS, 1);
-            else if(ln == "FRS1" && TARG != "")targ = TARG;
-            if(targ == "")return;
-            
-            Status$getTextureDesc(targ, llDetectedTouchFace(0), llList2String(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_TEXTURE, llDetectedTouchFace(0)]), 0));
+        else if(llGetSubString(ln,0,1) == "FX"){
+			integer button = (int)llGetSubString(ln, 2, -1);
+		
+			// The description contains the spell PID
+			int desc = llList2Integer(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_DESC]), 0);
+            if(desc == -1)return;
+			
+			// The icons are split into blocks of 8
+			string targ = (string)LINK_ROOT;
+
+			if((button%8) == 1)targ = llList2String(PLAYERS, 1);
+			else if((button%8) == 2 && TARG != llGetOwner())targ = TARG;
+
+            Status$getTextureDesc(targ, desc);
         }
         raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0)]));
     }
@@ -196,49 +202,7 @@ default
 
     
     // This is the listener
-    #define LISTEN_LIMIT_FREETEXT \
-if(chan == 3){ \
-    if(message == "login") \
-        Bridge$getToken(); \
-    else if(message=="Join") \
-        Bridge$dialog(message); \
-    else if(message == "switch"){ \
-        Evts$cycleEnemy(); \
-    } \
-	else if(message == "self"){ \
-		setTarget(llGetOwner(), TEXTURE_PC, TRUE);\
-	} \
-	else if(message == "coop"){\
-		setTarget(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE);\
-	} \
-	else if(message == "wipeCells"){ \
-		Portal$killAll(); \
-		GUI$toggleObjectives((string)LINK_ROOT, FALSE); \
-		Level$despawn(); \
-	} \
-	else if(message == "reset"){resetAll();} \
-	else if(message == "continueQuest"){ \
-		AMS$(ARoot$continueQuest); \
-		Portal$killAll(); \
-		Bridge$continueQuest(); \
-	} \
-	else if(llGetSubString(message, 0,10) =="difficulty:"){ \
-		Status$setDifficulty((string)LINK_THIS, (integer)llGetSubString(message,11,-1), TRUE); \
-	} \
-	else if(message == "potion"){ \
-		Potions$use((string)LINK_ROOT); \
-	} \
-    else  \
-        SpellMan$hotkey(message); \
-	return; \
-} \
-if(chan == 2){ \
-    if(llGetSubString(message, 0, 8) == "settings:") \
-        Status$setSex((integer)jVal(llGetSubString(message, 9, -1), ["sex"]));  \
-    return; \
-} \
-if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1) \
-    return; 
+    #define LISTEN_LIMIT_FREETEXT if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1)return; 
    
     
     #include "xobj_core/_LISTEN.lsl" 
@@ -296,7 +260,7 @@ if(llListFindList(PLAYERS, [llGetOwnerKey(id)]) == -1) \
             THONG_ID = id;
             DB2$set([RootShared$thongUUID], id);
             raiseEvent(RootEvt$thongKey, id);
-            Bridge$refreshThong((integer)method_arg(0));
+            Bridge$refreshThong();
             multiTimer(["THONG", "", 5, TRUE]);
         }else if(METHOD == RootMethod$reset)llResetScript();
     }

@@ -43,7 +43,15 @@ default
             queue+=[item, targ, llGetTime()];
             llRezAtRoot(item, llGetPos()-<0,0,3>, ZERO_VECTOR, ZERO_ROTATION, 1);
         }
-    }
+		else if(METHOD == SpellFXMethod$remInventory){
+			list assets = llJson2List(method_arg(0));
+			list_shift_each(assets, val,
+				if(llGetInventoryType(val) == INVENTORY_OBJECT){
+					llRemoveInventory(val);
+				}
+			)
+		}
+	}
     
     if(method$byOwner){
         if(METHOD == SpellFXMethod$getTarg){
@@ -72,13 +80,20 @@ default
             string name = llList2String(data, 0);
             vector pos_offset = (vector)llList2String(data, 1);
             rotation rot_offset = (rotation)llList2String(data, 2);
+			integer flags = llList2Integer(data, 3);
+			
             key targ = method_arg(1);
             
             boundsHeight(targ, b)
             if(llGetAgentSize(targ))b = 0;
-            vector to = prPos(targ)+<0,0,b/2>+pos_offset;
-			vector vrot = llRot2Euler(llGetRootRotation());
-            llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(<0,0,vrot.z>)*rot_offset, 1);
+            
+			vector vrot = llRot2Euler(prRot(targ));
+			if(~flags&SpellFXFlag$SPI_FULL_ROT)vrot = <0,0,vrot.z>;
+			rotation rot = llEuler2Rot(vrot);
+			
+			vector to = prPos(targ)+<0,0,b/2>+pos_offset*rot;
+			
+            llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, 1);
 
         }
     }

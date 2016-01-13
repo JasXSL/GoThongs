@@ -22,9 +22,18 @@ timerEvent(string id, string data){
 }
 
 alert(string text, integer ownerSay, integer playSound){
-	if(ownerSay)llOwnerSay(text);
-    if(playSound)llPlaySound("09ba0e73-fcf6-ed22-e1a3-7fc600237711", .25);
-            
+	
+    key sound = "";
+	float vol = 0.25;
+	if(playSound == 1)sound = "09ba0e73-fcf6-ed22-e1a3-7fc600237711";
+	else if(playSound == 2){
+		text = "🏥 "+text;
+		sound = "0596c6db-cc3e-e3e3-0f3b-b91e63f4e8b4";
+		vol = 1;
+		ALERTS = [];
+	}
+	if(sound)llPlaySound(sound, vol);
+    if(ownerSay)llOwnerSay(text);
     ALERTS+=text;
     if(llGetListLength(ALERTS)>3)
 		ALERTS = llDeleteSubList(ALERTS, 0, 0);
@@ -68,7 +77,7 @@ default
             string text = method_arg(0);
             integer id = (integer)text;
             if(SENDER_SCRIPT == "got SpellMan")text = llList2String(ASpellMan, id);
-            else if(SENDER_SCRIPT == "#ROOT")text = llList2String(ARoot, id);
+            else if(SENDER_SCRIPT == "#ROOT" || SENDER_SCRIPT == "got RootAux")text = llList2String(ARoot, id);
             else if(SENDER_SCRIPT == "got Bridge")text = llList2String(ABridge, id);
             if(text == ""){
 				qd("Text missing for "+SENDER_SCRIPT+" : "+(string)id);

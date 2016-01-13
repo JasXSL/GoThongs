@@ -84,7 +84,7 @@ recacheFlags(){
     else if(t == fx$SPELL_DMG_TAKEN_MOD) \
         SPELL_DMG_TAKEN_MOD = manageList(FALSE, SPELL_DMG_TAKEN_MOD, [pid,llList2String(fx,1), llList2Float(fx, 2)]); \
 	else if(t == fx$ICON){ \
-        Status$addTextureDesc(llList2String(fx, 1), llList2String(fx, 2)); \
+        Status$addTextureDesc(pid, llList2String(fx, 1), llList2String(fx, 2), time, (int)((float)j(package,0)*10), stacks); \
 	}else if(t == fx$DODGE) \
         DODGE_MULTI = manageList(FALSE, DODGE_MULTI, [pid,llList2Float(fx, 1)]); \
 	else if(t == fx$CASTTIME_MULTIPLIER) \
@@ -112,7 +112,7 @@ recacheFlags(){
     else if(t == fx$SPELL_DMG_TAKEN_MOD) \
         SET_FLAGS = manageList(TRUE, SET_FLAGS, [pid, 0, 0]); \
     else if(t == fx$ICON){ \
-        Status$remTextureDesc(llList2String(fx, 1)); \
+        Status$remTextureDesc(pid); \
 	}\
     else if(t == fx$DODGE) \
         DODGE_MULTI = manageList(TRUE, DODGE_MULTI, [pid, 0]); \

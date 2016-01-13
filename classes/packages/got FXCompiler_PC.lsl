@@ -93,7 +93,7 @@ runEffect(key caster, integer stacks, string package, integer pid){
     
 }
 
-addEffect(key caster, integer stacks, string package, integer pid){
+addEffect(key caster, integer stacks, string package, integer pid, integer time){
     
     debugUncommon("FX Added: "+jVal(package, [PACKAGE_NAME]));
     list fxs = llJson2List(jVal(package, [PACKAGE_FXOBJS]));

@@ -43,6 +43,16 @@ onEvt(string script, integer evt, string data){
 
 integer pin;
 
+timerEvent(string id, string data){
+	if(id == "INI")Root$getPlayers("INI");
+	else if(id == "POSTQUERY"){
+		if(~BFL&BFL_INITIALIZED){
+			checkIni();
+			qd("Important debug: Portal failed to initialize. BFL was: "+(string)BFL+" & non-initialized was "+mkarr(required));
+		}
+	}
+}
+
 default
 {
     on_rez(integer mew){
@@ -87,6 +97,8 @@ default
 			
 			debugUncommon("Waiting for "+mkarr(required));
 			
+			multiTimer(["POSTQUERY", "", 60, FALSE]);
+			
 			integer mew = llList2Integer(llGetPrimitiveParams([PRIM_TEXT]), 0);
 			
 			
@@ -120,7 +132,8 @@ default
     }
     
     timer(){
-        Root$getPlayers("INI");
+		multiTimer([]);
+        
     }
     
 	#define LISTEN_LIMIT_FREETEXT if(llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1)return;

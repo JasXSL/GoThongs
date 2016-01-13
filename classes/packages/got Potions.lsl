@@ -1,3 +1,4 @@
+#define USE_EVENTS
 #include "got/_core.lsl"
 integer BFL;
 #define BFL_CD 0x1
@@ -9,7 +10,12 @@ integer FLAGS;
 float COOLDOWN;
 string DATA;
 #define onCooldownFinish() BFL = BFL&~BFL_CD
-
+key level;
+onEvt(string script, integer evt, string data){
+	if(script == "#ROOT" && evt == RootEvt$level){
+		level = j(data,0);
+	}
+}
 
 timerEvent(string id, string data){
 	if(id == "CD"){
@@ -29,7 +35,7 @@ dropPotion(){
 	if(FLAGS&PotionsFlag$is_in_hud){
 		Spawner$spawnInt(NAME, pos, rot, "", FALSE, TRUE); 
 	}else{
-		Level$spawnLive(NAME, pos, rot);
+		Level$spawnLiveTarg(level, NAME, pos, rot);
 	}
 }
 
@@ -89,7 +95,8 @@ default
 	// public
 	if(METHOD == PotionsMethod$setPotion){
 		//qd("Name is "+NAME+" Received from "+SENDER_SCRIPT);
-		if(NAME != "" && ~FLAGS&PotionsFlag$no_drop){
+		if(FLAGS&PotionsFlag$no_drop)return;
+		if(NAME != ""){
 			dropPotion();
 		}
 		
@@ -105,6 +112,7 @@ default
 		if(CHARGES_REMAINING == 0)CHARGES_REMAINING = 1;
 		
 		GUI$togglePotion(TEXTURE, CHARGES_REMAINING);
+		
     }
 	else if(METHOD == PotionsMethod$resetCooldown){
 		
@@ -112,7 +120,8 @@ default
 	}
 	else if(METHOD == PotionsMethod$remove){
 		//qd("Remove method gotten");
-		if(NAME != "" && ~FLAGS&PotionsFlag$no_drop && (int)method_arg(0)){
+		if(FLAGS&PotionsFlag$no_drop && !(int)method_arg(1))return;
+		if(NAME != "" && PotionsFlag$no_drop && (int)method_arg(0)){
 			dropPotion();
 		}
 		remPotion();

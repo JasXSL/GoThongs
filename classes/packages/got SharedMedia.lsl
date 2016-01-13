@@ -203,7 +203,7 @@ default
                     PRIM_MEDIA_WIDTH_PIXELS, 512,
                     PRIM_MEDIA_HEIGHT_PIXELS, 512,
                     PRIM_MEDIA_FIRST_CLICK_INTERACT, TRUE,
-                    PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_NONE,
+                    PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_OWNER,
                     PRIM_MEDIA_PERMS_INTERACT, PRIM_MEDIA_PERM_OWNER
                 ]);
                 vector bg = BG_POS;

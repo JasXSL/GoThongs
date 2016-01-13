@@ -63,6 +63,8 @@
 #define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)
 #define Level$getObjectives() runMethod(db2$get("#ROOT", [RootShared$level]), "got Level", LevelMethod$getObjectives, [], TNN)
 #define Level$spawnLive(asset, pos, rot) runOmniMethod("got Level", LevelMethod$spawn, [asset, pos, rot, FALSE], TNN)
+#define Level$spawnLiveTarg(targ, asset, pos, rot) runMethod(targ, "got Level", LevelMethod$spawn, [asset, pos, rot, FALSE], TNN)
+
 #define Level$bind(player) runLimitMethod(player, "got Level", LevelMethod$bindToLevel, [], TNN, 100)
 
 

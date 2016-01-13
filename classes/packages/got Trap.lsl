@@ -7,7 +7,6 @@
 integer BFL;
 #define BFL_CD 1
 #define BFL_TRIGGERED 2
-#define BFL_USE_SIT 4
 
 float cooldown = 2;             // Time between trigger attempts
 float cooldown_full = 20;        // Delay after trigger is successful
@@ -127,7 +126,6 @@ default
     changed(integer change){
 		
         if(change&CHANGED_LINK){
-			if(~BFL&BFL_USE_SIT && llGetObjectDesc() != "DEBUG")return;
             if(llAvatarOnLinkSitTarget(P_SEAT)){
                 BFL = BFL|BFL_TRIGGERED;
                 sitter = llAvatarOnLinkSitTarget(P_SEAT);
@@ -157,7 +155,6 @@ default
     if(method$isCallback)return;
     if(method$internal){
         if(METHOD == TrapMethod$forceSit){
-            BFL = BFL|BFL_USE_SIT;
             if(BFL&(BFL_CD|BFL_TRIGGERED))return;
             if(cooldown>0){
                 BFL = BFL|BFL_CD;

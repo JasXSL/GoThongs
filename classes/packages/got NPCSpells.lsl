@@ -120,7 +120,6 @@ onEvt(string script, integer evt, string data){
         }else if(evt == StatusEvt$dead){
             BFL = BFL|BFL_DEAD;
             if(BFL&BFL_CASTING)endCast(FALSE);
-            
         }
     }else if(script == "got Portal" && evt == evt$SCRIPT_INIT)
         PLAYERS = llJson2List(data);
@@ -144,16 +143,18 @@ endCast(integer success){
     }
     raiseEvent(evt, mkarr(([spell_id, spell_targ])));
     Monster$unsetFlags(monster_flags);
-    BFL = BFL&~BFL_CASTING;
+
+    
     multiTimer(["CB"]);
     multiTimer(["CAST"]);
     multiTimer(["US", monster_flags, 1, FALSE]);
     updateText();
     Monster$lookOverride("");
+	BFL = BFL&~BFL_CASTING;
 }
 
 startCast(integer spid, key targ, integer hasStatus){
-	if(BFL&BFL_RECENT_CAST || RUNTIME_FLAGS&Monster$RF_NO_SPELLS)return;
+	if(BFL&(BFL_RECENT_CAST|BFL_CASTING) || RUNTIME_FLAGS&Monster$RF_NO_SPELLS)return;
 	if(targ != aggro_target && !hasStatus){
         Status$get(targ, "SPL;"+(string)spid);
 		return;
@@ -222,6 +223,7 @@ timerEvent(string id, string data){
 	else if(id == "SPS")BFL = BFL&~BFL_RECENT_CAST;
     else if(id == "IR")BFL = BFL&~BFL_INTERRUPTED;
     else if(id == "F"){
+		// Find a spell to cast here
         if(aggro_target == ""){return;}
         if(BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST) || RUNTIME_FLAGS&Monster$RF_NO_SPELLS){ return;}
         if(FXFLAGS & fx$NOCAST){return;}

@@ -11,19 +11,19 @@
 #define BridgeMethod$continueQuest 11	// *(int)cell = -1 - Spawn a cell from your current quest, provided you have completed the previous steps.
 #define BridgeMethod$difficulty 12		// (int)difficulty - Sets difficulty
 
-#define Bridge$refreshThong(phys) runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$refreshThong, [phys], TNN)
-#define Bridge$getToken() runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$getToken, [], TNN)
-#define Bridge$dialog(text) runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$dialog, [text], TNN)
+#define Bridge$refreshThong() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$refreshThong, [], TNN)
+#define Bridge$getToken() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$getToken, [], TNN)
+#define Bridge$dialog(text) runMethod((string)LINK_SET, "got Bridge", BridgeMethod$dialog, [text], TNN)
 #define Bridge$fetchRape(targ, monsterName) runMethod(targ, "got Bridge", BridgeMethod$fetchRape, [monsterName], TNN)
-#define Bridge$saveBrowser(pos, scale) runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$saveBrowser, [pos, scale], TNN)
-#define Bridge$reURL() runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$reURL, [], TNN)
+#define Bridge$saveBrowser(pos, scale) runMethod((string)LINK_SET, "got Bridge", BridgeMethod$saveBrowser, [pos, scale], TNN)
+#define Bridge$reURL() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$reURL, [], TNN)
 
 #define Bridge$getCellData() runMethod(llGetOwner(), "got Bridge", BridgeMethod$getCellData, [], TNN)
 #define Bridge$completeCell(targ, deaths, monsters_killed, continue) runMethod(targ, "got Bridge", BridgeMethod$completeCell, [deaths, monsters_killed, continue], TNN)
 #define Bridge$setQuestData(targ, data) runMethod(targ, "got Bridge", BridgeMethod$setQuestData, [data], TNN)
-#define Bridge$continueQuest() runMethod((string)LINK_THIS, "got Bridge", BridgeMethod$continueQuest, [-1], TNN)
-#define Bridge$setQuestStage(stage) runMethod((string)LINK_THIS, "got Bridge", BridgeMethod$continueQuest, [stage], TNN)
-#define Bridge$setDifficulty(difficulty) runMethod((string)LINK_THIS, "got Bridge", BridgeMethod$difficulty, [difficulty], TNN)
+#define Bridge$continueQuest() runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$continueQuest, [-1], TNN)
+#define Bridge$setQuestStage(stage) runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$continueQuest, [stage], TNN)
+#define Bridge$setDifficulty(difficulty) runMethod((string)LINK_ROOT, "got Bridge", BridgeMethod$difficulty, [difficulty], TNN)
 
 
 

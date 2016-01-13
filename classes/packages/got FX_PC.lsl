@@ -4,20 +4,13 @@
 #define FXConf$useEvtListener
 #include "got/_core.lsl" 
 
+#define IS_INVUL_CHECK() (FX_FLAGS&fx$F_INVUL || STATUS&StatusFlag$invul)
 
 integer STATUS;
 integer FX_FLAGS;
 key _NPC_TARG;
 
-// Against is data from the package, data is data from the event
-integer evtCheck(string script, integer evt, string data, string against){
-    if(script == ""){
-        if(evt == INTEVENT_SPELL_ADDED)
-            if(data != jVal(against, [0]))return FALSE;
-    }
-    
-    return TRUE;
-}
+
 
 evtListener(string script, integer evt, string data){
     if(script == "got FXCompiler" && evt == FXCEvt$update)FX_FLAGS = (integer)jVal(data, [0]);

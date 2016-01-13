@@ -1,10 +1,10 @@
 //#include "situation/_lib_effects.lsl"
 
 
-#define PSTRIDE 4
+#define PSTRIDE 5
 list PCS;
 list NPCS;
-list PACKAGES;     // (int)pid, (key)id, (arr)package, (int)stacks
+list PACKAGES;     // (int)pid, (key)id, (arr)package, (int)stacks, (int)timesnap
 list EVT_INDEX;     // [scriptname_evt, [pid, pid...]]
 list TAG_CACHE;     // [(int)tag1...]
 integer PID;
@@ -65,7 +65,15 @@ if(script != cls$name){
             evts = llDeleteSubList(evts, 0, 0);
             
             if(script+"_"+(string)evt == jVal(evdata, [1])+"_"+jVal(evdata,[0])){
-				if(evtCheck(script, evt, data, jVal(evdata, [5]))){
+				string against = jVal(evdata, [5]);
+				integer check;
+				// Against is data from the package, data is data from the event
+				if(data == j(against,0) || j(against, 0) == JSON_INVALID)check = TRUE;
+				
+
+			
+			
+				if(check){
 					string wrapper = jVal(evdata, [4]);
 					integer targ = (integer)jVal(evdata, [2]);
 					integer maxtargs = (integer)jVal(evdata, [3]);
@@ -183,7 +191,7 @@ list find(list names, list senders, list tags, list pids, integer flags){
 		
 		// Scan tags
 		list t = llJson2List(jVal(p, [PACKAGE_TAGS]));
-        if(add && t != []){
+        if(add && tags != []){
             integer x; 
 			integer found;
             for(x = 0; x<llGetListLength(tags) && !found; x++){
@@ -223,16 +231,21 @@ addPackage(string sender, list package, integer stacks){
         list exists = find([llList2String(package,PACKAGE_NAME)], [sender], [], [], 0);
         if(exists){
             integer idx = llList2Integer(exists,0);
+			integer pid = llList2Integer(PACKAGES, idx);
             CS = llList2Integer(PACKAGES, idx+3)+stacks;
             if(CS>mstacks)CS = mstacks;
             PACKAGES = llListReplaceList(PACKAGES, [CS], idx+3, idx+3);
-            multiTimer(["F_"+(string)PID, "", dur, FALSE]);
+			integer ts = timeSnap();
+			PACKAGES = llListReplaceList(PACKAGES, [ts], idx+4, idx+4);
+			
+            multiTimer(["F_"+(str)pid, "", dur, FALSE]);
             raiseEvent(FXEvt$effectStacksChanged, 
                 mkarr(([
                     sender, 
                     CS, 
                     mkarr(package),
-					llList2Integer(PACKAGES, idx)
+					llList2Integer(PACKAGES, idx),
+					ts
                 ]))
             );
             #ifdef FXConf$useShared
@@ -279,7 +292,8 @@ addPackage(string sender, list package, integer stacks){
         }
     } 
     // Remove conditions
-    PACKAGES += [PID, sender, mkarr(package), 1];
+	integer ts = timeSnap();
+    PACKAGES += [PID, sender, mkarr(package), 1, ts];
     TAG_CACHE+= llJson2List(llList2String(package, PACKAGE_TAGS));
     
     
@@ -288,7 +302,7 @@ addPackage(string sender, list package, integer stacks){
     if(tick>0)
         multiTimer(["T_"+(string)PID, "", tick, TRUE]);
 		
-    raiseEvent(FXEvt$effectAdded, mkarr(([sender, stacks, mkarr(package), PID])));
+    raiseEvent(FXEvt$effectAdded, mkarr(([sender, stacks, mkarr(package), PID, ts])));
     //runPackage(sender, package, CS);
     onEvt("", INTEVENT_ONADD, (string)PID);
     onEvt("", INTEVENT_SPELL_ADDED, llList2String(package, PACKAGE_NAME));
@@ -377,9 +391,11 @@ default
 			){
 				CB_DATA = [FALSE];
 			}	
-			#ifdef IS_NPC
-			
-			#endif			
+			#ifdef IS_INVUL_CHECK
+			else if(flags&WF_DETRIMENTAL && IS_INVUL_CHECK()){
+				CB_DATA = [FALSE];
+			}
+			#endif
 			else if(~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != llGetOwner() && llFrand(1)<(dodge_chance+dodge_add)){
 				#ifndef IS_NPC
 				AnimHandler$anim(mkarr((["got_dodge_active", "got_dodge_active_ub"])), TRUE, 0);

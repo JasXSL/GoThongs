@@ -20,6 +20,7 @@
 #include "xobj_core/classes/jas Primswim.lsl"
 #include "xobj_core/classes/jas Interact.lsl"
 #include "xobj_core/classes/jas MaskAnim.lsl"
+#include "xobj_core/classes/jas Soundspace.lsl"
 
 
 #include "xobj_toonie/classes/ton MeshAnim.lsl"
@@ -56,6 +57,8 @@
 #include "./classes/got LevelSpawner.lsl"
 #include "./classes/got Language.lsl"
 #include "./classes/got Potions.lsl"
+#include "./classes/got RootAux.lsl"
+#include "./classes/got ModInstall.lsl"
 
 // Helper function to run code on all players. Requires players to be stored in a global list named PLAYERS
 #define runOnPlayers(pkey, code) {integer i; for(i=0; i<llGetListLength(PLAYERS); i++){key pkey = llList2Key(PLAYERS, i); code}}

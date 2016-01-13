@@ -119,7 +119,10 @@ default
             raiseEvent(LevelEvt$players, PARAMS);
             llSetTimerEvent(0);
             Alert$freetext(llGetOwner(), "Players: "+(string)llGetListLength(PLAYERS), FALSE, FALSE);
-            
+            runOnPlayers(targ,
+				GUI$toggleBoss(targ, "");
+				Rape$setTemplates(targ, []);
+			)
             key p = llList2Key(PLAYERS, 0);
             if(p == llGetOwner())p = llList2Key(PLAYERS, 1);
             Root$setLevelOn(p);
@@ -324,7 +327,7 @@ default
 
 	
     
-    else if(METHOD == LevelMethod$loadFinished){
+    else if(METHOD == LevelMethod$loadFinished && BFL&BFL_LOADING){
         llSetTimerEvent(0);
         BFL = BFL&~BFL_LOADING;
         raiseEvent(LevelEvt$loaded, "");

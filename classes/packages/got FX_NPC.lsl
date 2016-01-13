@@ -9,15 +9,7 @@ integer FX_FLAGS;
 float hp = 1;
 key aggro;
 
-// Against is data from the package, data is data from the event
-integer evtCheck(string script, integer evt, string data, string against){
-    if(script == ""){
-        if(evt == INTEVENT_SPELL_ADDED)
-            if(data != jVal(against, [0]))return FALSE;
-    }
-    
-    return TRUE;
-}
+
 
 evtListener(string script, integer evt, string data){ 
     if(script == "got FXCompiler" && evt == FXCEvt$update){

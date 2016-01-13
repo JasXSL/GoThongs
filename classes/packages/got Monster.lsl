@@ -8,7 +8,6 @@
 #define TIMER_FRAME "a"
 #define TIMER_ATTACK "b" 
 
-#define preAtk() if(atkspeed>0 && llList2Integer(llCastRay(llGetPos()+<0,0,.5>, prPos(chasetarg), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0){Status$get(chasetarg, "ATK");}
 
 
 list PLAYERS;           // The players, should always contain owner
@@ -79,7 +78,7 @@ anim(string anim, integer start){
 	integer meshAnim = (llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT);
 	if(start){
 		if(meshAnim)MeshAnim$startAnim(anim);
-		else MaskAnim$restart(anim);
+		else MaskAnim$start(anim);
 	}else{
 		if(meshAnim)MeshAnim$stopAnim(anim);
 		else MaskAnim$stop(anim);
@@ -87,7 +86,7 @@ anim(string anim, integer start){
 }
 
 toggleMove(integer on){
-    if(on && ~BFL&BFL_MOVING && ~BFL&BFL_STOPON){
+    if(on && ~BFL&BFL_MOVING && ~BFL&BFL_STOPON && ~RUNTIME_FLAGS&Monster$RF_IMMOBILE){
         BFL = BFL|BFL_MOVING;
         anim("walk", true);
     }else if(!on && BFL&BFL_MOVING){
@@ -152,6 +151,7 @@ timerEvent(string id, string data){
             BFL = BFL&~BFL_CHASING;
         }
         
+		// Tracking a player
         else if(STATE == STATE_CHASING){
             BFL = BFL|BFL_CHASING;
 			
@@ -172,10 +172,21 @@ timerEvent(string id, string data){
 			if(llVecDist(ppos, llGetPos())<=hitbox){
 				if(~BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$inRange, chasetarg);
-                    if(~BFL&BFL_ATTACK_CD && ~RUNTIME_FLAGS&Monster$RF_PACIFIED){
-						preAtk();
-                    }
                 }
+
+				// This is where we request an attack
+				if(
+					atkspeed>0 && 
+					~BFL&BFL_ATTACK_CD &&
+					BFL&BFL_IN_RANGE && 
+					~BFL&BFL_STOPON && 
+					~FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED) && 
+					~RUNTIME_FLAGS&Monster$RF_PACIFIED && 
+					llList2Integer(llCastRay(llGetPos()+<0,0,.5>, prPos(chasetarg), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
+				){
+					Status$get(chasetarg, "ATK");
+				}
+				
                 BFL = BFL|BFL_IN_RANGE;
 			}else{
 				if(BFL&BFL_IN_RANGE){
@@ -214,12 +225,10 @@ timerEvent(string id, string data){
         }
         
     }
+	// Timer run after an attack
     else if(id == TIMER_ATTACK){
-        BFL = BFL&~BFL_ATTACK_CD;
-        if(BFL&BFL_STOPON || FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED))return;
-        if(BFL&BFL_IN_RANGE){
-            preAtk();
-        }
+		// Set it so we can attack again
+		BFL = BFL&~BFL_ATTACK_CD;
     }
 }
 
@@ -233,7 +242,8 @@ onEvt(string script, integer evt, string data){
     
     else if(script == "got FXCompiler"){
         if(evt == FXCEvt$update){
-            FXFLAGS = (integer)j(data, 0);
+			FXFLAGS = (integer)j(data, 0);
+			if(FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED))toggleMove(FALSE);
         }
     }
     
@@ -347,7 +357,7 @@ default
     if(method$isCallback){ 
         if(METHOD == StatusMethod$get && id!="" && SENDER_SCRIPT == "got Status"){
             ctData = llJson2List(PARAMS);
-            if(CB == "ATK"){
+            if(CB == "ATK" && ~BFL&BFL_ATTACK_CD){
                 multiTimer([TIMER_ATTACK, "", atkspeed+llFrand(atkspeed*.5), FALSE]);
 				if(BFL&BFL_STOPON || RUNTIME_FLAGS&Monster$RF_PACIFIED || FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED))return;
 				integer flags = llList2Integer(ctData, 0);
@@ -371,7 +381,7 @@ default
         
         
         raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)RUNTIME_FLAGS);
-        if(~pre&Monster$RF_IMMOBILE && RUNTIME_FLAGS&Monster$RF_IMMOBILE){
+        if(RUNTIME_FLAGS&Monster$RF_IMMOBILE){
             toggleMove(FALSE);
         }  
         if(pre&Monster$RF_NOROT && RUNTIME_FLAGS&Monster$RF_NOROT){
@@ -382,6 +392,7 @@ default
 		look_override = method_arg(0);
 		updateLookAt();
 	}
+	else if(METHOD == MonsterMethod$atkspeed)atkspeed = (float)method_arg(0);
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"   
 }

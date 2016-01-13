@@ -16,7 +16,7 @@
 #define TIMER_CLIMB_ROOT "d"
 
 integer BFL;
-#define BFL_TEMP_INVUL 1		// Temp invul after rez
+
 #define BFL_CAM 2				// Cam is overridden
 #define BFL_CLIMB_ROOT 4		// Ended climb, root for a bit
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
@@ -30,12 +30,12 @@ integer PRE_FLAGS;
 integer THONG_LEVEL = 1;
 list BONUS_STATS = [];
 
-#define SPSTRIDE 2
-list SPELL_ICONS;   // [(key)texture, (int)desc]
+#define SPSTRIDE 6
+list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
 
 // Effects
 integer STATUS_FLAGS = 0; 
-key coop_player;
+#define coop_player llList2Key(PLAYERS, 1)
 
 integer GENITAL_FLAGS;
 
@@ -55,6 +55,7 @@ float AROUSAL = 0;
 float PAIN = 0;
 
 list OUTPUT_STATUS_TO; 
+list PLAYERS;
 
 integer DIFFICULTY = 1;	// 
 #define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.7)+DIFFICULTY*4)*0.1)-0.4)
@@ -75,12 +76,7 @@ toggleClothes(integer showGenitals){
     if(showGenitals){
         llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Bits");
     }else{
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed/Arms");
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed/Boots");
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed/Head"); 
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed/Torso"); 
-               
-        
+        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed");
         llRegionSayTo(llGetOwner(), 1, "jasx.togglefolder Bits/Groin, 0");
         llRegionSayTo(llGetOwner(), 1, "jasx.togglefolder Dressed/Groin, 0");
         llRegionSayTo(llGetOwner(), 1, "jasx.togglefolder Underwear/Groin, 0");
@@ -99,7 +95,6 @@ addDurability(float amount, string spellName, integer flags){
 		amount*=maxDurability();
 	
     if(amount<0){
-		if(BFL&BFL_TEMP_INVUL)return;
         if(STATUS_FLAGS&StatusFlag$pained)amount*=1.5;
         amount*=fxModDmgTaken;
 		amount*=difMod();
@@ -119,6 +114,9 @@ addDurability(float amount, string spellName, integer flags){
 		
 		multiTimer([TIMER_BREAKFREE, "", 20, FALSE]);
 		GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, 20);
+
+		Status$monster_rapeMe();
+		Rape$activateTemplate();
     }else{
         if(DURABILITY > maxDurability())DURABILITY = maxDurability();
         if(STATUS_FLAGS&StatusFlag$dead){
@@ -251,7 +249,7 @@ onEvt(string script, integer evt, string data){
         }
     }else if(script == "#ROOT"){
         if(evt == RootEvt$players){
-            coop_player = jVal(data, [1]);
+            PLAYERS = llJson2List(data);
         }
         else if(evt == evt$TOUCH_START){
             if(~STATUS_FLAGS&StatusFlag$dead && ~STATUS_FLAGS&StatusFlag$raped)return;
@@ -385,10 +383,13 @@ timerEvent(string id, string data){
 		}
 		
     }else if(id == "OP"){
-		list dta = llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE);
-		GUI$setMySpellTextures(dta);
+		integer i; list out;
+		for(i=0; i<llGetListLength(SPELL_ICONS); i+=SPSTRIDE){
+			out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
+		}
+		GUI$setMySpellTextures(out);
 		if(coop_player)
-			GUI$setSpellTextures(coop_player, dta);
+			GUI$setSpellTextures(coop_player, out);
     }
 	else if(id == TIMER_BREAKFREE){
 		// Show breakfree button
@@ -396,7 +397,8 @@ timerEvent(string id, string data){
 		GUI$toggleQuit(TRUE);
 	}
 	else if(id == TIMER_INVUL){
-		BFL=BFL&~BFL_TEMP_INVUL;
+		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$invul;
+		outputStats();
 	}
 	else if(id == TIMER_CLIMB_ROOT){
 		BFL = BFL&~BFL_CLIMB_ROOT;
@@ -408,8 +410,8 @@ timerEvent(string id, string data){
 default 
 {
     state_entry(){
+		PLAYERS = [(string)llGetOwner()];
         db2$ini();
-        coop_player = llList2String(_getPlayers(), 1);
         outputStats();
         Status$fullregen();
         multiTimer([TIMER_REGEN, "", 2, TRUE]);
@@ -439,22 +441,30 @@ default
     
     if(id == ""){
         if(METHOD == StatusMethod$addTextureDesc){
-            key texture = (key)method_arg(0);
-            string desc = method_arg(1);
-            SPELL_ICONS += [texture, desc];
-            multiTimer(["OP", "", .5, FALSE]);
+            SPELL_ICONS += [(integer)method_arg(0), (key)method_arg(1), (str)method_arg(2), (int)method_arg(3), (int)method_arg(4), (int)method_arg(5)];
+			multiTimer(["OP", "", .1, FALSE]);
         }
         else if(METHOD == StatusMethod$remTextureDesc){
-            key texture = (key)method_arg(0);
-            integer pos = llListFindList(SPELL_ICONS, [texture]);
-            if(pos == -1)return;
-            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos, pos+SPSTRIDE-1);
+            integer pid = (integer)method_arg(0);
+            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if(pos == -1)return;
+			
+            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
             multiTimer(["OP", "", .1, FALSE]);
         }
         else if(METHOD == StatusMethod$setSex){
             GENITAL_FLAGS = (integer)method_arg(0);
             db2$set([StatusShared$sex], (string)GENITAL_FLAGS);
         }
+		else if(METHOD == StatusMethod$stacksChanged){
+			integer pid = (integer)method_arg(0);
+            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if(pos == -1)return;
+			
+			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
+            //qd("Refreshing spell icons: "+mkarr(SPELL_ICONS));
+			multiTimer(["OP", "", .1, FALSE]);
+		}
     }
     
     if(METHOD == StatusMethod$addDurability)addDurability((float)method_arg(0), method_arg(2), (integer)method_arg(3));
@@ -471,7 +481,8 @@ default
         Rape$end();
         
 		if(STATUS_FLAGS&StatusFlag$dead){
-			BFL = BFL|BFL_TEMP_INVUL; 
+			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$invul;
+			outputStats();
 			multiTimer([TIMER_INVUL,"", 6, FALSE]);
 		}
         DURABILITY = maxDurability();
@@ -508,19 +519,12 @@ default
     }
     else if(METHOD == StatusMethod$getTextureDesc){
         if(id == "")id = llGetOwner();
-        string out = "";
-        
-        integer pos = (integer)method_arg(0);
-        string texture = method_arg(1);
-        
-        if(llList2String(SPELL_ICONS, pos*SPSTRIDE) == texture)out = llList2String(SPELL_ICONS, pos*SPSTRIDE+1);
-        else{
-            integer p = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [(key)texture]);
-            if(~p)out = llList2String(SPELL_ICONS, p*SPSTRIDE+1);
-        }
-        
-        if(out)
-            llRegionSayTo(llGetOwnerKey(id), 0, out);
+		
+		integer pid = (integer)method_arg(0);
+        integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+        if(pos == -1)return;
+		
+		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
     }
     else if(METHOD == StatusMethod$outputStats)
         outputStats();

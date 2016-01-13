@@ -80,7 +80,7 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     list bounds = llGetBoundingBox(llList2String(SPELL_TARGS, 0));\
     vector b = llList2Vector(bounds, 0)-llList2Vector(bounds,1); \
     float h = llFabs(b.z/2); \
-    list ray = llCastRay(llGetPos()+<0,0,.5>, pos+<0,0,h>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]); \
+    list ray = llCastRay(llGetPos()+<0,0,.5>, pos+<0,0,h>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); \
     if(llList2Integer(ray, -1) == 1 && llList2Key(ray,0) != targ){ \
         A$(ASpellMan$errVisionObscured); \
         SpellMan$interrupt(); \

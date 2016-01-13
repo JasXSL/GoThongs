@@ -23,7 +23,7 @@ onEvt(string script, integer evt, string data){
         else if(evt == FXEvt$effectAdded){
 			// Add to stacks
 			STACKS += [llList2Integer(d,1), llList2Integer(d,3)];
-            addEffect(llList2String(d,0), llList2Integer(d,1), llList2String(d,2), llList2Integer(d,3));
+            addEffect(llList2String(d,0), llList2Integer(d,1), llList2String(d,2), llList2Integer(d,3), llList2Integer(d,4));
         }
 		else if(evt == FXEvt$effectRemoved){
             remEffect(llList2String(d,0), llList2Integer(d,1), llList2String(d,2), llList2Integer(d,3), llList2Integer(d,4));
@@ -32,8 +32,13 @@ onEvt(string script, integer evt, string data){
 			if(~sp)STACKS = llDeleteSubList(STACKS, sp*2, sp*2+1);
 		}
         else if(evt == FXEvt$effectStacksChanged){
-            integer sp = llListFindList(stacksIds(), [llList2Integer(d,3)]);
-			if(~sp)STACKS = llListReplaceList(STACKS, [llList2Integer(d,1)], sp*2+1, sp*2+1);
+			integer PID = llList2Integer(d,3);
+			integer stacks = llList2Integer(d,1);
+            integer sp = llListFindList(stacksIds(), [PID]);
+			if(~sp)STACKS = llListReplaceList(STACKS, [stacks], sp*2+1, sp*2+1);
+			integer time = llList2Integer(d,4);
+			Status$stacksChanged(PID, time, (int)((float)j(llList2String(d,2),0)*10), stacks);
+			
 			updateGame();
         }
     }

@@ -6,10 +6,17 @@ list queue;			// [name, pos, rot, desc, debug, temp]
 #define QUEUESTRIDE 6
 integer BFL;
 #define BFL_QUEUE 1
+// If the object description has been sent
+#define BFL_READY 2
 
+integer rDesc; // Req desc of this item
+string asset;
 key current;
+integer attempts;
 
+// Spawns the next asset
 next(integer forceRetry){
+	// Queue is empty or already going
 	if(queue == [] || (BFL&BFL_QUEUE && !forceRetry)){
 		if(queue == []){  
 			multiTimer(["FORCE_NEXT"]);
@@ -17,11 +24,28 @@ next(integer forceRetry){
 		}
 		return;
 	}
+	// Clear the completion timer
 	multiTimer(["B"]);
-	integer reqDesc = llList2String(queue, 3) != "";
 	
-	_portal_spawn_std(llList2String(queue, 0), llList2Vector(queue,1), llList2Rot(queue,2), -<0,0,8>, llList2Integer(queue, 4), reqDesc, llList2Integer(queue,5));
+	// Globals
+	// If a description is needed
+	rDesc = llList2String(queue, 3) != "";
+	// Name
+	asset = llList2String(queue, 0);
+	
+	// Description has not been sent
+	BFL = BFL&~BFL_READY;
+	
+	
+	
+	
+	// Spawn it
+	_portal_spawn_std(asset, llList2Vector(queue,1), llList2Rot(queue,2), -<0,0,8>, llList2Integer(queue, 4), rDesc, llList2Integer(queue,5));
+	
+	// Wait for it to finish
 	BFL = BFL|BFL_QUEUE;
+	
+	// Sets a timer to force retry this one if it didn't spawn
 	multiTimer(["FORCE_NEXT", "", 30, FALSE]);
 }
 
@@ -33,21 +57,33 @@ done(){
 }
 
 timerEvent(string id, string data){
+	// A checks if the asset is ready for description input, provided the asset does have a description
 	if(id == "A"){
 		string desc = prDesc(current);
+		// Send the description since the object is now ready
 		if(desc == "READY"){
-			// Send
+			BFL = BFL|BFL_READY;
 			Portal$iniData(current, llList2String(queue, 3));
+			attempts++;
+			if(attempts == 50){
+				qd("Portal is not responding: "+llKey2Name(current));
+			}
+		}
+		// Keep sending until the description is no longer "READY"
+		else if(BFL&BFL_READY){
 			multiTimer(["A"]);
 			done();
 		}
-	}else if(id == "B"){
+	}
+	// B is sent once all objects have been spawned
+	else if(id == "B"){
 		#ifdef IS_HUD
 		Level$loaded(db2$get("#ROOT", [RootShared$level]), TRUE);
 		#else
 		Level$loaded((string)LINK_ROOT, FALSE);
 		#endif
 	}
+	// If SL didn't rez in a timely fashion, retry
 	else if(id == "FORCE_NEXT"){
 		qd("Error. SL dropped spawn success on "+mkarr(llList2List(queue, 0, QUEUESTRIDE-1))+" retrying. If this message repeats a lot, say 'debug got Spawner' in chat and restart the level.");
 		next(TRUE);
@@ -59,9 +95,11 @@ default
 {
 	state_entry(){db2$ini(); raiseEvent(evt$SCRIPT_INIT, "");}
 	object_rez(key id){
-		if(llStringTrim(llList2String(queue, 3), STRING_TRIM) == ""){
+		if(llKey2Name(id) != asset)return;
+		if(!rDesc){
 			done();
 		}else{
+			attempts = 0;
 			current = id; // Cache the current ID
 			multiTimer(["A", "", .2, TRUE]);
 		}
@@ -81,6 +119,17 @@ default
         return;
     }
     
+	if(method$internal){
+		if(METHOD == SpawnerMethod$remInventory){
+			list assets = llJson2List(method_arg(0));
+			list_shift_each(assets, val,
+				if(llGetInventoryType(val) == INVENTORY_OBJECT){
+					llRemoveInventory(val);
+				}
+			)
+		}
+	}
+	
     if(method$byOwner){
 		if(METHOD == 0){
 			llResetScript();
