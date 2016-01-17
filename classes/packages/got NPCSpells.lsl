@@ -94,16 +94,13 @@ updateText(){
 }
 
 onEvt(string script, integer evt, string data){
-    if(script == "got FXCompiler"){
-        if(evt == FXCEvt$update){
-            FXFLAGS = (integer)j(data, FXCUpd$FLAGS);
-            fxModDmgDone = (float)j(data, FXCUpd$DAMAGE_DONE);
-            fxCTM = (float)j(data, FXCUpd$CASTTIME); 
-            fxCDM = (float)j(data, FXCUpd$COOLDOWN);
-            if(BFL&BFL_CASTING && FXFLAGS&fx$NOCAST)
-                endCast(FALSE);
-            
-        }
+    if(script == "got FXCompiler" && evt == FXCEvt$update){
+        FXFLAGS = (integer)j(data, FXCUpd$FLAGS);
+        fxModDmgDone = (float)j(data, FXCUpd$DAMAGE_DONE);
+        fxCTM = (float)j(data, FXCUpd$CASTTIME); 
+        fxCDM = (float)j(data, FXCUpd$COOLDOWN);
+        if(BFL&BFL_CASTING && FXFLAGS&fx$NOCAST)
+            endCast(FALSE);
     }
     else if(script == "got Monster"){
         if(evt == MonsterEvt$runtimeFlagsChanged){

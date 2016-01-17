@@ -13,7 +13,7 @@ key _NPC_TARG;
 
 
 evtListener(string script, integer evt, string data){
-    if(script == "got FXCompiler" && evt == FXCEvt$update)FX_FLAGS = (integer)jVal(data, [0]);
+    if(script == "got Passives" && evt == PassivesEvt$data)FX_FLAGS = (integer)jVal(data, [0]);
     else if(script == "got Status"){
         if(evt == StatusEvt$flags)STATUS = (integer)data;
         else if(evt == StatusEvt$dead && (integer)data)FX$rem(FALSE, "", "", "", 0, FALSE, PF_DETRIMENTAL, 0, 0);

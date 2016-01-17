@@ -5,10 +5,10 @@
 
 #define saveFlags() db2$set([StatusShared$flags], (string)STATUS_FLAGS); raiseEvent(StatusEvt$flags, (string)STATUS_FLAGS)
 
-#define maxDurability() (DEFAULT_DURABILITY*(1+(float)getBonusStat(STAT_DURABILITY)*.1))
-#define maxMana() (DEFAULT_MANA*(1+(float)getBonusStat(STAT_MANA)*.1))
-#define maxArousal() (DEFAULT_AROUSAL*(1+(float)getBonusStat(STAT_AROUSAL)*0.5))
-#define maxPain() (DEFAULT_PAIN*(1+(float)getBonusStat(STAT_PAIN)*0.5))
+#define maxDurability() ((DEFAULT_DURABILITY+fxModMaxHpNr)*(1+(float)getBonusStat(STAT_DURABILITY)*.1)*fxModMaxHpPerc)
+#define maxMana() ((DEFAULT_MANA+fxModMaxManaNr)*(1+(float)getBonusStat(STAT_MANA)*.1)*fxModMaxManaPerc)
+#define maxArousal() ((DEFAULT_AROUSAL+fxModMaxArousalNr)*(1+(float)getBonusStat(STAT_AROUSAL)*0.5)*fxModMaxArousalPerc)
+#define maxPain() ((DEFAULT_PAIN+fxModMaxPainNr)*(1+(float)getBonusStat(STAT_PAIN)*0.5)*fxModMaxPainPerc)
 
 #define TIMER_REGEN "a"
 #define TIMER_BREAKFREE "b"
@@ -45,6 +45,17 @@ float fxModDmgTaken = 1;
 float fxModManaRegen = 1;
 float fxModArousalTaken = 1;
 float fxModPainTaken = 1;
+
+float fxModMaxHpPerc = 1;
+integer fxModMaxHpNr = 0;
+float fxModMaxManaPerc = 1;
+integer fxModMaxManaNr = 0;
+float fxModMaxArousalPerc = 1;
+integer fxModMaxArousalNr = 0;
+float fxModMaxPainPerc = 1;
+integer fxModMaxPainNr = 0;
+
+
 
 list SPELL_DMG_TAKEN_MOD;
 
@@ -230,23 +241,33 @@ float spdmtm(string spellName){
 
 
 onEvt(string script, integer evt, string data){
-    if(script == "got FXCompiler"){
-        if(evt == FXCEvt$update){
-            FXFLAGS = (integer)jVal(data, [0]);
-			
-			integer divisor = 0;
-			if(FXFLAGS&fx$F_BLURRED){
-				divisor = 8;
-			}
-			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force");
-			
-            fxModDmgTaken = (float)j(data, FXCUpd$DAMAGE_TAKEN);
-            fxModManaRegen = (float)j(data, FXCUpd$MANA_REGEN);
-			fxModPainTaken = (float)j(data,FXCUpd$PAIN_MULTI);
-			fxModArousalTaken = (float)j(data,FXCUpd$AROUSAL_MULTI);
-			
-            outputStats();
-        }
+    if(script == "got Passives" && evt == PassivesEvt$data){
+
+        FXFLAGS = (integer)jVal(data, [0]);
+		
+		integer divisor = 0;
+		if(FXFLAGS&fx$F_BLURRED){
+			divisor = 8;
+		}
+		llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force");
+		
+        fxModDmgTaken = (float)j(data, FXCUpd$DAMAGE_TAKEN);
+        fxModManaRegen = (float)j(data, FXCUpd$MANA_REGEN);
+		fxModPainTaken = (float)j(data,FXCUpd$PAIN_MULTI);
+		fxModArousalTaken = (float)j(data,FXCUpd$AROUSAL_MULTI);
+		
+		fxModMaxHpPerc = (float)j(data, FXCUpd$HP_MULTIPLIER);
+		fxModMaxHpNr = (int)j(data, FXCUpd$HP_ADD);
+		fxModMaxManaPerc = (float)j(data, FXCUpd$MANA_MULTIPLIER);
+		fxModMaxManaNr = (int)j(data, FXCUpd$MANA_ADD);
+		fxModMaxArousalPerc = (float)j(data, FXCUpd$AROUSAL_MULTIPLIER);
+		fxModMaxArousalNr = (int)j(data, FXCUpd$AROUSAL_ADD);
+		fxModMaxPainPerc = (float)j(data, FXCUpd$PAIN_MULTIPLIER);
+		fxModMaxPainNr = (int)j(data, FXCUpd$PAIN_ADD);
+		
+		qd(maxDurability());
+        outputStats();
+        
     }else if(script == "#ROOT"){
         if(evt == RootEvt$players){
             PLAYERS = llJson2List(data);

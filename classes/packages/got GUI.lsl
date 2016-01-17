@@ -75,24 +75,20 @@ onEvt(string script, integer evt, string data){
             toggle(TRUE);
         }
     }
-	else if(script == "got FXCompiler"){
-		if(evt == FXCEvt$update){
-			integer flags = (integer)j(data, 0);
-			if(flags == CACHE_FX_FLAGS)return;
-			
-			
-			if(
-				(flags&fx$F_BLINDED && ~CACHE_FX_FLAGS&fx$F_BLINDED) ||
-				(~flags&fx$F_BLINDED && CACHE_FX_FLAGS&fx$F_BLINDED)
-			){
-				integer on;
-				if(flags&fx$F_BLINDED)on = TRUE;
-				list data = [PRIM_POSITION, BLIND_POS, PRIM_SIZE, BLIND_SCALE];
-				if(!on)data = [PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR];
-				llSetLinkPrimitiveParams(P_BLIND, data);
-			}
-			CACHE_FX_FLAGS = flags;
+	else if(script == "got Passives" && evt == PassivesEvt$data){
+		integer flags = (integer)j(data, 0);
+		if(flags == CACHE_FX_FLAGS)return;
+		if(
+			(flags&fx$F_BLINDED && ~CACHE_FX_FLAGS&fx$F_BLINDED) ||
+			(~flags&fx$F_BLINDED && CACHE_FX_FLAGS&fx$F_BLINDED)
+		){
+			integer on;
+			if(flags&fx$F_BLINDED)on = TRUE;
+			list data = [PRIM_POSITION, BLIND_POS, PRIM_SIZE, BLIND_SCALE];
+			if(!on)data = [PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR];
+			llSetLinkPrimitiveParams(P_BLIND, data);
 		}
+		CACHE_FX_FLAGS = flags;
 	}
 }
 

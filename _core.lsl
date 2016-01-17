@@ -59,6 +59,7 @@
 #include "./classes/got Potions.lsl"
 #include "./classes/got RootAux.lsl"
 #include "./classes/got ModInstall.lsl"
+#include "./classes/got Passives.lsl"
 
 // Helper function to run code on all players. Requires players to be stored in a global list named PLAYERS
 #define runOnPlayers(pkey, code) {integer i; for(i=0; i<llGetListLength(PLAYERS); i++){key pkey = llList2Key(PLAYERS, i); code}}

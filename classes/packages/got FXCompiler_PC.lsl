@@ -181,7 +181,6 @@ remEffect(key caster, integer stacks, string package, integer pid, integer overw
 
 
 
-	
 
 updateGame(){
     integer visual = llList2Integer(THONG_VISUALS, -2);
@@ -233,8 +232,9 @@ updateGame(){
         else spdmtm+=[n, 1+llList2Float(SPELL_DMG_TAKEN_MOD, i+2)];
     }
     
-    Status$spellModifiers(spdmtm);
-    raiseEvent(FXCEvt$update, mkarr(([CACHE_FLAGS, regen, ddm, dtm, dodge, ctm, cdm, mcm, cm, pm, am])));
+    Status$spellModifiers(spdmtm); 
+	
+	Passives$setActive(([CACHE_FLAGS, regen, ddm, dtm, dodge, ctm, cdm, mcm, cm, pm, am]));
 }
 
 #include "got/classes/packages/got FXCompiler.lsl"

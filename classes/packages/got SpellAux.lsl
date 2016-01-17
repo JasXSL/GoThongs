@@ -115,7 +115,7 @@ onEvt(string script, integer evt, string data){
 			)
 		}
 	}
-    else if(script == "got FXCompiler" && evt == FXCEvt$update){
+    else if(script == "got Passives" && evt == PassivesEvt$data){
         dmdmod = (float)j(data, FXCUpd$DAMAGE_DONE);
 		critmod = (float)j(data, FXCUpd$CRIT);
 	}

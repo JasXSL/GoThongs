@@ -140,7 +140,7 @@ onEvt(string script, integer evt, string data){
     }
 	
 	// Cache FX flags
-	else if(script == "got FXCompiler" && evt == FXCEvt$update){
+	else if(script == "got Passives" && evt == PassivesEvt$data){
         ctm = (float)j(data, FXCUpd$CASTTIME);
         cdm = (float)j(data, FXCUpd$COOLDOWN);
         mcm = (float)j(data, FXCUpd$MANACOST);

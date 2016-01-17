@@ -2,18 +2,31 @@
 
 #define FXCFlag$STUNNED 1
 
-#define FXCEvt$update 1					// Array of below values
-	#define FXCUpd$FLAGS 0 
-	#define FXCUpd$MANA_REGEN 1
-	#define FXCUpd$DAMAGE_DONE 2
-	#define FXCUpd$DAMAGE_TAKEN 3
-	#define FXCUpd$DODGE 4
-	#define FXCUpd$CASTTIME 5
-	#define FXCUpd$COOLDOWN 6
-	#define FXCUpd$MANACOST 7
-	#define FXCUpd$CRIT 8
-	#define FXCUpd$PAIN_MULTI 9
-	#define FXCUpd$AROUSAL_MULTI 10
+// When you add something here, make sure you also set it as a default in got Passives global var: list compiled_actives;
+#define FXCEvt$update 1					// Only sent in NPCs, in PCs the effects are tunneled through got Passives
+	#define FXCUpd$UNSET_FLAGS -1		// Special case only used when setting got Passives 
+	#define FXCUpd$FLAGS 0 				// (int)flags - Default 0
+	#define FXCUpd$MANA_REGEN 1			// (float)multiplier - Default 1
+	#define FXCUpd$DAMAGE_DONE 2		// (float)multiplier - Default 1
+	#define FXCUpd$DAMAGE_TAKEN 3		// (float)multiplier - Default 1
+	#define FXCUpd$DODGE 4				// (float)multiplier - Default 0
+	#define FXCUpd$CASTTIME 5			// (float)multiplier - Default 1
+	#define FXCUpd$COOLDOWN 6			// (float)multiplier - Default 1
+	#define FXCUpd$MANACOST 7			// (float)multiplier - Default 1
+	#define FXCUpd$CRIT 8				// (float)multiplier - Default 0
+	#define FXCUpd$PAIN_MULTI 9			// (float)multiplier - Default 1
+	#define FXCUpd$AROUSAL_MULTI 10		// (float)multiplier - Default 1
+	
+	#define FXCUpd$HP_ADD 11			// (int)hp - Default 0
+	#define FXCUpd$HP_MULTIPLIER 12		// (float)multiplier - Default 1
+	#define FXCUpd$MANA_ADD 13			// (int)mana - Default 0
+	#define FXCUpd$MANA_MULTIPLIER 14	// (float)multiplier - Default 1
+	#define FXCUpd$AROUSAL_ADD 15		// (int)arousal - Default 0
+	#define FXCUpd$AROUSAL_MULTIPLIER 16// (float)multiplier - Default 1
+	#define FXCUpd$PAIN_ADD 17			// (int)pain - Default 1
+	#define FXCUpd$PAIN_MULTIPLIER 18	// (float)multiplier - Default 1
+	
+	
 	
 #define FXCEvt$pullStart 2				// void - Pull has started
 #define FXCEvt$pullEnd 3				// void - A pull effect has ended

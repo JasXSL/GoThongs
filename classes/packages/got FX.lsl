@@ -17,10 +17,14 @@ float dodge_add;
 onEvt(string script, integer evt, string data){
     // Packages to work on
 if(script != cls$name){
-    if(script == "got FXCompiler"){
-		if(evt == FXCEvt$update){
-			dodge_chance = (float)jVal(data, [4]);
-		}
+    if(
+		#ifndef IS_NPC
+		script == "got Passives" && evt == PassivesEvt$data
+		#else
+		script == "got FXCompiler" && evt == FXCEvt$update
+		#endif
+	){
+		dodge_chance = (float)jVal(data, [4]);
 	}
 	else if(script == "got Bridge"){
         if(evt == BridgeEvt$data_change){

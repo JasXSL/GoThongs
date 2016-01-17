@@ -240,11 +240,9 @@ onEvt(string script, integer evt, string data){
         LocalConf$ini();
     }
     
-    else if(script == "got FXCompiler"){
-        if(evt == FXCEvt$update){
-			FXFLAGS = (integer)j(data, 0);
-			if(FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED))toggleMove(FALSE);
-        }
+    else if(script == "got FXCompiler" && evt == FXCEvt$update){
+		FXFLAGS = (integer)j(data, 0);
+		if(FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED))toggleMove(FALSE);
     }
     
     else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
