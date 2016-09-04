@@ -1,0 +1,123 @@
+#include "got/_core.lsl"
+
+default
+{
+    state_entry()
+    {
+		if(llGetStartParameter() == 2){
+			raiseEvent(evt$SCRIPT_INIT, "");
+		}
+    }
+    
+
+    #include "xobj_core/_LM.lsl"
+    /*
+        Included in all these calls:
+        METHOD - (int)method
+        PARAMS - (var)parameters
+        SENDER_SCRIPT - (var)parameters
+        CB - The callback you specified when you sent a task
+    */
+
+
+// Spawn the level, this goes first as it's fucking memory intensive
+    if(METHOD == LevelLoaderMethod$load && method$internal){
+        integer debug = (integer)method_arg(0);
+		
+		list groups = [method_arg(1)];
+		if(llJsonValueType(method_arg(1), []) == JSON_ARRAY)
+			groups = llJson2List(method_arg(1));
+				
+        // Spawn from HUD
+        list data = llJson2List(db3$get(LevelStorage$points, []));
+		
+		integer spawned;
+		list out = [];
+		list_shift_each(data, v,
+			list val = llJson2List(v);
+			
+			list l = llList2List(val, 4, 4);
+			if(l == [])l = [""];
+			integer pos = llListFindList(groups, l);
+			string group = llList2String(groups, pos);
+			
+			if(~pos){ 
+				spawned++;
+				string chunk = llList2Json(JSON_ARRAY, [
+					llList2String(val, 0), 
+					(vector)llList2String(val, 1)+llGetPos(), 
+					llList2String(val, 2), 
+					llList2String(val, 3), 
+					debug, 
+					FALSE, 
+					group
+				]);
+				if(llStringLength(mkarr(out)+chunk)>900){
+					// Send out
+					Spawner$spawnThese(llGetOwner(), out);
+					out = [];
+				}
+				// Add the chunk
+				out+= chunk;
+			}
+        )
+		
+		
+		if(out){
+			// Send out
+			Spawner$spawnThese(llGetOwner(), out);
+		}
+
+			
+		//qd("Spawned "+(str)spawned+" monsters");
+        spawned = 0;
+		
+        // Spawn from Me
+		out = [];
+        data = llJson2List(db3$get(LevelStorage$custom, []));
+
+
+		list_shift_each(data, v,
+			list val = llJson2List(v);
+			
+			list l = llList2List(val, 4, 4);
+			if(l == [])l = [""];
+			integer pos = llListFindList(groups, l);
+			string group = llList2String(groups, pos);
+			
+			if(~pos){
+				spawned++;
+				// No limit on link messages, just send all of the things
+				string add = llList2Json(JSON_ARRAY, [
+					llList2String(val, 0), 
+					(vector)llList2String(val,1)+llGetPos(), 
+					llList2String(val, 2), 
+					llStringTrim(llList2String(val, 3), STRING_TRIM), 
+					debug, 
+					FALSE, 
+					group
+				]);
+				
+				if(llStringLength(mkarr(out))+llStringLength(add) > 1024){
+					Spawner$spawnThese(LINK_THIS, out);
+					out = [];
+				}
+				out += add;
+			}
+        )
+		if(out)
+			Spawner$spawnThese(LINK_THIS, out);
+		
+		
+
+		out = [];
+    }
+	
+	
+    
+    #define LM_BOTTOM  
+    #include "xobj_core/_LM.lsl" 
+    
+    
+}
+
