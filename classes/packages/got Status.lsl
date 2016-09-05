@@ -24,6 +24,7 @@ integer BFL = 1;
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
 #define BFL_STATUS_SENT 0x20		// Status sent
 #define BFL_AVAILABLE_BREAKFREE 0x40
+#define BFL_AO_OFF 0x80
 
 // Cache
 integer PRE_CONTS;
@@ -137,6 +138,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 			SpellMan$interrupt();
 			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
 			BFL = BFL&~BFL_AVAILABLE_BREAKFREE;
+			
 			
 			outputStats();
 			raiseEvent(StatusEvt$dead, 1);
@@ -300,10 +302,12 @@ onEvt(string script, integer evt, list data){
     }
 	else if(script == "jas Primswim"){
 		if(evt == PrimswimEvt$onWaterEnter){
+			
 			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$swimming;
 		}
 		else if(evt == PrimswimEvt$onWaterExit){
 			STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$swimming;
+			
 		}
 		outputStats();
 	}
@@ -387,6 +391,17 @@ timerEvent(string id, string data){
 	
     if(id == TIMER_REGEN){
 		integer inCombat = (STATUS_FLAGS&StatusFlags$combatLocked)>0;
+		
+		integer ainfo = llGetAgentInfo(llGetOwner());
+		// Checks if agent is no longer sitting or swimming
+		if(BFL&BFL_AO_OFF && ~STATUS_FLAGS&StatusFlag$swimming && ~ainfo & AGENT_SITTING){
+			BFL = BFL&~BFL_AO_OFF;
+			llRegionSayTo(llGetOwner(), -8888, (string)llGetOwner()+"booton");
+		}
+		else if(~BFL&BFL_AO_OFF && ((STATUS_FLAGS&StatusFlag$swimming) || ainfo & AGENT_SITTING)){
+			llRegionSayTo(llGetOwner(), -8888, (string)llGetOwner()+"bootoff");
+			BFL = BFL|BFL_AO_OFF;
+		}
 		
 		#define DEF_MANA_REGEN 0.025
 		#define DEF_HP_REGEN 0.015

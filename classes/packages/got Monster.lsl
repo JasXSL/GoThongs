@@ -373,8 +373,14 @@ onEvt(string script, integer evt, list data){
             if(llList2String(data, 0) != ""){    
                 STATE = STATE_CHASING;
             }
-			else if(STATE == STATE_CHASING)
+			/*
+			Not needed as it has a built in target lost
+			else if(STATE == STATE_CHASING){
+				//parseDesc(chasetarg, resources, status, fx, sex, team);
 				STATE = STATE_SEEKING;
+				qd("Target lost from status");
+			}
+			*/
         }
     }
     

@@ -656,8 +656,11 @@ default
 	
 	else if(METHOD == StatusMethod$monster_rapeMe){
 		list ray = llCastRay(llGetPos()+<0,0,1>, prPos(id), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
-		if(llList2Integer(ray, -1) == 0)
+		if(llList2Integer(ray, -1) == 0){
+			if(!isset(rapeName))
+				rapeName = llGetObjectName();
 			Bridge$fetchRape(llGetOwnerKey(id), rapeName);
+		}
 	}
 	
 	// Get status
