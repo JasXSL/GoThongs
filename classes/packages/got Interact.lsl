@@ -47,7 +47,9 @@ onDesc(key obj, string text){
         obj = llGetKey();
         text = "[E] Climb Out";
     }
-    else text = "[E] "+text;
+    else{
+		text = "[E] "+text;
+	}
 	
     if(obj){
         llSetLinkPrimitiveParamsFast(CROSSHAIR, [PRIM_SIZE, <0.05, 0.05, 0.05>, PRIM_TEXT, text, <1,1,1>, 1, PRIM_ROT_LOCAL, llEuler2Rot(<0,-PI_BY_TWO,0>)]);

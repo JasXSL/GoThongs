@@ -4,7 +4,8 @@
 #define WeaponLoaderMethod$storeScale 4				// (float)scaleFactor
 #define WeaponLoaderMethod$remInventory 5			// (arr)assets - Removes assets from this link
 
-#define WeaponLoaderEvt$attackAnim 1				// void | Attack animation started
+#define WeaponLoaderEvt$attackAnim 1				// void - Attack animation started
+#define WeaponLoaderEvt$sheathed 2					// (bool)sheathed - Weapon sheathed
 
 #define WeaponLoader$toggleSheathe(targ, sheathe) runMethod((str)targ, "got WeaponLoader", WeaponLoaderMethod$toggleSheathe, [sheathe], TNN)  
 #define WeaponLoader$anim() runMethod((str)LINK_ALL_OTHERS, "got WeaponLoader", WeaponLoaderMethod$anim, [], TNN)

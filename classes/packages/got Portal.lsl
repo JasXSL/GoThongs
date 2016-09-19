@@ -189,7 +189,8 @@ default
 			else 
 				BFL = BFL|BFL_HAS_DESC;
 			
-			setText(mkarr(([pos, ((BFL&BFL_IS_DEBUG)>0), ""])));
+			list text = [pos, ((BFL&BFL_IS_DEBUG)>0), ""];
+			setText(mkarr(text));
 			
 			// Putting it below will cause trouble with double inits
 			Root$getPlayers("INI");

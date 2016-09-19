@@ -130,7 +130,7 @@ loadWeapon(list data){
         spawnWeapons();
     }
 
-    
+    raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
 }
 
 // Returns an attachment slot
@@ -355,6 +355,8 @@ default
                 // Update the weapons
                 if(~WFLAGS&WFLAG_UNSHEATHABLE)
                     spawnWeapons();
+					
+				raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
             }
             
             // Animations
