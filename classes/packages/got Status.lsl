@@ -79,7 +79,7 @@ list PLAYERS;
 list TARGETING;
 
 integer DIFFICULTY = 1;	// 
-#define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.7)+DIFFICULTY*4)*0.1)-0.4)
+#define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.7)+DIFFICULTY*3)*0.1)-0.4)
 
 
         

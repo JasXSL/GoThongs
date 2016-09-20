@@ -11,12 +11,15 @@ list CACHE;
 #define spellFlags(data) llList2Integer(data, 3)
 
 #define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
+#define difDmgMod() llPow(0.9, DIFFICULTY)
 
 list CACHE_MANA_COST = [0,0,0,0,0]; 	// Mana cost of all spells
 integer CACHE_LOW_MANA = 0;		// Bitfield of 00000 spells with higher mana cost than mana cache
 
 // Contains the fx data
 #define CSTRIDE 4
+
+integer DIFFICULTY;
 
 list FX_CACHE;
 #define FXSTRIDE 5
@@ -79,7 +82,11 @@ list ABILS_BG = [0,0,0,0,0];
 string runMath(string FX, integer index, key targ){
     list split = llParseString2List(FX, ["$MATH$"], []);
     float pmod = 1;
-    if(llList2Key(PLAYERS, 1))pmod = .5;
+	
+	integer p = count(PLAYERS);
+	if(p<1)p=1;
+    pmod = 1./p;
+	
     float aroused = 1;
     if(STATUS_FLAGS&StatusFlag$aroused)aroused = .9;
 	
@@ -92,7 +99,7 @@ string runMath(string FX, integer index, key targ){
 	
 	string consts = llList2Json(JSON_OBJECT, [
 		// Damage done multiplier
-        "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm(index)),
+        "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm(index)*difDmgMod()),
 		// Points of arousal
 		"A", CACHE_AROUSAL,
 		// Points of pain
@@ -124,7 +131,10 @@ onEvt(string script, integer evt, list data){
     if(script == "#ROOT"){
         if(evt == RootEvt$players)
             PLAYERS = data;
-    }else if(script == "got Status"){
+    }
+	
+	
+	else if(script == "got Status"){
 		if(evt == StatusEvt$flags){
 			integer pre = STATUS_FLAGS;
 			STATUS_FLAGS = llList2Integer(data,0);
@@ -135,6 +145,11 @@ onEvt(string script, integer evt, list data){
 				toggleSpellButtons(TRUE);		// Auto hides if dead. So we can just go with TRUE for both cases
 			} 
 		}
+		
+		else if(evt == StatusEvt$difficulty){
+			DIFFICULTY = l2i(data, 0);
+		}
+		
 		else if(evt == StatusEvt$resources){
 			// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
 			CACHE_AROUSAL = llList2Float(data, 4);
