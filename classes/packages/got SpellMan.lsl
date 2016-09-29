@@ -31,6 +31,9 @@ list COOLDOWNS = [];            // (int)buttonID, (float)finish_time
 #define clearQueue() QUEUE_SPELL = -1; BFL=BFL&~BFL_QUEUE_SELF_CAST; SpellAux$setQueue(QUEUE_SPELL)
 #define startSpell(spell) if(castSpell(spell) == FALSE){llStopSound();llPlaySound("2967371a-f0ec-d8ad-4888-24b3f8f3365c", .2);clearQueue();}
 
+// Recaches the team of the active target
+#define recacheTarget() CACHE_ROOT_TARGET = l2k(data,0); CACHE_ROOT_TARGET_TEAM = l2i(data,2)
+
 
 // Global cooldown. Set by bridge.
 float GCD = 1.5;
@@ -138,8 +141,7 @@ onEvt(string script, integer evt, list data){
 			
 		// Update target cache
 		else if(evt == RootEvt$targ){
-			CACHE_ROOT_TARGET = l2k(data,0);
-			CACHE_ROOT_TARGET_TEAM = l2i(data,2);
+			recacheTarget();
 			if(SPELL_ON_TARG != -1){
 				startSpell(SPELL_ON_TARG);
 			}
@@ -171,8 +173,10 @@ onEvt(string script, integer evt, list data){
 		else if(evt == StatusEvt$resources){
 			CACHE_MANA = llList2Float(data, 2);
 		}
-		else if(evt == StatusEvt$team)
+		else if(evt == StatusEvt$team){
 			TEAM = l2i(data,0);
+			recacheTarget();
+		}
 	}
 }
 

@@ -2,17 +2,8 @@
 #include "got/_core.lsl"
 integer TEAM = TEAM_NPC;
 
-list SET_FLAGS;             // [id, (int)data]
-list UNSET_FLAGS;           // [id, (int)data]
-list DAMAGE_TAKEN_MULTI;    // [id, (int)multiplier]
-list DAMAGE_DONE_MULTI;     // [id, (int)multiplier]
-list SPELL_DMG_TAKEN_MOD;   // [id, (str)spell, (float)multiplier]
-list DODGE_ADD;           	// [id, (float)data]
-list CASTTIME_MULTI;   		// [id, (float)multiplier]
-list COOLDOWN_MULTI;   		// [id, (float)multiplier]
-list CRIT_ADD;				// [id, (float)multiplier]
 list SPEED_MULTI;			// [id, (float)multiplier]
-list HEAL_MOD;				// [id, (float)multi]
+
 
 
 integer current_visual;
@@ -146,7 +137,11 @@ updateGame(){
 	// Healing taken mod, multi
 	float htm = compileList(HEAL_MOD, 0, 1, 2, TRUE);
     if(htm<0)htm = 0;
-
+	
+	integer team = -1;
+	if(TEAM_MOD)
+		team = l2i(TEAM_MOD, -1);
+		
     // Compile lists of spell specific modifiers
     list spdmtm; // SPELL_DMG_TAKEN_MOD - [(str)spellName, (float)dmgmod]
     for(i=0; i<llGetListLength(SPELL_DMG_TAKEN_MOD); i+=3){
@@ -179,7 +174,8 @@ updateGame(){
 		0,					// SPell highlights
 		f2i(htm),				// Healing received mod
 		f2i(speed),			// Movespeed multiplier
-		1					// (PC only)Healing done mod
+		1,					// (PC only)Healing done mod
+		team
 	])), "");
 }
 

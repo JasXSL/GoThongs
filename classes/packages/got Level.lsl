@@ -21,23 +21,52 @@ integer BFL;
 #define BFL_COMPLETED 0x20
 
 list LOADQUEUE = REQUIRE;			// Required scripts to be remoteloaded
+list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
 
 onEvt(string script, integer evt, list data){
-	integer pos = llListFindList(LOADQUEUE, [script]);
-	if(~pos && evt == evt$SCRIPT_INIT && ~BFL&BFL_INI){
-		LOADQUEUE = llDeleteSubList(LOADQUEUE, pos, pos);
+	if(evt == evt$SCRIPT_INIT && ~BFL&BFL_INI){
+		integer pos = llListFindList(LOADQUEUE, [script]);
+		if(~pos){
+			LOADQUEUE = llDeleteSubList(LOADQUEUE, pos, pos);
+			
+			if(LOADQUEUE == []){
+				
+				// Loadqueue raises script init with the pin that other scripts can use once the official scripts have been downloaded
+				db3$set([LevelShared$isSharp], (string)START_PARAM);
+				raiseEvent(evt$SCRIPT_INIT, (str)pin);				
+				
+			} 
+		}
 		
-		if(LOADQUEUE == []){
-
-			raiseEvent(evt$SCRIPT_INIT, "");
-			db3$set([LevelShared$isSharp], (string)START_PARAM);
+		pos = llListFindList(LOAD_ADDITIONAL, [script]);
+		if(~pos){
+			LOAD_ADDITIONAL = llDeleteSubList(LOAD_ADDITIONAL, pos, pos);
+		}
+		
+		// Load finished
+		if(LOADQUEUE+LOAD_ADDITIONAL == [] && ~BFL&BFL_INI){
 			Alert$freetext(llGetOwner(), "Loading from HUD", FALSE, FALSE);
-
 			Root$setLevel();
 			BFL = BFL|BFL_INI;
-			
-		} 
+		}
+		
 	}
+	
+	if(script == "got LevelLoader" && evt == LevelLoaderEvt$defaultStatus){
+		
+		integer assets = l2i(data, 0);
+		integer spawns = l2i(data, 1);
+		
+		if(!assets){
+			Level$loaded(LINK_THIS, 0);
+		}
+		if(!spawns){
+			Level$loaded(LINK_THIS, 1);
+		}
+		
+	}
+	
+	
 }
 
 timerEvent(string id, string data){
@@ -103,12 +132,36 @@ default
 					Spawner$getAsset(val);
 				} 
 			}
-		
+			
+			
+			
+			
 			pin = floor(llFrand(0xFFFFFFF));
 			llSetRemoteScriptAccessPin(pin);
 			
 			Remoteloader$load(mkarr(LOADQUEUE), pin, 2);
-				
+			
+			// Add custom scripts that need to init
+			if(llJsonValueType(llGetObjectDesc(), []) == JSON_ARRAY){
+				list d = llJson2List(llGetObjectDesc());
+				list_shift_each(d, val,
+					list v = llJson2List(val);
+					integer type = l2i(v, 0);
+					v = llDeleteSubList(v, 0,0);
+					
+					// Custom scripts
+					if(type == LevelDesc$additionalScripts){
+						list_shift_each(v, script,
+							if(llListFindList(LOAD_ADDITIONAL, [script]) == -1){
+								LOAD_ADDITIONAL += script;
+							}
+						)
+					}
+					
+				)
+			}
+			
+			
 			return;
         }
 		multiTimer(["INI", "", 5, FALSE]);
@@ -144,8 +197,7 @@ default
 			BFL = BFL&~BFL_ASSETS_LOADED;
 			BFL = BFL|BFL_LOADING;
 			
-			multiTimer(["LOAD_FINISH", "", 60, FALSE]);
-
+			multiTimer(["LOAD_FINISH", "", 10, FALSE]);
 			
 			Bridge$getCellData();
 			
@@ -245,7 +297,7 @@ default
         return raiseEvent(LevelEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
     }
     if(METHOD == LevelMethod$idEvent){
-        list out = [id, method_arg(1), method_arg(2)];
+        list out = [id, method_arg(1), method_arg(2), method_arg(3)];
         integer evt = (integer)method_arg(0);
 		if(evt == LevelEvt$idDied){
 			MONSTERS_KILLED++;

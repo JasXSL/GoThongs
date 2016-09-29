@@ -30,7 +30,8 @@ integer BFL = 1;
 integer PRE_CONTS;
 integer PRE_FLAGS;
 
-integer TEAM = TEAM_PC;
+integer TEAM_DEFAULT = TEAM_PC;			// This is the team set by the HUD itself, can be overridden by fxTeam
+integer TEAM = TEAM_PC; 				// This is team out
 
 // Constant
 integer THONG_LEVEL = 1;
@@ -63,6 +64,8 @@ float fxModMaxArousalPerc = 1;
 integer fxModMaxArousalNr = 0;
 float fxModMaxPainPerc = 1;
 integer fxModMaxPainNr = 0;
+
+integer fxTeam = -1;
 
 key ROOT_LEVEL;
 
@@ -335,9 +338,18 @@ onEvt(string script, integer evt, list data){
 
 
 outputStats(){ 
+
+	
+	// Check team
+	integer t = fxTeam;
+	if(t == -1)
+		t = TEAM_DEFAULT;
+		
+	integer pre = TEAM;
+
 	// GUI
-	// Status is on cooldown
-	if(BFL&BFL_STATUS_SENT){
+	// Status is on cooldown and team has not changed
+	if(BFL&BFL_STATUS_SENT && pre == t){
 		// We need to output status once the timer fades
 		BFL = BFL|BFL_STATUS_QUEUE;
 	}
@@ -365,9 +377,20 @@ outputStats(){
 			(llRound(AROUSAL/maxArousal()*127)<<7) |
 			llRound(PAIN/maxPain()*127)
 		);
-		
 		llSetObjectDesc(data+"$"+(str)STATUS_FLAGS+"$"+(str)FXFLAGS+"$"+(str)GENITAL_FLAGS+"$"+(str)TEAM);
 	}
+	
+	// Team change goes after because we need to update description first
+	if(pre != t){
+		TEAM = t;
+		raiseEvent(StatusEvt$team, TEAM);
+		runOnPlayers(targ,
+			if(targ == llGetOwner())
+				targ = (str)LINK_ROOT;
+			Root$forceRefresh(targ, llGetKey());
+		)
+	}
+	
 	
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
     if(FXFLAGS&fx$F_STUNNED || BFL&BFL_CAM || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading) && ~STATUS_FLAGS&StatusFlag$raped))
@@ -523,9 +546,10 @@ default
 		fxPainRegen = i2f(l2f(data, FXCUpd$PAIN_REGEN)); \
 		fxArousalRegen = i2f(l2f(data, FXCUpd$AROUSAL_REGEN)); \
 		fxModHealingTaken = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
+		fxTeam = l2i(data, FXCUpd$TEAM); \
         outputStats(); \
 		toggleClothes(); \
-    }
+    } \
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl"  
@@ -720,8 +744,8 @@ default
 		saveFlags();
 	}
     else if(METHOD == StatusMethod$setTeam){
-		TEAM = llList2Integer(PARAMS, 0);
-		raiseEvent(StatusEvt$team, TEAM);
+		TEAM_DEFAULT = llList2Integer(PARAMS, 0);
+		outputStats();
 	} 
 	
     // Public code can be put here

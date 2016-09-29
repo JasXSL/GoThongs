@@ -10,7 +10,11 @@ integer lcb;
 list PLAYERS;
 key COOP_HUD;
 list ADDITIONAL; 		// Additional players
+
 key TARG;
+key TARG_ICON;
+integer TARG_TEAM;
+
 key ROOT_LEVEL;			// Current level being played
 
 integer BFL;
@@ -41,43 +45,58 @@ timerEvent(string id, string data){
 
 
 integer setTarget(key t, key icon, integer force, integer team){
-    if(TARG == t)return FALSE;
+	// We are already targeting this and it's not a force
+    if(TARG == t && !force)return FALSE;
+	
     // Target is currently set but if last npc targ is not, then set it
     if(TARG != "" && t != "" && !force){
         return FALSE;
     }
-    // ID not found
+	
+    // ID not found and not empty
     if(llKey2Name(t) == "" && t != "")
         return FALSE;
     
 
     // Clear previous updates
     //if(llListFindList(getPlayers(), [(str)TARG]) == -1)
-        Status$setTargeting(TARG, FALSE);
     
+	// Clear current target if it has changed
+	if(TARG != t){
+		Status$setTargeting(TARG, FALSE);
+		// You get status updates from yourself and coop partner automatically
+		llPlaySound("0b81cd3f-c816-1062-332c-bca149ef1c82", .2);
+	}
+    
+	TARG_ICON = icon;
+	
 	// Make sure we target a HUD if we target a player
 	if(t == llGetOwner())
 		t = llGetKey();
 	else if(~llListFindList(getPlayers(), [(str)t]))
 		t = COOP_HUD;
 	
+	// Try to fetch from description
+	if(team == -1){
+		parseDesc(t, resources, status, fx, sex, te);
+		team = te;
+	}
     
     TARG = t;
-    // You get status updates from yourself and coop partner automatically
-    llPlaySound("0b81cd3f-c816-1062-332c-bca149ef1c82", .2);
-		
+    
     raiseEvent(RootEvt$targ, mkarr(([t, icon, team])));
     
-	
-    if(t)multiTimer(["T", "", 2, TRUE]);
+	// Check if target still exists
+	if(t)
+		multiTimer(["T", "", 2, TRUE]);
     
-    
-    
-    // Make sure your target knows you are targeting them unless it's a player
+    // Make sure your target knows you are targeting them
 	string t = TARG;
-	if(t == llGetKey())t = (string)LINK_THIS;
+	if(t == llGetKey())
+		t = (string)LINK_THIS;
     Status$setTargeting(t, TRUE);
     
+	
     return TRUE;
 }
 
@@ -340,6 +359,17 @@ default
 			}
 		}
 		CB_DATA = getPlayers();
+	}
+	else if(METHOD == RootMethod$refreshTarget){
+		// Refresh active target
+		
+		// Method arg has to be our current target or empty to refresh regardless
+		if(TARG != method_arg(0) && method_arg(0) != ""){
+			return;
+		}
+		
+		setTarget(TARG, TARG_ICON, TRUE, -1);
+		
 	}
 
     // Public code can be put here

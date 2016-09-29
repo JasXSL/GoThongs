@@ -37,9 +37,11 @@
 	#define FXCUpd$HEAL_MOD 23			// (float)multiplier - Default 1 
 	#define FXCUpd$MOVESPEED 24			// (NPC)(float)multiplier - Default 1
 	#define FXCUpd$HEAL_DONE_MOD 25		// (PC)
+	#define FXCUpd$TEAM 26				// (int)team
+	#define FXCUpd$BEFUDDLE 27			// (float)multiplier
 	
 // Settings that are are not multiplicative
-#define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$DODGE, FXCUpd$CRIT, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD]
+#define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$DODGE, FXCUpd$CRIT, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD, FXCUpd$TEAM]
 	
 #define FXCEvt$pullStart 2				// void - Pull has started
 #define FXCEvt$pullEnd 3				// void - A pull effect has ended
@@ -107,6 +109,7 @@ recacheFlags(){
 		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9)); \
 	} \
 
+
 // These are ADD tasks that are shared
 #define dumpFxAddsShared() \
 	if(t == fx$SET_FLAG){ \
@@ -136,7 +139,10 @@ recacheFlags(){
 		CRIT_ADD = manageList(FALSE, CRIT_ADD, [pid,llList2Float(fx, 1)]); \
 	else if(t == fx$HEALING_TAKEN_MULTI)\
 		HEAL_MOD = manageList(FALSE, HEAL_MOD, [pid,llList2Float(fx, 1)]); \
-
+	else if(t == fx$SET_TEAM)\
+		TEAM_MOD = manageList(FALSE, HEAL_MOD, [pid,l2i(fx, 1)]); \
+	
+	
 // These are REM tasks that are shared
 #define dumpFxRemsShared() \
 	if(t == fx$SET_FLAG){ \
@@ -166,7 +172,8 @@ recacheFlags(){
 		CRIT_ADD = manageList(TRUE, CRIT_ADD, [pid,0]); \
 	else if(t == fx$HEALING_TAKEN_MULTI)\
 		HEAL_MOD = manageList(TRUE, HEAL_MOD, [pid,0]); \
-	
-	
+	else if(t == fx$SET_TEAM)\
+		TEAM_MOD = manageList(TRUE, TEAM_MOD, [pid,0]); \
+
 	
 	

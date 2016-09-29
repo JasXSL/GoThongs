@@ -140,7 +140,8 @@ addHP(float amount, key attacker, string spellName, integer flags, integer updat
 			runOnPlayers(targ, GUI$toggleBoss(targ, "");)
 		}
 		list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
-		Level$idEvent(LevelEvt$idDied, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)));
+		
+		Level$idEvent(LevelEvt$idDied, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)), portalConf$spawnround);
 		
         
         STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
@@ -397,8 +398,9 @@ onSettings(list settings){
 		if(l2s(dta, 0) == "ID"){
 			list cid = CUSTOM_ID;
 			CUSTOM_ID = llDeleteSubList(dta, 0, 0);
-			if((str)cid != (str)CUSTOM_ID)
-				Level$idEvent(LevelEvt$idSpawned, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)));
+			if((str)cid != (str)CUSTOM_ID){
+				Level$idEvent(LevelEvt$idSpawned, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)), portalConf$spawnround);
+			}
 		}
 	)
 	

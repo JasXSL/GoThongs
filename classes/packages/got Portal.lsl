@@ -189,7 +189,13 @@ default
 			else 
 				BFL = BFL|BFL_HAS_DESC;
 			
-			list text = [pos, ((BFL&BFL_IS_DEBUG)>0), ""];
+			// Build the first config
+			list text = [
+				pos, 						// Spawn pos
+				((BFL&BFL_IS_DEBUG)>0), 	// Is live
+				"", 						// Custom desc data
+				""							// Spawnround
+			];
 			setText(mkarr(text));
 			
 			// Putting it below will cause trouble with double inits
@@ -308,9 +314,10 @@ default
 				}
 			}
 			BFL = BFL|BFL_HAS_DESC;
-			string get = getText();
-			get = llJsonSetValue(get, [2], INI_DATA);
-			setText(get);
+			list get = llJson2List(getText());
+			get = llListReplaceList(get, [INI_DATA], 2, 2);
+			get = llListReplaceList(get, [SPAWNROUND], 3, 3);
+			setText(mkarr(get));
 			
 			
 			checkIni()

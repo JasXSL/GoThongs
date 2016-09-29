@@ -21,6 +21,21 @@ list STACKS;                // [id, stacks, flags]
 integer CACHE_FLAGS;		// 
 #define stacksIds() llList2ListStrided(STACKS, 0, -1, STACKSTRIDE)
 
+
+// Shared trackers
+list TEAM_MOD;				// [(int)id, (int)team]
+list SET_FLAGS;             // [id, (int)data]
+list UNSET_FLAGS;           // [id, (int)data]
+list DAMAGE_TAKEN_MULTI;    // [id, (int)multiplier]
+list DAMAGE_DONE_MULTI;     // [id, (int)multiplier]
+list SPELL_DMG_TAKEN_MOD;   // [id, (str)spell, (float)multiplier]
+list DODGE_ADD;           	// [id, (float)data]
+list CASTTIME_MULTI;   		// [id, (float)multiplier]
+list CRIT_ADD;				// [id, (float)multiplier]
+list HEAL_MOD;				// [id, (float)multi]
+list COOLDOWN_MULTI;   		// [id, (float)multiplier]
+
+
 #define onStackUpdate() //qd(mkarr(STACKS))
 // updateGame is now run at the end of the package parser
 

@@ -10,6 +10,7 @@ integer monster_flags;
 integer spell_flags;
 integer spell_id;
 key spell_targ;
+key spell_targ_real;	// HUD or same as spell_targ
 
 list CACHE;			// Spell arrays from localconf
 //list PLAYERS;
@@ -142,13 +143,13 @@ endCast(integer success){
         BFL = BFL|BFL_INTERRUPTED;
         multiTimer(["IR", "", 3, FALSE]);
     }
-    raiseEvent(evt, mkarr(([spell_id, spell_targ])));
+    raiseEvent(evt, mkarr(([spell_id, spell_targ, spell_targ_real])));
     Monster$unsetFlags(monster_flags);
 
     
     multiTimer(["CB"]);
     multiTimer(["CAST"]);
-    multiTimer(["US", monster_flags, 1, FALSE]);
+    //multiTimer(["US", monster_flags, 1, FALSE]);
     BFL = BFL&~BFL_CASTING;
 	
     Monster$lookOverride("");
@@ -161,6 +162,8 @@ startCast(integer spid, key targ){
 	parseDesc(aggro_target, resources, status, fx, sex, team);
     if(status&StatusFlags$NON_VIABLE)return;
 	// Data comes from parseDesc, 0 is the attach point.
+	
+	key real = targ;
 	// If attached, use the owner key
 	if(l2i(_data, 0)){
 		targ = llGetOwnerKey(targ);
@@ -172,6 +175,7 @@ startCast(integer spid, key targ){
 
 	
     spell_targ = targ;
+	spell_targ_real = real;
     list d = llJson2List(llList2String(CACHE, spid));
     integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
     float casttime = llList2Float(d, NPCS$SPELL_CASTTIME)*fxCTM;
@@ -205,7 +209,7 @@ startCast(integer spid, key targ){
 		endCast(TRUE); // Immediately finish the cast
 	}else{
 		// Non instant
-		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ])));
+		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ, spell_targ_real])));
 		multiTimer(["CAST", "", casttime, FALSE]);
 		multiTimer(["CB", "", .1, TRUE]);
 		Monster$setFlags(monster_flags);

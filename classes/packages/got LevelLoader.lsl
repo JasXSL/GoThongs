@@ -1,5 +1,17 @@
 #include "got/_core.lsl"
 
+// Used for "" loading and reporting
+integer BFL;
+#define BFL_HAS_ASSETS 0x1
+#define BFL_HAS_SPAWNS 0x2
+
+timerEvent(string id, string data){
+	if(id == "INI"){
+		list d = [BFL&BFL_HAS_ASSETS, BFL&BFL_HAS_SPAWNS];
+		raiseEvent(LevelLoaderEvt$defaultStatus, mkarr(d));
+	}
+}
+
 default
 {
     state_entry()
@@ -9,6 +21,8 @@ default
 		}
     }
     
+	
+	timer(){multiTimer([]);}
 
     #include "xobj_core/_LM.lsl"
     /*
@@ -27,7 +41,14 @@ default
 		list groups = [method_arg(1)];
 		if(llJsonValueType(method_arg(1), []) == JSON_ARRAY)
 			groups = llJson2List(method_arg(1));
-				
+		
+		if(l2s(groups, 0) == ""){
+			BFL = BFL&~BFL_HAS_ASSETS;
+			BFL = BFL&~BFL_HAS_SPAWNS;
+			multiTimer(["INI", "", 10, FALSE]);
+		}
+		
+		
         // Spawn from HUD
         list data = llJson2List(db3$get(LevelStorage$points, []));
 		
@@ -66,6 +87,7 @@ default
 		if(out){
 			// Send out
 			Spawner$spawnThese(llGetOwner(), out);
+			BFL = BFL|BFL_HAS_SPAWNS;
 		}
 
 			
@@ -105,9 +127,10 @@ default
 				out += add;
 			}
         )
-		if(out)
+		if(out){
 			Spawner$spawnThese(LINK_THIS, out);
-		
+			BFL = BFL|BFL_HAS_ASSETS;
+		}
 		
 
 		out = [];

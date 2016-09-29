@@ -1,5 +1,5 @@
 #define LevelMethod$update 0		// Updates scripts from HUD
-#define LevelMethod$loaded 1		// (int)HUD_loaded - Whenever the loader has finished
+#define LevelMethod$loaded 1		// (int)HUD_loaded - 2 = Scripts from HUD loaded, 1 = Monsters, 0 = Assets Whenever the loader has finished
 #define LevelMethod$died 2			// Add one to the death counter
 #define LevelMethod$load 3			// (bool)edit_mode[, (str)group=JSON_INVALID] - Edit mode will let you move monsters and stuff around. JSON_INVALID = spawn at level start. Otherwise lets you spawn by group.
 #define LevelMethod$setFinished 4	// (key)player||(int)-1[, (bool)evtOnFinished] - Set that this player has finished the level. Once all players have finished, the cell moves to the next unless evtOnFinished is set in which case it raises LevelEvt$levelCompleted. If using the latter. Send this command again with "" for user to finalize. If player is -1, then all players have finished
@@ -35,7 +35,7 @@
 
 // These require an ID to be set and got Status to be present. See https://github.com/JasXSL/GoThongs/wiki/LevelDev---Monster-Setting-Sheet
 #define LevelEvt$idSpawned 4	// (key)monster, (str)id, (arr)vars - An item has spawned as live
-#define LevelEvt$idDied 5		// (key)monster, (str)id, (arr)vars - An item has been killed
+#define LevelEvt$idDied 5		// (key)monster, (str)id, (arr)vars, (str)spawnround - An item has been killed
 
 #define LevelEvt$loaded 6		// void - Level has finished loading
 #define LevelEvt$questData 7	// (var)questdata - Questdata has been received
@@ -43,6 +43,14 @@
 
 #define LevelEvt$fetchObjectives 9	// [(key)clicker] - Try to fetch objectives if there are any
 #define LevelEvt$potion 10			// [(key)agent, (str)name] Potion used
+
+
+
+// Level description config: [[(int)task, (var)param1, (var)param2...]...]
+#define LevelDesc$additionalScripts 0			// List of names of scripts to wait for evt$SCRIPT_INIT from
+
+
+
 
 #define Level$loadDebug(group) runOmniMethod("got Level", LevelMethod$load, [1,group], TNN)
 #define Level$loadSharp(group) runOmniMethod("got Level", LevelMethod$load, [0,group], TNN)
@@ -56,8 +64,8 @@
 #define Level$despawn() runOmniMethod("got Level", LevelMethod$despawn, [], TNN)
 #define Level$getScripts(targ, pin, scripts) runMethod((str)targ, "got Level", LevelMethod$getScripts, [pin, scripts], TNN)
 #define Level$trigger(user, data) runOmniMethod("got Level", LevelMethod$trigger, [user, data], TNN)
-#define Level$idEvent(evt, id, data) runOmniMethod("got Level", LevelMethod$idEvent, [evt, id, data], TNN)
-#define Level$loaded(targ, isHUD) runMethod(targ, "got Level", LevelMethod$loaded, [isHUD], TNN)
+#define Level$idEvent(evt, id, data, spawnround) runOmniMethod("got Level", LevelMethod$idEvent, [evt, id, data, spawnround], TNN)
+#define Level$loaded(targ, isHUD) runMethod((str)targ, "got Level", LevelMethod$loaded, [isHUD], TNN)
 #define Level$loadPerc(targ, id, perc) runMethod(targ, "got Level", LevelMethod$loadPerc, [id, perc], TNN)
 
 // These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}

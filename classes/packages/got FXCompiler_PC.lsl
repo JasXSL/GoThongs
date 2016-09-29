@@ -4,18 +4,9 @@ integer TEAM = TEAM_PC;
 
 
 
-list SET_FLAGS;             // [id, (int)data]
-list UNSET_FLAGS;           // [id, (int)data]
 list THONG_VISUALS;         // [id, (arr)data]
 list MANA_REGEN_MULTI;      // [id, (float)multiplier]
-list DAMAGE_TAKEN_MULTI;    // [id, (float)multiplier]
-list DAMAGE_DONE_MULTI;     // [id, (float)multiplier]
-list SPELL_DMG_TAKEN_MOD;   // [id, (str)spell, (float)multiplier]
-list DODGE_ADD;           // [id, (float)data]
-list CASTTIME_MULTI;   // [id, (float)multiplier]
-list COOLDOWN_MULTI;   // [id, (float)multiplier]
 list MANA_COST_MULTI;  // [id, (float)multiplier]
-list CRIT_ADD;		// [id, (float)multiplier]
 list AROUSAL_MULTI;	// [id, (float)multiplier]
 list PAIN_MULTI;		// [id, (float)multiplier]
 list SPELL_DMG_DONE_MOD;	// [id, (int)index, (float)multiplier]
@@ -24,9 +15,9 @@ list SPELL_MANACOST_MULTI;	// [id, (int)index, (float)multiplier]
 list SPELL_CASTTIME_MULTI;	// [id, (int)index, (float)multiplier]
 list SPELL_COOLDOWN_MULTI;	// [id, (int)index, (float)multiplier]
 list SPELL_HIGHLIGHTS; 		// [id, (int)index]
-list HEAL_MOD;				// [id, (float)multi] - Healing received
 list HEAL_DONE_MOD;			// [id, (float)multi] - Healing done (need to mutliply by h in the spell)
- 
+list BEFUDDLE; 				// [id, (float)chanceMulti]
+
 integer current_visual;
 
 runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster){
@@ -121,6 +112,8 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			SpellFX$spawnInstant(mkarr(llDeleteSubList(fx,0,0)), llGetOwner());
 		}
 		else if(t == fx$ALERT)Alert$freetext(LINK_ROOT, l2s(fx,1), llList2Integer(fx,2), llList2Integer(fx, 3));
+		else if(t == fx$CUBETASKS)
+			RLV$cubeTask(llDeleteSubList(fx, 0, 0));
     }
     
     if(resource_updates){
@@ -186,6 +179,11 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
 		else if(t == fx$ATTACH){
 			Rape$addFXAttachments(llList2List(fx, 1, -1));
 		}
+		
+		else if(t == fx$BEFUDDLE){
+			BEFUDDLE = manageList(FALSE, BEFUDDLE, [pid, l2f(fx, 1)]);
+		}
+		
     }
 
 }
@@ -240,6 +238,10 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 		}
 		else if(t == fx$HEALING_DONE_MULTI)
 			HEAL_DONE_MOD = manageList(TRUE, HEAL_DONE_MOD, [pid, 0]);
+		else if(t == fx$BEFUDDLE){
+			BEFUDDLE = manageList(TRUE, BEFUDDLE, [pid, 0]);
+		}
+		
     }
 }
 
@@ -274,30 +276,24 @@ updateGame(){
     
 	// Multiplicative
     float ddm = compileList(DAMAGE_DONE_MULTI, 0, 1, 2, TRUE);
-    if(ddm<0)ddm = 0;
     
 	// Multiplicative
     float dtm = compileList(DAMAGE_TAKEN_MULTI, 0, 1, 2, TRUE);
-    if(dtm<0)dtm = 0;
     
 	// Additive
     float dodge = compileList(DODGE_ADD, 0, 1, 2, FALSE);
     
 	// Multiplicative
     float ctm = compileList(CASTTIME_MULTI, 0, 1, 2, TRUE);
-    if(ctm<0)ctm = 0;
     
 	// Multiplicative
     float cdm = compileList(COOLDOWN_MULTI, 0, 1, 2, TRUE);
-    if(cdm<0)cdm = 0;
     
 	// Multiplicative
     float regen = compileList(MANA_REGEN_MULTI, 0, 1, 2, TRUE);
-    if(regen<0)regen = 0;
     
 	// Multiplicative
     float mcm = compileList(MANA_COST_MULTI, 0, 1, 2, TRUE);
-    if(mcm<0)mcm = 0;
 	
 	// Additive
     float cm = compileList(CRIT_ADD, 0, 1, 2, FALSE);
@@ -305,19 +301,23 @@ updateGame(){
 	
 	// Multiplicative
 	float pm = compileList(PAIN_MULTI, 0, 1, 2, TRUE);
-    if(pm<0)pm = 0;
 	
 	// Multiplicative
 	float am = compileList(AROUSAL_MULTI, 0, 1, 2, TRUE);
-    if(am<0)am = 0;
 	
 	// Healing taken mod, multi
 	float htm = compileList(HEAL_MOD, 0, 1, 2, TRUE);
-    if(htm<0)htm = 0;
 	
 	// Healing done mod, multi
 	float hdm = compileList(HEAL_DONE_MOD, 0, 1, 2, TRUE);
-    if(hdm<0)hdm = 0;
+	
+	// Befuddle mod, multi
+	float befuddle = compileList(BEFUDDLE, 0, 1, 2, TRUE);
+	
+	
+	integer team = -1;
+	if(TEAM_MOD)
+		team = l2i(TEAM_MOD, -1);
 	
     // Compile lists of spell specific modifiers
     list spdmtm; // SPELL_DMG_TAKEN_MOD - [(str)spellName, (float)dmgmod]
@@ -333,7 +333,7 @@ updateGame(){
     list spmcm = spellModCompile(SPELL_MANACOST_MULTI); 	// 
 	list spctm = spellModCompile(SPELL_CASTTIME_MULTI); 	// 
 	list spcdm = spellModCompile(SPELL_COOLDOWN_MULTI); 	// 
-
+	
 	string out = llList2Json(JSON_ARRAY, [
 		mkarr(spdmdm),
 		mkarr(spmcm),
@@ -384,7 +384,9 @@ updateGame(){
 		hlt,				// 22 HIGHLIGHT_FLAGS
 		f2i(htm),			// 23 Healing taken mod
 		1,					// 24 Movespeed (NPC only)
-		f2i(hdm)			// 25 Healing done mod
+		f2i(hdm),			// 25 Healing done mod
+		team,				// 26 Team override
+		f2i(befuddle)		// 27 Befuddle
 	])); 
 }
 

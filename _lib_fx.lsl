@@ -94,6 +94,9 @@
 	#define fx$HEALING_TAKEN_MULTI 51			// (float)add - Increases or decreases healing received
 	#define fx$HEALING_DONE_MULTI 52			// (float)add - Increases or decreases healing done
 	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc - (PC only) Spawns a monster from HUD
+	#define fx$SET_TEAM 54						// (int)team - (PC ONLY for now)Overrides the current team
+	#define fx$CUBETASKS 55						// (arr)tasks - PC ONLY Sends cubetasks to the owner
+	#define fx$BEFUDDLE 56						// (float)perc - PC ONLY - Adds a chance on spell cast to target a random player
 	
 // conditions
 	// Built in
@@ -127,5 +130,7 @@
 	#define fx$TAG_LEGS_SPREAD 1				// Used by skelcrawler
 	#define fx$TAG_QUICKRAPE_A 2				// Used by the trap script
 	#define fx$TAG_UNRAOUSED 3					// Used by anemone
+	#define fx$TAG_LIFTED 4						// Lifted in the air by the leg hand
+	#define fx$TAG_LUBED 5						// Triggered by trap, can be used by monsters
 	
 	

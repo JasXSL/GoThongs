@@ -48,7 +48,9 @@ list compiled_actives = [
 	0,	// 22 SPell highlights
 	1,	// 23 Healing Received
 	1,	// 24 Movespeed (NPC)
-	1	// 25 Healing done
+	1,	// 25 Healing done
+	-1, // 26 Team
+	1	// 27 Befuddle
 ];      // Compiled actives defaults
 
 /*
@@ -207,7 +209,8 @@ output(){
         FXCUpd$MANA_ADD,
         FXCUpd$AROUSAL_ADD,
         FXCUpd$PAIN_ADD,
-		FXCUpd$SPELL_HIGHLIGHTS
+		FXCUpd$SPELL_HIGHLIGHTS,
+		FXCUpd$TEAM
     ];
     list non_multi = FXCUpd$non_multi; // Things that should be ADDed
 	
@@ -469,7 +472,9 @@ default
 			l2i(set, 22),			\
 			i2f(l2f(set, 23)),		\
 			l2f(set, 24),			\
-			i2f(l2f(set, 25))		\
+			i2f(l2f(set, 25)),		\
+			l2i(set, 26), 			\
+			i2f(l2f(set,27))		\
 		]; \
         output(); \
 	}
@@ -501,8 +506,10 @@ default
 			l2f(set, 21),			// Arousal regen = 1
 			l2i(set, 22)			// Highlights
 			l2f(set, 23)			// Healing received mod
-			1						// Movespeed = 1
+			24						// Movespeed = 1
 			25						// Healing done mod
+			26						// Team = -1
+			27						// Befuddle = 1
 		]; \
 	*/
 	

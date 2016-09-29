@@ -74,7 +74,9 @@ integer checkCondition(key caster, integer cond, list data, integer flags, integ
     integer pos;
     if(~(pos=llListFindList(greaterCheck, [cond]))){
         list shares = [hp_perc, mana_perc, arousal_perc, pain_perc];
-        if(llList2Float(shares, pos)<=0)return FALSE;
+
+		if(llList2Float(shares, pos)<=l2f(data,0))
+			return FALSE;
     }
     return TRUE;
 }

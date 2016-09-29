@@ -8,6 +8,7 @@
 #define RootMethod$setLevel 7					// void - Returns players
 #define RootMethod$manageAdditionalPlayer 8		// (key)player, (int)rem - Adds or removes a player to be able to interact with the HUD and any monsters you spawn
 #define RootMethod$attached 9					// Sent as omni com on HUD attach - Also used to get the coop player's HUD
+#define RootMethod$refreshTarget 10				// (key)id, Force a target refresh command if id is "" or we are currently targeting ID
 
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed
@@ -34,4 +35,4 @@
 #define Root$addPlayer(player) runMethod(llGetOwner(), "#ROOT", RootMethod$manageAdditionalPlayer, [player], TNN)
 #define Root$remPlayer(player) runMethod(llGetOwner(), "#ROOT", RootMethod$manageAdditionalPlayer, [player, TRUE], TNN)
 #define Root$attached() llRegionSay(AOE_CHAN, (string)RUN_METHOD+":#ROOT"+llList2Json(JSON_ARRAY, [RootMethod$attached, "", llGetScriptName(), "ATTACHED"]))
-
+#define Root$forceRefresh(targ, id) runMethod(targ, "#ROOT", RootMethod$refreshTarget, [id], TNN)

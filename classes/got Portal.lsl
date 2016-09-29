@@ -25,7 +25,20 @@
 
 #define portalLive() (!(int)j(llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0),1) && llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0)!="")
 // Get spawn desc config
-#define portalConf() j(llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0), 2)
+#define portalConf() llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0)
+// Config is an array:
+/*
+	00	(vec)pos
+	01	(int)live
+	02	(var)customDesc
+	03	(str)spawnround
+*/
+#define portalConf$pos (vector)j(portalConf(), 0)
+#define portalConf$live (int)j(portalConf(), 1)
+#define portalConf$desc j(portalConf(), 2)
+#define portalConf$spawnround j(portalConf(), 3)
+
+
 
 
 #define PortalEvt$desc_updated 1		// Portal has received a custom desc from the level

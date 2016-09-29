@@ -69,6 +69,7 @@ float cdmod = 1;		// Global cooldown mod
 float hdmod = 1;		// Healing done mod
 list manacostMulti = [1,1,1,1,1];
 integer fxHighlight;	// Bitwise combination, 0x1 for rest, 0x2 for abil1 etc
+float befuddle = 1;		// Chance to cast at a random target
 
 // Abil prims
 list ABILS = [0,0,0,0,0];
@@ -297,6 +298,7 @@ default
 		hdmod = i2f(l2f(data, FXCUpd$HEAL_DONE_MOD)); \
 		integer pre = fxHighlight; \
 		fxHighlight = llList2Integer(data, FXCUpd$SPELL_HIGHLIGHTS); \
+		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\
 		list out = []; \
 		integer i; \
 		for(i=0; i<5; i++){ \
@@ -411,6 +413,7 @@ default
                 loop = FALSE;
                 sounds = llDeleteSubList(sounds, 0, 0);
             }
+			
             key sound = llList2String(sounds, 0);
             float vol = llList2Float(sounds, 1);
             if(vol<=0)vol = 1;
@@ -420,6 +423,7 @@ default
                 else
                     llTriggerSound(sound, vol);
             }
+			
         }
         
 
@@ -484,7 +488,18 @@ default
                 FX$aoe(spellRange(data), llGetKey(), runMath(FX,SPELL_CASTED, ""), TEAM);  
                 SPELL_TARGS = [LINK_ROOT];
             }
-
+			
+			else if(llFrand(1) < befuddle-1){
+				float r = spellRange(data);
+				string targ = randElem(PLAYERS);
+				if(targ == llGetOwner())
+					SPELL_TARGS = [LINK_ROOT];
+				else if(llVecDist(llGetPos(), prPos(targ)) < r){
+					SPELL_TARGS = [targ];
+				}
+			}
+			
+			
             list visuals = [llList2String(visual, fxc$rezzable)];
             if(llJsonValueType((string)visuals, []) == JSON_ARRAY)
                 visuals = llJson2List((string)visuals);

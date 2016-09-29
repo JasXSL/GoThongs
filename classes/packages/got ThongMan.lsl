@@ -27,11 +27,14 @@ updateDefaults(){
     
     if(fxcolor != ZERO_VECTOR){
         color = fxcolor;
-        specular = llListReplaceList(specular, ["59facb66-4a72-40a2-815c-7d9b42c56f60"], 2, 2);
+        //specular = llListReplaceList(specular, ["59facb66-4a72-40a2-815c-7d9b42c56f60"], 2, 2);
         glow = llListReplaceList(glow, [fxglow], -1, -1);
-        if(fxspecular != [])
-            specular = [PRIM_SPECULAR, ALL_SIDES]+fxspecular;
     }
+	
+	if(fxspecular != []){
+        specular = [PRIM_SPECULAR, ALL_SIDES]+fxspecular;
+	}
+		
     raiseEvent(ThongManEvt$ini, "[]");
 	
     if(BFL&BFL_DEAD)return;
@@ -282,6 +285,7 @@ default
 				fxspecular = llListReplaceList(fxspecular, [(vector)llList2String(fxspecular, 1)], 1, 1);
 				fxspecular = llListReplaceList(fxspecular, [(vector)llList2String(fxspecular, 2)], 2, 2);
 				fxspecular = llListReplaceList(fxspecular, [(vector)llList2String(fxspecular, 4)], 4, 4);
+				
 				if(llList2String(fxspecular, 0) == "")
 					fxspecular = llListReplaceList(fxspecular, ["6c7b07d9-9c9c-f272-815b-abae6e3fbf67"], 0, 0);
             }
