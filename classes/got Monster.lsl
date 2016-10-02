@@ -70,5 +70,5 @@
 #define MLC$drops 15				// [[(str)name, (float)chance]...]
 #define MLC$team 16
 #define MLC$range_add 17			// (int)decimeters - Range increase in decimeters players players can hit this monster 
-
+#define MLC$height_add 18			// (int)decimeters - Offset the Z center used for LOS calculations
 

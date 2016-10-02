@@ -164,6 +164,13 @@ default
 		];
 		list out = [];
 		
+		if(llKey2Name(boss) == ""){
+			boss = "";
+			Status$toggleBossFight(false);
+			statuses = llListReplaceList(statuses, [""], 3, 3);
+		}
+		
+		
 		// Loops through the keys above and sets to -1 if not found, or a bitwise resource block
 		integer i;
 		for(i=0; i<llGetListLength(statuses); i++){
@@ -399,9 +406,17 @@ default
 			PRIM_LINK_TARGET, P_BOSS_HP,
 			PRIM_POSITION, ZERO_VECTOR
 		];
+		
+		boss = "";
+		
 		integer exists = FALSE;
 		if((key)method_arg(0)){
-			boss = id;
+			
+			// If not forcing manual HP updates
+			if(!l2i(PARAMS, 1))
+				boss = id;
+			
+			
 			out = [
 				PRIM_LINK_TARGET, P_BOSS_PORTRAIT,
 				PRIM_POSITION, P_BOSS_PORTRAIT_POS,

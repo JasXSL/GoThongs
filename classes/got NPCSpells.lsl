@@ -33,7 +33,7 @@
 #define NPCSpellsEvt$SPELL_CAST_START 1				// (int)spell, (key)targ, (key)real
 #define NPCSpellsEvt$SPELL_CAST_FINISH 2			// (int)spell, (key)targ, (key)real
 #define NPCSpellsEvt$SPELL_CAST_INTERRUPT 3			// (int)spell, (key)targ, (key)real
-
+#define NPCSpellsEvt$SPELLS_SET 4					// (str)script - Raises an event when setSpells has been ran, script is the name of the script that set spells
 
 
 #define NPCSpells$setSpells(data) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setSpells, data, TNN)

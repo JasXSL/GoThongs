@@ -6,4 +6,5 @@
 
 
 #define fxlib$dealDamageOn(target, damage, color, team) FX$send(target, llGetKey(), "[9,0,0,0,[0,1,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\"]],[],[],[],0,0,0]]", team)
+#define fxlib$hitFX(target, color, flags) FX$send(target, "", "[0,0,0,0,[0,0,\"\",[[6,\""+(str)color+"\", "+(str)flags+"]],[],[],[],0,0,0]]", TEAM_PC)
 

@@ -20,6 +20,10 @@ float W_SCALE = 1;
 
 list W_SOUNDS;
 
+
+// FX
+integer FX_FLAGS;
+
 // 
 vector W_MAINHAND_POS;
 vector W_BACK_MAINHAND_POS;
@@ -183,7 +187,7 @@ timerEvent(string id, string data){
 
 spawnWeapons(){
 	// NO weapons when dead
-	if(STATUS&StatusFlag$dead)
+	if(STATUS&StatusFlag$dead || FX_FLAGS&fx$F_DISARM)
 		return;
     
 	Weapon$removeAll();
@@ -269,6 +273,22 @@ default
         }
         
     }
+	
+	
+	// Get FX
+	#define LM_PRE \
+	if(nr == TASK_FX){ \
+		list data = llJson2List(s); \
+		integer pre = FX_FLAGS; \
+        FX_FLAGS = llList2Integer(data, FXCUpd$FLAGS); \
+        if((pre&fx$F_DISARM) != (FX_FLAGS&fx$F_DISARM)){ \
+			if(FX_FLAGS&fx$F_DISARM){ \
+				Weapon$removeAll(); \
+			} \
+			else \
+				spawnWeapons(); \
+		} \
+	}
     
     #include "xobj_core/_LM.lsl"
     

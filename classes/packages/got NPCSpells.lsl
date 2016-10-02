@@ -34,6 +34,9 @@ float fxModDmgDone = 1;
 float fxCTM = 1;
 float fxCDM = 1;
 
+integer height_add;		// LOS check height offset from the default 0.5m above root prim
+#define hAdd() ((float)height_add/10)
+
 list cooldowns;
 list OUTPUT_STATUS_TO;
 
@@ -258,7 +261,7 @@ timerEvent(string id, string data){
                     p = llDeleteSubList(p, 0, 0);
                     vector ppos = prPos(targ);
                     float dist = llVecDist(llGetPos(), ppos);
-                    list ray = llCastRay(llGetPos()+<0,0,.5>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+                    list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
                     if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0){
                         if(flags&NPCS$FLAG_REQUEST_CASTSTART){
                             // Request start cast
@@ -290,8 +293,21 @@ timerEvent(string id, string data){
     else if(id == "US")Monster$unsetFlags((integer)data);
 }
 
+// Settings received
+onSettings(list settings){
+	
+	while(settings){
+		integer idx = l2i(settings, 0);
+		list dta = llList2List(settings, 1, 1);
+		settings = llDeleteSubList(settings, 0, 1);
+		#define dtaInt l2i(dta,0)
+		#define dtaFloat l2f(dta,0)
+		#define dtaStr l2s(dta,0)
 
-
+		if(idx == MLC$height_add)
+			height_add = dtaInt;
+	}
+}
 
 default 
 {
@@ -320,7 +336,9 @@ default
 		 \
         if(BFL&BFL_CASTING && FXFLAGS&fx$NOCAST) \
             endCast(FALSE); \
-	}
+	} \
+	else if(nr == TASK_MONSTER_SETTINGS)\
+		onSettings(llJson2List(s));
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -350,7 +368,10 @@ default
                 if(flags&NPCS$FLAG_DISABLED_ON_START)cooldowns+=i;
             }
 			
+			// Start frame ticker
             multiTimer(["F", "", 1+llFrand(4), TRUE]);
+			
+			raiseEvent(NPCSpellsEvt$SPELLS_SET, SENDER_SCRIPT);
         }
         else if(METHOD == NPCSpellsMethod$interrupt){
             endCast(FALSE);
@@ -368,6 +389,7 @@ default
 			integer pos = llListFindList(cooldowns, [id]);
 			if(~pos)cooldowns = llDeleteSubList(cooldowns, pos, pos);
 		}
+		
     }
 	
 

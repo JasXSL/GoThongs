@@ -48,6 +48,7 @@
 		#define fx$F_NO_DEATH 0x800					// PC - Prevents the player from going below 0 HP and instead raises StatusEvt$death_hit
 		#define fx$F_CAST_WHILE_MOVING 0x1000		// PC - Allows you to cast while moving
 		#define fx$F_SHOW_GENITALS 0x2000			// PC - Renders the character naked
+		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE)
@@ -132,5 +133,6 @@
 	#define fx$TAG_UNRAOUSED 3					// Used by anemone
 	#define fx$TAG_LIFTED 4						// Lifted in the air by the leg hand
 	#define fx$TAG_LUBED 5						// Triggered by trap, can be used by monsters
+	#define fx$TAG_NAKED 6
 	
 	

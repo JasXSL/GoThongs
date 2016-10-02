@@ -64,6 +64,7 @@ float CACHE_CASTTIME = 0;
 integer QUEUE_SPELL = -1;		// Spell to cast after finishing the current cast
 float CACHE_MANA;
 float RANGE_ADD;
+float HEIGHT_ADD;
 
 list PLAYERS;					// Me and coop player
 
@@ -92,16 +93,18 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
             return ret; \
         } \
     }\
-    list bounds = llGetBoundingBox(llList2String(SPELL_TARGS, 0));\
-    vector b = llList2Vector(bounds, 0)-llList2Vector(bounds,1); \
-    float h = llFabs(b.z/2); \
-    list ray = llCastRay(llGetPos()+<0,0,.5>, pos+<0,0,h>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); \
+    list ray = llCastRay(llGetPos()+<0,0,.5>, pos+<0,0,1+HEIGHT_ADD>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); \
     if(llList2Integer(ray, -1) == 1 && llList2Key(ray,0) != targ){ \
         A$(ASpellMan$errVisionObscured); \
         SpellMan$interrupt(); \
         return ret; \
     } \
 }
+/*
+	list bounds = llGetBoundingBox(llList2String(SPELL_TARGS, 0));\
+    vector b = llList2Vector(bounds, 0)-llList2Vector(bounds,1); \
+    float h = llFabs(b.z/2); \
+*/
 
 // Default event handler
 onEvt(string script, integer evt, list data){
@@ -151,8 +154,11 @@ onEvt(string script, integer evt, list data){
 			if(!llList2Integer(data, 1)){
 				// This is an NPC, add range add
 				list split = explode("$", l2s(data, 0));
-				RANGE_ADD = l2f(split, 3);
+				RANGE_ADD = l2f(split, 3)/10;
+				HEIGHT_ADD = l2f(split, 4)/10;
 			}
+			
+			
 			
 		}
 

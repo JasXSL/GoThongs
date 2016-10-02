@@ -22,6 +22,8 @@ key icon;
 string rapeName;        // Usually prim name
 string drops;			// JSON array of sub arrays of [(str)asset, (float)drop_chance]
 integer range_add;		// Hitbox range add for players to hit ME
+integer height_add;		// LOS check height offset from the default 0.5m above root prim
+#define hAdd() ((float)height_add/10)
 
 // (float)aggro, (key)id, (int)flags
 #define AGGRO_STRIDE 3
@@ -71,8 +73,8 @@ list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 #define setTeam(team) TEAM = team; raiseEvent(StatusEvt$team, (str)TEAM)
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
-// Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)
-#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)range_add);}
+// Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add
+#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)range_add+"$"+(str)height_add);}
 
 
 dropAggro(key player, integer complete){
@@ -179,7 +181,7 @@ addHP(float amount, key attacker, string spellName, integer flags, integer updat
     
 }
 
-aggroCheck(key k, float mod){
+aggroCheck(key k){
     if(RUNTIME_FLAGS&Monster$RF_NOAGGRO)return;
     if(BFL&BFL_NOAGGRO)return;
     
@@ -189,22 +191,15 @@ aggroCheck(key k, float mod){
     if(dist>100)return;
     
     integer ainfo = llGetAgentInfo(k);
-    float range = aggro_range*mod;
-    vector add = <0,0,1>;
-    if(mod <= 1){
-        list odata = llGetObjectDetails(k, [OBJECT_POS, OBJECT_ROT]);
-        float bet = llRot2Angle(llRotBetween(llVecNorm(<0,0,1> * llGetRot()), llVecNorm(llList2Vector(odata, 0)-llGetPos())));
-        if(bet>PI_BY_TWO)range*=.5;
-        if(ainfo&AGENT_CROUCHING){
-            add = ZERO_VECTOR;
-            range *= .5;
-            if(bet>PI_BY_TWO)range=.5;
-        }
-    }
-    
-    
+    float range = aggro_range;
+
+	prAngZ(k, ang)
+	if(llFabs(ang)>PI_BY_TWO)
+		range *= 0.25;
+     
+	
     if(dist<range){
-        list ray = llCastRay(llGetPos()+add, ppos+add, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
+        list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
         if(llList2Integer(ray, -1) == 0){
             Status$get(k, "aggro");
         } 
@@ -404,7 +399,6 @@ onSettings(list settings){
 		}
 	)
 	
-	
 	while(settings){
 		integer idx = l2i(settings, 0);
 		list dta = llList2List(settings, 1, 1);
@@ -445,7 +439,10 @@ onSettings(list settings){
 			
 		if(idx == MLC$range_add)
 			range_add = dtaInt;
-			
+		
+		if(idx == MLC$height_add)
+			height_add = dtaInt;
+		
 		// Brackets are important here
 		if(idx == MLC$team && dtaStr != ""){
 			setTeam(dtaInt);
@@ -459,10 +456,10 @@ onSettings(list settings){
 			drops = dtaStr;
 		
 		if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]";
-
-        
 		
 	}
+	
+	
 	
 	// Limits
 	HP = maxHP;
@@ -502,7 +499,7 @@ default
 				(type&AGENT && TEAM != TEAM_PC && (ffa || ~llListFindList(PLAYERS, [(str)k]))) || 
 				(llGetSubString(desc, 0, 2) == "$M$" && (int)llGetSubString(desc, 3, 3) != TEAM)
 			){
-				aggroCheck(k, 1);
+				aggroCheck(k);
 			}
         }
 	}
@@ -657,7 +654,7 @@ default
     }
 	
 	else if(METHOD == StatusMethod$monster_rapeMe){
-		list ray = llCastRay(llGetPos()+<0,0,1>, prPos(id), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+		list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 		if(llList2Integer(ray, -1) == 0){
 			if(!isset(rapeName))
 				rapeName = llGetObjectName();
@@ -719,7 +716,7 @@ default
 		vector pp = prPos(p);
 		float r = (float)method_arg(1);
 		if(llVecDist(llGetPos(), pp) > r)return;
-		list ray = llCastRay(llGetPos()+<0,0,1>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
+		list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 		if(llList2Integer(ray, -1) == 0){
 			aggro(p,10);
 		}

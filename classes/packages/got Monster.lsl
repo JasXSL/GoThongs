@@ -33,6 +33,8 @@ float hitbox = 3;       // Range of melee attacks
 float atkspeed = 1;     // Time between melee attacks
 float wander;           // Range to roam
 
+integer height_add;		// LOS check height offset from the default 0.5m above root prim
+#define hAdd() ((float)height_add/10)
 
 float fxSpeed = 1;			// FX speed modifier
 float fxCooldownMod = 1;	// Used for attack speed
@@ -74,6 +76,7 @@ integer moveInDir(vector dir){
 			a = b = ZERO_VECTOR;
 		}
 		
+		// movement, hAdd() is not added
         list r = llCastRay((gpos+dir+a), (gpos+dir+b), ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
         if(
 			// Too steep drop
@@ -150,6 +153,8 @@ timerEvent(string id, string data){
             vector b = llGetPos()+<0,0,.5>+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
             
 			if(llVecDist(b, rezpos)>wander)return;
+			
+			// Movement, hAdd() is not added
             list ray = llCastRay(a, b, []);
             if(llList2Integer(ray, -1) == 0){
                 lastseen = b;
@@ -174,6 +179,8 @@ timerEvent(string id, string data){
 					
 			float dist = llVecDist(<t.x, t.y, 0>, <gpos.x, gpos.y, 0>);
             if(BFL & BFL_PLAYERS_NEARBY && dist>md && t != ZERO_VECTOR){
+			
+				// Movement, hAdd() not added
                 list ray = llCastRay(llGetPos()+<0,0,1>, t+<0,0,1>, [RC_DATA_FLAGS, RC_GET_ROOT_KEY, RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
                 
                 if(llList2Integer(ray, -1)==0 || l2k(ray, 0) == l2k(SEEKTARG, 0)){
@@ -237,7 +244,8 @@ timerEvent(string id, string data){
 					~BFL&BFL_STOPON && 
 					~FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED) && 
 					~RUNTIME_FLAGS&Monster$RF_PACIFIED && 
-					llList2Integer(llCastRay(llGetPos()+<0,0,.5>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
+					// Attack LOS, hAdd() IS added
+					llList2Integer(llCastRay(llGetPos()+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
 				){
 					
 					parseDesc(chasetarg, resources, status, fx, sex, team);
@@ -272,7 +280,7 @@ timerEvent(string id, string data){
             // Might be in range but should move closer
             else{
 				
-			
+				// Movement, hAdd() is not added
                 vector add = <0,0,1>;
                 if(llGetAgentInfo(chasetarg)&AGENT_CROUCHING)add = ZERO_VECTOR;
                 
@@ -323,7 +331,8 @@ onEvt(string script, integer evt, list data){
 		
 		// Description should be applied first if received from localconf. 
 		// Custom updates sent directly through Monster$updateSettings should be sent after initialization to prevent overwrites
-		string override = portalConf();
+		string override = portalConf$desc;
+
 		if(isset(override)){
 			list dt = llJson2List(override);
 			override = "";
@@ -333,7 +342,6 @@ onEvt(string script, integer evt, list data){
 					out += llList2List(d, 0, 1);
 			)
 		}
-		
 		Monster$updateSettings(out);
     }
 	
@@ -418,7 +426,9 @@ onSettings(list settings){
 		
 		if(idx == 5 && l2f(dta,0)>5)
 			wander = l2f(dta,0);
-         
+        
+		if(idx == MLC$height_add)
+			height_add = l2i(dta,0);
 		
 		
 	}
@@ -492,6 +502,7 @@ default
         if(pre&Monster$RF_NOROT && RUNTIME_FLAGS&Monster$RF_NOROT){
             llStopLookAt();
         }
+		
     }
 	else if(METHOD == MonsterMethod$seek){
 		BFL = BFL|BFL_SEEKING;
