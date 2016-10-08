@@ -13,6 +13,7 @@
 #define InteractConf$maxRate 0.5
 #define InteractConf$soundOnFail "ea0ab603-63f5-6377-21bb-552aa4ba334f"
 #define InteractConf$ignoreUnsit
+#define InteractConf$allowWhenSitting
 
 #define USE_EVENT_OVERRIDE
 #include "got/_core.lsl"

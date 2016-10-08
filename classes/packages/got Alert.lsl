@@ -27,14 +27,17 @@ timerEvent(string id, string data){
     }
 }
 
-alert(string text, integer ownerSay, integer playSound){
+alert(string text, integer ownerSay, string playSound){
 	if(BFL&BFL_FADING)
 		ALERTS = [];
 		
     key sound = "";
 	float vol = 0.25;
-	if(playSound == 1)sound = "09ba0e73-fcf6-ed22-e1a3-7fc600237711";
-	else if(playSound == 2){
+	
+	key s = playSound;
+	if(s)sound = s;
+	else if((int)playSound == 1)sound = "09ba0e73-fcf6-ed22-e1a3-7fc600237711";
+	else if((int)playSound == 2){
 		text = "🏥 "+text;
 		sound = "0596c6db-cc3e-e3e3-0f3b-b91e63f4e8b4";
 		vol = 1;
@@ -91,19 +94,19 @@ default
         if(METHOD == AlertMethod$alert){
             string text = method_arg(0);
             integer id = (integer)text;
-            if(SENDER_SCRIPT == "got SpellMan")text = llList2String(ASpellMan, id);
+			if(SENDER_SCRIPT == "got SpellMan")text = llList2String(ASpellMan, id);
             else if(SENDER_SCRIPT == "#ROOT" || SENDER_SCRIPT == "got RootAux")text = llList2String(ARoot, id);
             else if(SENDER_SCRIPT == "got Bridge")text = llList2String(ABridge, id);
             if(text == ""){
 				qd("Text missing for "+SENDER_SCRIPT+" : "+(string)id);
                 return;
             }
-			alert(text, (integer)method_arg(1), (integer)method_arg(2));
+			alert(text, (integer)method_arg(1), method_arg(2));
         }
 	}
     // Public code can be put here
 	if(METHOD == AlertMethod$freetext){
-		alert(method_arg(0), (integer)method_arg(1), (integer)method_arg(2));
+		alert(method_arg(0), (integer)method_arg(1), method_arg(2));
 	}
 
     // End link message code

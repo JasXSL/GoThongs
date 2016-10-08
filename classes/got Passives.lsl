@@ -12,7 +12,9 @@
 	
 #define Passives$toFloat(val) ((float)val/100)			// Convert back to float
 
-#define Passives$set(targ, name, passives) runMethod((string)targ, "got Passives", PassivesMethod$set, [name, mkarr(passives)], TNN)
+#define Passives$FLAG_REM_ON_CLEANUP 0x1				// Removes the passive on cleanup
+
+#define Passives$set(targ, name, passives, flags) runMethod((string)targ, "got Passives", PassivesMethod$set, [name, mkarr(passives), flags], TNN)
 #define Passives$rem(targ, name) runMethod((string)targ, "got Passives", PassivesMethod$rem, [name], TNN)
 #define Passives$get(targ, callback) runMethod((string)targ, "got Passives", PassivesMethod$get, [], callback)
 #define Passives$setActive(active) llMessageLinked(LINK_ROOT, TASK_PASSIVES_SET_ACTIVES, mkarr(active), "")

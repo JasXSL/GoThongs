@@ -1,6 +1,6 @@
 
 #define AlertMethod$alert 1		// (int)message 
-#define AlertMethod$freetext 2	// (str)message, (int)output_in_chat, (int)sound
+#define AlertMethod$freetext 2	// (str)message, (int)output_in_chat, (int)||(str)sound
 
 #define A$(id) runMethod((string)LINK_ROOT, "got Alert", AlertMethod$alert, [id], TNN)
 #define AM$(id) runMethod((string)LINK_ROOT, "got Alert", AlertMethod$alert, [id, true], TNN)

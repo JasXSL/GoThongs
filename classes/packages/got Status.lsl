@@ -2,7 +2,11 @@
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"
 
-#define saveFlags() raiseEvent(StatusEvt$flags, STATUS_FLAGS)
+#define saveFlags() \
+if(STATUS_FLAGS_PRE != STATUS_FLAGS){ \
+	raiseEvent(StatusEvt$flags, llList2Json(JSON_ARRAY, [STATUS_FLAGS, STATUS_FLAGS_PRE])); \
+	STATUS_FLAGS_PRE = STATUS_FLAGS; \
+}	
 
 #define maxDurability() ((DEFAULT_DURABILITY+fxModMaxHpNr)*fxModMaxHpPerc)
 #define maxMana() ((DEFAULT_MANA+fxModMaxManaNr)*fxModMaxManaPerc)
@@ -41,6 +45,7 @@ list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)dura
 
 // Effects
 integer STATUS_FLAGS = 0; 
+integer STATUS_FLAGS_PRE = 0;
 #define coop_player llList2Key(PLAYERS, 1)
 
 integer GENITAL_FLAGS;

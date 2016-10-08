@@ -138,6 +138,8 @@ updateTarget(key targ, key texture, integer team){
 			out+= [PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), PRIM_POSITION, ZERO_VECTOR, PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0];
 		}
     }
+	// Make sure target status is scheduled for update
+	status_pre = llListReplaceList(status_pre, [0], 2, 2);
     llSetLinkPrimitiveParamsFast(0, out);
 }
 

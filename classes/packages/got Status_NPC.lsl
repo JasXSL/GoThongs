@@ -32,6 +32,7 @@ list AGGRO;
 
 key aggroTarg;			// Should always be an object
 
+integer TEAM_DEFAULT = TEAM_NPC;			// This is the team set by the HUD itself, can be overridden by fxTeam
 integer TEAM = TEAM_NPC;
 
 integer BFL = 0; 
@@ -48,6 +49,7 @@ integer BFL = 0;
 
 // Effects
 integer STATUS_FLAGS = 0; 
+integer STATUS_FLAGS_PRE = 0;
 // See ots Monster
 integer RUNTIME_FLAGS;
 
@@ -57,6 +59,7 @@ float fxModDmgTaken = 1;
 float fxModDmgDone = 1;
 float fxModCrit = 0;
 float fxModHealingTaken = 1;
+integer fxTeam = -1;
 
 list SPELL_DMG_TAKEN_MOD;
 
@@ -139,7 +142,7 @@ addHP(float amount, key attacker, string spellName, integer flags, integer updat
 		HP = 0;
 		outputStats(TRUE);
 		if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
-			runOnPlayers(targ, GUI$toggleBoss(targ, "");)
+			runOnPlayers(targ, GUI$toggleBoss(targ, "", FALSE);)
 		}
 		list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
 		
@@ -265,7 +268,7 @@ aggro(key player, float ag){
 			if(~RUNTIME_FLAGS&Monster$RF_NO_TARGET) Root$targetMe(at, icon, FALSE, TEAM);
 			if(RUNTIME_FLAGS&Monster$RF_IS_BOSS && ~BFL&BFL_AGGROED_ONCE){
 				runOnPlayers(targ,
-					GUI$toggleBoss(targ, icon);
+					GUI$toggleBoss(targ, icon, FALSE);
 				)
 				BFL = BFL|BFL_AGGROED_ONCE;
 			}
@@ -318,16 +321,37 @@ onEvt(string script, integer evt, list data){
 }
 
 outputStats(integer force){
+	// Check team
+	integer t = fxTeam;
+	if(t == -1)
+		t = TEAM_DEFAULT;
+	integer pre = TEAM;
+	
+	// Needed for TEAM to be in the description
+	TEAM = t;
 	updateDesc();
 
-	if(BFL&BFL_STATUS_SENT && !force){
+	if(BFL&BFL_STATUS_SENT && !force && TEAM == pre){
 		BFL = BFL|BFL_STATUS_QUEUE;
 		return;
 	}
 	if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
 		OUTPUT_STATUS_TO = PLAYERS;
 	}
-    raiseEvent(StatusEvt$flags, (string)STATUS_FLAGS);
+	
+	if(STATUS_FLAGS_PRE != STATUS_FLAGS){
+		raiseEvent(StatusEvt$flags, llList2Json(JSON_ARRAY,[STATUS_FLAGS, STATUS_FLAGS_PRE]));
+		STATUS_FLAGS_PRE = STATUS_FLAGS;
+	}
+	
+	// Team change goes after because we need to update description first
+	if(pre != t){
+		setTeam(t);
+		runOnPlayers(targ,
+			Root$forceRefresh(targ, llGetKey());
+		)
+	}
+	
     raiseEvent(StatusEvt$monster_hp_perc, (string)(HP/maxHP));
 	BFL = BFL|BFL_STATUS_SENT;
 	multiTimer(["_", "", .5, FALSE]);
@@ -387,7 +411,7 @@ anim(string anim, integer start){
 onSettings(list settings){
 	
 	// Check for ID
-	list d = llJson2List(portalConf());
+	list d = llJson2List(portalConf$desc);
 	list_shift_each(d, v,
 		list dta = llJson2List(v);
 		if(l2s(dta, 0) == "ID"){
@@ -521,6 +545,7 @@ default
         fxModDmgDone = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
 		fxModHealingTaken = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
 		fxModCrit = i2f(l2f(data, FXCUpd$CRIT)); \
+		fxTeam = l2i(data, FXCUpd$TEAM); \
         outputStats(FALSE); \
 	}\
 	else if(nr == TASK_MONSTER_SETTINGS)\
@@ -580,7 +605,24 @@ default
 		outputStats(FALSE);
 	}
 	
+	if(METHOD == StatusMethod$fullregen){
+		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$dead;
+		BFL = BFL|BFL_INITIALIZED;
+		HP = maxHP;
+		outputStats(TRUE);
+	}
+	else if(METHOD == StatusMethod$setTeam){
+		
+		setTeam(l2i(PARAMS, 0));
+		updateDesc();
+		
+	}
 	
+	
+	
+	
+	
+	// Combat stuff below here
 	if(!initialized()){
 		return;
 	}
@@ -721,12 +763,8 @@ default
 			aggro(p,10);
 		}
 	}
-	else if(METHOD == StatusMethod$setTeam){
-		
-		setTeam(l2i(PARAMS, 0));
-		updateDesc();
-		
-	}
+	
+	
 	
 	
 	

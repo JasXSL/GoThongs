@@ -38,6 +38,8 @@ dropPotion(){
 	}else{
 		LevelAux$spawnLiveTarg(ROOT_LEVEL, NAME, pos, rot);
 	}
+	
+	raiseEvent(PotionsEvt$drop, NAME);
 }
 
 
@@ -112,7 +114,7 @@ default
 		if(CHARGES_REMAINING == 0)CHARGES_REMAINING = 1;
 		
 		GUI$togglePotion(TEXTURE, CHARGES_REMAINING);
-		
+		raiseEvent(PotionsEvt$pickup, NAME);
     }
 	else if(METHOD == PotionsMethod$resetCooldown){
 		
@@ -134,6 +136,8 @@ default
 		if(FLAGS&PotionsFlag$raise_event){
 			Level$potionUsed(NAME);
 		}
+		
+		raiseEvent(PotionsEvt$use, NAME);
 		
 		if(CHARGES_REMAINING <= 0 && CHARGES_REMAINING != -1){
 			remPotion();

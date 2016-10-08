@@ -8,6 +8,10 @@
 #define PotionsFlag$raise_event 0x2		// Raise event on the current level when potion is consumed
 #define PotionsFlag$is_in_hud 0x4		// The potion is in HUD. Just have your avatar drop it
 
+#define PotionsEvt$pickup 1				// (str)potion_name
+#define PotionsEvt$drop 2				// (str)potion_name
+#define PotionsEvt$use 3				// (str)potion_name
+
 #define Potions$set(targ, name, texture, charges, flags, cooldown, spellData) runMethod(targ, "got Potions", PotionsMethod$setPotion, [name, texture, charges, flags, cooldown, spellData], NORET)
 #define Potions$resetCooldown(targ) runMethod(targ, "got Potions", PotionsMethod$resetCooldown, [], NORET)
 #define Potions$remove(targ, allow_drop, force_rem) runMethod(targ, "got Potions", PotionsMethod$remove, [allow_drop, force_rem], NORET)

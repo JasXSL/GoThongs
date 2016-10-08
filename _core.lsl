@@ -62,7 +62,6 @@
 #include "./classes/got FX.lsl"
 #include "./classes/got FXCompiler.lsl"
 #include "./classes/got Status.lsl"
-#include "./classes/got Game.lsl"
 #include "./classes/got SpellMan.lsl"
 #include "./classes/got GUI.lsl"
 #include "./classes/got Portal.lsl"
@@ -138,6 +137,7 @@
 
 // Parses a description into resources, status, fx, sex, team - Currently only supports resources for NPCs
 // The if statement checks if this is a HUD which has a slightly different syntax
+// _data[0] is the attached point, if attached, the syntax is a bit different
 #define parseDesc(aggroTarg, resources, status, fx, sex, team) \
 list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \

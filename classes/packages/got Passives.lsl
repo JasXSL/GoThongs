@@ -16,8 +16,10 @@ list EVT_LISTENERS;		// (int)id, (arr)targs, (int)max_targs, (float)proc_chance,
 
 list PASSIVES;
 // Nr elements before the attributes
-#define PASSIVES_PRESTRIDE 3
-// (str)name, (arr)evt_listener_ids, (int)length, (int)attributeID, (float)attributeVal
+#define PASSIVES_PRESTRIDE 4
+// (str)name, (arr)evt_listener_ids, (int)length, (int)flags, (int)attributeID, (float)attributeVal
+list ATTACHMENTS; 			// [(str)passive, (arr)attachments]
+list CACHE_ATTACHMENTS;		// Contains names of attachments
 
 #define COMPILATION_STRIDE 2
 list compiled_passives;     // Compiled passives [id, val, id2, val2...]
@@ -118,6 +120,15 @@ integer removePassiveByName(string name){
 			
 		)
 		
+		// Remove attachments
+		integer i;
+		for(i=0; i<count(ATTACHMENTS) && ATTACHMENTS != []; i+= 2){
+			if(l2s(ATTACHMENTS, i) == name){
+				ATTACHMENTS = llDeleteSubList(ATTACHMENTS, i, i+1);
+				i-= 2;
+			}
+		}
+		
 		
 		
         integer ln = llList2Integer(PASSIVES, pos+2);
@@ -142,7 +153,7 @@ compilePassives(){
 	@continueCompilePassives;
     while(i<llGetListLength(PASSIVES)){
         // Get the effects
-		integer n = l2i(PASSIVES, i+PASSIVES_PRESTRIDE-1);
+		integer n = l2i(PASSIVES, i+2);
         list block = subarr(PASSIVES, i+PASSIVES_PRESTRIDE, n);
         i+=n+PASSIVES_PRESTRIDE;
         
@@ -243,6 +254,33 @@ output(){
 		output = llListReplaceList(output, v, i, i);
 	}
     
+	// Scan attachments
+	list att = []; 	// Contains all names
+	list add = [];	// New names
+	for(i=0; i<count(ATTACHMENTS); i+= 2){
+		list a = llJson2List(l2s(ATTACHMENTS, i+1));
+		list_shift_each(a, val,
+			if(llListFindList(att, [val]) == -1){
+				att+= val;
+				if(llListFindList(CACHE_ATTACHMENTS, [val]) == -1)
+					add += val;
+			}
+		)
+	}
+	// Find attachments to remove
+	list rem;
+	for(i=0; i<count(CACHE_ATTACHMENTS); ++i){
+		// Attachment no longer found
+		if(llListFindList(att, llList2List(CACHE_ATTACHMENTS, i, i)) == -1){
+			rem += l2s(CACHE_ATTACHMENTS, i);
+		}
+	}
+	CACHE_ATTACHMENTS = att;
+	if(add)
+		Rape$addFXAttachments(add);
+	if(rem)
+		Rape$remFXAttachments(rem);
+	
     set_flags = set_flags&~unset_flags;
 	
     output = llListReplaceList(output, [set_flags], FXCUpd$FLAGS, FXCUpd$FLAGS);
@@ -254,9 +292,29 @@ onEvt(string script, integer evt, list data){
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
         data = llJson2List(l2s(data, BSUD$WDATA));
 		data = llJson2List(l2s(data, 2));
-		Passives$set(LINK_THIS, "_WEAPON_", data);				
+		Passives$set(LINK_THIS, "_WEAPON_", data, 0);				
 		return;
     }
+	
+	// Remove passives that should be removed on cleanup
+	else if(script == "got RootAux" && evt == RootAuxEvt$cleanup){
+		integer i;
+		@restartWipe;
+		while(i<llGetListLength(PASSIVES)){
+			// Get the effects
+			string name = l2s(PASSIVES, i);
+			integer n = l2i(PASSIVES, i+2);
+			integer flags = l2i(PASSIVES, i+3);
+			i+=n+PASSIVES_PRESTRIDE;
+			
+			if(flags&Passives$FLAG_REM_ON_CLEANUP){
+				removePassiveByName(name);
+				jump restartWipe;
+			}
+		}
+		output();
+		return;
+	}
     
 	// Procs here
 	integer i;
@@ -524,7 +582,7 @@ default
     */
     if(METHOD == PassivesMethod$set){
         string name = method_arg(0);
-
+		integer flags = l2i(PARAMS, 2);
 		
         list effects = llJson2List(method_arg(1));
         if(effects == [])return Passives$rem(LINK_THIS, name);
@@ -571,9 +629,12 @@ default
 				effects = llDeleteSubList(effects, i, i+1);
 				i-=2;
 			}
+			else if(t == FXCUpd$ATTACH){
+				ATTACHMENTS += [name, l2s(effects, i+1)];
+			}
 		}
 		
-		PASSIVES += [name, mkarr(added_effects), llGetListLength(effects)]+effects;
+		PASSIVES += [name, mkarr(added_effects), llGetListLength(effects), flags]+effects;
         outputDebug("ADD");
 		compilePassives();
     }

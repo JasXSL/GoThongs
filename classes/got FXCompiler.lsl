@@ -5,6 +5,7 @@
 // When you add something here, make sure you also set it as a default in got Passives global var: list compiled_actives;
 // Multipliers should actually be additive when setting them through passives. so .1 is 1.1x
 //#define FXCEvt$update 1				// See _core TASK_FX - It has replaced this but still uses the same index
+	#define FXCUpd$ATTACH -3			// (arr)attachments
 	#define FXCUpd$PROC -2				// Special case used in got Passives, See the got Passives.lsl function buildProc() for data
 	#define FXCUpd$UNSET_FLAGS -1		// Special case only used when setting got Passives 
 	#define FXCUpd$FLAGS 0 				// (int)flags - Default 0

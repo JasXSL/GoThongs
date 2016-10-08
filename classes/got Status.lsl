@@ -54,7 +54,7 @@
 
  
 
-#define StatusEvt$flags 1					// (int)flags
+#define StatusEvt$flags 1					// (int)current_flags, (int)previous_flags - To get newly added flags do current_flags&~previous_flags, to get removed flags do previous_flags&~current_flags
 #define StatusEvt$monster_gotTarget 2		// [(key)id], Monster only
 // Monster doesn't have shared vars so status is sent this way
 #define StatusEvt$monster_hp_perc 3			// HP/maxHP
@@ -159,7 +159,7 @@
 #define Status$monster_aggroed(player, range, team) runLimitMethod(llGetOwner(), "got Status", StatusMethod$monster_aggroed, [player, range, team], TNN, range)
 #define Status$monster_rapeMe() runOnPlayers(k, runLimitMethod(k, "got Status", StatusMethod$monster_rapeMe, [], TNN, 10);)
 #define Status$monster_overrideDesc(desc) runMethod((str)LINK_ROOT, "got Status", StatusMethod$monster_overrideDesc, [desc], TNN)
-
+#define Status$monster_setTeam(targ, team) runMethod((str)targ, "got Status", StatusMethod$setTeam, [team], TNN)
 
 
 
