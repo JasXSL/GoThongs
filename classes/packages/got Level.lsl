@@ -19,6 +19,9 @@ integer BFL;
 #define BFL_INI 0x10
 #define BFL_LOAD_REQ (BFL_MONSTERS_LOADED|BFL_ASSETS_LOADED|BFL_SCRIPTS_LOADED)
 #define BFL_COMPLETED 0x20
+// Prevents auto load from running multiple times when the level is rezzed live
+#define BFL_AUTOLOADED 0x40
+
 
 list LOADQUEUE = REQUIRE;			// Required scripts to be remoteloaded
 list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
@@ -187,7 +190,7 @@ default
     if(METHOD == LevelMethod$load && method$byOwner){
 		integer debug = (integer)method_arg(0);
 		string group = method_arg(1);
-
+		
         raiseEvent(LevelEvt$load, mkarr(([debug, group])));
 
 		// Things to run on level start
@@ -263,6 +266,12 @@ default
         if(CB == "LV" && SENDER_SCRIPT == "#ROOT" && llGetOwnerKey(id) == llGetOwner() && llGetStartParameter() == 2 && method$byOwner){
             PLAYERS = PARAMS;
 			if(llList2Key(PLAYERS, 0)){
+				// prevents recursion
+				if(BFL&BFL_AUTOLOADED)
+					return;
+					
+				BFL = BFL|BFL_AUTOLOADED;
+				
 				list pnames = [];
 				raiseEvent(LevelEvt$players, mkarr(PARAMS));
 				
