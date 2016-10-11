@@ -73,7 +73,7 @@ list OUTPUT_STATUS_TO;
 list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 
 // Updates description with the proper team
-#define setTeam(team) TEAM = team; raiseEvent(StatusEvt$team, (str)TEAM)
+#define setTeam(team) TEAM_DEFAULT = team; outputStats(FALSE)
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
 // Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add
@@ -197,7 +197,7 @@ aggroCheck(key k){
     float range = aggro_range;
 
 	prAngZ(k, ang)
-	if(llFabs(ang)>PI_BY_TWO)
+	if(llFabs(ang)>PI_BY_TWO && ~RUNTIME_FLAGS&Monster$RF_360_VIEW)
 		range *= 0.25;
      
 	
@@ -346,7 +346,7 @@ outputStats(integer force){
 	
 	// Team change goes after because we need to update description first
 	if(pre != t){
-		setTeam(t);
+		raiseEvent(StatusEvt$team, (str)TEAM);
 		runOnPlayers(targ,
 			Root$forceRefresh(targ, llGetKey());
 		)
@@ -506,8 +506,7 @@ default
         if(llGetStartParameter()){
             raiseEvent(evt$SCRIPT_INIT, "");
         }
-		setTeam(TEAM);
-		updateDesc();
+		setTeam(TEAM_DEFAULT);
     }
 	
 	sensor(integer total){
@@ -614,7 +613,6 @@ default
 	else if(METHOD == StatusMethod$setTeam){
 		
 		setTeam(l2i(PARAMS, 0));
-		updateDesc();
 		
 	}
 	

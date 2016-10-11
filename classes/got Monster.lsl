@@ -38,6 +38,7 @@
 #define Monster$RF_NO_SPELLS 0x100		// Unable to cast spells
 #define Monster$RF_IS_BOSS 0x200		// Shows up in the boss bar
 #define Monster$RF_FLYING 0x400			// Travels in a linear fashion to enemy groin height without following the ground
+#define Monster$RF_360_VIEW 0x800		// Does not get shorter aggro range when players are behind it
 
 #define Monster$atkFrame "_a"
 

@@ -269,7 +269,7 @@ default
 				
 				runOnPlayers(targ,
 					pnames += llGetDisplayName(targ);
-					GUI$toggleBoss(targ, "");
+					GUI$toggleBoss(targ, "", FALSE);
 					Rape$setTemplates(targ, []);
 					Root$setLevelOn(targ);
 				)

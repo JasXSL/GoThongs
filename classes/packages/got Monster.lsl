@@ -69,8 +69,8 @@ integer moveInDir(vector dir){
         if(~BFL&BFL_CHASING && ~BFL&BFL_SEEKING)sp/=2;
 
         dir = dir*.5*sp;
-		vector a = <0,0,1>;		// Max climb distance
-		vector b = <0,0,-1.5>;	// Max drop distance
+		vector a = <0,0,0.5+hAdd()>;	// Max climb distance
+		vector b = <0,0,-1>;	// Max drop distance
 		// If flying, go directly towards the target 
 		if(RUNTIME_FLAGS&Monster$RF_FLYING){
 			a = b = ZERO_VECTOR;
