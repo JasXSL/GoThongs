@@ -239,30 +239,42 @@ timerEvent(string id, string data){
 		}
         if(FXFLAGS & fx$NOCAST){return;}
         
+		// Create an index of [(int)index, (str)data]
         list r;
         integer i;
         for(i=0; i<llGetListLength(CACHE); i++)r+=[i, llList2String(CACHE, i)];
         r = llListRandomize(r, 2);
 		
+		// Loop through the index
         for(i=0; i<llGetListLength(r); i+=2){
             integer spid = llList2Integer(r, i);
+			
+			// Not on cooldown
             if(llListFindList(cooldowns, [spid]) == -1){
                 list d = llJson2List(llList2String(r, i+1));
                 integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
                 float range = llList2Float(d, NPCS$SPELL_RANGE);
                 float minrange = llList2Float(d, NPCS$SPELL_MIN_RANGE);
                 
-                
+                // Default to aggro_target
                 list p = [aggro_target];
-                if(flags&NPCS$FLAG_CAST_AT_RANDOM)p = llListRandomize(AGGROED, 1);
-
+				// Randomize all aggroed targets
+                if(flags&NPCS$FLAG_CAST_AT_RANDOM)
+					p = llListRandomize(AGGROED, 1);
+				
+				// Loop through the players
                 while(llGetListLength(p)){
                     key targ = llList2Key(p, 0);
                     p = llDeleteSubList(p, 0, 0);
                     vector ppos = prPos(targ);
                     float dist = llVecDist(llGetPos(), ppos);
                     list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
-                    if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0){
+					
+					// Get some info about the target
+					parseDesc(targ, resources, status, fx, sex, team);
+					
+					
+                    if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0 && !(status&StatusFlags$NON_VIABLE) && ~fx&fx$UNVIABLE){
                         if(flags&NPCS$FLAG_REQUEST_CASTSTART){
                             // Request start cast
                             LocalConf$checkCastSpell(llList2Integer(r, i), targ, "SPELL;"+llList2String(r,i)+";"+(string)targ);
@@ -321,6 +333,7 @@ default
         links_each(nr, name, 
             if(name == "TXT")P_TXT = nr;
         )
+		llSetLinkPrimitiveParamsFast(P_TXT, [PRIM_TEXT, "", ZERO_VECTOR, 0]);
         //PLAYERS = [llGetOwner()];
     }
     

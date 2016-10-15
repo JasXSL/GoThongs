@@ -12,6 +12,7 @@ float maxHP = 100;
 // Conf stuff
 float dmg = 10;         // Damage of melee attacks
 float HP = 100;
+float preHP = 1;
 float aggro_range;
 key aggrosound;         //
 key dropaggrosound;     //
@@ -352,7 +353,11 @@ outputStats(integer force){
 		)
 	}
 	
-    raiseEvent(StatusEvt$monster_hp_perc, (string)(HP/maxHP));
+	float perc = HP/maxHP;
+	if(perc != preHP){
+		preHP = perc;
+		raiseEvent(StatusEvt$monster_hp_perc, (string)perc);
+	}
 	BFL = BFL|BFL_STATUS_SENT;
 	multiTimer(["_", "", .5, FALSE]);
 }
@@ -693,7 +698,13 @@ default
 		NPCSpells$setOutputStatusTo(OUTPUT_STATUS_TO);
     }
 	
-	else if(METHOD == StatusMethod$monster_rapeMe){
+	else if(METHOD == StatusMethod$monster_rapeMe && ~RUNTIME_FLAGS&Monster$RF_INVUL){
+		
+		parseDesc(id, resources, status, fx, sex, team);
+		
+		if(team == TEAM)
+			return;
+	
 		list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 		if(llList2Integer(ray, -1) == 0){
 			if(!isset(rapeName))

@@ -8,6 +8,7 @@
 #define PortalMethod$debugPlayers 5			// void - Says the loaded PLAYERS to the owner
 #define PortalMethod$removeBySpawnround 6	// spawnround - Removes any item with a specific spawnround
 #define PortalMethod$removeBySpawner 7		// (key)spawner - Removes any portal object spawned by spawner
+#define PortalMethod$forceLiveInitiate 8	// Forces the portal to reinitialize as if it was live
 
 #define BIT_DEBUG 536870912			// This is the binary bit (30) that determines if it runs in debug mode or not
 #define BIT_GET_DESC 1073741824		// This is the binary bit (31) that determines if it needs to get custom data from the spawner or not

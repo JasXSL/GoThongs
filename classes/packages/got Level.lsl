@@ -67,6 +67,9 @@ onEvt(string script, integer evt, list data){
 			Level$loaded(LINK_THIS, 1);
 		}
 		
+		if(!assets || !spawns){
+			multiTimer(["LOAD_FINISH", "", 60, FALSE]);
+		}
 	}
 	
 	
@@ -391,8 +394,8 @@ default
         if(isHUD == 2)BFL = BFL|BFL_SCRIPTS_LOADED;
         else if(isHUD)BFL = BFL|BFL_MONSTERS_LOADED;
         else BFL = BFL|BFL_ASSETS_LOADED;
-		
-        if(BFL&BFL_LOAD_REQ == BFL_LOAD_REQ){
+				
+        if((BFL&BFL_LOAD_REQ) == BFL_LOAD_REQ){
             Level$loadFinished();
         }
     }

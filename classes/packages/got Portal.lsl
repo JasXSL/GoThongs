@@ -268,6 +268,19 @@ default
 				llDie();
 			}
 		}
+		
+		// Forces the portal to load as if it was live
+		else if(METHOD == PortalMethod$forceLiveInitiate){
+			qd("Updating and setting live");
+			vector g = llGetPos();
+			integer in = vec2int(g);
+			integer p = llCeil(llFrand(0xFFFFFFF));
+            llSetRemoteScriptAccessPin(p);
+			setText((string)in);
+            multiTimer([]);
+            Remoteloader$load(cls$name, p, 2);
+		}
+		
 		else if(METHOD == PortalMethod$iniData && ~BFL&BFL_HAS_DESC && llGetStartParameter() == 2){
 			INI_DATA = method_arg(0);
 			SPAWNROUND = method_arg(1);

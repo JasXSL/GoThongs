@@ -12,6 +12,16 @@ list MANIFEST;
 
 key VALIDATE;		// HTTP request to fetch manifest
 
+
+cleanup(){
+	Portal$killAll(); 
+	GUI$toggleObjectives((string)LINK_ROOT, FALSE); 
+	Level$despawn(); 
+	Soundspace$reset();
+	raiseEvent(RootAuxEvt$cleanup, "");
+	RLV$reset();			// Reset RLV locks and windlight on cleanup			
+}
+
 onEvt(string script, integer evt, list data){
 	if(script == "#ROOT" && evt == RootEvt$players){
 		PLAYERS = data;
@@ -183,13 +193,7 @@ default
 			} 
 			
 			else if(message == "wipeCells"){ 
-				Portal$killAll(); 
-				GUI$toggleObjectives((string)LINK_ROOT, FALSE); 
-				Level$despawn(); 
-				Soundspace$reset();
-				raiseEvent(RootAuxEvt$cleanup, "");
-				RLV$reset();			// Reset RLV locks and windlight on cleanup
-				
+				cleanup();
 			} 
 			
 			else if(message == "reset"){resetAll();}
@@ -312,6 +316,10 @@ default
 			// Fetch manifest by pubkey
 			VALIDATE = llHTTPRequest("http://jasx.org/lsl/got/app/manifest/?PUBKEY="+method_arg(0), [HTTP_BODY_MAXLENGTH, 0x2000], "");
 			
+		}
+		
+		else if(METHOD == RootAuxMethod$cleanup){
+			cleanup();
 		}
     }
 	
