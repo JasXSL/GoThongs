@@ -5,6 +5,10 @@ integer assets_saved;
 integer points_saved;
 integer custom_saved;
 
+#define HUD_TABLES Level$HUD_TABLES
+#define CUSTOM_TABLES Level$CUSTOM_TABLES
+
+
 timerEvent(string id, string data){
     if(id == "SAVE"){
         qd("Save: \n"+(string)assets_saved+" HUD assets\n"+(string)points_saved+" spawnpoints\n"+(string)custom_saved+" custom assets");
@@ -40,6 +44,39 @@ list trimVecRot(list vec_or_rot, integer places, integer returnString){
     return [(vector)out];
 }
 
+// Returns [(str)table, (int)internal_index, (str)data] or [] if not found
+list getAssetByIndex(integer customAsset, integer globalIndex){
+	if(globalIndex<0){
+		qd("Negative indexes are no longer allowed");
+		return [];
+	}
+	// Tables
+	list tables = HUD_TABLES;
+	if(customAsset)
+		tables = CUSTOM_TABLES;
+		
+	// Global index
+	integer n;
+	
+	list out = [];
+	// Interate over tables
+	integer i;
+	for(i=0; i<count(tables); ++i){
+		list parse = llJson2List(db3$get(l2s(tables, i), []));
+		if(globalIndex>=n+count(parse)){
+			n+= count(parse);
+		}
+		else{
+			return [
+				l2s(tables, i),
+				globalIndex-n,
+				llList2String(parse, globalIndex-n)
+			];
+		}
+	}
+	return [];
+}
+
 
 default
 {
@@ -68,12 +105,12 @@ default
             
             
             list data = llGetObjectDetails(id, [OBJECT_NAME, OBJECT_DESC, OBJECT_POS, OBJECT_ROT]);
-            
+            /*
             if(llVecDist(llList2Vector(data, 2), llGetPos())>150){
                 llOwnerSay("Warning! Out of bounds object: "+llList2String(data, 0)+" could not be added!");
                 return;
             }
-            
+            */
             
             string name = llList2String(data, 0);
             string pos = (string)trimVecRot([llList2Vector(data, 2)-llGetPos()], 2, TRUE);
@@ -85,6 +122,8 @@ default
             else desc = llGetSubString(desc, 1, -1);
             out+=desc;
             out+=group;
+			
+			integer i;
 			
 			// Saved data is [name, pos, rot, desc, group]
             
@@ -102,7 +141,8 @@ default
             // This is probably in the HUD then
             else{
                 // Spawn from HUD
-                db3$setOther(LevelStorage$points, [-1], mkarr(out)); 
+                list names = HUD_TABLES;
+				for(i=0; i<3 && db3$setOther(l2s(names, i), [-1], mkarr(out)) == "0"; ++i){}
                 assets_saved++;
             }
         }
@@ -127,33 +167,31 @@ default
         assets_saved = 0;
         points_saved = 0;
         custom_saved = 0;
-        if(!(integer)method_arg(0)){
-			// Clear current
-            llOwnerSay("Saving...");
-			list points = llJson2List(db3$get(LevelStorage$points, [])); list out;
-			list_shift_each(points, val,
-				if(j(val, 4) != group)out+=val;
-			)
-            db3$setOther(LevelStorage$points, [], mkarr(out));
-			
-			points = llJson2List(db3$get(LevelStorage$custom, [])); out = [];
-			list_shift_each(points, val,
-				if(j(val, 4) != group)out+=val;
-			)
-            db3$setOther(LevelStorage$custom, [], mkarr(out));
-			
-        }else llOwnerSay("Adding...");
 		
-		
-		
+		llOwnerSay("Adding...");
+
         multiTimer(["S", "", 3, FALSE]);
     }
     
     else if(METHOD == LevelAuxMethod$stats){
         llOwnerSay("Stats:");
-        integer hud = llGetListLength(llJson2List(db3$get(LevelStorage$points, [])));
-        integer custom = llGetListLength(llJson2List(db3$get(LevelStorage$custom, [])));
-        
+		list h = HUD_TABLES;
+		integer hud;
+		integer hlen;
+		list_shift_each(h, val,
+			val = db3$get(val, []);
+			hud = llGetListLength(llJson2List(val));
+			hlen += llStringLength(val);
+		)
+		list c = CUSTOM_TABLES;
+		integer custom;
+		integer clen;
+		list_shift_each(c, val,
+			val = db3$get(val, []);
+			custom = llGetListLength(llJson2List(val));
+			clen += llStringLength(val);
+        )
+		
         vector p1 = (vector)db3$get("got Level", [LevelShared$P1_start]);
         vector p2 = (vector)db3$get("got Level", [LevelShared$P2_start]);
         
@@ -167,12 +205,13 @@ default
         }
         else llOwnerSay("P2 Not set.");
         
+
         
         llOwnerSay("HUD Spawned: "+(string)hud);
         llOwnerSay("Custom assets: "+(string)custom);
-		integer perc = llRound((1-((float)llStringLength(db3$get(LevelStorage$points, []))/(1024*3)))*100);
+		integer perc = llRound(100-((float)hlen/(db3$tableMaxlength*3)*100));
 		llOwnerSay("Free Spawner Memory: "+(string)perc+"%");
-        perc = llRound((1-((float)llStringLength(db3$get(LevelStorage$custom, []))/(1024*3)))*100);
+        perc = llRound(100-((float)clen/(db3$tableMaxlength*3))*100);
 		llOwnerSay("Free Assets Memory: "+(string)perc+"%");
     }
     
@@ -182,7 +221,7 @@ default
         rotation rot = (rotation)method_arg(2);
         integer debug = (integer)method_arg(3);
 		string description = method_arg(4);
-
+		
         if(llGetInventoryType(asset) == INVENTORY_OBJECT){
             if(debug)llOwnerSay("Spawning local asset: "+asset);
 			Spawner$spawnInt(asset, pos, rot, description, debug, FALSE, "");
@@ -195,60 +234,73 @@ default
     // Spawns an item from HUD assets or level inventory as if it was live by ID
     else if(METHOD == LevelAuxMethod$testSpawn){
         integer HUD = (integer)method_arg(0);
-        integer i = (integer)method_arg(1);
+        integer index = (integer)method_arg(1);
         integer live = (integer)method_arg(2);
         
-        if(HUD){
-            list parse = llJson2List(llList2String(llJson2List(db3$get(LevelStorage$points, [])), i));
-            if(llList2String(parse, 0) == "")return;
+		list asset = getAssetByIndex(!HUD, index);
+		if(asset == [])
+			return qd("Item not found: "+(str)index);
+		
+		list parse = llJson2List(l2s(asset, 2));
+		if(HUD){
 			llOwnerSay("Spawning from HUD: "+llList2String(parse, 0));
-            Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetPos(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
-        }else{
-            list parse = llJson2List(llList2String(llJson2List(db3$get(LevelStorage$custom, [])), i));
-            if(llList2String(parse, 0) == "")return;
+			Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetPos(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
+		}else{
 			llOwnerSay("Spawning from INV: "+llList2String(parse, 0));
 			Spawner$spawnInt(llList2String(parse, 0), (vector)llList2String(parse,1)+llGetPos(), (rotation)llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
-        }
+		}
     }
     
     else if(METHOD == LevelAuxMethod$list){
         list data = [];
-        if((integer)method_arg(0))data = llJson2List(db3$get(LevelStorage$points, []));
-        else data = llJson2List(db3$get(LevelStorage$custom, []));
+        if((integer)method_arg(0))data = HUD_TABLES;
+        else data = CUSTOM_TABLES;
         
-        integer i;
+        integer i; integer n;
         for(i=0; i<llGetListLength(data); i++){
-            llOwnerSay("["+(string)i+"] "+llList2String(data, i));
+			list spawns = llJson2List(db3$get(l2s(data, i), []));
+			list_shift_each(spawns, val,
+				llOwnerSay("["+(string)n+"] "+val);
+				++n;
+			)
         }
         
     }
 	
 	// Set a property of a spawn
 	else if(METHOD == LevelAuxMethod$assetVar){
-		list data = [];
-        if((integer)method_arg(0))data = llJson2List(db3$get(LevelStorage$points, []));
-        else data = llJson2List(db3$get(LevelStorage$custom, []));
-        integer pos = (integer)method_arg(1);
-		integer field = (integer)method_arg(2);
+		integer HUD = l2i(PARAMS, 0);
+		integer globalIndex = l2i(PARAMS, 1);
+		integer field = l2i(PARAMS,2);
 		string newVal = method_arg(3);
-		string asset = llList2String(data, pos);
-		asset = llJsonSetValue(asset, [field], newVal);
-        data = llListReplaceList(data, [asset], pos, pos);
-        
-        if((integer)method_arg(0))db3$setOther(LevelStorage$points, [], mkarr(data));
-        else db3$setOther(LevelStorage$custom, [], mkarr(data));
+		
+		
+		list asset = getAssetByIndex(!HUD, globalIndex);
+		if(asset == [])
+			return qd("Error: Item not found.");
+		
+		list data = llJson2List(l2s(asset, 2));
+		
+		data = llListReplaceList(data, [newVal], field, field);
+
+        db3$setOther(l2s(asset, 0), [l2i(asset, 1)], mkarr(data));
         llOwnerSay("Item updated. Say 'listAssets' or 'listSpawns' for updated index");
+		
 	}
     
     else if(METHOD == LevelAuxMethod$remove){
-        list data = [];
-        if((integer)method_arg(0))data = llJson2List(db3$get(LevelStorage$points, []));
-        else data = llJson2List(db3$get(LevelStorage$custom, []));
-        integer pos = (integer)method_arg(1);
-        data = llDeleteSubList(data, pos, pos);
-        
-        if((integer)method_arg(0))db3$setOther(LevelStorage$points, [], mkarr(data));
-        else db3$setOther(LevelStorage$custom, [], mkarr(data));
+        integer HUD = l2i(PARAMS, 0);
+		integer globalIndex = l2i(PARAMS, 1);
+		
+		list asset = getAssetByIndex(!HUD, globalIndex);
+		if(asset == [])
+			return qd("Error: Item not found.");
+		string table = l2s(asset, 0);
+		integer localIndex = l2i(asset, 1);
+		
+		list out = llJson2List(db3$get(table, []));
+		out = llDeleteSubList(out, localIndex, localIndex);
+		db3$setOther(table, [], mkarr(out));
         llOwnerSay("Asset removed. Say 'listAssets' or 'listSpawns' for updated index");
     }
     

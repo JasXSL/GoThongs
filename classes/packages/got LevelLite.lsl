@@ -12,7 +12,22 @@ integer slave;
 
 default
 {
-	state_entry(){memLim(1.5); raiseEvent(evt$SCRIPT_INIT, "");}
+	state_entry(){
+		memLim(1.5); 
+		raiseEvent(evt$SCRIPT_INIT, "");
+		if(llGetStartParameter() == 2){
+			list tables = [
+				LevelStorage$main,
+				LevelStorage$points,
+				LevelStorage$custom,
+				LevelStorage$points+"_1",
+				LevelStorage$custom+"_1",
+				LevelStorage$points+"_2",
+				LevelStorage$custom+"_2"
+			];
+			db3$addTables(tables);
+		}
+	}
 	
     #include "xobj_core/_LM.lsl"
     /*

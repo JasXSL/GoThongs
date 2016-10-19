@@ -69,7 +69,7 @@ timerEvent(string id, string data){
 		#ifdef IS_HUD
 		Level$loaded(ROOT_LEVEL, TRUE);
 		#else
-		Level$loaded((string)LINK_ROOT, FALSE);
+		Level$loaded(LINK_ROOT, FALSE);
 		#endif
 		num_spawned = 0;
 	}

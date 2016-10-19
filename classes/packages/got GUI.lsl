@@ -167,9 +167,12 @@ default
 		list out = [];
 		
 		if(llKey2Name(boss) == ""){
+			GUI$toggleBoss(LINK_THIS, "", FALSE);
+			/*
 			boss = "";
 			Status$toggleBossFight(false);
 			statuses = llListReplaceList(statuses, [""], 3, 3);
+			*/
 		}
 		
 		

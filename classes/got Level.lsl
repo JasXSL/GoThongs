@@ -24,9 +24,13 @@
 	#define LevelShared$P2_start "b"						// (vec)pos
 	#define LevelShared$questData "c"				// Data passed from database about the quest
 	#define LevelShared$isSharp "d"					// Contains the rez param TRUE for sharp spawn
-	
+
+// These also exist in versions with _1 & _2 appended	
 #define LevelStorage$points "got HUD_Assets"		// Contains an array of arrays - [(str)name, (vec)pos, (rot)rotation, (str)desc, (str)spawnRound]
 #define LevelStorage$custom "got Custom_Assets"		// Contains an array of arrays - [(str)name, (vec)pos, (rot)rotation, (str)desc, (str)spawnRound]
+#define Level$HUD_TABLES [LevelStorage$points,LevelStorage$points+"_1",LevelStorage$points+"_2"]
+#define Level$CUSTOM_TABLES [LevelStorage$custom,LevelStorage$custom+"_1",LevelStorage$custom+"_2"]
+
 
 #define LevelEvt$players 0			// (arr)players - List of players has been updated
 #define LevelEvt$interact 1			// (key)player, (key)asset - When a player has attempted to interact with an item that needs to run a check with the server

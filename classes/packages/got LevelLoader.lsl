@@ -48,41 +48,45 @@ default
 			multiTimer(["INI", "", 10, FALSE]);
 		}
 		
+		list out;					// Data to push to spawners
+		list data;					// Asset data
+		integer spawned;			// Nr spawned
 		
         // Spawn from HUD
-        list data = llJson2List(db3$get(LevelStorage$points, []));
-		
-		integer spawned;
-		list out = [];
-		list_shift_each(data, v,
-			list val = llJson2List(v);
+		list HUD = Level$HUD_TABLES;
+		list_shift_each(HUD, table,
+			data = llJson2List(db3$get(table, []));
 			
-			list l = llList2List(val, 4, 4);
-			if(l == [])l = [""];
-			integer pos = llListFindList(groups, l);
-			string group = llList2String(groups, pos);
 			
-			if(~pos){ 
-				spawned++;
-				string chunk = llList2Json(JSON_ARRAY, [
-					llList2String(val, 0), 
-					(vector)llList2String(val, 1)+llGetPos(), 
-					llList2String(val, 2), 
-					llList2String(val, 3), 
-					debug, 
-					FALSE, 
-					group
-				]);
-				if(llStringLength(mkarr(out)+chunk)>900){
-					// Send out
-					Spawner$spawnThese(llGetOwner(), out);
-					out = [];
+			list_shift_each(data, v,
+				list val = llJson2List(v);
+				
+				list l = llList2List(val, 4, 4);
+				if(l == [])l = [""];
+				integer pos = llListFindList(groups, l);
+				string group = llList2String(groups, pos);
+				
+				if(~pos){ 
+					spawned++;
+					string chunk = llList2Json(JSON_ARRAY, [
+						llList2String(val, 0), 
+						(vector)llList2String(val, 1)+llGetPos(), 
+						llList2String(val, 2), 
+						llList2String(val, 3), 
+						debug, 
+						FALSE, 
+						group
+					]);
+					if(llStringLength(mkarr(out)+chunk)>900){
+						// Send out
+						Spawner$spawnThese(llGetOwner(), out);
+						out = [];
+					}
+					// Add the chunk
+					out+= chunk;
 				}
-				// Add the chunk
-				out+= chunk;
-			}
-        )
-		
+			)
+		)
 		
 		if(out){
 			// Send out
@@ -96,37 +100,39 @@ default
 		
         // Spawn from Me
 		out = [];
-        data = llJson2List(db3$get(LevelStorage$custom, []));
-
-
-		list_shift_each(data, v,
-			list val = llJson2List(v);
-			
-			list l = llList2List(val, 4, 4);
-			if(l == [])l = [""];
-			integer pos = llListFindList(groups, l);
-			string group = llList2String(groups, pos);
-			
-			if(~pos){
-				spawned++;
-				// No limit on link messages, just send all of the things
-				string add = llList2Json(JSON_ARRAY, [
-					llList2String(val, 0), 
-					(vector)llList2String(val,1)+llGetPos(), 
-					llList2String(val, 2), 
-					llStringTrim(llList2String(val, 3), STRING_TRIM), 
-					debug, 
-					FALSE, 
-					group
-				]);
+        
+		list CUSTOM = Level$CUSTOM_TABLES;
+		list_shift_each(CUSTOM, table,
+			data = llJson2List(db3$get(table, []));
+			list_shift_each(data, v,
+				list val = llJson2List(v);
 				
-				if(llStringLength(mkarr(out))+llStringLength(add) > 1024){
-					Spawner$spawnThese(LINK_THIS, out);
-					out = [];
+				list l = llList2List(val, 4, 4);
+				if(l == [])l = [""];
+				integer pos = llListFindList(groups, l);
+				string group = llList2String(groups, pos);
+				
+				if(~pos){
+					spawned++;
+					// No limit on link messages, just send all of the things
+					string add = llList2Json(JSON_ARRAY, [
+						llList2String(val, 0), 
+						(vector)llList2String(val,1)+llGetPos(), 
+						llList2String(val, 2), 
+						llStringTrim(llList2String(val, 3), STRING_TRIM), 
+						debug, 
+						FALSE, 
+						group
+					]);
+					
+					if(llStringLength(mkarr(out))+llStringLength(add) > 1024){
+						Spawner$spawnThese(LINK_THIS, out);
+						out = [];
+					}
+					out += add;
 				}
-				out += add;
-			}
-        )
+			)
+		)
 		if(out){
 			Spawner$spawnThese(LINK_THIS, out);
 			BFL = BFL|BFL_HAS_ASSETS;

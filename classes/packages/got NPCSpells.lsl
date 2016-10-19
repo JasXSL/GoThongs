@@ -103,6 +103,9 @@ onEvt(string script, integer evt, list data){
 	if(script == "got Monster"){
         if(evt == MonsterEvt$runtimeFlagsChanged){
             RUNTIME_FLAGS = llList2Integer(data,0);
+			if(RUNTIME_FLAGS&Monster$RF_NO_SPELLS && BFL&BFL_CASTING){
+				endCast(FALSE);
+			}
         }
     }else if(script == "got Status"){
         if(evt == StatusEvt$flags){
@@ -318,6 +321,9 @@ onSettings(list settings){
 
 		if(idx == MLC$height_add)
 			height_add = dtaInt;
+		// Flags
+		else if(idx == MLC$RF)
+			RUNTIME_FLAGS = l2i(dta,0);
 	}
 }
 

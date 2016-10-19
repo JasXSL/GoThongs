@@ -30,7 +30,7 @@
 #define GUI$togglePotion(texture, stacks) runMethod((str)LINK_ROOT, "got GUI", GUIMethod$togglePotion, [texture, stacks], TNN)
 #define GUI$potionCD(cd) runMethod((str)LINK_ROOT, "got GUI", GUIMethod$potionCD, [cd], TNN)
 #define GUI$toggleObjectives(targ, on) runMethod(targ, "got GUI", GUIMethod$toggleObjectives, [on], TNN)
-#define GUI$toggleBoss(targ, texture, manual_hp) runMethod(targ, "got GUI", GUIMethod$toggleBoss, [texture, manual_hp], TNN)
-#define GUI$bossHP(targ, perc) runMethod(targ, "got GUI", GUIMethod$bossHP, [perc], TNN)
+#define GUI$toggleBoss(targ, texture, manual_hp) runMethod((str)(targ), "got GUI", GUIMethod$toggleBoss, [texture, manual_hp], TNN)
+#define GUI$bossHP(targ, perc) runMethod((str)(targ), "got GUI", GUIMethod$bossHP, [perc], TNN)
 
 

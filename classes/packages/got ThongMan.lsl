@@ -76,6 +76,12 @@ takeHit(vector col){
     hit = col;
 	//restore();
 	multiTimer(["A"]);
+	
+	if(col == <-1,-1,-1>){
+		col = color;
+		if(fxcolor != ZERO_VECTOR)
+			col = fxcolor;
+	}
 	setColorOnInvolved(col);
 	
 
@@ -92,8 +98,10 @@ timerEvent(string id, string data){
         float d = (float)data;
         d-=.1;
         
-		vector v = color*(1.-d)+hit*d;
-		setColorOnInvolved(v);
+		if(hit != <-1,-1,-1>){
+			vector v = color*(1.-d)+hit*d;
+			setColorOnInvolved(v);
+		}
 		
 		if(d>0)multiTimer(["A", d, .05, FALSE]);
     }
@@ -264,7 +272,11 @@ default
 		
 		// Hit effect
         else if(METHOD == ThongManMethod$hit){
-            takeHit((vector)method_arg(0));
+			string color = method_arg(0);
+			vector c = (vector)color;
+			if(color == "")
+				c = <-1,-1,-1>;
+            takeHit(c);
         }
 		
 		// Temp override of visual

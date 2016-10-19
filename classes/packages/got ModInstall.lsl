@@ -10,9 +10,12 @@
 #define PUBKEY llGetObjectDesc()
 #define text(txt) llSetText(txt, <.5,.8,1>, 1)
 
-string get_type_info(integer inputInteger)
-{
-    if (inputInteger == INVENTORY_TEXTURE)
+string get_type_info(integer inputInteger){
+	
+	if(inputInteger == -1)
+		return "ANY";
+
+    else if(inputInteger == INVENTORY_TEXTURE)
         return "INVENTORY_TEXTURE";
  
     else if (inputInteger == INVENTORY_SOUND)
@@ -52,7 +55,7 @@ integer check(integer type, list items, integer disregard_modperms){
     for(i=0; i<llGetListLength(items); i++){
         string itm = llList2String(items, i);
         integer it = llGetInventoryType(itm);
-        if((it != type && type != 0) || it == INVENTORY_NONE){
+        if((it != type && type != -1) || it == INVENTORY_NONE){
 
             llOwnerSay("ERROR: "+llList2String(items, i)+" is missing from inventory or incorrect type. Got "+
                 get_type_info(it)+
@@ -84,7 +87,13 @@ default
 			
 		}
 		else{
-		
+			
+			list exp = explode("_",llGetObjectDesc());
+			if(l2s(exp,1) == "BETA"){
+				llRegionSayTo(llGetOwner(), 0, "!!WARNING!! This installer is set to use BETA. Don't forget to remove _BETA from description before you redistribute it.");
+				llPlaySound("b08f8409-0ae1-da6a-91a8-297ba8c2a495", 1);
+			}
+			
 			text("Initializing, make sure you are wearing the HUD.");
 			integer pin = llFloor(llFrand(0xFFFFFFF));
 			llSetRemoteScriptAccessPin(pin);
@@ -117,7 +126,7 @@ default
         
         
         integer s = (
-            check(0, llJson2List(llList2String(MANIFEST, 1)), TRUE) && // Attachments
+            check(-1, llJson2List(llList2String(MANIFEST, 1)), TRUE) && // Attachments
             check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 2)), FALSE) && // Levels
             check(INVENTORY_ANIMATION, llJson2List(llList2String(MANIFEST, 3)), FALSE) && // Animations
             check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 4)), FALSE) && // SpellFX
