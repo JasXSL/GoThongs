@@ -13,10 +13,13 @@ list MANIFEST;
 key VALIDATE;		// HTTP request to fetch manifest
 
 
-cleanup(){
+cleanup(key id){
+	// Owner cleanup only
+	if(id == llGetOwner()){
+		Level$despawn(); 
+	}
 	Portal$killAll(); 
 	GUI$toggleObjectives((string)LINK_ROOT, FALSE); 
-	Level$despawn(); 
 	Soundspace$reset();
 	raiseEvent(RootAuxEvt$cleanup, "");
 	RLV$reset();			// Reset RLV locks and windlight on cleanup			
@@ -193,7 +196,11 @@ default
 			} 
 			
 			else if(message == "wipeCells"){ 
-				cleanup();
+				cleanup(llGetOwner());
+				runOnPlayers(targ,
+					if(targ != llGetOwner())
+						RootAux$cleanup(targ);
+				)
 			} 
 			
 			else if(message == "reset"){resetAll();}
@@ -318,13 +325,16 @@ default
 			
 		}
 		
-		else if(METHOD == RootAuxMethod$cleanup){
-			cleanup();
-		}
+		
     }
 	
 	if(METHOD == RootAuxMethod$playSound){
 		llPlaySound(method_arg(0), (float)method_arg(1));
+	}
+	else if(METHOD == RootAuxMethod$cleanup){
+		if(id == "")
+			id = llGetOwner();
+		cleanup(id);
 	}
     
     #define LM_BOTTOM  
