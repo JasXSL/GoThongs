@@ -18,6 +18,16 @@ onEvt(string script, integer evt, list data){
 	}
 }
 
+outputBindStatus(key id, integer bound){
+	integer evt = GotAPIEvt$bound;
+	if(!bound)
+		evt = GotAPIEvt$unbound;
+		
+	string msg = GotAPI$buildAction(GotAPI$actionEvt, ([
+		llGetScriptName(), evt
+	]));
+	llRegionSayTo(id, GotAPI$chan(llGetOwnerKey(id)), msg);
+}
 
 
 default
@@ -45,16 +55,18 @@ default
 			integer pos = llListFindList(bindings, [targ]);
 			
 
-			if(command == GotAPI$cmdBind && ~pos)return;
-			if(command == GotAPI$cmdUnbind && pos == -1)return;
+			if(command == GotAPI$cmdBind && ~pos)return outputBindStatus(targ, TRUE);
+			if(command == GotAPI$cmdUnbind && pos == -1)return outputBindStatus(targ, FALSE);
 				
 			// Bind
 			if(command == GotAPI$cmdBind){
 				bindings+= [targ, GotAPI$chan(llGetOwnerKey(targ))];
+				outputBindStatus(targ, TRUE);
 			}
 			// Unbind
 			else{
 				bindings = llDeleteSubList(bindings, pos, pos+1);
+				outputBindStatus(targ, FALSE);
 			}
 			
 			

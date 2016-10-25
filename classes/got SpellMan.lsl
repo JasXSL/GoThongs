@@ -11,7 +11,7 @@
 
 #define SpellManEvt$interrupted 1	// NULL - NULL
 #define SpellManEvt$cast 2			// f2i((float)casttime), (key)target - Cast started - Not raised on instant cast
-#define SpellManEvt$complete 3 		// (int)spell_index, (key)target - Spell finished casting. Index goes from 0 (rest) to 4 (last)
+#define SpellManEvt$complete 3 		// (int)spell_index, (key)target, (bool)detrimental - Spell finished casting. Index goes from 0 (rest) to 4 (last)
 
 
 #define SpellMan$NO_GCD 0x80

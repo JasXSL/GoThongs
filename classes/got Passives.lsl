@@ -55,6 +55,8 @@ string Passives_buildTrigger(integer targ, string script, integer evt, list args
     (int)flags,
     (arr)wrapper
 ]
+	Args are arguments that have to exactly match the events. You can use "" as a wildcard.
+
 */
 // Proc flags
 #define Passives$PF_ON_COOLDOWN 0x1

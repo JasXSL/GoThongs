@@ -423,7 +423,7 @@ spellComplete(){
     else if(CACHE_CASTTIME<gcd && CACHE_CASTTIME>0 && ~tflags&SpellMan$NO_GCD)
 		SpellAux$setCooldown(SPELL_CASTED, gcd-CACHE_CASTTIME);
 		
-    raiseEvent(SpellManEvt$complete, llList2Json(JSON_ARRAY, [SPELL_CASTED, l2s(SPELL_TARGS,0)]));
+    raiseEvent(SpellManEvt$complete, llList2Json(JSON_ARRAY, [SPELL_CASTED, l2s(SPELL_TARGS,0), (flags&WF_DETRIMENTAL)>0]));
     spellEnd();
 }
 

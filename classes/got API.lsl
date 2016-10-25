@@ -33,6 +33,10 @@
     }
 
 */
+
+#define GotAPIEvt$bound 1			// Reply once an API listener has been bound
+#define GotAPIEvt$unbound 2	
+
 #define GotAPIMethod$list 0			// Owner only, outputs currently bound APIs in chat
 
 // output actions

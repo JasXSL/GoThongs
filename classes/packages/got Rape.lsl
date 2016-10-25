@@ -61,7 +61,7 @@ default
     }
     
     if(method$internal){
-        if(METHOD == RapeMethod$start && PARAMS != []){
+        if(METHOD == RapeMethod$start && count(PARAMS) > 1){
 		
             if(BFL&BFL_RAPE_STARTED || ~STATUS_FLAGS&StatusFlag$dead)return;
             
