@@ -36,9 +36,11 @@ onInteract(key obj, string task, list params){
 	else if(task == "CLEAR_CAM"){
 		RLV$clearCamera((str)LINK_ROOT);
 	}
+	/*
     else if(task == "CUSTOM"){
         raiseEvent(InteractEvt$onInteract, mkarr(([obj, task])));
     }
+	*/
     else return;
     llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", 0.25);
 }

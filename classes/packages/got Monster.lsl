@@ -19,9 +19,7 @@ vector lastseen;        // Position target was last seen at
 vector rezpos;          // Position this was rezzed at. Used for roaming
 
 integer STATE;          // Current movement state
-#define STATE_IDLE 0
-#define STATE_CHASING 1
-#define STATE_SEEKING 2
+
 
 integer FXFLAGS;
 key look_override = ""; // Key to override looking at from current target
@@ -56,7 +54,8 @@ integer BFL = 0x20;            // Don't roam unless a player is in range
 
 #define BFL_STOPON BFL_DEAD
  
- #define getSpeed() (speed*fxSpeed)
+#define getSpeed() (speed*fxSpeed)
+#define setState(n) STATE = n; raiseEvent(MonsterEvt$state, (str)STATE)
 
 integer moveInDir(vector dir){
 	if(dir == ZERO_VECTOR)return FALSE;
@@ -143,8 +142,8 @@ timerEvent(string id, string data){
         if(BFL&BFL_STOPON || FXFLAGS&fx$F_STUNNED)return;
         
         // Try to find a target
-        if(STATE == STATE_IDLE){
-            if(RUNTIME_FLAGS&Monster$RF_IMMOBILE || FXFLAGS&fx$F_ROOTED)return;
+        if(STATE == MONSTER_STATE_IDLE){
+            if(RUNTIME_FLAGS&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED)return;
             
             // Find a random pos to go to maybe
             if(wander == 0 || llFrand(1)>.1 || ~BFL&BFL_PLAYERS_NEARBY)return;
@@ -158,14 +157,18 @@ timerEvent(string id, string data){
             list ray = llCastRay(a, b, []);
             if(llList2Integer(ray, -1) == 0){
                 lastseen = b;
-                STATE = STATE_SEEKING;
+				setState(MONSTER_STATE_SEEKING);
             }
         } 
         
         
-        else if(STATE == STATE_SEEKING){
+        else if(STATE == MONSTER_STATE_SEEKING){
             if(RUNTIME_FLAGS&Monster$RF_IMMOBILE || FXFLAGS&fx$F_ROOTED)return;
-            
+            if(RUNTIME_FLAGS&Monster$RF_FOLLOWER){	// Followers can't seek
+				setState(MONSTER_STATE_IDLE);
+				return;
+			}
+			
 			vector gpos = llGetPos();
 			
 			float md = 0.1;				// Min dist to be considered at target
@@ -198,30 +201,28 @@ timerEvent(string id, string data){
 				}
 				SEEKTARG = [];
 			}
-			/*
-            if(BFL&BFL_MANEUVERING){
-                BFL = BFL&~BFL_MANEUVERING;
-                STATE = STATE_CHASING;
-                return;
-            }
-			*/
-            STATE = STATE_IDLE;
-			if(chasetarg)
-				STATE = STATE_CHASING;
-            toggleMove(FALSE);
+			
+			integer s = MONSTER_STATE_IDLE;
+			if(chasetarg){
+				s = MONSTER_STATE_CHASING;
+			}
+			setState(s);
+            
+			toggleMove(FALSE);
             lastseen = ZERO_VECTOR;
             BFL = BFL&~BFL_CHASING;
+			
         }
         
 		// Tracking a player
-        else if(STATE == STATE_CHASING){
+        else if(STATE == MONSTER_STATE_CHASING){
             BFL = BFL|BFL_CHASING;
 			
             vector ppos = prPos(chasetarg);
             
-            // Player left sim
+            // Player left sim or monster target died
             if(ppos == ZERO_VECTOR){
-                STATE = STATE_IDLE;
+				setState(MONSTER_STATE_IDLE);
                 Status$dropAggro(chasetarg);
                 
                 // raiseEvent(MonsterEvt$lostTarget, chasetarg);
@@ -289,8 +290,9 @@ timerEvent(string id, string data){
                 if(llList2Integer(ray, -1)>0){
                     if(RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO)return;
                     string desc = prDesc(llList2Key(ray, 0));
-                    Status$dropAggro(chasetarg);                
-                    STATE = STATE_SEEKING;
+                    Status$dropAggro(chasetarg); 
+
+					setState(MONSTER_STATE_SEEKING);
                     // dropAggro()
                     //raiseEvent(MonsterEvt$lostTarget, chasetarg);
                 }else{
@@ -379,16 +381,8 @@ onEvt(string script, integer evt, list data){
 		
             if(BFL&(BFL_STOPON|BFL_SEEKING))return;
             if(llList2String(data, 0) != ""){    
-                STATE = STATE_CHASING;
+				setState(MONSTER_STATE_CHASING);
             }
-			/*
-			Not needed as it has a built in target lost
-			else if(STATE == STATE_CHASING){
-				//parseDesc(chasetarg, resources, status, fx, sex, team);
-				STATE = STATE_SEEKING;
-				qd("Target lost from status");
-			}
-			*/
         }
     }
     
@@ -506,7 +500,7 @@ default
     }
 	else if(METHOD == MonsterMethod$seek){
 		BFL = BFL|BFL_SEEKING;
-		STATE = STATE_SEEKING;
+		setState(MONSTER_STATE_SEEKING);
 		SEEKTARG = [method_arg(0)];
 		if((vector)method_arg(0))
 			SEEKTARG = [(vector)method_arg(0)];

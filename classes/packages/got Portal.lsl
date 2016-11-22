@@ -301,22 +301,29 @@ default
 					for(i=0; i<llGetListLength(ini) && ini != []; i++){
 						list v = llJson2List(llList2String(ini, i));
 						string task = llList2String(v, 0);
-						if(task == "SC" || task == "PR"){
+						if(task == "SC" || task == "PR" || task == "HSC"){
 							v = llDeleteSubList(v, 0, 0);
 							// Make sure there's actually an asset
 							if(v != []){
 								// Only add to required ini if it's scripts
-								if(task == "SC"){
+								if(task == "SC" || task == "HSC"){
 									BFL=BFL&~BFL_SCRIPTS_INITIALIZED;
 									integer i;
 									for(i=0; i<llGetListLength(v); i++){
 										string val = llList2String(v, i);
 										if(llListFindList(required, [val]) == -1)
-											required+=[0,val];
+											required+=[
+												task == "HSC",		// From HUD
+												val					// Name
+											];
 									}
 								}
 								
-								Level$getScripts(requester, pin, mkarr(v));
+								if(task == "HSC"){
+									Remoteloader$load(mkarr(v), pin, 2);
+								}
+								else
+									Level$getScripts(requester, pin, mkarr(v));
 							}
 							// Remove this from data that is sent out, since we only need to send monster/status specific stuff
 							ini = llDeleteSubList(ini, i, i);

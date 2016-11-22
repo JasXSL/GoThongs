@@ -7,7 +7,7 @@
 
 list PLAYERS;
 
-float maxHP = 100;
+float maxHP = -1;
 
 // Conf stuff
 float dmg = 10;         // Damage of melee attacks
@@ -74,7 +74,7 @@ list OUTPUT_STATUS_TO;
 list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 
 // Updates description with the proper team
-#define setTeam(team) TEAM_DEFAULT = team; outputStats(FALSE)
+#define setTeam(team) TEAM_DEFAULT = team; outputStats(FALSE,__LINE__)
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
 // Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add
@@ -141,7 +141,7 @@ addHP(float amount, key attacker, string spellName, integer flags, integer updat
     HP += amount;
     if(HP<=0 && HP != pre){
 		HP = 0;
-		outputStats(TRUE);
+		outputStats(TRUE,__LINE__);
 		if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
 			runOnPlayers(targ, GUI$toggleBoss(targ, "", FALSE);)
 		}
@@ -178,10 +178,11 @@ addHP(float amount, key attacker, string spellName, integer flags, integer updat
 		else{
 			raiseEvent(StatusEvt$death_hit, "");
 		}
-    }else if(HP > maxHP)HP = maxHP;
+    }
+	else if(HP > maxHP)HP = maxHP;
     
     if(pre != HP && update)
-        outputStats(FALSE);
+        outputStats(FALSE,__LINE__);
     
 }
 
@@ -321,7 +322,10 @@ onEvt(string script, integer evt, list data){
     }
 }
 
-outputStats(integer force){
+outputStats(integer force, integer line){
+
+	// qd(line) <- Debugging
+	
 	// Check team
 	integer t = fxTeam;
 	if(t == -1)
@@ -354,7 +358,7 @@ outputStats(integer force){
 	}
 	
 	float perc = HP/maxHP;
-	if(perc != preHP){
+	if(perc != preHP && maxHP > 0){
 		preHP = perc;
 		raiseEvent(StatusEvt$monster_hp_perc, (string)perc);
 	}
@@ -368,7 +372,7 @@ timerEvent(string id, string data){
 		BFL = BFL&~BFL_STATUS_SENT;
 		if(BFL&BFL_STATUS_QUEUE){
 			BFL = BFL&~BFL_STATUS_QUEUE;
-			outputStats(FALSE);
+			outputStats(FALSE, __LINE__);
 		}
 	}
     else if(id == "A"){
@@ -428,6 +432,9 @@ onSettings(list settings){
 		}
 	)
 	
+	float mhp = maxHP;
+	integer team = TEAM;
+	
 	while(settings){
 		integer idx = l2i(settings, 0);
 		list dta = llList2List(settings, 1, 1);
@@ -435,6 +442,8 @@ onSettings(list settings){
 		#define dtaInt l2i(dta,0)
 		#define dtaFloat l2f(dta,0)
 		#define dtaStr l2s(dta,0)
+		
+		
 		
 		// Runtime flags
 		if(idx == 0)
@@ -474,7 +483,7 @@ onSettings(list settings){
 		
 		// Brackets are important here
 		if(idx == MLC$team && dtaStr != ""){
-			setTeam(dtaInt);
+			team = dtaInt;
 		}
 			
 
@@ -491,12 +500,17 @@ onSettings(list settings){
 	
 	
 	// Limits
-	HP = maxHP;
+	if(mhp == -1 || HP>maxHP)
+		HP = maxHP;
+	
+
 	if(aggro_range > 0)
 		multiTimer(["A", "", 2, TRUE]);
 	else
 		multiTimer(["A"]);
-	updateDesc();
+	
+	// Updates team and desc and outputs everything
+	setTeam(team);
 	
 	if(~BFL&BFL_INITIALIZED){
 		BFL = BFL|BFL_INITIALIZED;
@@ -550,7 +564,7 @@ default
 		fxModHealingTaken = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
 		fxModCrit = i2f(l2f(data, FXCUpd$CRIT)); \
 		fxTeam = l2i(data, FXCUpd$TEAM); \
-        outputStats(FALSE); \
+        outputStats(FALSE,__LINE__); \
 	}\
 	else if(nr == TASK_MONSTER_SETTINGS)\
 		onSettings(llJson2List(s));
@@ -606,14 +620,14 @@ default
 			if(type == SMBUR$durability)  
 				addHP(amount, id, name, flags, FALSE);
 		}
-		outputStats(FALSE);
+		outputStats(FALSE,__LINE__);
 	}
 	
 	if(METHOD == StatusMethod$fullregen){
 		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$dead;
 		BFL = BFL|BFL_INITIALIZED;
 		HP = maxHP;
-		outputStats(TRUE);
+		outputStats(TRUE,__LINE__);
 	}
 	else if(METHOD == StatusMethod$setTeam){
 		
@@ -692,7 +706,7 @@ default
             OUTPUT_STATUS_TO = llDeleteSubList(OUTPUT_STATUS_TO, pos, pos);
         }else{
             if(pos == -1)OUTPUT_STATUS_TO += (str)id;
-            outputStats(TRUE);
+            outputStats(TRUE,__LINE__);
             outputTextures();
         }
 		NPCSpells$setOutputStatusTo(OUTPUT_STATUS_TO);

@@ -91,6 +91,7 @@
 #include "./classes/got LevelSpawner.lsl"
 #include "./classes/got Weapon.lsl"
 #include "./classes/got WeaponLoader.lsl"
+#include "./classes/got Follower.lsl"
 
 
 

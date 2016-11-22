@@ -25,6 +25,7 @@
 #define MonsterEvt$seekFail 9			// void - Failed to seek to target
 #define MonsterEvt$seekComplete 10		// void - Reached current target
 #define MonsterEvt$confIni 11			// void - Configuration has been received, monster is starting up
+#define MonsterEvt$state 12				// (int)state - Monster state has changed
 
 // Runtime flags
 #define Monster$RF_IMMOBILE 1
@@ -39,9 +40,15 @@
 #define Monster$RF_IS_BOSS 0x200		// Shows up in the boss bar
 #define Monster$RF_FLYING 0x400			// Travels in a linear fashion to enemy groin height without following the ground
 #define Monster$RF_360_VIEW 0x800		// Does not get shorter aggro range when players are behind it
+#define Monster$RF_FOLLOWER 0x1000		// Follower mode enabled
 
 #define Monster$atkFrame "_a"
 
+
+// Monster runtime states
+#define MONSTER_STATE_IDLE 0
+#define MONSTER_STATE_CHASING 1
+#define MONSTER_STATE_SEEKING 2
 
 // Sends a custom command that updates settings
 // Unlike LocalConfEvt$iniData this is a strided list consisting of [(int)index, (var)value]

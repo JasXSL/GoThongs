@@ -49,7 +49,7 @@ string CACHE_TEXT;
 updateText(){
 	integer i;
     integer p = llRound(hp*5);
-	
+		
 	list names = [];
 	for(i=0; i<llGetListLength(OUTPUT_STATUS_TO); i++){
 		string n = llGetSubString(
@@ -113,8 +113,10 @@ onEvt(string script, integer evt, list data){
         }else if(evt == StatusEvt$monster_gotTarget){
             aggro_target = llList2String(data, 0);
         }else if(evt == StatusEvt$monster_hp_perc){
-            hp = llList2Float(data,0);
-            updateText();
+			if(hp != llList2Float(data, 0)){
+				hp = llList2Float(data,0);
+				updateText();
+			}
         }else if(evt == StatusEvt$dead){
             BFL = BFL|BFL_DEAD;
             if(BFL&BFL_CASTING)endCast(FALSE);
