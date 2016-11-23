@@ -142,7 +142,7 @@
 #define parseDesc(aggroTarg, resources, status, fx, sex, team) \
 list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-integer status = 0; \
+integer status = l2i(_split,5); \
 integer resources = l2i(_split,2); \
 integer fx; \
 integer team = l2i(_split,1); \

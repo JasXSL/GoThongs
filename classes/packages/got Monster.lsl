@@ -375,10 +375,14 @@ onEvt(string script, integer evt, list data){
             if(~BFL&BFL_DEAD && llList2Integer(data,0)){
                 BFL = BFL|BFL_DEAD;
                 toggleMove(FALSE);
+				setState(MONSTER_STATE_IDLE);
+				chasetarg = "";
             }
+			else if(!l2i(data, 0))
+				BFL = BFL&~BFL_DEAD;
         }else if(evt == StatusEvt$monster_gotTarget){
 			chasetarg = llList2String(data, 0);
-		
+			
             if(BFL&(BFL_STOPON|BFL_SEEKING))return;
             if(llList2String(data, 0) != ""){    
 				setState(MONSTER_STATE_CHASING);
@@ -397,15 +401,17 @@ onEvt(string script, integer evt, list data){
 
 // Settings received
 onSettings(list settings){
+	integer flagsChanged;
 	while(settings){
 		integer idx = l2i(settings, 0);
 		list dta = llList2List(settings, 1, 1);
 		settings = llDeleteSubList(settings, 0, 1);
 		
 		// Flags
-		if(idx == 0)
+		if(idx == 0){
 			RUNTIME_FLAGS = l2i(dta,0);
-		
+			flagsChanged = TRUE;
+		}
 		// Movement speed
 		if(idx == 1 && l2f(dta,0)>0)
 			speed = l2f(dta,0);
@@ -433,6 +439,8 @@ onSettings(list settings){
 	if(hitbox<=0)
 		hitbox = 3;
     
+	if(flagsChanged)
+		raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)RUNTIME_FLAGS);
 	
 	if(~BFL&BFL_INITIALIZED){
 		BFL = BFL|BFL_INITIALIZED; 

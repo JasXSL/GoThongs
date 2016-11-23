@@ -77,8 +77,8 @@ list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 #define setTeam(team) TEAM_DEFAULT = team; outputStats(FALSE,__LINE__)
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
-// Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add
-#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)range_add+"$"+(str)height_add);}
+// Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add$(int)status_flags
+#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)range_add+"$"+(str)height_add+"$"+(str)STATUS_FLAGS);}
 
 
 dropAggro(key player, integer complete){
@@ -161,26 +161,31 @@ addHP(float amount, key attacker, string spellName, integer flags, integer updat
         BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
 		llSetObjectDesc("");			// Prevent targeting
         
-		list d = llListRandomize(llJson2List(drops), 1);
-		list_shift_each(d, val,
-			if(llFrand(1)<(float)j(val, 1)){ 
-				Spawner$spawn(j(val,0), (llGetPos()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
-				d = [];
-			}
-		)
+		
         
         
         if(deathsound)llTriggerSound(deathsound, 1);
+		
+		// The monster will remove itself
         if(~RUNTIME_FLAGS&Monster$RF_NO_DEATH){
+			// Drop loot
+			list d = llListRandomize(llJson2List(drops), 1);
+			list_shift_each(d, val,
+				if(llFrand(1)<(float)j(val, 1)){ 
+					Spawner$spawn(j(val,0), (llGetPos()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
+					d = [];
+				}
+			)
             llSleep(2);
             llDie();
         }
 		else{
+			// The monster will die but not delete itself
 			raiseEvent(StatusEvt$death_hit, "");
 		}
     }
 	else if(HP > maxHP)HP = maxHP;
-    
+	
     if(pre != HP && update)
         outputStats(FALSE,__LINE__);
     
@@ -326,6 +331,16 @@ outputStats(integer force, integer line){
 
 	// qd(line) <- Debugging
 	
+	// NPC has been ressurected
+	if(HP>0 && STATUS_FLAGS&StatusFlag$dead){
+		raiseEvent(StatusEvt$dead, "0");
+		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$dead;
+		MaskAnim$restartOverride("idle");
+		AGGRO = [];
+		aggroTarg = "";
+		//qd("Aggro reset");
+	}
+	
 	// Check team
 	integer t = fxTeam;
 	if(t == -1)
@@ -381,7 +396,6 @@ timerEvent(string id, string data){
 		
 			parseDesc(aggroTarg, resources, status, fx, sex, team);
             
-			
 			if(
 				status&StatusFlags$NON_VIABLE ||
 				fx&fx$UNVIABLE || 
@@ -605,7 +619,7 @@ default
 	
 	
 	
-	if(METHOD == StatusMethod$batchUpdateResources){
+	if(METHOD == StatusMethod$batchUpdateResources && ~STATUS_FLAGS&StatusFlag$dead){
 		while(PARAMS){
 			integer type = l2i(PARAMS, 0);
 			integer len = l2i(PARAMS, 1);
@@ -624,7 +638,7 @@ default
 	}
 	
 	if(METHOD == StatusMethod$fullregen){
-		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$dead;
+		//qd("Fullregen ran");
 		BFL = BFL|BFL_INITIALIZED;
 		HP = maxHP;
 		outputStats(TRUE,__LINE__);

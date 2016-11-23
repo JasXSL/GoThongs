@@ -1,6 +1,11 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
+
+integer STATUS_FLAGS;
+integer MONSTER_FLAGS;
+integer FXFLAGS;
+
 integer BFL;
 // Warp queued
 #define BFL_WARP_TIMER 0x1
@@ -15,6 +20,13 @@ float ANGLE = 1;
 integer STATE;
 
 #define text(txt) llSetLinkPrimitiveParamsFast(2, [PRIM_TEXT, (str)(txt), <1,1,1>, 1]) 
+
+#define stopOnCheck() ( \
+	STATE != MONSTER_STATE_IDLE || \
+	STATUS_FLAGS&StatusFlag$dead || \
+	FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED) || \
+	MONSTER_FLAGS&Monster$RF_IMMOBILE \
+)
 
 vector targetPos(){
 	list data = llGetObjectDetails(TARGET, [OBJECT_POS, OBJECT_ROT, OBJECT_ATTACHED_POINT, OBJECT_ROOT]);
@@ -104,9 +116,31 @@ integer moveInDir(vector dir, float speed){
 
 
 onEvt(string script, integer evt, list data){
-    if(script == "got Monster" && evt == MonsterEvt$state){
-        STATE = l2i(data, 0);
+    if(script == "got Monster"){
+		if(evt == MonsterEvt$state){
+			STATE = l2i(data, 0);
+			if(STATE != MONSTER_STATE_IDLE)
+				BFL = BFL&~BFL_WALKING;
+		}
+		else if(evt == MonsterEvt$runtimeFlagsChanged){
+			MONSTER_FLAGS = l2i(data, 0);
+		}
     }
+	
+	else if(script == "got Status"){
+		if(evt == StatusEvt$flags){
+			STATUS_FLAGS = l2i(data, 0);		
+		}
+		else if(evt == StatusEvt$dead){
+			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;		// Prevents sliding after death
+			if(l2i(data, 0) && MONSTER_FLAGS&Monster$RF_NO_DEATH){
+				multiTimer(["REVIVE", "", 15, FALSE]);
+			}
+			else if(!l2i(data, 0))
+				multiTimer(["REVIVE"]);
+		}
+	}
+	
 	
 }
 
@@ -115,9 +149,10 @@ onEvt(string script, integer evt, list data){
 timerEvent(string id, string data){
 	if(id == "tick"){
 		// Only allow when follower is idle
-		if(STATE != MONSTER_STATE_IDLE)
+		if(stopOnCheck())
 			return;
-			
+		
+		
 		vector point = targetPos();
 		if(point == ZERO_VECTOR)
 			return Follower$disable();
@@ -165,7 +200,10 @@ timerEvent(string id, string data){
 	else if(id == "WARP"){
 		BFL = BFL|BFL_DO_WARP;
 	}
-	
+	else if(id == "REVIVE"){
+		qd("Reviving");
+		Status$fullregen();
+	}
 }
 
 
@@ -180,6 +218,11 @@ default
     
 	timer(){multiTimer([]);}
     
+	#define LM_PRE \
+	if(nr == TASK_FX){ \
+		list data = llJson2List(s); \
+		FXFLAGS = l2i(data, FXCUpd$FLAGS); \
+	} \
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
     /*
@@ -202,7 +245,7 @@ default
             ANGLE = l2f(PARAMS, 2);
 			multiTimer(["tick", "", .25, TRUE]);
 			Monster$setFlags(Monster$RF_FOLLOWER);
-			qd("Follower enabled, with DISTANCE: "+(str)DISTANCE+" Dir: "+(str)ANGLE);
+			//qd("Follower enabled, with DISTANCE: "+(str)DISTANCE+" Dir: "+(str)ANGLE);
         }
         
         else if(METHOD == FollowerMethod$disable){
