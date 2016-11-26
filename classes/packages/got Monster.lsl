@@ -249,7 +249,7 @@ timerEvent(string id, string data){
 					llList2Integer(llCastRay(llGetPos()+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
 				){
 					
-					parseDesc(chasetarg, resources, status, fx, sex, team);
+					parseDesc(chasetarg, resources, status, fx, sex, team, mf);
 					
 					// not attackable
 					if(
@@ -321,8 +321,7 @@ onEvt(string script, integer evt, list data){
     
 	// Tunnels legacy into the new command
     else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
-		
-		
+				
 		list out = [];	// Strided list
 		integer i;
 		for(i=0; i<count(data); i++){
@@ -474,8 +473,9 @@ default
 		fxCooldownMod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		if(FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED))toggleMove(FALSE); \
 	} \
-	else if(nr == TASK_MONSTER_SETTINGS)\
-		onSettings(llJson2List(s));
+	else if(nr == TASK_MONSTER_SETTINGS){\
+		onSettings(llJson2List(s)); \
+	}\
 	
     #include "xobj_core/_LM.lsl" 
     /*

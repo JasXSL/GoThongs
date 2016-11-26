@@ -17,7 +17,7 @@ integer BFL;
 #define BFL_LOADING 0x4
 #define BFL_SCRIPTS_LOADED 0x8
 #define BFL_INI 0x10
-#define BFL_LOAD_REQ (BFL_MONSTERS_LOADED|BFL_ASSETS_LOADED|BFL_SCRIPTS_LOADED)
+#define BFL_LOAD_REQ (BFL_MONSTERS_LOADED|BFL_ASSETS_LOADED)
 #define BFL_COMPLETED 0x20
 // Prevents auto load from running multiple times when the level is rezzed live
 #define BFL_AUTOLOADED 0x40
@@ -67,7 +67,7 @@ onEvt(string script, integer evt, list data){
 			Level$loaded(LINK_THIS, 1);
 		}
 		
-		if(!assets || !spawns){
+		if(assets || spawns){
 			multiTimer(["LOAD_FINISH", "", 60, FALSE]);
 		}
 	}
@@ -395,8 +395,9 @@ default
     
     if(METHOD == LevelMethod$loaded && BFL&BFL_LOADING && method$byOwner){
         integer isHUD = (integer)method_arg(0);
-        if(isHUD == 2)BFL = BFL|BFL_SCRIPTS_LOADED;
-        else if(isHUD)BFL = BFL|BFL_MONSTERS_LOADED;
+		
+        //if(isHUD == 2)BFL = BFL|BFL_SCRIPTS_LOADED;
+        if(isHUD)BFL = BFL|BFL_MONSTERS_LOADED;
         else BFL = BFL|BFL_ASSETS_LOADED;
 				
         if((BFL&BFL_LOAD_REQ) == BFL_LOAD_REQ){
@@ -422,8 +423,6 @@ default
 		}
 	}
     if(METHOD == LevelMethod$loadFinished && BFL&BFL_LOADING && method$byOwner){
-		
-		qd("Level has finished loading");
 		
 		multiTimer(["LOAD_FINISH"]);
         BFL = BFL&~BFL_LOADING;

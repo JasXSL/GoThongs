@@ -11,6 +11,10 @@
 #define FollowerMethod$enable 1				// (key)target, (float)distance, (float)radius - Enables/Updates following of the target, radius can be used to set the followers preferred position, starts at PI (behind player)
 #define FollowerMethod$disable 2			// 
 
+#define FollowerEvt$targetLost 1			// void - Target we're following has been lost
+
 #define Follower$enable(target, distance, radius) runMethod((str)LINK_ROOT, "got Follower", FollowerMethod$enable, [target, distance, radius], TNN)
 #define Follower$disable() runMethod((str)LINK_ROOT, "got Follower", FollowerMethod$disable, [], TNN)
+
+
 

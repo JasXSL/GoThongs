@@ -45,7 +45,7 @@ default
 		if(l2s(groups, 0) == ""){
 			BFL = BFL&~BFL_HAS_ASSETS;
 			BFL = BFL&~BFL_HAS_SPAWNS;
-			multiTimer(["INI", "", 10, FALSE]);
+			multiTimer(["INI", "", 3, FALSE]);
 		}
 		
 		list out;					// Data to push to spawners

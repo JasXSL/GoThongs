@@ -11,6 +11,8 @@ integer BFL;
 #define BFL_WARP_TIMER 0x1
 #define BFL_DO_WARP 0x2
 #define BFL_WALKING 0x4
+// Tracks if follower is in the sim
+#define BFL_HAS_TARGET 0x8
 
 // Target followed
 key TARGET;
@@ -154,9 +156,15 @@ timerEvent(string id, string data){
 		
 		
 		vector point = targetPos();
-		if(point == ZERO_VECTOR)
-			return Follower$disable();
+		if(point == ZERO_VECTOR){
+			if(BFL&BFL_HAS_TARGET){
+				raiseEvent(FollowerEvt$targetLost, "");
+				BFL = BFL&~BFL_HAS_TARGET;
+			}
+			return;
+		}
 		
+		BFL = BFL|BFL_HAS_TARGET;
 	
 		vector gpos = llGetPos();
 		

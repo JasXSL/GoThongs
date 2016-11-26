@@ -167,7 +167,7 @@ endCast(integer success){
 startCast(integer spid, key targ){
 	if(BFL&(BFL_RECENT_CAST|BFL_CASTING) || RUNTIME_FLAGS&Monster$RF_NO_SPELLS)return;
 
-	parseDesc(aggro_target, resources, status, fx, sex, team);
+	parseDesc(aggro_target, resources, status, fx, sex, team, rf);
     if(status&StatusFlags$NON_VIABLE)return;
 	// Data comes from parseDesc, 0 is the attach point.
 	
@@ -276,7 +276,7 @@ timerEvent(string id, string data){
                     list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 					
 					// Get some info about the target
-					parseDesc(targ, resources, status, fx, sex, team);
+					parseDesc(targ, resources, status, fx, sex, team, rf);
 					
 					
                     if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0 && !(status&StatusFlags$NON_VIABLE) && ~fx&fx$UNVIABLE){
@@ -344,6 +344,10 @@ default
 		llSetLinkPrimitiveParamsFast(P_TXT, [PRIM_TEXT, "", ZERO_VECTOR, 0]);
         //PLAYERS = [llGetOwner()];
     }
+	
+	touch_start(integer total){
+		raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0)]));
+    }
     
     timer(){multiTimer([]);}
     
@@ -382,6 +386,12 @@ default
     
     if(method$byOwner){
         if(METHOD == NPCSpellsMethod$setSpells){
+			
+			// Clear cooldowns from previous spells
+			list_shift_each(cooldowns, cd,
+				multiTimer(["CD_"+cd]);
+			)
+		
             CACHE = PARAMS;
             integer i;
             for(i=0; i<llGetListLength(CACHE); i++){

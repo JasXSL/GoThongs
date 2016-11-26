@@ -139,7 +139,7 @@
 // Parses a description into resources, status, fx, sex, team - Currently only supports resources for NPCs
 // The if statement checks if this is a HUD which has a slightly different syntax
 // _data[0] is the attached point, if attached, the syntax is a bit different
-#define parseDesc(aggroTarg, resources, status, fx, sex, team) \
+#define parseDesc(aggroTarg, resources, status, fx, sex, team, monsterflags) \
 list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
 integer status = l2i(_split,5); \
@@ -147,12 +147,14 @@ integer resources = l2i(_split,2); \
 integer fx; \
 integer team = l2i(_split,1); \
 integer sex; \
+integer monsterflags = l2i(_split, 6); \
 if(l2i(_data, 0)){ \
 	resources = l2i(_split, 0); \
 	status = l2i(_split, 1); \
 	fx = l2i(_split, 2); \
 	sex = l2i(_split, 3); \
 	team = l2i(_split, 4); \
+	monsterflags = 0;\
 }\
 
 // Returns an array of hp, mana, arousal, pain

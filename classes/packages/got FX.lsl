@@ -412,7 +412,11 @@ default
 				// RC is only needed for NPCs since NPCs can direct effects to players
 				integer RC = TRUE;
 				if(flags&WF_REQUIRE_LOS && id != ""){
-					if(llList2Integer(llCastRay(llGetPos()+<0,0,.5>, prPos(id), [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]), -1)> 0){
+					list data = llGetObjectDetails(id, [OBJECT_POS, OBJECT_DESC]);
+					vector pos = l2v(data, 0);
+					if(llGetSubString(l2s(data, 1), 0, 2) == "$M$")
+						pos+= <0,0,1>;
+					if(llList2Integer(llCastRay(llGetPos()+<0,0,.5>, pos, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]), -1)> 0){
 						RC = FALSE;
 					}
 				}
