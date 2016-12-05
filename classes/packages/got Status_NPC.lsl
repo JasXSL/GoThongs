@@ -546,6 +546,7 @@ default
 			key attacker = l2s(data, 3);
 			
 			
+			
 			// Apply
 			if(type == SMBUR$durability){
 				float pre = HP;
@@ -557,7 +558,8 @@ default
 					if(RUNTIME_FLAGS&Monster$RF_INVUL)return;
 					amount*=fxModDmgTaken;
 					
-					if(attacker){
+					parseDesc(attacker, _r, _s, _f, _st, team, _mo)
+					if(attacker != "" && team != TEAM){
 						aggro(attacker, llFabs(amount));
 					}
 					raiseEvent(StatusEvt$hurt, llList2Json(JSON_ARRAY, [(str)amount, attacker]));

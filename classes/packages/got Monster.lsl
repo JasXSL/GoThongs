@@ -145,6 +145,7 @@ timerEvent(string id, string data){
         if(STATE == MONSTER_STATE_IDLE){
             if(RUNTIME_FLAGS&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED)return;
             
+			//llSetLinkPrimitiveParamsFast(2, [PRIM_TEXT, (str)wander+"\n"+portalConf$desc, <1,1,1>, 1]);
             // Find a random pos to go to maybe
             if(wander == 0 || llFrand(1)>.1 || ~BFL&BFL_PLAYERS_NEARBY)return;
 			
@@ -333,7 +334,6 @@ onEvt(string script, integer evt, list data){
 		// Description should be applied first if received from localconf. 
 		// Custom updates sent directly through Monster$updateSettings should be sent after initialization to prevent overwrites
 		string override = portalConf$desc;
-
 		if(isset(override)){
 			list dt = llJson2List(override);
 			override = "";
@@ -399,7 +399,7 @@ onEvt(string script, integer evt, list data){
 }
 
 // Settings received
-onSettings(list settings){
+onSettings(list settings){ 
 	integer flagsChanged;
 	while(settings){
 		integer idx = l2i(settings, 0);
@@ -423,8 +423,9 @@ onSettings(list settings){
 		if(idx == 3)
 			atkspeed = l2f(dta,0);
 		
-		if(idx == 5 && l2f(dta,0)>5)
+		if(idx == 5 && l2f(dta,0)>=0){
 			wander = l2f(dta,0);
+		}
         
 		if(idx == MLC$height_add)
 			height_add = l2i(dta,0);

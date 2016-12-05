@@ -550,7 +550,7 @@ default
 						if(flags&PF_FULL_UNIQUE)
 							s = [];
 						
-						list exists = find([name], [sender], [], [], 0);
+						list exists = find([name], s, [], [], 0);
 						if(exists){
 							// It exists, schedule an add stack
 							// Manage stacks

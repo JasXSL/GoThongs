@@ -21,6 +21,7 @@ integer BFL;
 #define BFL_INTERRUPTED 2
 #define BFL_DEAD 4
 #define BFL_RECENT_CAST 0x8			// Used to limit spells from casting too often
+#define BFL_SILENCED 0x10
 
 float spells_per_sec_limit = 0.5;			// Max spells per sec that can be cast
 
@@ -239,7 +240,7 @@ timerEvent(string id, string data){
     else if(id == "F"){
 		// Find a spell to cast here
         if(aggro_target == ""){return;}
-        if(BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST) || RUNTIME_FLAGS&Monster$RF_NO_SPELLS){ 
+        if(BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST|BFL_SILENCED) || RUNTIME_FLAGS&Monster$RF_NO_SPELLS){ 
 			return;
 		}
         if(FXFLAGS & fx$NOCAST){return;}
@@ -420,7 +421,15 @@ default
 			integer pos = llListFindList(cooldowns, [id]);
 			if(~pos)cooldowns = llDeleteSubList(cooldowns, pos, pos);
 		}
-		
+		else if(METHOD == NPCSpellsMethod$silence){
+			if(l2i(PARAMS, 0)){
+				endCast(FALSE);
+				BFL = BFL|BFL_SILENCED;
+			}
+			else{
+				BFL = BFL&~BFL_SILENCED;
+			}
+		}
     }
 	
 

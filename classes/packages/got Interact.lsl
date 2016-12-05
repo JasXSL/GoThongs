@@ -12,6 +12,7 @@
 #define InteractConf$usePrimSwim
 #define InteractConf$maxRate 0.5
 #define InteractConf$soundOnFail "ea0ab603-63f5-6377-21bb-552aa4ba334f"
+#define InteractConf$soundOnSuccess "31086022-7f9a-65d1-d1a7-05571b8ea0f2"
 #define InteractConf$ignoreUnsit
 #define InteractConf$allowWhenSitting
 #define InteractConf$raiseEvent
@@ -22,7 +23,7 @@
 
 key level = "";
 integer CROSSHAIR;
-onInteract(key obj, string task, list params){
+integer onInteract(key obj, string task, list params){
     if(task == "book"){
         SharedMedia$setBook(llList2String(params, 0));
     }
@@ -41,8 +42,9 @@ onInteract(key obj, string task, list params){
         raiseEvent(InteractEvt$onInteract, mkarr(([obj, task])));
     }
 	*/
-    else return;
-    llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", 0.25);
+    else 
+		return FALSE;
+	return TRUE;
 }
 onDesc(key obj, string text){
     if(text == "CUSTOM")text = "Coop Player";

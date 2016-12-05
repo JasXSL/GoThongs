@@ -2,6 +2,8 @@
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"
 
+#define TEXTURE_NUMBERS "176e096d-7a43-9f72-1eb1-f58c186bca8d"
+
 integer BFL;
 #define BFL_TOGGLED 0x1
 #define BFL_FIRST_ENABLED 0x2		// If it's been enabled manually
@@ -135,7 +137,12 @@ updateTarget(key targ, key texture, integer team){
         ];
 		integer i;
 		for(i=16; i<24; i++){
-			out+= [PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), PRIM_POSITION, ZERO_VECTOR, PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0];
+			// Spinner
+			out+= [
+				PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), 
+				PRIM_POSITION, ZERO_VECTOR, 
+				PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0
+			];
 		}
     }
 	// Make sure target status is scheduled for update
@@ -166,7 +173,7 @@ default
 		];
 		list out = [];
 		
-		if(llKey2Name(boss) == ""){
+		if(llKey2Name(boss) == "" && boss != ""){
 			GUI$toggleBoss(LINK_THIS, "", FALSE);
 			/*
 			boss = "";
@@ -289,8 +296,11 @@ default
 						PRIM_DESC, description
 					];
 					if(stacks>1){
-						if(stacks >10)stacks = 10;
-						block+= [PRIM_COLOR, 3, <1,.5,0>, .5, PRIM_TEXTURE, 3, "6c058895-b95f-1c19-4f28-2e13a5c0a609", <1./16, 1,0>, <-1./16*8+1./32+(1./16*stacks), 0,0>, 0];
+						if(stacks >15)stacks = 15;
+						block+= [
+							PRIM_COLOR, 3, <1,1,1>, 0.9, 
+							PRIM_TEXTURE, 3, TEXTURE_NUMBERS, <1./16, 1,0>, <-1./16*8+1./32+(1./16*stacks), 0,0>, 0
+						];
 					}
 					float end = 16*16;
 					integer start = llRound(end*percentage);

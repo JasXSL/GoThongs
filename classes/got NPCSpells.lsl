@@ -4,7 +4,7 @@
 #define NPCSpellsMethod$wipeCooldown 4		// (int)id - -1 is all
 #define NPCSpellsMethod$setOutputStatusTo 5	// Sets players that are currently targeting this monster
 #define NPCSpellsMethod$setConf 6			// (float)max_spells_per_sec
-
+#define NPCSpellsMethod$silence 7		// (int)silence - Silence
 
 // For the spells array
 #define NPCS$SPELL_FLAGS 0			// 
@@ -42,6 +42,7 @@
 #define NPCSpells$startCast(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$startCast, [id], TNN)
 #define NPCSpells$wipeCooldown(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$wipeCooldown, [id], TNN)
 #define NPCSpells$setOutputStatusTo(targs) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setOutputStatusTo, targs, TNN)
+#define NPCSpells$silence(silenced) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$silence, [silenced], TNN)
 
 
 
