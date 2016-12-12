@@ -435,7 +435,7 @@ default
 
     }
 
-    if(METHOD == LevelMethod$despawn && method$byOwner){
+    if(METHOD == LevelMethod$despawn && method$byOwner && START_PARAM != 0){
         llDie();
     }
 	if(METHOD == LevelMethod$update && method$byOwner){
