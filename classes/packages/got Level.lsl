@@ -59,7 +59,7 @@ onEvt(string script, integer evt, list data){
 		
 		integer assets = l2i(data, 0);
 		integer spawns = l2i(data, 1);
-		
+				
 		if(!assets){
 			Level$loaded(LINK_THIS, 0);
 		}
@@ -79,7 +79,7 @@ timerEvent(string id, string data){
 	
 	if(id == "INI"){
 		if(~BFL&BFL_INI){
-			llOwnerSay("got Level @ timer(): Level script could not update. If you are developing this level, wear the HUD and then reset the level script.");
+			llOwnerSay("got Level ERROR: Could not update. This is usually because you're not wearing the HUD. Attach it and manually reset the level script or shout 'debug got Level'.");
 		}
 		Root$setLevel();
 	}
@@ -207,7 +207,7 @@ default
 			BFL = BFL&~BFL_ASSETS_LOADED;
 			BFL = BFL|BFL_LOADING;
 			
-			multiTimer(["LOAD_FINISH", "", 10, FALSE]);
+			multiTimer(["LOAD_FINISH", "", 20, FALSE]);
 			
 			Bridge$getCellData();
 			

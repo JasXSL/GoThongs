@@ -13,7 +13,7 @@ list MANIFEST;
 key VALIDATE;		// HTTP request to fetch manifest
 
 
-cleanup(key id){
+cleanup(key id, integer manual){
 	// Owner cleanup only
 	if(id == llGetOwner()){
 		Level$despawn(); 
@@ -21,7 +21,7 @@ cleanup(key id){
 	Portal$killAll(); 
 	GUI$toggleObjectives((string)LINK_ROOT, FALSE); 
 	Soundspace$reset();
-	raiseEvent(RootAuxEvt$cleanup, "");
+	raiseEvent(RootAuxEvt$cleanup, (str)manual);
 	RLV$reset();			// Reset RLV locks and windlight on cleanup			
 }
 
@@ -196,10 +196,10 @@ default
 			} 
 			
 			else if(message == "wipeCells"){ 
-				cleanup(llGetOwner());
+				cleanup(llGetOwner(), TRUE);
 				runOnPlayers(targ,
 					if(targ != llGetOwner())
-						RootAux$cleanup(targ);
+						RootAux$cleanup(targ, TRUE);
 				)
 			} 
 			
@@ -334,7 +334,7 @@ default
 	else if(METHOD == RootAuxMethod$cleanup){
 		if(id == "")
 			id = llGetOwner();
-		cleanup(id);
+		cleanup(id, l2i(PARAMS, 0));
 	}
     
     #define LM_BOTTOM  

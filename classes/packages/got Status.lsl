@@ -23,7 +23,7 @@ if(STATUS_FLAGS_PRE != STATUS_FLAGS){ \
 
 integer BFL = 1;
 #define BFL_NAKED 1				// 
-#define BFL_CAM 2				// Cam is overridden
+//#define BFL_CAM 2				// Cam is overridden
 #define BFL_CLIMB_ROOT 4		// Ended climb, root for a bit
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
 #define BFL_STATUS_SENT 0x20		// Status sent
@@ -113,7 +113,8 @@ toggleClothes(){
         
 // Returns TRUE if changed
 integer addDurability(float amount, string spellName, integer flags, integer isRegen){
-    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
+
+    if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = DURABILITY;
     amount*=spdmtm(spellName);
 	
@@ -184,7 +185,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 	return pre != DURABILITY;
 }
 integer addMana(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
+    if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = MANA;
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE)
@@ -196,7 +197,7 @@ integer addMana(float amount, string spellName, integer flags){
 	return pre != MANA;
 }
 integer addArousal(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount>0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
+    if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount>0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = AROUSAL;    
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE){
@@ -218,7 +219,7 @@ integer addArousal(float amount, string spellName, integer flags){
 	return pre != AROUSAL;
 }
 integer addPain(float amount, string spellName, integer flags){
-    if(STATUS_FLAGS&StatusFlag$dead || (BFL&BFL_CAM && amount>0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
+    if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount>0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = PAIN;
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE){
@@ -334,8 +335,9 @@ onEvt(string script, integer evt, list data){
 		outputStats();
 	}
 	else if(script == "jas RLV" && (evt == RLVevt$cam_set || evt == RLVevt$cam_unset)){
-		BFL = BFL&~BFL_CAM;
-		if(evt == RLVevt$cam_set)BFL = BFL|BFL_CAM;
+		
+		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$cutscene;
+		if(evt == RLVevt$cam_set)STATUS_FLAGS = STATUS_FLAGS|StatusFlag$cutscene;
 		outputStats();
 	}
 }
@@ -398,7 +400,7 @@ outputStats(){
 	
 	
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
-    if(FXFLAGS&fx$F_STUNNED || BFL&BFL_CAM || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading) && ~STATUS_FLAGS&StatusFlag$raped))
+    if(FXFLAGS&fx$F_STUNNED || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading|StatusFlag$cutscene) && ~STATUS_FLAGS&StatusFlag$raped))
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
     if(FXFLAGS&fx$F_ROOTED || (STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming) && ~FXFLAGS&fx$F_CAST_WHILE_MOVING) || BFL&BFL_CLIMB_ROOT)
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;

@@ -93,8 +93,8 @@
 #define StatusConst$COMBAT_DURATION 6
 
 // GoThongs supports max 16 flags
-#define StatusFlag$dead 0x1			// (int)dead - Checked for automatically by fx
-#define StatusFlag$game_started 0x2	// 
+#define StatusFlag$dead 0x1			// Checked for automatically by fx
+#define StatusFlag$cutscene 0x2		// In cutscene
 #define StatusFlag$casting 0x4		// 
 #define StatusFlag$raped 0x8		// Dead and raped.
 #define StatusFlag$inLevel 0x10		// If currently in a quest level. If not set it's just dicking around with the dev tools
@@ -111,7 +111,7 @@
 #define StatusFlags$combatLocked (StatusFlag$combat|StatusFlag$boss_fight)
 #define StatusFlags$noCast (StatusFlag$dead|StatusFlag$raped|StatusFlag$climbing)
 
-#define StatusFlags$NON_VIABLE (StatusFlag$dead|StatusFlag$raped)		// For monsters to assume the PC can't be interacted with
+#define StatusFlags$NON_VIABLE (StatusFlag$dead|StatusFlag$raped|StatusFlag$loading|StatusFlag$cutscene)		// For monsters to assume the PC can't be interacted with
 
 
 #define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)

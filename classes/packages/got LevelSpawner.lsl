@@ -9,7 +9,9 @@ quit(){
 
 onEvt(string script, integer evt, list data){
     if(script == "got RootAux" && evt == RootAuxEvt$cleanup){
-        startPos = ZERO_VECTOR;
+		integer manual = l2i(data, 0);
+        if(manual)
+			startPos = ZERO_VECTOR;
     }
 }
 
@@ -34,16 +36,20 @@ default
     if(METHOD == LevelSpawnerMethod$spawnLevel && method$byOwner){
 		string level = method_arg(0);
 		if(llGetInventoryType(level) != INVENTORY_OBJECT){
-			qd(level+" not found in HUD. This is usually caused by trying to start a quest being pre-tested by patrons. Consider becoming a patron if you want to test things ahead of time: https://www.patreon.com/jasx_games");
+			qd(level+" not found in HUD. This is usually caused by trying to start a quest being pre-tested by patrons or forgetting to install mod files. Consider becoming a patron if you want to test things ahead of time: https://www.patreon.com/jasx_games");
 			quit();
             return;
         }
-        if(startPos == ZERO_VECTOR)startPos = llGetPos()+<0,0,8>;
+        if(startPos == ZERO_VECTOR || llVecDist(startPos, llGetPos())>300){
+			startPos = llGetPos()+<0,0,8>;
+		}
             
         // Clear old
         Portal$killAll();
         Level$despawn();
         _portal_spawn_std(level, startPos, ZERO_ROTATION, <0,0,8>, FALSE, FALSE, FALSE);
+		
+		
     }
  
 	if(METHOD == LevelSpawnerMethod$remInventory && method$internal){

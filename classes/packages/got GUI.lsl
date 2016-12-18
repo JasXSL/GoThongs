@@ -297,9 +297,10 @@ default
 					];
 					if(stacks>1){
 						if(stacks >15)stacks = 15;
+						// The texture begins at 1, not 0
 						block+= [
 							PRIM_COLOR, 3, <1,1,1>, 0.9, 
-							PRIM_TEXTURE, 3, TEXTURE_NUMBERS, <1./16, 1,0>, <-1./16*8+1./32+(1./16*stacks), 0,0>, 0
+							PRIM_TEXTURE, 3, TEXTURE_NUMBERS, <1./16, 1,0>, <-1./16*8+1./32+(1./16*(stacks-1)), 0,0>, 0
 						];
 					}
 					float end = 16*16;
@@ -374,6 +375,7 @@ default
 		llListen(GCHAN, "", "", "");
 		llListen(GCHAN+1, "", "", "");
 		llSetTimerEvent(0.5); // tick status bars
+		
     } 
 	
 	listen(integer chan, string name, key id, string message){
