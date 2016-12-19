@@ -137,25 +137,14 @@ default
 		if(METHOD == 0){
 			llResetScript();
 		}
-        if(METHOD == SpawnerMethod$spawn){
+        if(METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn){
 			if(id == "")id = llGetLinkKey(LINK_THIS);
-		
-            string object = method_arg(0);
-            if(llGetInventoryType(object) != INVENTORY_OBJECT){qd("Missing asset: "+object);return;}
-            vector pos = (vector)method_arg(1);
-            rotation rot = (rotation)method_arg(2);
-			string desc = method_arg(3);		// DO something with this
-			integer debug = (integer)method_arg(4);		
-			integer temp = (integer)method_arg(5);
-			string spawnround = method_arg(6);
-			queue+= [object, pos, rot, desc, debug, temp, spawnround, id];
-			next(FALSE);
-        }
-		else if(METHOD == SpawnerMethod$spawnThese){
-			if(id == "")id = llGetLinkKey(LINK_THIS);
-			
 			
 			list data = PARAMS;
+			if(METHOD == SpawnerMethod$spawn){
+				data = [mkarr(PARAMS)];
+			}
+			
 			integer i;
 			for(i=0; i<llGetListLength(data); i++){
 				string s = llList2String(data, i);
