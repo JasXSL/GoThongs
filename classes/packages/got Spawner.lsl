@@ -37,6 +37,19 @@ next(integer forceRetry){
 	// Name
 	asset = llList2String(queue, 0);
 	
+	if (asset == "CALLBACK"){
+		sendCallback(
+			llList2String(queue, 1), 
+			llList2String(queue, 2), 
+			llList2Integer(queue, 3), 
+			"", 
+			llList2String(queue, 4)
+		);
+		queue = llDeleteSubList(queue, 0, 4);
+		next(FALSE);
+		return;
+	}
+	
 	// Description has not been sent
 	BFL = BFL&~BFL_READY;
 	// Spawn it
@@ -167,6 +180,22 @@ default
 			}
 			
 			next(FALSE);
+		}
+		else if(METHOD == SpawnerMethod$queueCallback){
+			if (BFL&BFL_QUEUE) {
+				if(method_arg(0) != ""){
+					queue += [
+						"CALLBACK",
+						id,
+						SENDER_SCRIPT,
+						METHOD,
+						method_arg(0)
+					];
+				}
+			}
+			else {
+				CB = method_arg(0);
+			}
 		}
 		else if(METHOD == SpawnerMethod$debug){
 			qd("Dumping queue");
