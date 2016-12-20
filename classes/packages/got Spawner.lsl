@@ -37,7 +37,7 @@ next(integer forceRetry){
 	// Name
 	asset = llList2String(queue, 0);
 	
-	if (asset == "CALLBACK"){
+	if (asset == "CB"){
 		sendCallback(
 			llList2String(queue, 1), 
 			llList2String(queue, 2), 
@@ -165,8 +165,8 @@ default
 			next(FALSE);
         }
 		else if(METHOD == SpawnerMethod$spawnThese){
-			if(id == "")id = llGetLinkKey(LINK_THIS);
-			
+			key requester = id;
+			if(requester == "")requester = llGetLinkKey(LINK_THIS);
 			
 			list data = PARAMS;
 			integer i;
@@ -174,16 +174,26 @@ default
 				string s = llList2String(data, i);
 				if(llJsonValueType(s, []) == JSON_ARRAY){
 					list dta = llJson2List(s);
-					if(llGetInventoryType(llList2String(dta,0)) == INVENTORY_OBJECT){
+					string asset = llList2String(dta,0);
+					if(asset == "CB"){
 						queue += [
-							llList2String(dta, 0),				// Obj name
+							"CB",
+							id,
+							SENDER_SCRIPT,
+							METHOD,
+							llList2String(dta, 1)
+						];
+					}
+					else if(llGetInventoryType(asset) == INVENTORY_OBJECT){
+						queue += [
+							asset,								// Obj name
 							(vector)llList2String(dta, 1),		// Position
 							(rotation)llList2String(dta, 2),	// Rotation
 							llList2String(dta, 3),				// Description
 							llList2Integer(dta, 4),				// Debug
 							llList2Integer(dta, 5),				// Temp
 							llList2String(dta, 6),				// spawnround
-							id									// sender
+							requester							// sender
 						];
 					}
 					else qd("Inventory missing: "+llList2String(dta, 0));
@@ -191,22 +201,6 @@ default
 			}
 			
 			next(FALSE);
-		}
-		else if(METHOD == SpawnerMethod$queueCallback){
-			if (BFL&BFL_QUEUE) {
-				if(method_arg(0) != ""){
-					queue += [
-						"CALLBACK",
-						id,
-						SENDER_SCRIPT,
-						METHOD,
-						method_arg(0)
-					];
-				}
-			}
-			else {
-				CB = method_arg(0);
-			}
 		}
 		else if(METHOD == SpawnerMethod$debug){
 			qd("Dumping queue");
