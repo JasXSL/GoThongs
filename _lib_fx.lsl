@@ -18,6 +18,10 @@
 	#define fx$HITFX 6							// [(vec)color, (int)flags]
 		#define fxhfFlag$NOANIM 1					// Don't use standard takehit anim
 		#define fxhfFlag$NOSOUND 2					// Don't use a default sound
+		#define fxhfFlag$PAIN_HEAVY 0x4				// Could be used for RP purposes
+		#define fxhfFlag$AROUSAL 0x8				// Could be used for RP purposes
+		#define fxhfFlag$AROUSAL_HEAVY 0x10			// Could be used for RP purposes
+		#define fxhfFlag$IGNORE_TYPE 0x20			// Prevents RP grunts
 		
 		#define fxhfColor$phys "<1,.5,.5>"
 		#define fxhfColor$arouse "<1,.5,1>"

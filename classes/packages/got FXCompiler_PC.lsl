@@ -74,6 +74,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
             }
             if(~flags&fxhfFlag$NOANIM)
                 AnimHandler$anim(mkarr((["got_takehit_highpri", "got_takehit"])), TRUE, 0, 0);
+			raiseEvent(FXCEvt$hitFX, mkarr(llDeleteSubList(fx,0,0)));
         }
         else if(t == fx$HUD_TEXT)
             runMethod((str)LINK_ROOT, "got Alert", AlertMethod$freetext, llList2List(fx, 1, -1), TNN);

@@ -6,6 +6,6 @@
 
 #define fxlib$forceSit(targ, on, allowUnsit, duration) FX$send(targ, llGetKey(), "[0,0,0,0,["+(str)duration+",0,\"forceSat\",[[31,\""+(str)on+"\","+(str)allowUnsit+"]],[],[],[],0,0,0]]", 0)
 
-#define fxlib$dealDamageOn(target, damage, color, team) FX$send(target, llGetKey(), "[9,0,0,0,[0,1,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\"]],[],[],[],0,0,0]]", team)
+#define fxlib$dealDamageOn(target, damage, color, team, hfxFlags) FX$send(target, llGetKey(), "[9,0,0,0,[0,1,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\","+(str)hfxFlags+"]],[],[],[],0,0,0]]", team)
 #define fxlib$hitFX(target, color, flags) FX$send(target, "", "[0,0,0,0,[0,0,\"\",[[6,\""+(str)color+"\", "+(str)flags+"]],[],[],[],0,0,0]]", TEAM_PC)
 
