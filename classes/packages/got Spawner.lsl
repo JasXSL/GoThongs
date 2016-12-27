@@ -1,43 +1,42 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
+#ifndef CONCURRENCY
+#define CONCURRENCY 5
+#endif
 
-list queue;			// [(str)name, (vec)pos, (rot)rot, (str)desc, (bool)debug, (bool)temp, (str)spawnround, (key)sender]
-#define QUEUESTRIDE 8
 integer BFL;
 #define BFL_QUEUE 1
-// If the object description has been sent
-#define BFL_READY 2
-
-integer rDesc; // Req desc of this item
-string asset;
-key current;
-integer attempts;
-integer num_spawned;
+#define BFL_REZING 2
 
 key ROOT_LEVEL;		// ID of level
 
-// Spawns the next asset
-next(integer forceRetry){
+list queue;			// [(str)name, (vec)pos, (rot)rot, (str)desc, (bool)debug, (bool)temp, (str)spawnround, (key)sender]
+#define QUEUESTRIDE 8
+list queue_rez;		// [(str)name, (str)desc, (str)spawnround, (key)sender]
+integer processing;	// Number of objects currently rezed and in desc processing
+list queue_desc;	// [(key)id, (str)name, (str)desc, (str)spawnround, (key)sender]
+#define QUEUEDESCSTRIDE 5
+
+
+next() {
 	// Clear the completion timer
 	multiTimer(["B"]);
 	
-	// Queue is empty or already going
-	if(queue == [] || (BFL&BFL_QUEUE && !forceRetry)){
-		if(queue == []){  
-			multiTimer(["FORCE_NEXT"]);	
+	if(queue == [] || queue_rez != [] || BFL&BFL_REZING || (processing >= CONCURRENCY)){
+		if(queue == []){
 			multiTimer(["B", "", 2, FALSE]);
 		}
 		return;
 	}
 	
-
-	// Globals
-	
-	// Name
-	asset = llList2String(queue, 0);
+	// Object Name
+	string asset = llList2String(queue, 0);
 	
 	if (asset == "CB"){
+		if(processing > 0){
+			return;
+		}
 		sendCallback(
 			llList2String(queue, 1), 
 			llList2String(queue, 2), 
@@ -46,50 +45,56 @@ next(integer forceRetry){
 			llList2String(queue, 4)
 		);
 		queue = llDeleteSubList(queue, 0, 4);
-		next(FALSE);
+		next();
 		return;
 	}
 	
-	// Description has not been sent
-	BFL = BFL&~BFL_READY;
-	// Spawn it
-	_portal_spawn_std(asset, llList2Vector(queue,1), llList2Rot(queue,2), -<0,0,8>, llList2Integer(queue, 4), TRUE, llList2Integer(queue,5));
+	if(llGetInventoryType(asset) != INVENTORY_OBJECT){
+		qd("Error. Asset not found: "+mkarr(llList2List(queue, 0, QUEUESTRIDE-1))+". The level may work but you probably want to restart.");
+		queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
+		next();
+		return;
+	}
 	
+	BFL = BFL|BFL_REZING;
 	
-	// Wait for it to finish
-	BFL = BFL|BFL_QUEUE;
-	
-	// let's wait for the object
+	// Set/reset clean up timer
 	multiTimer(["FORCE_NEXT", 1, 30, FALSE]);
-
+	
+	// Spawn it
+	_portal_spawn_std(asset, llList2Vector(queue, 1), llList2Rot(queue, 2), -<0,0,8>, llList2Integer(queue, 4), TRUE, llList2Integer(queue, 5));
+	queue_rez = [asset, llList2String(queue, 3), llList2String(queue, 6), llList2String(queue, 7)];
+	queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
 }
 
 // An item has been initialized, let's continue
-done(){
-	queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
-	BFL = BFL&~BFL_QUEUE;
-	next(FALSE);
-	num_spawned++;
+done(key id){
+	integer pos = llListFindList(queue_desc, [id]);
+	if(~pos){
+		queue_desc = llDeleteSubList(queue_desc, pos, pos+QUEUEDESCSTRIDE-1);
+		if(queue_desc == []) multiTimer(["FORCE_NEXT"]);
+		processing--;
+		next();
+	}
 }
 
 timerEvent(string id, string data){
-	// Just move to the next
-	if(id == "A"){
-		done();
-	}
 	// B is sent once all objects have been spawned
-	else if(id == "B"){
+	if(id == "B"){
 		#ifdef IS_HUD
 		Level$loaded(ROOT_LEVEL, TRUE);
 		#else
 		Level$loaded(LINK_ROOT, FALSE);
 		#endif
-		num_spawned = 0;
 	}
-	// If SL didn't rez in a timely fashion, retry
+	// Something has gotten stuck
 	else if(id == "FORCE_NEXT"){
-		qd("Error. SL dropped spawn success on "+mkarr(llList2List(queue, 0, QUEUESTRIDE-1))+". The level may work but you probably want to restart.");
-		done();
+		qd("Error. SL dropped spawn success on "+mkarr(queue_desc)+". The level may work but you probably want to restart.");
+		// Clear post-rez processing queue, anything in it at this point has gotten stuck
+		queue_desc = [];
+		processing = 0;
+		// Try next
+		next();
 	}
 	
 }
@@ -107,15 +112,34 @@ default
 		llListen(playerChan(llGetKey()), "", "", "");
 	}
 	
+	object_rez(key id){
+		queue_desc += [id] + queue_rez;
+		queue_rez = [];
+		processing++;
+		BFL = BFL&~BFL_REZING;
+		if(processing < CONCURRENCY){
+			next();
+		}
+	}
+	
 	// The script listens to it's own object key chan
 	// SP is received when a portal is ready to receive a description
 	// DN is received when a portal has received the description
 	listen(integer chan, string name, key id, string message){
 		if(llGetOwnerKey(id) != llGetOwner())return;
-		// An object wants to fetch data
-		if(message == "SP")Portal$iniData(id, llList2String(queue, 3), llList2String(queue, 6), llList2String(queue,7));  
+		if(message == "SP"){
+			integer pos = llListFindList(queue_desc, [id]);
+			if(~pos){
+				Portal$iniData(id, llList2String(queue_desc, pos+2), llList2String(queue_desc, pos+3), llList2String(queue_desc, pos+4));
+			}
+			else {
+				qd("Error. Got unexpected description request from object '"+llKey2Name(id)+"' "+(string)id+". The level may work but you probably want to restart.");
+				// HAX: Send something to shut up the object
+				Portal$iniData(id, "", "", llGetKey());
+			}
+		}
 		else if(message == "DN"){
-			done();
+			done(id);
 		}
 	}
 	
@@ -190,7 +214,7 @@ default
 				}
 			}
 			
-			next(FALSE);
+			next();
 		}
 		else if(METHOD == SpawnerMethod$debug){
 			qd("Dumping queue");
@@ -202,7 +226,10 @@ default
 		
 		else if(METHOD == SpawnerMethod$getAsset){
 			string asset = method_arg(0);
-			if(llGetInventoryType(asset) == INVENTORY_NONE)return qd("Unable to give asset '"+asset+"', not found in inventory!");
+			if(llGetInventoryType(asset) == INVENTORY_NONE) {
+				qd("Unable to give asset '"+asset+"', not found in inventory!");
+				return;
+			}
 			llGiveInventory(id, asset);
 		}
     }
