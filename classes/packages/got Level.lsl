@@ -139,8 +139,8 @@ default
 				if(llGetInventoryType(val) != INVENTORY_NONE){ 
 					llRemoveInventory(val); 
 					llSleep(.1); 
-					Spawner$getAsset(val);
 				} 
+				Spawner$getAsset(val);
 			}
 			
 			

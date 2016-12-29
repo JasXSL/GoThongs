@@ -310,6 +310,10 @@ timerEvent(string id, string data){
 		// Set it so we can attack again
 		BFL = BFL&~BFL_ATTACK_CD;
     }
+	
+	else if(id == "INI"){
+		LocalConf$ini();
+	}
 }
 
 
@@ -318,11 +322,12 @@ onEvt(string script, integer evt, list data){
         rezpos = llGetPos();
         PLAYERS = data;
         LocalConf$ini();
+		multiTimer(["INI", "", 5, FALSE]);	// Some times localconf fails, I don't know why
     }
     
 	// Tunnels legacy into the new command
     else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
-				
+		multiTimer(["INI"]);
 		list out = [];	// Strided list
 		integer i;
 		for(i=0; i<count(data); i++){
@@ -343,6 +348,7 @@ onEvt(string script, integer evt, list data){
 					out += llList2List(d, 0, 1);
 			)
 		}
+		
 		Monster$updateSettings(out);
     }
 	

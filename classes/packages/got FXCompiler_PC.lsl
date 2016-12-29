@@ -70,7 +70,8 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
             // Also flags and stuff here
             integer flags = llList2Integer(fx,2);
             if(~flags&fxhfFlag$NOSOUND){
-                llTriggerSound(randElem((["71224087-bce9-d63f-f582-ccba8bb21e85", "b78573df-e593-b717-301c-ed55e8ad4916", "1d724698-4223-d381-f38c-d9c86986684d"])), .5+llFrand(.5));
+				list sounds = (["71224087-bce9-d63f-f582-ccba8bb21e85", "b78573df-e593-b717-301c-ed55e8ad4916", "1d724698-4223-d381-f38c-d9c86986684d"]);
+                llTriggerSound(randElem(sounds), .5+llFrand(.5));
             }
             if(~flags&fxhfFlag$NOANIM)
                 AnimHandler$anim(mkarr((["got_takehit_highpri", "got_takehit"])), TRUE, 0, 0);
