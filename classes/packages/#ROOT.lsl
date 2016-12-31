@@ -78,7 +78,7 @@ integer setTarget(key t, key icon, integer force, integer team){
 	
 	// Try to fetch from description
 	if(team == -1){
-		parseDesc(t, resources, status, fx, sex, te);
+		parseDesc(t, resources, status, fx, sex, te, junk);
 		team = te;
 	}
     

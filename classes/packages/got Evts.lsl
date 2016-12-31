@@ -11,26 +11,31 @@ list output_cache = [];		// score, key
 list nearby_cache = [];		// key, key...
 vector cache_pos;
 rotation cache_rot;
+key cache_targ;
 
 
 #define descIsProper(desc) llGetSubString(desc, 0, 2) == "$M$" && (int)llGetSubString(desc, 3, 3) != TEAM
 
-output(){
+// If FIRST is true, it will ignore current target
+output(integer first){
 	if(output_cache == []){
 		integer i;
 		for(i=0; i<llGetListLength(nearby_cache); i++){
-			vector pos = prPos(llList2Key(nearby_cache, i));
-			
+			key t = l2k(nearby_cache, i);
+			vector pos = prPos(t);
+				
 			float dist = llVecDist(pos, llGetPos());
 			float angle = llRot2Angle(llRotBetween(llRot2Fwd(llGetRot()), llVecNorm(pos-llGetPos())))*RAD_TO_DEG;
 			float score = dist+angle/8;
-			output_cache += [score, llList2Key(nearby_cache, i)];
 			
+			// Prevents targeting the same one again
+			if(first && t == cache_targ)
+				score = 9001;
+			output_cache += [score, llList2Key(nearby_cache, i)];
 		}
 		output_cache = llListSort(output_cache, 2, TRUE);
 	}
-	
-	
+
 	if(output_cache == [])return;
 	
 	
@@ -52,9 +57,12 @@ output(){
 	}
 }
 
-onEvent(string script, integer evt, list data){
+onEvt(string script, integer evt, list data){
 	if(script == "got Status" && evt == StatusEvt$team)
-		team = l2i(data,0);
+		TEAM = l2i(data,0);
+	else if(script == "#ROOT" && evt == RootEvt$targ){
+		cache_targ = l2s(data, 0);
+	}
 }
 
 default
@@ -87,8 +95,10 @@ default
 			if(descIsProper(desc)){
 				nearby_cache+=llDetectedKey(i);
 			}
+			
 		}
-		output();
+		
+		output(TRUE);
 	}
 	
 	
@@ -114,7 +124,19 @@ default
     
     if(method$internal){
         if(METHOD == EvtsMethod$cycleEnemy){
-			if(llVecDist(llGetPos(), cache_pos)>2 || llAngleBetween(llGetRot(), cache_rot)>PI/4 || ~BFL&BFL_RECENT_CACHE || nearby_cache == []){
+			
+			
+			if(
+				// Moved more than 1m
+				llVecDist(llGetPos(), cache_pos)>1 || 
+				// Rotated more than 45 deg
+				llAngleBetween(llGetRot(), cache_rot)>PI/8 || 
+				// Not cached within 4 sec
+				~BFL&BFL_RECENT_CACHE || 
+				// Nobody nearby found
+				nearby_cache == []
+			){
+				// Build a new list of targets
 				BFL = BFL|BFL_RECENT_CACHE;
 				cache_pos = llGetPos();
 				cache_rot = llGetRot();
@@ -125,7 +147,7 @@ default
 			}
 			else{
 				pointer++;
-				output();
+				output(FALSE);
 			}
 			llSetTimerEvent(4);
 		}
