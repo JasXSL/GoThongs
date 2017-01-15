@@ -106,6 +106,9 @@ default
 	}
     // Public code can be put here
 	if(METHOD == AlertMethod$freetext){
+		// Prevent RLV injection
+		if(llGetSubString(method_arg(0), 0, 0) == "@")
+			return;
 		alert(method_arg(0), (integer)method_arg(1), method_arg(2));
 	}
 

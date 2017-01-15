@@ -641,10 +641,10 @@ default
         if(METHOD == FXMethod$rem || METHOD == FXMethod$addStacks){
 		
             integer rEvent = (integer)method_arg(0); 	// also num_stacks for addStacks
-            string name = method_arg(1);				// Name of package
-            integer tag = l2i(PARAMS, 2);				//
-            string sender = method_arg(3);				//
-            integer pid = l2i(PARAMS, 4);				//
+            list names = llJson2List(method_arg(1));				// Name of package
+            list tags = llJson2List(method_arg(2));				//
+            list senders = llJson2List(method_arg(3));				//
+            list pids = llJson2List(method_arg(4));				//
 			integer overwrite = l2i(PARAMS, 5); 		// If this is FALSE it's an overwrite and should not send the rem event
             integer flags = l2i(PARAMS, 6);				// 
 			integer amount = l2i(PARAMS, 7);			// Max nr to remove
@@ -652,11 +652,14 @@ default
 			integer is_dispel = l2i(PARAMS, 8);			// Dispel event will be raised
 
 			// Owner is always S
-            if(sender == llGetOwner())
-				sender = "s";
+			integer pos = llListFindList(senders, [(str)llGetOwner()]);
+            if(~pos)
+				senders = llListReplaceList(senders, ["s"], pos, pos);
+			
+			key sender = id;
 			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
-			list find = llListSort(find([name], [sender], [tag], [pid], flags), 1, FALSE);	
+			list find = llListSort(find(names, senders, tags, pids, flags), 1, FALSE);	
 
 			// Jump since we can't have continues
 			@delContinue;

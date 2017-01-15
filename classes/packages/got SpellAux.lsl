@@ -112,7 +112,8 @@ string runMath(string FX, integer index, key targ){
 		// Spell damage done mod for index, added into D
 		"M", spdmdm(index),
 		// HEaling done multiplier
-		"h", hdmod
+		"h", hdmod,
+		"T", TEAM
     ]);
 	
     integer i;
