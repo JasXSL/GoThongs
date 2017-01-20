@@ -85,10 +85,10 @@ recacheFlags(){
     } \
 	else if(t == fx$FULLREGEN)Status$fullregen(); \
 	else if(t == fx$DISPEL){ \
-        integer detrimental = l2i(fx,1); \
-        if(detrimental)detrimental = PF_DETRIMENTAL; \
+        integer flags = -PF_DETRIMENTAL; \
+        if(l2i(fx,1))flags = PF_DETRIMENTAL; \
         integer maxnr = llList2Integer(fx, 2); \
-		FX$rem(FALSE, "", "", "", 0, FALSE, detrimental, TRUE, maxnr); \
+		FX$rem(FALSE, "", "", "", 0, FALSE, flags, TRUE, maxnr); \
     } \
 	else if(t == fx$REM){ \
 		FX$rem(llList2String(fx, 1), llList2String(fx, 2), llList2String(fx, 3), llList2String(fx, 4), llList2String(fx, 5), llList2String(fx, 6), llList2String(fx, 7), llList2String(fx, 8), llList2String(fx, 9)); \

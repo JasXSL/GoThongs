@@ -33,7 +33,8 @@
 
 #define FXMethod$refresh 2				// Runs a user defined refresh() function to check status updates etc
 #define FXMethod$rem 3					// raiseEvt, name, tag, sender, pid, runOnRem, flags, isDispel, maxNR - Use "" to disregard a value
-										// if sender is prefixed with ! it will remove everyone BUT that attacker
+										// name, tag, sender, pid can all be arrays as well which are ORed
+										// if flags is an array, it gets ANDed, otherwise flags are ORed. If the flags value is negative, it is NOT. So -PF_DETRIMENTAL = benficial
 #define FXMethod$setPCs 4				// (arr)pc_keys - Set PC keys on send to PC events
 #define FXMethod$setNPCs 5				// (arr)pc_keys - Set NPC keys to send to on NPC events
 #define FXMethod$hasTags 6				// (var)tag(s) - Callbacks TRUE/FALSE if the player has ANY of these tags
@@ -135,7 +136,7 @@ string FX_buildCondition(integer cond, list vars){
 // Packages are the effect objects bound to an FX wrapper. A wrapper can contain multiple packages, and a package can contain multiple fx objects
 // These are general package flags
 #define PF_DETRIMENTAL 0x1            	// Package is detrimental.
-//#define PF_NOT_UNIQUE 0x2				// Allows multiple effects with the same name
+//#define PF_OVERWRITE 0x2				// Overwrites if player is already affected by the same name package from the same caster
 #define PF_EVENT_ON_OVERWRITE 0x4		// Raises the removal event even when overwritten. Only works together with PF_UNIQUE
 #define PF_ALLOW_WHEN_DEAD 0x8			// 
 #define PF_ALLOW_WHEN_QUICKRAPE 0x10	// 

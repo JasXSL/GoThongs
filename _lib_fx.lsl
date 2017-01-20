@@ -79,7 +79,7 @@
 	#define fx$PARTICLES 34						// (float)duration, (int)prim, (arr)particles - PC_ONLY - See ThongMan$particles
 	#define fx$TAUNT 35							// (bool)inverse - NPC ONLY, resets everyone but this player's aggro. If inverse is set, reset this player's aggro only
 	#define fx$REM 36							// Accepts the same arguments as FX$rem at got FX.lsl
-	#define fx$PULL 37							// (vec)pos, (float)speed - PC only. Instant effect but is cleared on effect fade for duration effects
+	#define fx$PULL 37							// (vec)pos, (float)speed - PC only. (Use PF_TRIGGER_IMMEDIATE) Instant effect but is cleared on effect fade for duration effects
 	#define fx$SPAWN_VFX 38						// (str)name, (vec)posOffset, (rot)rotoffset, (int)flags, (int)startParam - PC only. Spawns a visual effect from the SpellFX container on the HUD
 	#define fx$REGION_SAY 39					// (int)chan, (str)message - Does what it says on the box
 	#define fx$AROUSAL_MULTI 40					// (float)add - PC only, Increases or decreases arousal generation
@@ -138,5 +138,6 @@
 	#define fx$TAG_LIFTED 4						// Lifted in the air by the leg hand
 	#define fx$TAG_LUBED 5						// Triggered by trap, can be used by monsters
 	#define fx$TAG_NAKED 6
+	
 	
 	

@@ -52,13 +52,13 @@ integer FX_FLAGS;
 
 
 // Searches packages and returns the index
-list find(list names, list senders, list tags, list pids, integer flags){
+list find(list names, list senders, list tags, list pids, list flags){
     list out; integer i;
 
     for(i=0; i<llGetListLength(PACKAGES); i+=PSTRIDE){ // Cycle all packages
         
 		integer add = TRUE; // If this should be added to output
-		
+		integer x; 
 		list slice = pSlice(i);
 		
         string n = pName(slice);		// Name of package
@@ -70,9 +70,19 @@ list find(list names, list senders, list tags, list pids, integer flags){
 		}
 		
 		// See if we can find a package with these flags
-		if(add && flags){
-			if(!(pFlags(slice)&flags))
-				add = FALSE;
+		if(add && flags != []){
+			for(x=0; x<count(flags) && add; ++x){
+				integer inverse = l2i(flags,x) < 0;
+				integer f = llAbs(l2i(flags, x));
+				if(f && (
+					// Fail if we don't have any of the flags
+					(!inverse && !(pFlags(slice)&f)) || 
+					// Fail if we do have any of the flags
+					(inverse && pFlags(slice)&f)
+				)){
+					add = FALSE;
+				}
+			}
 		}
 		
 		// See if we can find a package sent by this person
@@ -91,7 +101,6 @@ list find(list names, list senders, list tags, list pids, integer flags){
 		// See if it has any of these tags
 		list t = llJson2List(pTags(slice));
         if(add && tags != [] && llList2Integer(tags,0) != 0){
-            integer x; 
 			integer found;
             for(x = 0; x<llGetListLength(tags) && !found; x++){
                 if(~llListFindList(tags, llList2List(t, x, x)))
@@ -130,7 +139,7 @@ if(script != cls$name){
 			dispeller = llList2String(data, 1);
 		}
 		
-		packages = find([], [], [], [llList2Integer(data,0)], 0);	// Returns ID
+		packages = find([], [], [], [llList2Integer(data,0)], []);	// Returns ID
 		
 	}
 	// This was an external event
@@ -138,7 +147,7 @@ if(script != cls$name){
 		// This works because the only strings in evt_index are the labels
         integer pos = llListFindList(EVT_INDEX, [script+"_"+(string)evt]);
         if(~pos){
-            packages = find([],[],[],getEvtIdsByIndex(pos), 0);
+            packages = find([],[],[],getEvtIdsByIndex(pos), []);
         }
     }
     
@@ -550,7 +559,7 @@ default
 						if(flags&PF_FULL_UNIQUE)
 							s = [];
 						
-						list exists = find([name], s, [], [], 0);
+						list exists = find([name], s, [], [], []);
 						if(exists){
 							// It exists, schedule an add stack
 							// Manage stacks
@@ -646,7 +655,7 @@ default
             list senders = llJson2List(method_arg(3));				//
             list pids = llJson2List(method_arg(4));				//
 			integer overwrite = l2i(PARAMS, 5); 		// If this is FALSE it's an overwrite and should not send the rem event
-            integer flags = l2i(PARAMS, 6);				// 
+            list flags = llJson2List(l2s(PARAMS, 6));				// 
 			integer amount = l2i(PARAMS, 7);			// Max nr to remove
 			if(amount<1)amount = -1;					// Set to -1 for all
 			integer is_dispel = l2i(PARAMS, 8);			// Dispel event will be raised

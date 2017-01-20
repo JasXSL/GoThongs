@@ -430,6 +430,7 @@ anim(string anim, integer start){
 			){ \
 				list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);) \
 			} \
+			updateDesc(); \
         } \
 		else if(evt == MonsterEvt$attack){ \
             key targ = llList2Key(data, 0); \
