@@ -29,6 +29,7 @@ integer BFL = 1;
 #define BFL_STATUS_SENT 0x20		// Status sent
 #define BFL_AVAILABLE_BREAKFREE 0x40
 #define BFL_AO_OFF 0x80
+#define BFL_QTE 0x100			// In a quicktime event
 
 // Cache
 integer PRE_CONTS;
@@ -340,6 +341,14 @@ onEvt(string script, integer evt, list data){
 		if(evt == RLVevt$cam_set)STATUS_FLAGS = STATUS_FLAGS|StatusFlag$cutscene;
 		outputStats();
 	}
+	else if(script == "got Evts" && evt == EvtsEvt$QTE){
+		BFL = BFL&~BFL_QTE;
+		if(l2i(data, 0)){
+			BFL = BFL|BFL_QTE;
+		}
+
+		outputStats();
+	}
 }
 
 
@@ -400,12 +409,17 @@ outputStats(){
 	
 	
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
-    if(FXFLAGS&fx$F_STUNNED || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading|StatusFlag$cutscene) && ~STATUS_FLAGS&StatusFlag$raped))
+    if(FXFLAGS&fx$F_STUNNED || BFL&BFL_QTE || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading|StatusFlag$cutscene) && ~STATUS_FLAGS&StatusFlag$raped)){
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
-    if(FXFLAGS&fx$F_ROOTED || (STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming) && ~FXFLAGS&fx$F_CAST_WHILE_MOVING) || BFL&BFL_CLIMB_ROOT)
-        controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
-	if(FXFLAGS&fx$F_NOROT)
+		//qd("FX: "+(str)FXFLAGS+" :: BFL: "+(str)BFL+" SF: "+(str)STATUS_FLAGS);
+	}
+    if(FXFLAGS&fx$F_ROOTED || (STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming) && ~FXFLAGS&fx$F_CAST_WHILE_MOVING) || BFL&BFL_CLIMB_ROOT){
+		controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
+	}
+	if(FXFLAGS&fx$F_NOROT){
 		controls = controls|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
+	}
+	
 	
     if(PRE_CONTS != controls){
         PRE_CONTS = controls;

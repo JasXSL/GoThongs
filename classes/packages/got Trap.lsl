@@ -16,9 +16,14 @@ string base_anim;				// Loop
 integer max_anims = 0;
 integer cur_anim;
 
+key VICTIM;
+
+list PLAYERS;
+
 integer P_SPLAT;
 onEvt(string script, integer evt, list data){
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
+		PLAYERS = data;
         LocalConf$ini();
     }else if(script == "got LocalConf"){
         if(evt == LocalConfEvt$iniData){
@@ -37,7 +42,9 @@ onEvt(string script, integer evt, list data){
 				cur_anim++;
 				if(cur_anim>=max_anims)cur_anim = 0;
 			}
-			if(anim != "" && llGetPermissions()&PERMISSION_TRIGGER_ANIMATION)llStartAnimation(anim); 
+			if(anim != "" && llGetPermissions()&PERMISSION_TRIGGER_ANIMATION){
+				llStartAnimation(anim); 
+			}
 			
 			llLinkParticleSystem(P_SPLAT, [
                 PSYS_PART_MAX_AGE,.4, 
@@ -100,6 +107,7 @@ key getSitter(){
 default
 {
     state_entry(){
+		PLAYERS = [(str)llGetOwner()];
 		memLim(1.5);
         raiseEvent(evt$SCRIPT_INIT, "");
         links_each(nr, name,
@@ -133,14 +141,21 @@ default
     changed(integer change){
 		
         if(change&CHANGED_LINK){
-            if(getSitter()){
+			key sitter = getSitter();
+            if(sitter){
+				if(llListFindList(PLAYERS, [(str)sitter]) == -1){
+					llUnSit(sitter);
+					return;
+				}
+			
                 BFL = BFL|BFL_TRIGGERED;
-                sitter = getSitter();
+				VICTIM = sitter;
                 raiseEvent(TrapEvent$seated, "[\""+(string)sitter+"\"]");
 				llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
             }else if(BFL&BFL_TRIGGERED){
                 raiseEvent(TrapEvent$unseated, "[\""+(string)sitter+"\"]");
 				if(cooldown_full>0)multiTimer([TIMER_TRIGGER_RESET, "", cooldown_full, FALSE]);
+				fxlib$removeSpellByName(VICTIM, "_Q");
             }
         }
     }
@@ -161,8 +176,8 @@ default
         CB - The callback you specified when you sent a task
     */ 
     if(method$isCallback)return;
-    if(method$internal){
-        if(METHOD == TrapMethod$forceSit){
+
+    if(METHOD == TrapMethod$forceSit){
             if(BFL&(BFL_CD|BFL_TRIGGERED))return;
             if(cooldown>0){
                 BFL = BFL|BFL_CD;
@@ -171,15 +186,21 @@ default
 			float dur = (float)method_arg(1);
 			key seat = llGetLinkKey(P_SEAT);
 			if((key)method_arg(2))seat = (key)method_arg(2);
+			if(seat == NULL_KEY)
+				seat = llGetKey();
 			
 			// Strip
 			integer strip = 0;
 			if(l2i(PARAMS, 3))strip = fx$F_SHOW_GENITALS;
 				
-            FX$send(method_arg(0), llGetKey(), "[1,0,0,0,["+(string)dur+",65,\"_Q\",[[13,"+(str)(16|strip)+"],[31,"+(string)seat+",1]],[],[],[],0,0,0]]", TEAM_NPC);
-            raiseEvent(TrapEvent$triggered, "");
-        }
+        FX$send(method_arg(0), llGetKey(), "[1,0,0,0,["+(string)dur+",65,\"_Q\",[[13,"+(str)(16|strip)+"],[31,"+(string)seat+",1]],[],[],[],0,0,0]]", TEAM_NPC);
+        raiseEvent(TrapEvent$triggered, "");
     }
+    
+	
+	if(METHOD == TrapMethod$end){
+		llUnSit(getSitter());
+	}
     
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl" 

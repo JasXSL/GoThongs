@@ -182,7 +182,7 @@ default
 
             Status$getTextureDesc(targ, desc);
         }
-        raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0)]));
+        raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0), llDetectedTouchFace(0)]));
     }
     /*
     touch_end(integer total){ 

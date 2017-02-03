@@ -206,20 +206,25 @@ toggleSpellButtons(integer show){
         }
     }else{
         for(i=0; i<llGetListLength(ABILS); i++){
+			if(count(CACHE)/CSTRIDE <= i) //TODO: Changeme
+				out+= [PRIM_POSITION, ZERO_VECTOR];
+			else{
             vector pos = <0, 0.29586-0.073965-0.14793*(i-1), .31>;
             if(i == 0)pos = <0,0,.27>;
-            out += [
-                PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-                PRIM_POSITION, pos,
-                PRIM_COLOR, 0, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA,
-                PRIM_COLOR, 1, <1,1,1>, 1, 
-                PRIM_COLOR, 3, <0,0,0>, 0,
-                PRIM_COLOR, 4, <0,0,0>, 0,
-                PRIM_COLOR, 5, <0,0,0>, 0,
-				PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
-                PRIM_POSITION, pos+<.02,0,0>,
-				PRIM_COLOR, 0, <1,1,1>, 0
-            ];
+			if(i == 5)pos = <0,0,.35>;
+				out += [
+					PRIM_LINK_TARGET, llList2Integer(ABILS, i),
+					PRIM_POSITION, pos,
+					PRIM_COLOR, 0, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA,
+					PRIM_COLOR, 1, <1,1,1>, 1, 
+					PRIM_COLOR, 3, <0,0,0>, 0,
+					PRIM_COLOR, 4, <0,0,0>, 0,
+					PRIM_COLOR, 5, <0,0,0>, 0,
+					PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
+					PRIM_POSITION, pos+<.02,0,0>,
+					PRIM_COLOR, 0, <1,1,1>, 0
+				];
+			}
         }
     }
 	llSetLinkPrimitiveParamsFast(0, out);

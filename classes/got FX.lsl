@@ -61,7 +61,7 @@
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names
 #endif
 #ifndef fx$COND_HAS_PACKAGE_TAG
-	#define fx$COND_HAS_PACKAGE_TAG 2			// [(int)tag1, (int)tag2...] - Recipient has a tackage with a tag with at least one of these
+	#define fx$COND_HAS_PACKAGE_TAG 2			// [(int)tag1, (int)tag2...] - Recipient has a package with a tag with at least one of these
 #endif
 
 //#define FXConf$useEvtListener
