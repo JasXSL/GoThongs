@@ -221,13 +221,15 @@ default
         rotation rot = (rotation)method_arg(2);
         integer debug = (integer)method_arg(3);
 		string description = method_arg(4);
+		string spawnround = method_arg(5);
+		
 		
         if(llGetInventoryType(asset) == INVENTORY_OBJECT){
             if(debug)llOwnerSay("Spawning local asset: "+asset);
-			Spawner$spawnInt(asset, pos, rot, description, debug, FALSE, "");
+			Spawner$spawnInt(asset, pos, rot, description, debug, FALSE, spawnround);
         }else{
             if(debug)llOwnerSay("Item '"+asset+"' not found in level. Loading from HUD.");
-            Spawner$spawn(asset, pos, rot, description, debug, FALSE, "");
+            Spawner$spawn(asset, pos, rot, description, debug, FALSE, spawnround);
         }
 	}
 

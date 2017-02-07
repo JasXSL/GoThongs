@@ -119,6 +119,7 @@ qteButtonTouched(integer button){
 		// DONE
 		if(--QTE_STAGES == 0){
 			toggleQTE(FALSE);
+			onQteEnd(TRUE);
 			return;
 		}
 		
@@ -139,8 +140,8 @@ qteButtonTouched(integer button){
 toggleQTE(integer on){
 	
 	if(!on){
+		multiTimer(["QTE"]);
 		llSetLinkPrimitiveParamsFast(P_BUTTONS, [PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR]);
-		onQteEnd();
 		return;
 	}
 	
@@ -165,8 +166,8 @@ toggleQTE(integer on){
 	BFL = BFL&~BFL_QTE_PRESSED;
 }
 
-onQteEnd(){
-	sendCallback(l2s(QTE_SENDER_DATA, 0), l2s(QTE_SENDER_DATA, 1), EvtsMethod$startQuicktimeEvent, mkarr([EvtsEvt$QTE$END]), l2s(QTE_SENDER_DATA, 2));
+onQteEnd(integer success){
+	sendCallback(l2s(QTE_SENDER_DATA, 0), l2s(QTE_SENDER_DATA, 1), EvtsMethod$startQuicktimeEvent, mkarr(([EvtsEvt$QTE$END, success])), l2s(QTE_SENDER_DATA, 2));
 	raiseEvent(EvtsEvt$QTE, "0");
 	QTE_SENDER_DATA = [];
 }
@@ -286,14 +287,19 @@ default
 		
 		// Tells any active QTE sender that it has ended, useful if QTE ended by someone other than the one that initiated it
 		if(!QTE_STAGES)
-			onQteEnd();
+			onQteEnd(FALSE);
 		
 		CB_DATA = [EvtsEvt$QTE$APPLY];
 		list targ = [nr];
 		if(id != "")
 			targ = [id];
 		QTE_SENDER_DATA = targ+[SENDER_SCRIPT, CB];
-		toggleQTE(QTE_STAGES);
+		
+		float preDelay = l2f(PARAMS, 1);
+		if(preDelay)
+			multiTimer(["QTE", 0, preDelay, FALSE]);
+		else
+			toggleQTE(QTE_STAGES);
 	}
 
     // Public code can be put here

@@ -134,7 +134,7 @@
 // Tags
 	#define fx$TAG_LEGS_SPREAD 1				// Used by skelcrawler
 	#define fx$TAG_QUICKRAPE_A 2				// Used by the trap script
-	#define fx$TAG_UNRAOUSED 3					// Used by anemone
+	#define fx$TAG_UNAROUSED 3					// Used by anemone
 	#define fx$TAG_LIFTED 4						// Lifted in the air by the leg hand
 	#define fx$TAG_LUBED 5						// Triggered by trap, can be used by monsters
 	#define fx$TAG_NAKED 6
