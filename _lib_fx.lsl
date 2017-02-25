@@ -94,7 +94,7 @@
 		#define FXAF$SELF 0x1						// Apply FX on victim
 		#define FXAF$CASTER 0x2						// Apply FX on caster
 		#define FXAF$AOE 0x4						// Apply FX on AOE
-	#define fx$ADD_STACKS 49					// (int)stacks, (str)name... - See FXMethod$addStacks -  Adds or removes stacks without affecting the timer
+	#define fx$ADD_STACKS 49					// (int)stacks, (str)name... - See FXMethod$addStacks -  Adds (resets timer) or removes stacks (does not affect timer)
 	#define fx$SPELL_HIGHLIGHT 50				// (int)index - PC Only - Draws a yellow border around a spell.
 	#define fx$HEALING_TAKEN_MULTI 51			// (float)add - Increases or decreases healing received
 	#define fx$HEALING_DONE_MULTI 52			// (float)add - Increases or decreases healing done

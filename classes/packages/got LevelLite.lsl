@@ -4,11 +4,69 @@
 #include "got/_core.lsl"
 integer slave;
 
-// Load the level if portal is live
-#define onEvt(script, evt, data) \
-	if(script == "got Portal" && evt == evt$SCRIPT_INIT){\
-		LevelLoader$load(FALSE, ""); \
-	}\
+integer BFL;
+#define BFL_MONSTERS_LOADED 0x1
+#define BFL_ASSETS_LOADED 0x2
+#define BFL_SCRIPTS_LOADED 0x4
+#define BFL_INI 0x8
+#define BFL_LOAD_REQ (BFL_MONSTERS_LOADED|BFL_ASSETS_LOADED)
+
+onEvt(string script, integer evt, list data){
+	
+	if(script == "got Portal" && evt == evt$SCRIPT_INIT){
+		LevelLoader$load(FALSE, "");
+	}
+	
+	if(script == "got LevelLoader"){
+		// Returns true/false if assets/spawns exist
+		if(evt == LevelLoaderEvt$defaultStatus){
+			integer assets  = l2i(data, 0);
+			integer spawns = l2i(data, 1);
+					
+			if(!assets){
+				BFL = BFL|BFL_ASSETS_LOADED;
+			}
+			if(!spawns){
+				BFL = BFL|BFL_MONSTERS_LOADED;
+			}
+			checkLoadFinish(FALSE);
+			if(assets || spawns){
+				multiTimer(["LOAD_FINISH", "", 60, FALSE]);
+			}
+		}
+		else if(evt == LevelLoaderEvt$queueFinished){
+			list d = llJson2List(l2s(data, 1));
+			if(~llListFindList(d, [""])){
+				if(l2s(data, 0) == "HUD")
+					BFL = BFL|BFL_MONSTERS_LOADED;
+				else
+					BFL = BFL|BFL_ASSETS_LOADED;
+				
+				checkLoadFinish(FALSE);
+			}
+		}
+	}
+}
+
+timerEvent(string id, string data){
+	
+	if(id == "LOAD_FINISH"){
+		checkLoadFinish(TRUE);
+	}
+
+}
+
+checkLoadFinish(integer force){
+	if(BFL&BFL_INI)
+		return;
+	
+	if(~BFL&(BFL_MONSTERS_LOADED|BFL_ASSETS_LOADED) && !force)
+		return;
+		
+	BFL = BFL|BFL_INI;
+	raiseEvent(LevelLiteEvt$loaded, "");
+
+}
 
 default
 {
@@ -29,6 +87,8 @@ default
 		}
 	}
 	
+	timer(){multiTimer([]);}
+	
     #include "xobj_core/_LM.lsl"
     /*
         Included in all these calls:
@@ -41,6 +101,7 @@ default
         return;
     }
 	
+
 	
     if(METHOD == LevelMethod$load && method$byOwner){
         integer debug = (integer)method_arg(0);
@@ -64,6 +125,19 @@ default
         )
         
     }
+	
+	if(METHOD == LevelMethod$interact){
+        return raiseEvent(LevelLiteEvt$interact, mkarr(([llGetOwnerKey(id), method_arg(0), method_arg(1)]))); 
+    }
+    if(METHOD == LevelMethod$trigger){
+        return raiseEvent(LevelLiteEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
+    }
+    if(METHOD == LevelMethod$idEvent){
+        list out = [id, method_arg(1), method_arg(2), method_arg(3)];
+        integer evt = (integer)method_arg(0);
+        return raiseEvent(evt, mkarr(out));
+    }
+
     
 
     #define LM_BOTTOM  

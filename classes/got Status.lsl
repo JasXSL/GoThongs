@@ -66,7 +66,7 @@
 #define StatusEvt$death_hit 9				// void - HP has reached 0 but fx$F_NO_DEATH is set
 #define StatusEvt$genitals 10				// (int)genitals - Whenever genitals have changed. _core has a definition of these flags
 #define StatusEvt$loading_level 11			// [(key)level]
-#define StatusEvt$resources 12				// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
+#define StatusEvt$resources 12				// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain, (float)hpPerc] - PC only
 #define StatusEvt$monster_aggro 13			// [player1, player2...] - Players who have aggroed the monster in order of max aggro
 #define StatusEvt$team 14					// (int)team - Team has been updated
  

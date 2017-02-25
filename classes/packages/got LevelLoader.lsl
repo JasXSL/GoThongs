@@ -4,11 +4,13 @@
 integer BFL;
 #define BFL_HAS_ASSETS 0x1
 #define BFL_HAS_SPAWNS 0x2
+#define BFL_INI 0x4
 
 timerEvent(string id, string data){
 	if(id == "INI"){
 		list d = [BFL&BFL_HAS_ASSETS, BFL&BFL_HAS_SPAWNS];
 		raiseEvent(LevelLoaderEvt$defaultStatus, mkarr(d));
+		BFL = BFL|BFL_INI;
 	}
 }
 
@@ -32,7 +34,16 @@ default
         SENDER_SCRIPT - (var)parameters
         CB - The callback you specified when you sent a task
     */
-
+	if(method$isCallback){
+		if(SENDER_SCRIPT == "got Spawner"){
+			list parse = llJson2List(CB);
+			if(l2s(parse, 0) == "HUD" || l2s(parse, 0) == "CUSTOM"){
+				raiseEvent(LevelLoaderEvt$queueFinished, CB);
+			}
+		}
+		return;
+	}
+	
 
 // Spawn the level, this goes first as it's fucking memory intensive
     if(METHOD == LevelLoaderMethod$load && method$internal){
@@ -88,11 +99,14 @@ default
 			)
 		)
 		
-		if(out){
+
 			// Send out
-			Spawner$spawnThese(llGetOwner(), out);
-			BFL = BFL|BFL_HAS_SPAWNS;
-		}
+		out+= llList2Json(JSON_ARRAY, [
+			"_CB_", "[\"HUD\","+mkarr(groups)+"]"
+		]);
+		Spawner$spawnThese(llGetOwner(), out);
+		BFL = BFL|BFL_HAS_SPAWNS;
+		
 
 			
 		//qd("Spawned "+(str)spawned+" monsters");
@@ -133,10 +147,13 @@ default
 				}
 			)
 		)
-		if(out){
-			Spawner$spawnThese(LINK_THIS, out);
-			BFL = BFL|BFL_HAS_ASSETS;
-		}
+		
+		out+= llList2Json(JSON_ARRAY, [
+			"_CB_", "[\"CUSTOM\","+mkarr(groups)+"]"
+		]);
+		Spawner$spawnThese(LINK_THIS, out);
+		BFL = BFL|BFL_HAS_ASSETS;
+		
 		
 
 		out = [];

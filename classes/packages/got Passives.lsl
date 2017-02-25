@@ -287,6 +287,27 @@ output(){
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(output), "");
 }
 
+
+// Evaluates a proc, acceptable are acceptable args, var is the var passed from the event
+integer evalProc(list acceptable, string var){
+	if(l2s(acceptable,0) == "")return true; 				// If the event condition at index is unset, it should always be accepted
+	if(~llListFindList(acceptable, [var]))return true;				// The exact value exists
+	
+	// Check math
+	list_shift_each(acceptable, v,
+		string s = llGetSubString(v, 0, 0);
+		float comp = (float)trim(llGetSubString(v, 1,-1));
+		float c = (float)var;
+		if(s == "<" && c < comp)
+			return TRUE;
+			
+		if(s == ">" && c > comp)
+			return TRUE;
+	)
+	
+	return FALSE;
+}
+
 onEvt(string script, integer evt, list data){
     
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
@@ -375,12 +396,8 @@ onEvt(string script, integer evt, list data){
 					list eva = explode("||", llList2String(against, y));
 					// Event data from event
 					string cur = llList2String(data, y);
-		
-					// Validate comparison here, currently a simple == check, could be expanded with num comparisons
-					if(
-						l2s(eva,0) != "" && 				// If the event condition at index is unset, it should always be accepted
-						llListFindList(eva, [cur]) == -1	// But if it's not unset and not the same as the condition, then we fail
-					){
+					
+					if(!evalProc(eva, cur)){
 						//qd("Failed because "+l2s(eva,0)+" not in "+mkarr(eva));
 						jump targNext;						// Goes to the next target
 					}
@@ -459,6 +476,7 @@ addProc(string script, integer evt, integer id){
 		}
 		
 	}
+	
 	
 	// We have looped through entirely. If we haven't yet found an exisiting event to add to, do so now
 	EVT_CACHE += [script, evt, mkarr([id])];

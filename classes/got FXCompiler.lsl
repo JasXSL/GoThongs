@@ -101,11 +101,15 @@ recacheFlags(){
 		float range = l2f(fx,3); \
 		key t = caster; \
 		if(t == llGetOwner() || t == llGetKey()){t = "";} \
-		if(!targs || targs&FXAF$SELF || (targs&FXAF$CASTER && t == "")){FX$run("", l2s(fx,1));} \
+		if(!targs || targs&FXAF$SELF || (targs&FXAF$CASTER && t == "")){ \
+			FX$run("", l2s(fx,1)); \
+		} \
 		if(t != "" && targs&FXAF$CASTER && (range<=0 || llVecDist(llGetPos(), prPos(caster))<=range)){ \
 			FX$send(caster, llGetKey(), l2s(fx,1), TEAM); \
 		} \
-		if(targs&FXAF$AOE){FX$aoe(range, llGetKey(), l2s(fx,1), TEAM);} \
+		if(targs&FXAF$AOE){ \
+			FX$aoe(range, llGetKey(), l2s(fx,1), TEAM); \
+		} \
 	}\
 	else if(t == fx$ADD_STACKS){ \
 		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9)); \

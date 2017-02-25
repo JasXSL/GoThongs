@@ -374,7 +374,8 @@ outputStats(){
 			(int)DURABILITY, (int)maxDurability(), 
 			(int)MANA, (int)maxMana(), 
 			(int)AROUSAL, (int)maxArousal(), 
-			(int)PAIN,(int)maxPain()
+			(int)PAIN,(int)maxPain(),
+			DURABILITY/maxDurability()
 		]));
 
 		BFL = BFL|BFL_STATUS_SENT;

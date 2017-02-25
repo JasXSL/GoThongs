@@ -16,6 +16,8 @@ string base_anim;				// Loop
 integer max_anims = 0;
 integer cur_anim;
 
+integer QTE;					// QTE taps
+
 key VICTIM;
 
 list PLAYERS;
@@ -152,8 +154,12 @@ default
 				VICTIM = sitter;
                 raiseEvent(TrapEvent$seated, "[\""+(string)sitter+"\"]");
 				llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
+				if(QTE){
+					Evt$startQuicktimeEvent(sitter, QTE, 2, "a");
+				}
             }else if(BFL&BFL_TRIGGERED){
-                raiseEvent(TrapEvent$unseated, "[\""+(string)sitter+"\"]");
+				Evt$startQuicktimeEvent(VICTIM, 0,0, TNN);
+                raiseEvent(TrapEvent$unseated, "[\""+(string)VICTIM+"\"]");
 				if(cooldown_full>0)multiTimer([TIMER_TRIGGER_RESET, "", cooldown_full, FALSE]);
 				fxlib$removeSpellByName(VICTIM, "_Q");
             }
@@ -175,7 +181,19 @@ default
         SENDER_SCRIPT - (var)parameters   
         CB - The callback you specified when you sent a task
     */ 
-    if(method$isCallback)return;
+    if(method$isCallback){
+		if(SENDER_SCRIPT == "got Evts" && METHOD == EvtsMethod$startQuicktimeEvent){
+            integer type = l2i(PARAMS, 0);
+            
+            if(type == EvtsEvt$QTE$BUTTON){
+                raiseEvent(TrapEvent$qteButton, l2s(PARAMS, 0));
+            }
+            else if(type == EvtsEvt$QTE$END){
+                llUnSit(getSitter());
+            }
+        }
+		return;
+	}
 
     if(METHOD == TrapMethod$forceSit){
             if(BFL&(BFL_CD|BFL_TRIGGERED))return;
@@ -192,11 +210,13 @@ default
 			// Strip
 			integer strip = 0;
 			if(l2i(PARAMS, 3))strip = fx$F_SHOW_GENITALS;
-				
+		
         FX$send(method_arg(0), llGetKey(), "[1,0,0,0,["+(string)dur+",65,\"_Q\",[[13,"+(str)(16|strip)+"],[31,"+(string)seat+",1]],[],[],[],0,0,0]]", TEAM_NPC);
         raiseEvent(TrapEvent$triggered, "");
     }
-    
+    if(METHOD == TrapMethod$useQTE){
+		QTE = l2i(PARAMS, 0);
+	}
 	
 	if(METHOD == TrapMethod$end){
 		llUnSit(getSitter());

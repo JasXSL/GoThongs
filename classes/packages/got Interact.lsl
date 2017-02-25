@@ -32,7 +32,7 @@ integer onInteract(key obj, string task, list params){
         LocalConf$stdInteract(obj, llGetOwner(), [real_key]);
     }
     else if(task == "LVIN"){
-        runMethod(level, "got Level", LevelMethod$interact, [obj, mkarr(params)], TNN);
+        runOmniMethod("got Level", LevelMethod$interact, [obj, mkarr(params)], TNN);
     }
 	else if(task == "CLEAR_CAM"){
 		RLV$clearCamera((str)LINK_ROOT);
