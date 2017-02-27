@@ -22,7 +22,7 @@
 #define LevelLiteEvt$trigger LevelEvt$trigger			// (key)player, (key)asset, (str)data - A trigger has been hit. Asset may have been removed from the sim by the time this is raised, don't rely too much on it
 #define LevelLiteEvt$idSpawned LevelEvt$idSpawned 		// (key)monster, (str)id, (arr)vars - An item has spawned as live
 #define LevelLiteEvt$idDied LevelEvt$idDied 			// (key)monster, (str)id, (arr)vars, (str)spawnround - An item has been killed
-
+#define LevelLiteEvt$playerDied LevelEvt$playerDied
 
 
 

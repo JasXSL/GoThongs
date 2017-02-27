@@ -18,9 +18,15 @@ updateFxAttachments(){
 	integer i;
 	for(i=0; i<count(FX_ATTACHMENTS); i+=3){
 		if(llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == ""){
-			llRezAtRoot(llList2String(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_VECTOR, ZERO_ROTATION, 1);
+			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
+			//llRezAtRoot(llList2String(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_VECTOR, ZERO_ROTATION, 1);
 		}
 	}
+}
+
+timerEvent(string id, string data){
+	if(id == "ATC")
+		updateFxAttachments();
 }
 
 
@@ -36,7 +42,10 @@ default
 {
     // Timer event
     //timer(){multiTimer([]);}
-    state_entry(){memLim(2);}
+    state_entry(){
+		multiTimer(["ATC", "", 5, TRUE]);
+	}
+	timer(){multiTimer([]);}
 	
 	object_rez(key id){
 		str name = llKey2Name(id);
@@ -119,7 +128,6 @@ default
 					FX_ATTACHMENTS += ([val, NULL_KEY, 1]);
 				}
 			)
-			
 			updateFxAttachments();
 		}
 		else if(METHOD == RapeMethod$remFXAttachments){
@@ -138,6 +146,7 @@ default
 					}
 				}
 			)
+			
 			updateFxAttachments();
 		}
 		

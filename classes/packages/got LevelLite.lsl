@@ -106,7 +106,7 @@ default
     if(METHOD == LevelMethod$load && method$byOwner){
         integer debug = (integer)method_arg(0);
 		string group = method_arg(1);
-        raiseEvent(LevelEvt$load, mkarr(([debug, group])));
+        raiseEvent(LevelLiteEvt$load, mkarr(([debug, group])));
 		LevelLoader$load(debug, group);
         return;
     }
@@ -137,7 +137,10 @@ default
         integer evt = (integer)method_arg(0);
         return raiseEvent(evt, mkarr(out));
     }
-
+	if(METHOD == LevelMethod$died){
+		raiseEvent(LevelLiteEvt$playerDied, (str)id);
+		return;
+	}
     
 
     #define LM_BOTTOM  

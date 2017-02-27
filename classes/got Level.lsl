@@ -48,6 +48,7 @@
 #define LevelEvt$fetchObjectives 9	// [(key)clicker] - Try to fetch objectives if there are any
 #define LevelEvt$potion 10			// [(key)agent, (str)name] Potion used
 
+#define LevelEvt$playerDied 11		// [(key)hud] - Raised when a player dies
 
 
 // Level description config: [[(int)task, (var)param1, (var)param2...]...]
@@ -73,7 +74,7 @@
 #define Level$loadPerc(targ, id, perc) runMethod(targ, "got Level", LevelMethod$loadPerc, [id, perc], TNN)
 
 // These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}
-#define Level$died() runMethod(ROOT_LEVEL, "got Level", LevelMethod$died, [], TNN)
+#define Level$died() runOmniMethod("got Level", LevelMethod$died, [], TNN)
 #define Level$cellData(data) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellData, [data], TNN)
 #define Level$cellDesc(desc) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellDesc, [desc], TNN)
 #define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)

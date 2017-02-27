@@ -321,7 +321,8 @@ default
         return raiseEvent(evt, mkarr(out));
     }
 	if(METHOD == LevelMethod$died){
-		DEATHS++;
+		++DEATHS;
+		raiseEvent(LevelEvt$playerDied, (str)id);
 		return;
 	}
 	if(METHOD == LevelMethod$getObjectives){
@@ -347,8 +348,16 @@ default
 			added = TRUE;
 		}
 		
+		list needed;
+		runOnPlayers(targ,
+			if(llKey2Name(targ) != "")
+				needed+= targ;
+		)
+		
+		if(needed == [])return;
+		
 		// Done
-        if(PLAYERS_COMPLETED == PLAYERS && ~BFL&BFL_COMPLETED){
+        if(PLAYERS_COMPLETED == needed && ~BFL&BFL_COMPLETED){
 			runOnPlayers(targ,
 				GUI$toggleObjectives(targ, FALSE); // Clear objectives
 			)

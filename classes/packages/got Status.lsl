@@ -547,8 +547,9 @@ default
 		if(FXFLAGS&fx$F_BLURRED){ \
 			divisor = 8; \
 		} \
-		if(pre&fx$F_BLURRED != FXFLAGS&fx$F_BLURRED) \
+		if((pre&fx$F_BLURRED) != (FXFLAGS&fx$F_BLURRED)){ \
 			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force"); \
+		}\
 		\
         fxModDmgTaken = i2f(l2f(data, FXCUpd$DAMAGE_TAKEN)); \
         fxModManaRegen = i2f(l2f(data, FXCUpd$MANA_REGEN)); \
