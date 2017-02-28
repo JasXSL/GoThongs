@@ -159,7 +159,7 @@
 #define Status$monster_aggroed(player, range, team) runLimitMethod(llGetOwner(), "got Status", StatusMethod$monster_aggroed, [player, range, team], TNN, range)
 #define Status$monster_rapeMe() runOnPlayers(k, runLimitMethod(k, "got Status", StatusMethod$monster_rapeMe, [], TNN, 10);)
 #define Status$monster_overrideDesc(desc) runMethod((str)LINK_ROOT, "got Status", StatusMethod$monster_overrideDesc, [desc], TNN)
-#define Status$monster_setTeam(targ, team) runMethod((str)targ, "got Status", StatusMethod$setTeam, [team], TNN)
+#define Status$setTeam(targ, team) runMethod((str)targ, "got Status", StatusMethod$setTeam, [team], TNN)
 
 
 

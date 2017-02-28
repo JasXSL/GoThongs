@@ -74,7 +74,7 @@
 #define Level$loadPerc(targ, id, perc) runMethod(targ, "got Level", LevelMethod$loadPerc, [id, perc], TNN)
 
 // These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}
-#define Level$died() runOmniMethod("got Level", LevelMethod$died, [], TNN)
+#define Level$died() runOnPlayers(targ, runOmniMethodOn(targ, "got Level", LevelMethod$died, [], TNN);)
 #define Level$cellData(data) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellData, [data], TNN)
 #define Level$cellDesc(desc) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellDesc, [desc], TNN)
 #define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)
