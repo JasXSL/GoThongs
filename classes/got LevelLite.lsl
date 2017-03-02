@@ -24,5 +24,6 @@
 #define LevelLiteEvt$idDied LevelEvt$idDied 			// (key)monster, (str)id, (arr)vars, (str)spawnround - An item has been killed
 #define LevelLiteEvt$playerDied LevelEvt$playerDied
 
+#define LevelLite$loadSharp(group) runOmniMethod("got LevelLite", LevelMethod$load, [0,group], TNN)
 
 

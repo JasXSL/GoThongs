@@ -358,6 +358,7 @@ outputStats(){
 	
 	// Check team
 	integer t = fxTeam;
+	
 	if(t == -1)
 		t = TEAM_DEFAULT;
 		
@@ -380,26 +381,27 @@ outputStats(){
 
 		BFL = BFL|BFL_STATUS_SENT;
 		multiTimer(["_", "", 0.25, FALSE]);
-		
-		if(DURABILITY>maxDurability())
-			DURABILITY = maxDurability();
-		if(MANA>maxMana())
-			DURABILITY = maxDurability();
-		
-		
-		// int is 0000000 << 21 hp_perc, 0000000 << 14 mana_perc, 0000000 << 7 arousal_perc, 0000000 pain_perc 
-		string data = (string)(
-			(llRound(DURABILITY/maxDurability()*127)<<21) |
-			(llRound(MANA/maxMana()*127)<<14) |
-			(llRound(AROUSAL/maxArousal()*127)<<7) |
-			llRound(PAIN/maxPain()*127)
-		);
-		llSetObjectDesc(data+"$"+(str)STATUS_FLAGS+"$"+(str)FXFLAGS+"$"+(str)GENITAL_FLAGS+"$"+(str)TEAM);
 	}
+	
+	// Always keep description up to date
+	if(DURABILITY>maxDurability())
+		DURABILITY = maxDurability();
+	if(MANA>maxMana())
+		DURABILITY = maxDurability();
+		
+	// int is 0000000 << 21 hp_perc, 0000000 << 14 mana_perc, 0000000 << 7 arousal_perc, 0000000 pain_perc 
+	string data = (string)(
+		(llRound(DURABILITY/maxDurability()*127)<<21) |
+		(llRound(MANA/maxMana()*127)<<14) |
+		(llRound(AROUSAL/maxArousal()*127)<<7) |
+		llRound(PAIN/maxPain()*127)
+	);
+	llSetObjectDesc(data+"$"+(str)STATUS_FLAGS+"$"+(str)FXFLAGS+"$"+(str)GENITAL_FLAGS+"$"+(str)t);
 	
 	// Team change goes after because we need to update description first
 	if(pre != t){
 		TEAM = t;
+		
 		raiseEvent(StatusEvt$team, TEAM);
 		runOnPlayers(targ,
 			if(targ == llGetOwner())
@@ -676,9 +678,10 @@ default
     
     else if(METHOD == StatusMethod$fullregen){
 		
+		integer ignoreInvul = l2i(PARAMS, 0);
         Rape$end();
         
-		if(STATUS_FLAGS&StatusFlag$dead){
+		if(STATUS_FLAGS&StatusFlag$dead && ! ignoreInvul){
 			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$invul;
 			outputStats();
 			multiTimer([TIMER_INVUL,"", 6, FALSE]);

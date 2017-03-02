@@ -192,7 +192,7 @@ default
 			} 
 			
 			else if(message == "coop"){
-				Root$targetThis(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE, TEAM_PC);
+				Root$targetThis(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE, -1);
 			} 
 			
 			else if(message == "wipeCells"){ 

@@ -73,7 +73,7 @@ onEvt(string script, integer evt, list data){
 			toggle(TRUE);
         }
 		else if(evt == RootEvt$coop_hud){
-			COOP_HUD = l2k(data, 0);
+			COOP_HUD = l2k(data, 1);
 		}
     }
 	else if(script == "got Status" && evt == StatusEvt$team){

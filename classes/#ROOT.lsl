@@ -15,7 +15,7 @@
 #define RootEvt$targ 3							// [(key)targ, (key)icon, (int)team]
 #define RootEvt$players 4						// (arr)players
 #define RootEvt$level 5							// [(key)id] - Whenever a new cell has been ressed
-#define RootEvt$coop_hud 6						// (key)id - Id of coop HUD. Used by GUI
+#define RootEvt$coop_hud 6						// ["", (key)player1, (key)player2...] - Id of coop HUDs. Used by GUI
 
 //#define Root$refreshThong(targ) runMethod(targ, "#ROOT", RootMethod$refreshThong, [], TNN)
 //#define Root$setThongIni(on) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setThongIni, [on], TNN)

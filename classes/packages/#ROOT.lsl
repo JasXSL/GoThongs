@@ -1,4 +1,5 @@
 #define SCRIPT_IS_ROOT
+#define USE_EVENTS
 #define ALLOW_USER_DEBUG 1
 #include "got/_core.lsl"
  
@@ -8,17 +9,22 @@ float lastclick;
 integer lcb;
 
 list PLAYERS;
-key COOP_HUD;
+list COOP_HUDS;
 list ADDITIONAL; 		// Additional players
 
 key TARG;
 key TARG_ICON;
 integer TARG_TEAM;
+integer TEAM = TEAM_PC;
+
 
 key ROOT_LEVEL;			// Current level being played
 
 integer BFL;
 #define BFL_WILDCARD 0x1
+
+#define refreshTarget() \
+	setTarget(TARG, TARG_ICON, TRUE, -1);
 
 // If you want to use listen override, it ends up here
 // onListenOverride(integer chan, key id, string message){}
@@ -42,6 +48,13 @@ timerEvent(string id, string data){
 		Level$bind(llGetOwner());
 	}
 }
+
+
+#define onEvt(script, evt, data)  \
+	if(script == "got Status" && evt == StatusEvt$team && l2i(data,0) != TEAM){ \
+		TEAM = l2i(data, 0); \
+		refreshTarget(); \
+	}
 
 
 integer setTarget(key t, key icon, integer force, integer team){
@@ -73,9 +86,11 @@ integer setTarget(key t, key icon, integer force, integer team){
 	// Make sure we target a HUD if we target a player
 	if(t == llGetOwner())
 		t = llGetKey();
-	else if(~llListFindList(getPlayers(), [(str)t]))
-		t = COOP_HUD;
-	
+	else{
+		integer pos = llListFindList(getPlayers(), [(str)t]);
+		if(~pos)
+			t = l2k(COOP_HUDS, pos);
+	}
 	// Try to fetch from description
 	if(team == -1){
 		parseDesc(t, resources, status, fx, sex, te, junk);
@@ -89,12 +104,12 @@ integer setTarget(key t, key icon, integer force, integer team){
 	// Check if target still exists
 	if(t)
 		multiTimer(["T", "", 2, TRUE]);
-    
+		
     // Make sure your target knows you are targeting them
-	string t = TARG;
-	if(t == llGetKey())
-		t = (string)LINK_THIS;
-    Status$setTargeting(t, TRUE);
+	string ta = TARG;
+	if(ta == llGetKey())
+		ta = (string)LINK_THIS;
+    Status$setTargeting(ta, TRUE);
     
 	
     return TRUE;
@@ -162,9 +177,10 @@ default
         else if(ln == "BOOKBG")
             SharedMedia$setBook("");
         
-        else if(ln == "OP1" || ln == "OPB1")setTarget(llGetOwner(), TEXTURE_PC, TRUE, TEAM_PC);    // Add player default texture
-        else if((ln == "OP2" || ln == "OPB2") && llList2String(PLAYERS, 1) != "")
-            setTarget(llList2String(PLAYERS, 1), TEXTURE_COOP, TRUE, TEAM_PC); // Add coop partner texture
+        else if(ln == "OP1" || ln == "OPB1")setTarget(llGetOwner(), TEXTURE_PC, TRUE, TEAM);    // Add player default texture
+        else if((ln == "OP2" || ln == "OPB2") && llList2String(PLAYERS, 1) != ""){
+            setTarget(llList2String(PLAYERS, 1), TEXTURE_COOP, TRUE, -1); // Add coop partner texture
+		}
         else if(ln == "FRB1" || ln == "FR1")setTarget("", "", TRUE, 0);
 		else if(ln == "PROGRESS")Level$getObjectives();
         else if(llGetSubString(ln,0,1) == "FX"){
@@ -254,9 +270,10 @@ default
 		}
 		
 		if(CB == "ATTACHED"){
-			if(~llListFindList(PLAYERS, [(str)llGetOwnerKey(id)])){
-				COOP_HUD = id;
-				raiseEvent(RootEvt$coop_hud, (str)COOP_HUD);
+			integer pos = llListFindList(PLAYERS, [(str)llGetOwnerKey(id)]);
+			if(~pos){
+				COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
+				raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
 			}
 		}
 		
@@ -274,8 +291,11 @@ default
             if(targ == llList2String(PLAYERS, 1))return;
 
             PLAYERS = [(string)llGetOwner()];
-			COOP_HUD = "";
-			raiseEvent(RootEvt$coop_hud, (str)COOP_HUD);
+			COOP_HUDS = [];
+			integer i;
+			for(i=0; i<count(PLAYERS); ++i)
+				COOP_HUDS += "";
+			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
             if(targ){
 				PLAYERS+=[targ];
                 AS$(ARoot$nowInParty);
@@ -284,6 +304,8 @@ default
             }else
                 AMS$(ARoot$coopDisband);
             
+			
+			
             savePlayers();
 			
 			Root$attached(); // Fetches coop HUD
@@ -334,9 +356,10 @@ default
 			return;
 		}
 		
-		if(~llListFindList(PLAYERS, [(str)okey])){
-			COOP_HUD = id;
-			raiseEvent(RootEvt$coop_hud, (str)COOP_HUD);
+		integer pos = llListFindList(PLAYERS, [(str)okey]);
+		if(~pos){
+			COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
+			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
 		}
 		
 	}
