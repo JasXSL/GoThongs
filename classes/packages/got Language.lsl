@@ -15,7 +15,7 @@ default
 {
     state_entry()
     {
-        memLim(1.5);
+        memLim(2);
         llSetTimerEvent(1);
     }
 
