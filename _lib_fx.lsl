@@ -102,6 +102,8 @@
 	#define fx$SET_TEAM 54						// (int)team - (PC ONLY for now)Overrides the current team
 	#define fx$CUBETASKS 55						// (arr)tasks - PC ONLY Sends cubetasks to the owner
 	#define fx$BEFUDDLE 56						// (float)perc - PC ONLY - Adds a chance on spell cast to target a random player
+	#define fx$CONVERSION 57					// (int)conversion1, (int)conversion2... - PC ONLY - See got FXCompiler.lsl
+	
 	
 // conditions
 	// Built in

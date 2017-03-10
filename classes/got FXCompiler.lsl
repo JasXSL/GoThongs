@@ -5,7 +5,7 @@
 // When you add something here, make sure you also set it as a default in got Passives global var: list compiled_actives;
 // Multipliers should actually be additive when setting them through passives. so .1 is 1.1x
 //#define FXCEvt$update 1				// See _core TASK_FX - It has replaced this but still uses the same index
-	#define FXCUpd$ATTACH -3			// (arr)attachments
+	#define FXCUpd$ATTACH -3			// (arr)attachments - 
 	#define FXCUpd$PROC -2				// Special case used in got Passives, See the got Passives.lsl function buildProc() for data
 	#define FXCUpd$UNSET_FLAGS -1		// Special case only used when setting got Passives 
 	#define FXCUpd$FLAGS 0 				// (int)flags - Default 0
@@ -18,8 +18,8 @@
 	#define FXCUpd$MANACOST 7			// (float)multiplier - Default 1
 	#define FXCUpd$CRIT 8				// (float)add - Default 0
 	
-	#define FXCUpd$PAIN_MULTI 9			// (float)multiplier - Default 1
-	#define FXCUpd$AROUSAL_MULTI 10		// (float)multiplier - Default 1
+	#define FXCUpd$PAIN_MULTI 9			// (float)multiplier - Default 1 - Pain taken
+	#define FXCUpd$AROUSAL_MULTI 10		// (float)multiplier - Default 1 - Arousal taken
 	
 	// Mainly passives, multipliers are actually ADDitive so 0.1 would mean multiply by 1.1
 	#define FXCUpd$HP_ADD 11			// (int)hp - Default 0
@@ -34,20 +34,54 @@
 	#define FXCUpd$PAIN_REGEN 20		// (float)multiplier - Default 1
 	#define FXCUpd$AROUSAL_REGEN 21		// (float)multiplier - Default 1
 	#define FXCUpd$SPELL_HIGHLIGHTS 22	// (int)bitwise - A bitwise combination of 0x1 = rest, 0x2 abil1... to highlight
-	
 	#define FXCUpd$HEAL_MOD 23			// (float)multiplier - Default 1 
 	#define FXCUpd$MOVESPEED 24			// (NPC)(float)multiplier - Default 1
 	#define FXCUpd$HEAL_DONE_MOD 25		// (PC)
 	#define FXCUpd$TEAM 26				// (int)team
 	#define FXCUpd$BEFUDDLE 27			// (float)multiplier
+	#define FXCUpd$CONVERSION 28		// (arr)conversions - Converts damage types into another. See below
+	
+
 	
 // Settings that are are not multiplicative
 #define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$DODGE, FXCUpd$CRIT, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD, FXCUpd$TEAM]
+// Settings that are arrays that should be appended
+#define FXCUpd$arrays [FXCUpd$CONVERSION]
 
 #define FXCEvt$hitFX 1					// (vec)color, (int)flags
 #define FXCEvt$pullStart 2				// void - Pull has started
 #define FXCEvt$pullEnd 3				// void - A pull effect has ended
 #define FXCEvt$spellMultipliers 4		// (arr)spell_dmg_done_multi, (arr)SPELL_MANACOST_MULTI, (arr)SPELL_CASTTIME_MULTI, (arr)SPELL_COOLDOWN_MULTI - PC only - Contains 3 indexed arrays of floats indexed 0-4 for the spells.
+
+	
+	
+// Conversion:
+// Bits:
+    // 0000000 (7) (int)percent_conversion, 1-100
+	// 00(8-9) (int)from - 00 = hp, 01 = mana, 10 = arousal, 11 = pain
+	// 00(10-11) (int)to - == || ==
+	// 0(12) (bool)dont_reduce - Do not reduce incoming damage, but still apply conversion
+	// 0(13) (bool)non_detrimental - Makes conversion trigger from gaining HP/Mana or losing pain/arousal
+	// 0(14) (bool)inverse - Makes conversion subtract instead of add
+#define FXC$CONVERSION_HP 0
+#define FXC$CONVERSION_MANA 1
+#define FXC$CONVERSION_AROUSAL 2
+#define FXC$CONVERSION_PAIN 3
+
+#define FXC$CF_DONT_REDUCE 0x1       // Do not reduce incoming damage, but still apply conversion
+#define FXC$CF_NON_DETRIMENTAL 0x2   // Makes conversion trigger from gaining HP/Mana or losing pain/arousal
+#define FXC$CF_INVERSE 0x4           // Makes conversion subtract instead of add
+
+// Builds conversion: FXC$buildConversion(20,FX$CONVERSION_HP,FX$CONVERSION_MANA, FX$CF_DONT_REDUCE)
+#define FXC$buildConversion(percent, from, to, flags) \
+    (percent|(from<<7)|(to<<9)|(flags<<11))
+
+#define FXC$conversionPerc(conversion) (conversion&127)
+#define FXC$conversionFrom(conversion) ((conversion>>7)&3)
+#define FXC$conversionTo(conversion) ((conversion>>9)&3)
+#define FXC$conversionDontReduce(conversion) ((conversion>>11)&FXC$CF_DONT_REDUCE)
+#define FXC$conversionNonDetrimental(conversion) ((conversion>>11)&FXC$CF_NON_DETRIMENTAL)
+#define FXC$conversionInverse(conversion) ((conversion>>11)&FXC$CF_INVERSE)
 
 	
 	

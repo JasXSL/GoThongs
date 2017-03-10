@@ -71,6 +71,8 @@ integer fxModMaxArousalNr = 0;
 float fxModMaxPainPerc = 1;
 integer fxModMaxPainNr = 0;
 
+list fxConversions; // See got FXCompiler.lsl
+
 integer fxTeam = -1;
 
 key ROOT_LEVEL;
@@ -111,14 +113,58 @@ toggleClothes(){
 		ThongMan$dead(FALSE, FALSE); 
     }
 }
+
+// Returns conversion effects of a FXC$CONVERSION_* type
+float runConversions(integer type, float amount){
+	integer i; float out = 1;
+	integer isDetrimental = (
+		(amount < 0 && ~llListFindList([FXC$CONVERSION_HP, FXC$CONVERSION_MANA], [type])) ||
+		(amount > 0 && ~llListFindList([FXC$CONVERSION_PAIN, FXC$CONVERSION_AROUSAL], [type]))
+	);
+	
+	list conversions = [FXC$CONVERSION_HP,FXC$CONVERSION_MANA,FXC$CONVERSION_AROUSAL,FXC$CONVERSION_PAIN];
+	list resources = [0,0,0,0];
+	
+	for(i=0; i<count(fxConversions); ++i){
+		integer conv = l2i(fxConversions, i);
+		integer d = FXC$conversionNonDetrimental(conv);
+		
+		if(FXC$conversionFrom(conv) == type && ((!isDetrimental && d) || (isDetrimental && !d))){
+			float mag = FXC$conversionPerc(conv)/100.;
+			integer b = FXC$conversionTo(conv);
+			if(!FXC$conversionDontReduce(conv))
+				out*= 1-mag;
+			
+			float amt = amount*mag;
+			
+			// Flips amt
+			if(FXC$conversionInverse(conv))
+				amt = -amt;
+			
+			integer ndx = llListFindList(conversions, [b]);
+			resources = llListReplaceList(resources, [l2f(resources, ndx)+amt], ndx, ndx);
+		}
+	}
+	
+	qd(mkarr(resources));
+	if(l2f(resources, 0))
+		addDurability(l2f(resources,0), "", 0, FALSE, TRUE);
+	if(l2f(resources, 1))
+		addMana(l2f(resources, 1), "", 0, TRUE);
+	if(l2f(resources, 2))
+		addArousal(l2f(resources, 2), "", 0, TRUE);
+	if(l2f(resources, 3))
+		addPain(l2f(resources, 3), "", 0, TRUE);	
+	
+	return out;
+}
         
 // Returns TRUE if changed
-integer addDurability(float amount, string spellName, integer flags, integer isRegen){
+integer addDurability(float amount, string spellName, integer flags, integer isRegen, integer ignoreConversion){
 
     if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = DURABILITY;
     amount*=spdmtm(spellName);
-	
 	
 	if(flags&SMAFlag$IS_PERCENTAGE)
 		amount*=maxDurability();
@@ -133,6 +179,10 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 	else if(!isRegen)
 		amount*= fxModHealingTaken;
 		
+	// Run conversions
+	if(!ignoreConversion && !isRegen){
+		amount *= runConversions(FXC$CONVERSION_HP, amount);
+	}
     DURABILITY += amount;
     if(DURABILITY<=0){
 		DURABILITY = 0;
@@ -183,21 +233,29 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 			GUI$toggleQuit(FALSE);
         }
     }
+	
+	
+	
 	return pre != DURABILITY;
 }
-integer addMana(float amount, string spellName, integer flags){
+integer addMana(float amount, string spellName, integer flags, integer ignoreConversion){
     if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = MANA;
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE)
 		amount*=maxDurability();
     
+	// Run conversions
+	if(!ignoreConversion)
+		amount*=runConversions(FXC$CONVERSION_MANA, amount);	
+		
     MANA += amount;
     if(MANA<=0)MANA = 0;
     else if(MANA > maxMana())MANA = maxMana();
 	return pre != MANA;
 }
-integer addArousal(float amount, string spellName, integer flags){
+
+integer addArousal(float amount, string spellName, integer flags, integer ignoreConversion){
     if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount>0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = AROUSAL;    
     amount*=spdmtm(spellName);
@@ -205,6 +263,11 @@ integer addArousal(float amount, string spellName, integer flags){
 		amount*=maxArousal();
 	}
     if(amount>0)amount*=fxModArousalTaken;
+	
+	// Run conversions
+	if(!ignoreConversion)
+		amount*=runConversions(FXC$CONVERSION_AROUSAL, amount);
+	
     AROUSAL += amount;
     if(AROUSAL<=0)AROUSAL = 0;
     
@@ -219,7 +282,8 @@ integer addArousal(float amount, string spellName, integer flags){
     
 	return pre != AROUSAL;
 }
-integer addPain(float amount, string spellName, integer flags){
+
+integer addPain(float amount, string spellName, integer flags, integer ignoreConversion){
     if(STATUS_FLAGS&StatusFlag$dead || (STATUS_FLAGS&StatusFlag$cutscene && amount>0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC))return FALSE;
     float pre = PAIN;
     amount*=spdmtm(spellName);
@@ -228,7 +292,12 @@ integer addPain(float amount, string spellName, integer flags){
 	}
 		
     if(amount>0)amount*=fxModPainTaken;
-    PAIN += amount;
+    
+	// Run conversions
+	if(!ignoreConversion)
+		amount*=runConversions(FXC$CONVERSION_PAIN, amount);	
+	
+	PAIN += amount;
     if(PAIN<=0)PAIN = 0;
     
 	if(PAIN >= maxPain()){
@@ -459,7 +528,7 @@ timerEvent(string id, string data){
 		
 		float add = (maxMana()*DEF_MANA_REGEN)*fxModManaRegen;
         if(add>0)
-			n += addMana(add, "", 0);
+			n += addMana(add, "", 0, TRUE);
 		
 		// The following only regenerate out of combat
 		if(inCombat){
@@ -468,11 +537,11 @@ timerEvent(string id, string data){
 		}
 		
 		if(DEF_HP_REGEN*fxHpRegen>0)
-			n += addDurability(fxHpRegen*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE);
+			n += addDurability(fxHpRegen*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, TRUE);
 		if(DEF_PAIN_REGEN*fxPainRegen>0)
-			n += addPain(-fxPainRegen*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE);
+			n += addPain(-fxPainRegen*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE);
 		if(DEF_AROUSAL_REGEN*fxArousalRegen>0)
-			n += addArousal(-fxArousalRegen*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE);
+			n += addArousal(-fxArousalRegen*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE);
 		
 		if(n)
 			outputStats();
@@ -526,7 +595,6 @@ default
         llRegionSayTo(llGetOwner(), 1, "jasx.settings");
         toggleClothes();
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
-		
     }
     
     timer(){
@@ -572,6 +640,7 @@ default
 		fxArousalRegen = i2f(l2f(data, FXCUpd$AROUSAL_REGEN)); \
 		fxModHealingTaken = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
 		fxTeam = l2i(data, FXCUpd$TEAM); \
+		fxConversions = llJson2List(l2s(data, FXCUpd$CONVERSION)); \
         outputStats(); \
 		toggleClothes(); \
     } \
@@ -646,13 +715,13 @@ default
 						
 			// Apply
 			if(type == SMBUR$durability)
-				addDurability(amount, name, flags, FALSE);
+				addDurability(amount, name, flags, FALSE, FALSE);
 			else if(type == SMBUR$mana)
-				addMana(amount, name, flags);
+				addMana(amount, name, flags, FALSE);
 			else if(type == SMBUR$arousal)
-				addArousal(amount, name, flags);
+				addArousal(amount, name, flags, FALSE);
 			else if(type == SMBUR$pain)
-				addPain(amount, name, flags);
+				addPain(amount, name, flags, FALSE);
 		}
 		outputStats();
 	}

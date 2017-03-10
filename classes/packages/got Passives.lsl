@@ -52,7 +52,8 @@ list compiled_actives = [
 	1,	// 24 Movespeed (NPC)
 	1,	// 25 Healing done
 	-1, // 26 Team
-	1	// 27 Befuddle
+	1,	// 27 Befuddle
+	"[]"  // 28 (arr)Conversion
 ];      // Compiled actives defaults
 
 /*
@@ -145,6 +146,7 @@ integer removePassiveByName(string name){
 compilePassives(){
 	// Values that should be added instead of multiplied
     list non_multi = FXCUpd$non_multi;
+	list arrays = FXCUpd$arrays;
 	
     list keys = [];         // Stores the attribute IDs
     list vals = [];         // Stores the attribute values
@@ -167,34 +169,48 @@ compilePassives(){
             float val = llList2Float(block, x+1);
             
 			integer add = (~llListFindList(non_multi, [id])); // Check if we should add or multiply
-			
+			integer array = (~llListFindList(arrays, [id]));
+
             integer pos = llListFindList(keys, [id]);
             // The key already exists, add!
             if(~pos){
 				float n = llList2Float(vals, pos);
-				if(add)n+= val;
-				else{
-					n*= (1+val);
+				if(array){
+					vals = llListReplaceList(vals, [mkarr(
+						llJson2List(l2s(block, x+1))+llJson2List(l2s(vals, pos))
+					)], pos, pos);
 				}
-                vals = llListReplaceList(vals, [n], pos, pos);
+				else{
+					if(add)n+= val;
+					else{
+						n*= (1+val);
+					}
+					vals = llListReplaceList(vals, [n], pos, pos);
+				}
 			}
             else{
-                keys += id;
-				if(!add)val+=1;	// If something is a multiplier it should always start at 1
-                vals += val;
+				keys += id;
+				// Type is an array, merge
+				if(array){
+					vals+= [mkarr(llJson2List(l2s(block, x+1)))];
+				}else{
+					if(!add)val+=1;	// If something is a multiplier it should always start at 1
+					vals += val;
+				}
             }
         }
     }
-    
+	
     // These need to match compilation stride
     compiled_passives = [];
     for(i=0; i<llGetListLength(keys); i++){
         list v = llList2List(vals, i, i);
-        if(llList2Float(v,0) == (float)llList2Integer(v,0))v = [llList2Integer(v,0)];
+        // Flatten to integer if it doesn't have fractions
+		if(llGetListEntryType(v, 0) != TYPE_STRING && llList2Float(v,0) == (float)llList2Integer(v,0))
+			v = [llList2Integer(v,0)];
         compiled_passives+= [llList2Integer(keys, i)]+v;
     }
     
-	
     output();
 }
 
@@ -211,9 +227,8 @@ output(){
     list output = compiled_actives;
    
     integer set_flags = llList2Integer(output, FXCUpd$FLAGS);
-    integer unset_flags;
-    
-    
+	integer unset_flags;
+	
     // Fields that should be treated as ints for shortening
     list INT_FIELDS = [
         FXCUpd$HP_ADD,
@@ -224,7 +239,7 @@ output(){
 		FXCUpd$TEAM
     ];
     list non_multi = FXCUpd$non_multi; // Things that should be ADDed
-	
+	list arrays = FXCUpd$arrays;
 	
     integer i;
     for(i=0; i<llGetListLength(compiled_passives); i+=COMPILATION_STRIDE){
@@ -235,7 +250,9 @@ output(){
             set_flags = set_flags|llList2Integer(compiled_passives,i+1);
         else if(type == FXCUpd$UNSET_FLAGS)
             unset_flags = unset_flags|llList2Integer(compiled_passives,i+1);
-        
+        else if(~llListFindList(arrays, [type])){
+			output = llListReplaceList(output, [mkarr(llJson2List(l2s(compiled_passives, i+1))+llJson2List(l2s(output,type)))], type, type);
+		}
 		else{
 			float val = llList2Float(compiled_passives, i+1)*llList2Float(output,type);
 			if(~llListFindList(non_multi, [type]))
@@ -246,12 +263,14 @@ output(){
 	
 	// Shorten
 	for(i=0; i<count(output); i++){
-		float val = llList2Float(output, i);
-		list v = [(int)val];
-        if(llListFindList(INT_FIELDS, [i]) == -1){
-			v = [f2i(val)];
+		if(llGetListEntryType(output, i) != TYPE_STRING){
+			float val = llList2Float(output, i);
+			list v = [(int)val];
+			if(llListFindList(INT_FIELDS, [i]) == -1){
+				v = [f2i(val)];
+			}
+			output = llListReplaceList(output, v, i, i);
 		}
-		output = llListReplaceList(output, v, i, i);
 	}
     
 	// Scan attachments
@@ -284,6 +303,7 @@ output(){
     set_flags = set_flags&~unset_flags;
 	
     output = llListReplaceList(output, [set_flags], FXCUpd$FLAGS, FXCUpd$FLAGS);
+	
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(output), "");
 }
 
@@ -550,7 +570,8 @@ default
 			l2f(set, 24),			\
 			i2f(l2f(set, 25)),		\
 			l2i(set, 26), 			\
-			i2f(l2f(set,27))		\
+			i2f(l2f(set,27)),		\
+			l2s(set,28)				\
 		]; \
         output(); \
 	}
@@ -586,6 +607,7 @@ default
 			25						// Healing done mod
 			26						// Team = -1
 			27						// Befuddle = 1
+			28						// Conversions = []
 		]; \
 	*/
 	

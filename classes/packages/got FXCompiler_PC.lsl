@@ -17,6 +17,7 @@ list SPELL_COOLDOWN_MULTI;	// [id, (int)index, (float)multiplier]
 list SPELL_HIGHLIGHTS; 		// [id, (int)index]
 list HEAL_DONE_MOD;			// [id, (float)multi] - Healing done (need to mutliply by h in the spell)
 list BEFUDDLE; 				// [id, (float)chanceMulti]
+list CONVERSIONS;			// [id, (arr)conversions]
 
 integer current_visual;
 
@@ -186,6 +187,9 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
 			BEFUDDLE = manageList(FALSE, BEFUDDLE, [pid, l2f(fx, 1)]);
 		}
 		
+		else if(t == fx$CONVERSION)
+			CONVERSIONS = manageList(FALSE, CONVERSIONS, [pid,mkarr(llDeleteSubList(fx, 0, 0))]);
+		
     }
 
 }
@@ -243,6 +247,8 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 		else if(t == fx$BEFUDDLE){
 			BEFUDDLE = manageList(TRUE, BEFUDDLE, [pid, 0]);
 		}
+		else if(t == fx$CONVERSION)
+			CONVERSIONS = manageList(TRUE, CONVERSIONS, [pid,0]);
 		
     }
 }
@@ -349,6 +355,9 @@ updateGame(){
 		raiseEvent(FXCEvt$spellMultipliers, out);
 	}
 	
+	list conv;
+	for(i=0; i<count(CONVERSIONS); i+=2)
+		conv+= llJson2List(l2s(CONVERSIONS, i+1));
 	
 	//qd("Out: "+mkarr(spdmdm));
 	
@@ -388,7 +397,8 @@ updateGame(){
 		1,					// 24 Movespeed (NPC only)
 		f2i(hdm),			// 25 Healing done mod
 		team,				// 26 Team override
-		f2i(befuddle)		// 27 Befuddle
+		f2i(befuddle),		// 27 Befuddle
+		mkarr(conv)			// 28 Conversions
 	])); 
 }
 
