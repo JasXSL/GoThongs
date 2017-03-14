@@ -25,7 +25,8 @@ key level = "";
 integer CROSSHAIR;
 integer onInteract(key obj, string task, list params){
     if(task == "book"){
-        SharedMedia$setBook(llList2String(params, 0));
+        Bridge$setBook(llList2String(params, 0));
+		SharedMedia$setBook(llList2String(params, 0));
 		llPlaySound("01df6c43-069f-e7c8-6133-f1e706e2b672", .5);
     }
     else if(task == "STDIN"){

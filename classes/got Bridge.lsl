@@ -16,6 +16,7 @@
 #define BridgeMethod$savePos 16			// (bool)offhand, (bool)back, (vec)pos, (rot)rotation - Saves weapon custom offset
 #define BridgeMethod$saveScale 17		// (float)multiplier - Saves weapon scale multiplier
 #define BridgeMethod$unlockWeapon 18	// (str)token - Unlocks a weapon by token
+#define BridgeMethod$setBook 19			// (str)token - Loads a book
 
 #define Bridge$refreshThong() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$refreshThong, [], TNN)
 #define Bridge$getToken() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$getToken, [], TNN)
@@ -42,7 +43,7 @@
 #define Bridge$savePos(offhand, back, pos, rot) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$savePos, [offhand, back, pos, rot], TNN)
 #define Bridge$saveScale(scale) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$saveScale, [scale], TNN)
 #define Bridge$unlockWeapon(targ, token) runMethod((str)targ, "got Bridge", BridgeMethod$unlockWeapon, [token], TNN)
-
+#define Bridge$setBook(book) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$setBook, [book], TNN)
 
 #define BridgeEvt$data_change 1			// Thong data changed
 #define BridgeEvt$spells_change 2		// (arr)spells

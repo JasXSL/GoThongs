@@ -146,7 +146,6 @@ float runConversions(integer type, float amount){
 		}
 	}
 	
-	qd(mkarr(resources));
 	if(l2f(resources, 0))
 		addDurability(l2f(resources,0), "", 0, FALSE, TRUE);
 	if(l2f(resources, 1))

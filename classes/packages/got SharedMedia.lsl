@@ -1,7 +1,7 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
-#define BOOK_URL "http://jasx.org/lsl/got/hud2/book.php"
+#define BOOK_URL "http://jasx.org/lsl/got/hud2/book2.php"
 
 integer BFL;
 #define BFL_BROWSER_SHOWN 0x1
@@ -69,7 +69,7 @@ onEvt(string script, integer evt, list data){
 
 default 
 {
-    timer(){multiTimer([]);}
+    //timer(){multiTimer([]);}
     
     state_entry(){
         links_each(nr, name, 
@@ -183,7 +183,6 @@ default
         if(METHOD == SharedMediaMethod$setBook){
             list out;
             if(!isset(method_arg(0))){
-                llClearLinkMedia(P_PAPER, 0);
                 out = [
                     PRIM_LINK_TARGET, P_BOOK_BG,
                     PRIM_POSITION, ZERO_VECTOR,
@@ -195,18 +194,6 @@ default
                     PRIM_SIZE, ZERO_VECTOR
                 ];
             }else{
-                llClearLinkMedia(P_PAPER, 0);
-                llSetLinkMedia(P_PAPER, 0, [
-                    PRIM_MEDIA_CURRENT_URL, BOOK_URL+"?id="+method_arg(0),
-                    PRIM_MEDIA_HOME_URL, BOOK_URL+"?id="+method_arg(0),
-                    PRIM_MEDIA_CONTROLS, PRIM_MEDIA_CONTROLS_MINI,
-                    PRIM_MEDIA_AUTO_PLAY, TRUE,
-                    PRIM_MEDIA_WIDTH_PIXELS, 512,
-                    PRIM_MEDIA_HEIGHT_PIXELS, 512,
-                    PRIM_MEDIA_FIRST_CLICK_INTERACT, TRUE,
-                    PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_OWNER,
-                    PRIM_MEDIA_PERMS_INTERACT, PRIM_MEDIA_PERM_OWNER
-                ]);
                 vector bg = BG_POS;
                 bg.x = .13;
                 out = [
@@ -222,6 +209,22 @@ default
             }
             llSetLinkPrimitiveParamsFast(0, out);
         }
+		
+		else if(METHOD == SharedMediaMethod$bookBrowser){
+			string token = method_arg(0);
+			llSetLinkMedia(P_PAPER, 0, [
+				PRIM_MEDIA_CURRENT_URL, BOOK_URL+"?token="+method_arg(0),
+				PRIM_MEDIA_HOME_URL, BOOK_URL+"?token="+method_arg(0),
+				PRIM_MEDIA_CONTROLS, PRIM_MEDIA_CONTROLS_MINI,
+				PRIM_MEDIA_AUTO_PLAY, TRUE,
+				PRIM_MEDIA_WIDTH_PIXELS, 512,
+				PRIM_MEDIA_HEIGHT_PIXELS, 512,
+				PRIM_MEDIA_FIRST_CLICK_INTERACT, TRUE,
+				PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_OWNER,
+				PRIM_MEDIA_PERMS_INTERACT, PRIM_MEDIA_PERM_OWNER
+			]);
+		}
+		
     }
 
     // Public code can be put here
