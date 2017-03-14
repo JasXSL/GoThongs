@@ -68,7 +68,7 @@
 	#define BSUD$W_OH_OFFSET 8			// vec Offhand offset
 	#define BSUD$W_BACK_OH_OFFSET 9		// vec Offhand back offset
 	#define BSUD$WDATA 10				// arr Weapondata
-
+	#define BSUD$ENCHANTS 11			// arr Passives
 	
 	
 	

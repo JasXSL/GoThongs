@@ -26,11 +26,15 @@ integer CROSSHAIR;
 integer onInteract(key obj, string task, list params){
     if(task == "book"){
         SharedMedia$setBook(llList2String(params, 0));
+		llPlaySound("01df6c43-069f-e7c8-6133-f1e706e2b672", .5);
     }
     else if(task == "STDIN"){
 		// Real key is the key of the link that was interacted with, usually the same key as obj but might be a sub-link when ROOT is used
-        LocalConf$stdInteract(obj, llGetOwner(), [real_key]);
-    }
+        string t = obj;
+		if(l2s(params, 0) == "ROOT")
+			t = prRoot(obj);
+		LocalConf$stdInteract(t, llGetOwner(), [real_key]);	
+	}
     else if(task == "LVIN"){
 		list players = additionalAllow+llGetOwner();
 		integer i;
