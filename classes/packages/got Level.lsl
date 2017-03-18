@@ -8,8 +8,8 @@ list PLAYERS = [];
 list PLAYERS_COMPLETED;
 integer START_PARAM;
 
-integer DEATHS;
-integer MONSTERS_KILLED;
+// (str)name, (vec)pos
+list MONSTERS_KILLED;
 
 integer BFL;
 #define BFL_MONSTERS_LOADED 0x1
@@ -87,6 +87,13 @@ timerEvent(string id, string data){
 	else if(id == "LOAD_FINISH"){
 		Level$loadFinished();
 		Root$setLevel();
+	}
+	
+	else if(id == "KILLQUE" && MONSTERS_KILLED != []){
+		runOnPlayers(targ,
+			Bridge$monstersKilled(targ, MONSTERS_KILLED);
+		)
+		MONSTERS_KILLED = [];
 	}
 
 }
@@ -171,6 +178,7 @@ default
 				)
 			}
 			
+			multiTimer(["KILLQUE", "", 2, TRUE]);
 			
 			return;
         }
@@ -315,13 +323,16 @@ default
     if(METHOD == LevelMethod$idEvent){
         list out = [id, method_arg(1), method_arg(2), method_arg(3)];
         integer evt = (integer)method_arg(0);
+		
 		if(evt == LevelEvt$idDied){
-			MONSTERS_KILLED++;
+			vector pos = prPos(id);
+			list arr = [llKey2Name(id), "<"+roundTo(pos.x,2)+","+roundTo(pos.y,2)+","+roundTo(pos.z,2)+">"];
+			MONSTERS_KILLED += [mkarr(arr)];
 		}
+		
         return raiseEvent(evt, mkarr(out));
     }
 	if(METHOD == LevelMethod$died){
-		++DEATHS;
 		raiseEvent(LevelEvt$playerDied, (str)id);
 		return;
 	}
@@ -373,7 +384,7 @@ default
 				BFL = BFL|BFL_COMPLETED;
                 runOnPlayers(pk, 
 					integer continue = (pk == llGetOwner());
-					Bridge$completeCell(pk, DEATHS, MONSTERS_KILLED, continue);
+					Bridge$completeCell(pk, 0, 0, continue);
 					Portal$killAll();
 				)
 				qd("Loading next stage.");
