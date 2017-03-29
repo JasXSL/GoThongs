@@ -176,25 +176,26 @@ default
 		
 		// Gesture commands
 		if(chan == 3){ 
-			if(message == "login"){
-				Bridge$getToken(); 
-			}			
-			
-			else if(message=="Join") 
+			// Party join
+			if(message=="Join") 
 				Bridge$dialog(message); 
-				
+			
+			// Space targeting
 			else if(message == "switch"){ 
 				Evts$cycleEnemy(); 
 			} 
 			
+			// Self targeting
 			else if(message == "self"){ 
 				Root$targetThis(llGetOwner(), TEXTURE_PC, TRUE, TEAM_PC);
 			} 
-			
+			/*
+			Todo: Multi coop targeting through s-1 to s-3
 			else if(message == "coop"){
 				Root$targetThis(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE, -1);
 			} 
-			
+			*/
+			/*
 			else if(message == "wipeCells"){ 
 				cleanup(llGetOwner(), TRUE);
 				runOnPlayers(targ,
@@ -202,6 +203,7 @@ default
 						RootAux$cleanup(targ, TRUE);
 				)
 			} 
+			*/
 			
 			else if(message == "reset"){resetAll();}
 			
@@ -210,10 +212,11 @@ default
 				Portal$killAll(); 
 				Bridge$continueQuest();
 			} 
-			
+			/*
 			else if(llGetSubString(message, 0,10) =="difficulty:"){ 
 				Status$setDifficulty((string)LINK_ROOT, (integer)llGetSubString(message,11,-1), TRUE); 
 			} 
+			*/
 			
 			else if(message == "potion"){ 
 				Potions$use((string)LINK_ROOT); 
@@ -324,8 +327,6 @@ default
 			VALIDATE = llHTTPRequest("http://jasx.org/lsl/got/app/manifest/?PUBKEY="+method_arg(0), [HTTP_BODY_MAXLENGTH, 0x2000], "");
 			
 		}
-		
-		
     }
 	
 	if(METHOD == RootAuxMethod$playSound){

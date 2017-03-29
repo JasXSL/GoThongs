@@ -287,24 +287,31 @@ default
             llTakeControls((integer)method_arg(0), TRUE, FALSE);
         }
         else if(METHOD == RootMethod$setParty){
-			string targ = method_arg(0);
-            if(targ == llList2String(PLAYERS, 1))return;
-
+			
+			string pre = mkarr(PLAYERS);
             PLAYERS = [(string)llGetOwner()];
 			COOP_HUDS = [];
+			
+			
+			
+            if(count(PARAMS)){
+				PLAYERS+=PARAMS;
+			
+				if(mkarr(PLAYERS) != pre)
+					llOwnerSay("You are now in a party with secondlife:///app/agent/"+implode("/about, secondlife:///app/agent/", PARAMS)+"/about");
+				
+				runOnPlayers(targ,
+					Level$bind(targ);
+				)
+            }
+			
+			else
+                AMS$(ARoot$coopDisband);
+            
 			integer i;
 			for(i=0; i<count(PLAYERS); ++i)
 				COOP_HUDS += "";
 			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
-            if(targ){
-				PLAYERS+=[targ];
-                AS$(ARoot$nowInParty);
-                llOwnerSay("You are now in a party with secondlife:///app/agent/"+(string)targ+"/about");
-				Level$bind(targ);
-            }else
-                AMS$(ARoot$coopDisband);
-            
-			
 			
             savePlayers();
 			
@@ -372,14 +379,9 @@ default
 		ROOT_LEVEL = id;
 		raiseEvent(RootEvt$level, mkarr([ROOT_LEVEL]));
 			
-		if(pre != ROOT_LEVEL){
-			if(!method$byOwner){
-				qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
-				return;
-			}
-			else{
-				Status$setDifficulty((string)LINK_ROOT, -1, TRUE);
-			}
+		if(pre != ROOT_LEVEL && !method$byOwner){
+			qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
+			return;
 		}
 		CB_DATA = getPlayers();
 	}

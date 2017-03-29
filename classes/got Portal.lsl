@@ -14,7 +14,7 @@
 #define BIT_GET_DESC 1073741824		// This is the binary bit (31) that determines if it needs to get custom data from the spawner or not
 #define BIT_TEMP 2147483648			// Binary bit (32) that determines if the object should be temp or not
 
-#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim","jas MaskAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "got LevelLite", "got LevelAux", "got LevelLoader", "got Spawner"]
+#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim","jas MaskAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "got LevelLite", "got LevelAux", "got LevelLoader", "got Spawner", "got BuffSpawn"]
 #define PORTAL_SEARCH_OBJECTS ["Trigger"]
 
 #define Portal$save() runOmniMethod("got Portal", PortalMethod$save, [], "SV")

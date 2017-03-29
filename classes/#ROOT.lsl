@@ -4,7 +4,7 @@
 //#define RootMethod$setThongIni 3				// (int)has_thong		- Initialize thong
 #define RootMethod$setTarget 4					// (key)target, (key)texture, (int)force_override, (int)team
 #define RootMethod$getPlayers 5					// NULL - Returns an array of players
-#define RootMethod$setParty 6					// (key)coop_player - 
+#define RootMethod$setParty 6					// (key)coop_player, (key)players2... - 
 #define RootMethod$setLevel 7					// void - Returns players
 #define RootMethod$manageAdditionalPlayer 8		// (key)player, (int)rem - Adds or removes a player to be able to interact with the HUD and any monsters you spawn
 #define RootMethod$attached 9					// Sent as omni com on HUD attach - Also used to get the coop player's HUD
@@ -28,7 +28,7 @@
 
 #define Root$targetThis(targ, texture, force, team) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setTarget, [targ, texture, force, team], TNN)
 #define Root$aggro(targ) runMethod(targ, "#ROOT", RootMethod$aggro, [], TNN)
-#define Root$setParty(uuid) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setParty, [uuid], TNN)
+#define Root$setParty(uuids) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setParty, uuids, TNN)
 #define Root$clearTargetOn(targ) runMethod(targ, "#ROOT", RootMethod$setTarget, ["", "", TRUE], TNN)
 #define Root$setLevel() runMethod(llGetOwner(), "#ROOT", RootMethod$setLevel, [], "LV")
 #define Root$setLevelOn(targ) runMethod(targ, "#ROOT", RootMethod$setLevel, [], TNN)

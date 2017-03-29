@@ -40,7 +40,7 @@
 	#define FXCUpd$TEAM 26				// (int)team
 	#define FXCUpd$BEFUDDLE 27			// (float)multiplier
 	#define FXCUpd$CONVERSION 28		// (arr)conversions - Converts damage types into another. See below
-	
+	#define FXCUpd$SPRINT_FADE_MULTI 29	// (float)multiplier - Lower = longer sprint
 
 	
 // Settings that are are not multiplicative

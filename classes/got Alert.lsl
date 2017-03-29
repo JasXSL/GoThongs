@@ -39,7 +39,7 @@
 "Thong Detached", \
 "Thong Equipped!\nYou can now start playing!", \
 "Coop joined", \
-"Your coop partner has disbanded.", \
+"You are now playing solo.", \
 "Spawning cell. Please wait." \
 ]
 

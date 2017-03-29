@@ -151,9 +151,9 @@ float runConversions(integer type, float amount){
 	if(l2f(resources, 1))
 		addMana(l2f(resources, 1), "", 0, TRUE);
 	if(l2f(resources, 2))
-		addArousal(l2f(resources, 2), "", 0, TRUE);
+		addArousal(-l2f(resources, 2), "", 0, TRUE);
 	if(l2f(resources, 3))
-		addPain(l2f(resources, 3), "", 0, TRUE);	
+		addPain(-l2f(resources, 3), "", 0, TRUE);	
 	
 	return out;
 }
@@ -358,12 +358,13 @@ onEvt(string script, integer evt, list data){
         }
     }else if(script == "got Bridge"){
 		if(evt == BridgeEvt$userDataChanged){
-			DIFFICULTY = llList2Integer(data, 4);
+			Status$setDifficulty(l2i(data, 3));
 		}
 		else if(evt == BridgeEvt$thong_initialized)
 			toggleClothes();
         
     }
+	
     else if(script == "got Rape"){
         if(evt == RapeEvt$onStart || evt == RapeEvt$onEnd){
             if(evt == RapeEvt$onStart){
@@ -584,6 +585,8 @@ timerEvent(string id, string data){
 	}
 	
 }
+
+
 default 
 {
     state_entry(){
@@ -699,6 +702,18 @@ default
             //qd("Refreshing spell icons: "+mkarr(SPELL_ICONS));
 			multiTimer(["OP", "", .1, FALSE]);
 		}
+		else if(METHOD == StatusMethod$setDifficulty){
+			
+			integer pre = DIFFICULTY;
+			DIFFICULTY = llList2Integer(PARAMS, 0);
+			raiseEvent(StatusEvt$difficulty, DIFFICULTY);
+			
+			if(DIFFICULTY != pre){
+				list names = ["Casual", "Normal", "Hard", "Very Hard", "Brutal", "Bukakke"];
+				Alert$freetext(LINK_THIS, "Difficulty set to "+llList2String(names, DIFFICULTY), TRUE, TRUE);
+			}
+		
+		}
     }
 
 	if(METHOD == StatusMethod$batchUpdateResources){
@@ -804,28 +819,6 @@ default
 			outputStats();
 		}
 		raiseEvent(StatusEvt$loading_level, id);
-	}
-	else if(METHOD == StatusMethod$setDifficulty){ 
-		// Difficulty can be -1 to just update your coop partner
-		integer pre = DIFFICULTY;
-		if(~(integer)method_arg(0)){
-			integer d = (integer)method_arg(0);
-			if(d < 0)d = 0;
-			if(d > 5)d = 5;
-			if(d == DIFFICULTY && !(int)method_arg(1))return;
-			DIFFICULTY = d;
-		}
-		if((integer)method_arg(1)){Status$setDifficulty(coop_player, DIFFICULTY, FALSE);}
-
-		// Update server value just in case
-		Bridge$setDifficulty(DIFFICULTY);
-		
-		raiseEvent(StatusEvt$difficulty, DIFFICULTY);
-		
-		if(~(integer)method_arg(0) && DIFFICULTY != pre){
-			list names = ["Casual", "Normal", "Hard", "Very Hard", "Brutal", "Bukakke"];
-			Alert$freetext(LINK_THIS, "Difficulty set to "+llList2String(names, DIFFICULTY), TRUE, TRUE);
-		}
 	}
 	else if(METHOD == StatusMethod$debugOut){
 		llOwnerSay(mkarr(([maxDurability(), maxMana(), maxArousal(), maxPain()])));

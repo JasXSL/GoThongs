@@ -53,7 +53,8 @@ list compiled_actives = [
 	1,	// 25 Healing done
 	-1, // 26 Team
 	1,	// 27 Befuddle
-	"[]"  // 28 (arr)Conversion
+	"[]",  // 28 (arr)Conversion
+	1	// Sprint fade multiplier
 ];      // Compiled actives defaults
 
 /*
@@ -541,7 +542,7 @@ default
 	if(nr == TASK_PASSIVES_SET_ACTIVES){ \
 		list set = llJson2List(s); \
         compiled_actives = [ \
-			l2i(set, 0),			\
+			l2i(set, FXCUpd$FLAGS),			\
 			i2f(l2f(set, 1)),		\
 			i2f(l2f(set, 2)),		\
 			i2f(l2f(set, 3)),		\
@@ -571,7 +572,8 @@ default
 			i2f(l2f(set, 25)),		\
 			l2i(set, 26), 			\
 			i2f(l2f(set,27)),		\
-			l2s(set,28)				\
+			l2s(set,28),				\
+			i2f(l2i(set,FXCUpd$SPRINT_FADE_MULTI))		\
 		]; \
         output(); \
 	}
@@ -607,7 +609,8 @@ default
 			25						// Healing done mod
 			26						// Team = -1
 			27						// Befuddle = 1
-			28						// Conversions = []
+			28,						// Conversions = []
+			29						// Sprint fade = 1
 		]; \
 	*/
 	

@@ -12,6 +12,7 @@ integer BFL;
 #define BAR_STRIDE 2
 list BARS = [0,0,0,0,0,0];  // [(int)portrait, (int)bars], self, friend, target
 list FX_PRIMS = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+list PARTY_ICONS = [];
 
 list SPELL_UPDATE_QUEUE;	// (key)id, (csv)data 
 #define SUQSTRIDE 2
@@ -25,7 +26,6 @@ key default_tx = "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e";
 integer CACHE_FX_FLAGS = 0;
 
 integer P_QUIT;
-integer P_RETRY;
 #define RPB_SCALE <0.15643, 0.04446, 0.03635>*1.25
 #define RPB_ROOT_POS <-0.074654, 0.0, 0.31>
 
@@ -88,7 +88,7 @@ updateTarget(key targ, key texture, integer team){
     if(targ != ""){
         vector offs1 = <0,-.05,0.37>;
         vector offs2 = <0.05,.08,0.371>;
-        vector offs3 = <0.05, 0.11, 0.354>;
+		vector base_offs = <0,0,.02>;
 		
 		vector color = <.5,1,.5>;
 		if(team != TEAM)
@@ -96,7 +96,7 @@ updateTarget(key targ, key texture, integer team){
 		
         out+=[
             PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2),
-            PRIM_POSITION, offs1,
+            PRIM_POSITION, offs1+base_offs,
             PRIM_COLOR, 0, color, 1,
             PRIM_COLOR, 1, <1,1,1>, 1,
             PRIM_COLOR, 2, <1,1,1>, 0,
@@ -107,7 +107,7 @@ updateTarget(key targ, key texture, integer team){
         if(texture)out+=[PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0];
         out+=[
             PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2+1),
-            PRIM_POSITION, offs2,
+            PRIM_POSITION, offs2+base_offs,
             PRIM_COLOR, 0, ZERO_VECTOR, .25,
             PRIM_COLOR, 1, ZERO_VECTOR, .5,
             PRIM_COLOR, 2, <1,.5,.5>, 1,
@@ -357,7 +357,6 @@ default
 				FX_PRIMS = llListReplaceList(FX_PRIMS, [nr], n, n);
 			}
 			else if(name == "LOADING")P_LOADINGBAR = nr;
-            else if(name == "RETRY")P_RETRY = nr;
             else if(name == "QUIT")P_QUIT = nr;
             else if(name == "SPINNER")P_SPINNER = nr;
 			else if(name == "BLIND")P_BLIND = nr;
@@ -414,6 +413,11 @@ default
 		updateSpellIcons(id, llList2CSV(PARAMS));
     }
 	
+	if(method$internal && METHOD == GUIMethod$partyIcons){
+		PARTY_ICONS = PARAMS;
+		GUI$toggle(TRUE);
+	}
+	
 	// Toggles the boss portrait
 	if(METHOD == GUIMethod$toggleBoss){
 		if(~BFL&BFL_TOGGLED)return;
@@ -462,9 +466,9 @@ default
 	}
     // This needs to show the proper breakfree messages
     else if(METHOD == GUIMethod$toggleQuit){
-        integer on = (integer)method_arg(0);
+		integer show = l2i(PARAMS, 0);
         list out;
-        if(on){
+		if(show){
             out+= [
                 PRIM_LINK_TARGET, P_QUIT,
                 PRIM_TEXTURE, 0, "d44be195-0e8a-1a25-c3ed-c5372b8e39ad", <1,.5,0>, <0.,0.25,0>, 0,
@@ -474,12 +478,9 @@ default
         }else{
             out+= [
                 PRIM_LINK_TARGET, P_QUIT,
-                PRIM_POSITION, ZERO_VECTOR,
-                PRIM_LINK_TARGET, P_RETRY,
                 PRIM_POSITION, ZERO_VECTOR
             ];
         }
-        
         llSetLinkPrimitiveParamsFast(0,out);
     }
 	else if(METHOD == GUIMethod$toggleObjectives){
@@ -568,8 +569,8 @@ default
 			integer exists = FALSE;
 			if(llGetListLength(players)>i)exists = TRUE;
 			
-			key texture = TEXTURE_PC;
-			if(i == 1)texture = TEXTURE_COOP;
+			key texture = l2k(PARTY_ICONS, i);
+			if(texture){}else{texture = "d1f4998d-edb0-4067-da12-d651a3dbe9ac";}
 			
 			if(show && exists){
 				vector offs1 = <0,.12,0.25>;

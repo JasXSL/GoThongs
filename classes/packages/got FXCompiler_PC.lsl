@@ -117,6 +117,8 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		else if(t == fx$ALERT)Alert$freetext(LINK_ROOT, l2s(fx,1), llList2Integer(fx,2), llList2Integer(fx, 3));
 		else if(t == fx$CUBETASKS)
 			RLV$cubeTask(llDeleteSubList(fx, 0, 0));
+		else if(t == fx$REFRESH_SPRINT)
+			RLV$setSprintPercent(LINK_ROOT, 1);
     }
     
     if(resource_updates){
@@ -189,7 +191,8 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
 		
 		else if(t == fx$CONVERSION)
 			CONVERSIONS = manageList(FALSE, CONVERSIONS, [pid,mkarr(llDeleteSubList(fx, 0, 0))]);
-		
+		else if(t == fx$LTB)
+			BuffVis$add(pid, l2s(fx, 1), l2s(fx,2));
     }
 
 }
@@ -249,7 +252,8 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 		}
 		else if(t == fx$CONVERSION)
 			CONVERSIONS = manageList(TRUE, CONVERSIONS, [pid,0]);
-		
+		else if(t == fx$LTB)
+			BuffVis$rem(pid);
     }
 }
 
@@ -398,7 +402,8 @@ updateGame(){
 		f2i(hdm),			// 25 Healing done mod
 		team,				// 26 Team override
 		f2i(befuddle),		// 27 Befuddle
-		mkarr(conv)			// 28 Conversions
+		mkarr(conv),		// 28 Conversions
+		f2i(1.0)			// 29 Sprint fade
 	])); 
 }
 

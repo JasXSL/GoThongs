@@ -27,7 +27,7 @@
 #define StatusMethod$setSex 12			// (int)sex - 
 #define StatusMethod$outputStats 13		// NULL - Forces stats update (pc only)
 #define StatusMethod$loading 14			// (bool)loading - Sets loading flag
-#define StatusMethod$setDifficulty 15	// (int)difficulty, (bool)sendToCoop - between 0->5
+#define StatusMethod$setDifficulty 15	// (int)difficulty - between 0->5
 #define StatusMethod$stacksChanged 16	// (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
 // #define StatusMethod$refreshCombat 17	// void - Refreshes the combat timer
 #define StatusMethod$toggleBossFight 18			// (bool)fight - Received from GUI, toggles boss fight on or off
@@ -145,7 +145,7 @@
 #define Status$getTextureDesc(targ, pid) runMethod(targ, "got Status", StatusMethod$getTextureDesc, [pid], TNN)
 #define Status$setSex(sex) runMethod((string)LINK_ROOT, "got Status", StatusMethod$setSex, [sex], TNN)
 #define Status$loading(targ, loading) runMethod(targ, "got Status", StatusMethod$loading, [loading], TNN)
-#define Status$setDifficulty(targ, difficulty, sendToCoop) runMethod(targ, "got Status", StatusMethod$setDifficulty, [difficulty, sendToCoop], TNN)
+#define Status$setDifficulty(difficulty) runMethod((str)LINK_ROOT, "got Status", StatusMethod$setDifficulty, [difficulty], TNN)
 #define Status$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Status", StatusMethod$stacksChanged, [pid, added, duration, stacks], TNN)
 #define Status$refreshCombat() llMessageLinked(LINK_ROOT, TASK_REFRESH_COMBAT, "", "") 
 #define Status$toggleBossFight(on) runMethod((str)LINK_ROOT, "got Status", StatusMethod$toggleBossFight, [on], TNN)

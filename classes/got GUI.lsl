@@ -9,6 +9,7 @@
 #define GUIMethod$toggle 10				// (bool)show - opens or Closes the GUI
 #define GUIMethod$toggleBoss 11			// (key)texture OR "", (bool)manual_hp - Toggles the boss portrait. If manual_hp is set, only bossHP calls will update the HP
 #define GUIMethod$bossHP 12				// (float)perc - Sets boss HP percentage
+#define GUIMethod$partyIcons 9 			// (arr)textures - Sets party textures, first entry is self
 
 //#define GUI$myStatus(hp, mana, arousal, pain, flags, fxflags) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$status, [hp, mana, arousal, pain, flags, fxflags], TNN)
 #define GUI$setMySpellTextures(data) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$setSpellTextures, data, TNN)
@@ -32,5 +33,5 @@
 #define GUI$toggleObjectives(targ, on) runMethod(targ, "got GUI", GUIMethod$toggleObjectives, [on], TNN)
 #define GUI$toggleBoss(targ, texture, manual_hp) runMethod((str)(targ), "got GUI", GUIMethod$toggleBoss, [texture, manual_hp], TNN)
 #define GUI$bossHP(targ, perc) runMethod((str)(targ), "got GUI", GUIMethod$bossHP, [perc], TNN)
-
+#define GUI$partyIcons(icons) runMethod((str)LINK_ROOT, "got GUI", GUIMethod$partyIcons, icons, TNN)
 

@@ -92,6 +92,8 @@
 #include "./classes/got Weapon.lsl"
 #include "./classes/got WeaponLoader.lsl"
 #include "./classes/got Follower.lsl"
+#include "./classes/got BuffVis.lsl"
+#include "./classes/got BuffSpawn.lsl"
 
 
 
@@ -193,5 +195,19 @@ string statsToText(list stats){
 	}
 	return ret;
 }
+
+
+// Conversion for spells
+/*
+
+else if(script == "got NPCSpells"){
+        if(evt == NPCSpellsEvt$SPELL_CAST_START)onSpellStart(l2i(data, 0), l2s(data, 1));
+        else if(evt == NPCSpellsEvt$SPELL_CAST_FINISH)onSpellFinish(l2i(data, 0), l2s(data, 1));
+        else if(evt == NPCSpellsEvt$SPELL_CAST_INTERRUPT)onSpellInterrupt(l2i(data, 0), l2s(data, 1));
+        
+    }
+
+
+*/
 
 

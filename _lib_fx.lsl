@@ -103,7 +103,8 @@
 	#define fx$CUBETASKS 55						// (arr)tasks - PC ONLY Sends cubetasks to the owner
 	#define fx$BEFUDDLE 56						// (float)perc - PC ONLY - Adds a chance on spell cast to target a random player
 	#define fx$CONVERSION 57					// (int)conversion1, (int)conversion2... - PC ONLY - See got FXCompiler.lsl
-	
+	#define fx$LTB 58							// (str)asset, (arr)conf - PC Only - Spawns a long term buff visual which sticks around on the affected player until the spell is removed.
+	#define fx$REFRESH_SPRINT 59				// void - PC Only - Instant only. Refreshes sprint
 	
 // conditions
 	// Built in

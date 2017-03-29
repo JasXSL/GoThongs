@@ -175,7 +175,11 @@ updateGame(){
 		f2i(htm),				// Healing received mod
 		f2i(speed),			// Movespeed multiplier
 		1,					// (PC only)Healing done mod
-		team
+		team,
+		0,					// (unsupported)befuddle,
+		0,					// (unsupported)conversion
+		0					// (unsupported)sprint
+		
 	])), "");
 }
 
