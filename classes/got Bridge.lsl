@@ -52,6 +52,7 @@
 #define BridgeEvt$thong_initialized 3	// void - Thong data fetched
 #define BridgeEvt$userDataChanged 4		// (arr)userData, see class User.php fn.getOut
 #define BridgeEvt$goldChanged 5			// (int)gold
+#define BridgeEvt$partyIcons 6			// (arr)UUIDs - UUIDs of the party
 
 // Thong data
 #define BridgeShared$data "a"			

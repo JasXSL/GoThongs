@@ -8,6 +8,7 @@ float pressStart;
 float lastclick;
 integer lcb;
 
+list PLAYER_TEXTURES;
 list PLAYERS;
 list COOP_HUDS;
 list ADDITIONAL; 		// Additional players
@@ -54,7 +55,9 @@ timerEvent(string id, string data){
 	if(script == "got Status" && evt == StatusEvt$team && l2i(data,0) != TEAM){ \
 		TEAM = l2i(data, 0); \
 		refreshTarget(); \
-	}
+	} \
+	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons) \
+		PLAYER_TEXTURES = data;
 
 
 integer setTarget(key t, key icon, integer force, integer team){
@@ -177,11 +180,24 @@ default
         else if(ln == "BOOKBG")
             SharedMedia$setBook("");
         
-        else if(ln == "OP1" || ln == "OPB1")setTarget(llGetOwner(), TEXTURE_PC, TRUE, TEAM);    // Add player default texture
-        else if((ln == "OP2" || ln == "OPB2") && llList2String(PLAYERS, 1) != ""){
-            setTarget(llList2String(PLAYERS, 1), TEXTURE_COOP, TRUE, -1); // Add coop partner texture
+		// Player clicked
+        else if(llGetSubString(ln, 0,1) == "OP"){
+			integer n = (int)llGetSubString(ln, 2, -1);
+			if(llGetSubString(ln, 2, 2) == "B")
+				n = (int)llGetSubString(ln, 3, -1);
+				
+			--n;
+			
+			if(n >= count(PLAYERS))
+				return;
+			
+			setTarget(l2s(PLAYERS, n), l2s(PLAYER_TEXTURES, n), TRUE, TEAM);    // Add player default texture
 		}
+		
+		// Target frame
         else if(ln == "FRB1" || ln == "FR1")setTarget("", "", TRUE, 0);
+		
+		// Scroll
 		else if(ln == "PROGRESS")Level$getObjectives();
         else if(llGetSubString(ln,0,1) == "FX"){
 			integer button = (int)llGetSubString(ln, 2, -1);

@@ -1,4 +1,5 @@
 list PLAYERS;
+list PLAYER_ICONS = ["d1f4998d-edb0-4067-da12-d651a3dbe9ac"];
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -38,6 +39,8 @@ onEvt(string script, integer evt, list data){
 		}
 		else if(evt == RLVevt$cam_unset)BFL = BFL&~BFL_CAM_SET;
 	}
+	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons)
+		PLAYER_ICONS = data;
 }
 
 integer diagchan;
@@ -159,6 +162,7 @@ default
 {
 	state_entry(){
 		purge();
+		PLAYERS = [llGetOwner()];
 		diagchan = llCeil(llFrand(0xFFFFFFF));
 		memLim(2);
 		llListen(3, "", llGetOwner(), "");
@@ -184,26 +188,23 @@ default
 			else if(message == "switch"){ 
 				Evts$cycleEnemy(); 
 			} 
-			
+			/*
 			// Self targeting
 			else if(message == "self"){ 
 				Root$targetThis(llGetOwner(), TEXTURE_PC, TRUE, TEAM_PC);
 			} 
-			/*
 			Todo: Multi coop targeting through s-1 to s-3
 			else if(message == "coop"){
 				Root$targetThis(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE, -1);
 			} 
 			*/
-			/*
-			else if(message == "wipeCells"){ 
-				cleanup(llGetOwner(), TRUE);
-				runOnPlayers(targ,
-					if(targ != llGetOwner())
-						RootAux$cleanup(targ, TRUE);
-				)
-			} 
-			*/
+			
+			else if(llGetSubString(message, 0, 5) == "player"){
+				integer n = (int)llGetSubString(message, 6, -1);
+				if(n >= count(PLAYERS))
+					return;
+				Root$targetThis(llList2Key(PLAYERS, n), l2s(PLAYER_ICONS, n), TRUE, -1);
+			}
 			
 			else if(message == "reset"){resetAll();}
 			
@@ -212,11 +213,7 @@ default
 				Portal$killAll(); 
 				Bridge$continueQuest();
 			} 
-			/*
-			else if(llGetSubString(message, 0,10) =="difficulty:"){ 
-				Status$setDifficulty((string)LINK_ROOT, (integer)llGetSubString(message,11,-1), TRUE); 
-			} 
-			*/
+
 			
 			else if(message == "potion"){ 
 				Potions$use((string)LINK_ROOT); 

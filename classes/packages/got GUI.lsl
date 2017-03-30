@@ -79,6 +79,10 @@ onEvt(string script, integer evt, list data){
 	else if(script == "got Status" && evt == StatusEvt$team){
 		TEAM = l2i(data,0);
 	}
+	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons){
+		PARTY_ICONS = data;
+		GUI$toggle(TRUE);
+	}
 }
 
 
@@ -413,11 +417,7 @@ default
 		updateSpellIcons(id, llList2CSV(PARAMS));
     }
 	
-	if(method$internal && METHOD == GUIMethod$partyIcons){
-		PARTY_ICONS = PARAMS;
-		GUI$toggle(TRUE);
-	}
-	
+
 	// Toggles the boss portrait
 	if(METHOD == GUIMethod$toggleBoss){
 		if(~BFL&BFL_TOGGLED)return;

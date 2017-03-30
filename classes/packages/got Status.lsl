@@ -358,7 +358,7 @@ onEvt(string script, integer evt, list data){
         }
     }else if(script == "got Bridge"){
 		if(evt == BridgeEvt$userDataChanged){
-			Status$setDifficulty(l2i(data, 3));
+			Status$setDifficulty(l2i(data, 4));
 		}
 		else if(evt == BridgeEvt$thong_initialized)
 			toggleClothes();
