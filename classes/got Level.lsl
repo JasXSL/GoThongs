@@ -16,6 +16,7 @@
 #define LevelMethod$bindToLevel 14	// void - Bind my HUD to any level
 #define LevelMethod$getPlayers 15	// void - Forces a LevelEvt$players event to trigger
 #define LevelMethod$potionUsed 16	// name - Potion with PotionsFlag$raise_event used
+#define LevelMethod$difficulty 17	// (int)difficulty, (bool)isChallenge - Sets difficulty on the level
 
 #define LevelMethod$despawn 0x71771E5	// Deletes a level
 
@@ -49,11 +50,11 @@
 #define LevelEvt$potion 10			// [(key)agent, (str)name] Potion used
 
 #define LevelEvt$playerDied 11		// [(key)hud] - Raised when a player dies
-
+#define LevelEvt$difficulty 12		// (int)difficulty, (bool)challenge - This is only raised when a quest starts. Mostly useful for challenge mode since you can't change difficulty.
 
 // Level description config: [[(int)task, (var)param1, (var)param2...]...]
 #define LevelDesc$additionalScripts 0			// List of names of scripts to wait for evt$SCRIPT_INIT from
-
+#define LevelDesc$difficulty 1					// (int)difficulty, (int)isChallenge
 
 
 
@@ -77,6 +78,8 @@
 #define Level$died() runOnPlayers(targ, runOmniMethodOn(targ, "got Level", LevelMethod$died, [], TNN);)
 #define Level$cellData(data) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellData, [data], TNN)
 #define Level$cellDesc(desc) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellDesc, [desc], TNN)
+#define Level$difficulty(difficulty, challenge) runMethod(ROOT_LEVEL, "got Level", LevelMethod$difficulty, [difficulty, challenge], TNN)
+
 #define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)
 #define Level$getObjectives() runMethod(ROOT_LEVEL, "got Level", LevelMethod$getObjectives, [], TNN)
 #define Level$bind(player) runLimitMethod(player, "got Level", LevelMethod$bindToLevel, [], TNN, 100)

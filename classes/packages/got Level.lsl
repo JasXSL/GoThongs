@@ -8,6 +8,10 @@ list PLAYERS = [];
 list PLAYERS_COMPLETED;
 integer START_PARAM;
 
+// These are generally only relevant in challenge mode
+integer DIFFICULTY;  			
+integer CHALLENGE;
+
 // (str)name, (vec)pos
 list MONSTERS_KILLED;
 
@@ -230,35 +234,26 @@ default
 				// Send player to start
 				Alert$freetext(llGetOwner(), "Loading Cell.. Please wait.", FALSE, FALSE);
 				
-				
-				vector p1 = (vector)db3$get(cls$name, [LevelShared$P1_start]);
-				vector p2 = (vector)db3$get(cls$name, [LevelShared$P2_start]); 
-				
-				// Adds a 6 sec delay for physics shapes to load
-				list tp = [
-					SupportcubeBuildTask(Supportcube$tSetPos, [prPos(l2s(PLAYERS, 0))]), 
-					SupportcubeBuildTask(Supportcube$tDelay, [.1]), 
-					SupportcubeBuildTask(Supportcube$tForceSit, ([FALSE, TRUE])), 
-					SupportcubeBuildTask(Supportcube$tSetPos, [p1+llGetPos()]), 
-					SupportcubeBuildTask(Supportcube$tDelay, [6]), 
-					SupportcubeBuildTask(Supportcube$tForceUnsit, [])
+				list positions = [
+					p1,
+					p2
 				];
-				RLV$cubeTaskOn(llList2String(PLAYERS, 0), tp);
 				
-				// Send anyways to preserve memory
-				vector two = p2;
-				if(two == ZERO_VECTOR)two = p1;
-				
-				tp = [
-					SupportcubeBuildTask(Supportcube$tSetPos, [prPos(l2s(PLAYERS, 0))]), 
-					SupportcubeBuildTask(Supportcube$tDelay, [.1]), 
-					SupportcubeBuildTask(Supportcube$tForceSit, ([FALSE, TRUE])), 
-					SupportcubeBuildTask(Supportcube$tSetPos, [two+llGetPos()]), 
-					SupportcubeBuildTask(Supportcube$tDelay, [6]), 
-					SupportcubeBuildTask(Supportcube$tForceUnsit, [])
-				];
-				RLV$cubeTaskOn(llList2String(PLAYERS, 1), tp);
-
+				integer i;
+				runOnPlayers(targ,
+					vector pos = l2v(positions, i);
+					if(pos == ZERO_VECTOR)
+						pos = l2v(positions, 0)+(<llCos(PI/4*i), llSin(PI/4*i),0>*.5);
+					list tp = ([
+						SupportcubeBuildTask(Supportcube$tSetPos, [prPos(targ)]), 
+						SupportcubeBuildTask(Supportcube$tDelay, [.1]), 
+						SupportcubeBuildTask(Supportcube$tForceSit, ([FALSE, TRUE])), 
+						SupportcubeBuildTask(Supportcube$tSetPos, [pos+llGetPos()]), 
+						SupportcubeBuildTask(Supportcube$tDelay, [6]), 
+						SupportcubeBuildTask(Supportcube$tForceUnsit, [])
+					]);
+					RLV$cubeTaskOn(targ, tp);
+				)
 			}
 			
 			runOnPlayers(pk, 
@@ -289,7 +284,6 @@ default
 				
 				list pnames = [];
 				raiseEvent(LevelEvt$players, mkarr(PARAMS));
-				
 				
 				runOnPlayers(targ,
 					pnames += llGetDisplayName(targ);
@@ -382,11 +376,10 @@ default
 			// Actually send the completecell command, but only once
 			if((integer)START_PARAM){
 				BFL = BFL|BFL_COMPLETED;
-                runOnPlayers(pk, 
-					integer continue = (pk == llGetOwner());
-					Bridge$completeCell(pk, 0, 0, continue);
-					Portal$killAll();
-				)
+
+				Bridge$completeCell(llGetOwner(), 0, 0, TRUE);
+				Portal$killAll();
+				
 				qd("Loading next stage.");
 				return;
             }
@@ -441,6 +434,28 @@ default
 				GUI$toggleSpinner(pk, TRUE, txt);
 			)
 		}
+	}
+	if(METHOD == LevelMethod$difficulty && method$byOwner){
+		DIFFICULTY = l2i(PARAMS, 0);
+		CHALLENGE = l2i(PARAMS, 1);
+		list desc = llJson2List(llGetObjectDesc());
+		if(llJsonValueType(llGetObjectDesc(), []) != JSON_ARRAY)
+			desc = [];
+		integer i;
+		for(i=0; i<count(desc) && desc != []; ++i){
+			list dta = llJson2List(l2s(desc,i));
+			if(l2i(dta, 0) == LevelDesc$difficulty){
+				desc = llDeleteSubList(desc, i, i);
+				--i;
+			}
+		}
+		desc+= mkarr(([LevelDesc$difficulty, DIFFICULTY, CHALLENGE]));
+		llSetObjectDesc(mkarr(desc));
+		raiseEvent(LevelEvt$difficulty, mkarr(([DIFFICULTY, CHALLENGE])));
+		runOnPlayers(pk, 
+			Root$setLevelOn(pk);
+		)
+		
 	}
     if(METHOD == LevelMethod$loadFinished && BFL&BFL_LOADING && method$byOwner){
 		

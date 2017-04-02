@@ -220,7 +220,10 @@ default
 		multiTimer([]);
     }
     
-	#define LISTEN_LIMIT_FREETEXT if(llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1 && llList2String(PLAYERS, 0) != "*"){return;}
+	#define LISTEN_LIMIT_FREETEXT if(llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1 && llList2String(PLAYERS, 0) != "*"){ \
+		return; \
+	}
+	
     #include "xobj_core/_LISTEN.lsl"
     
     

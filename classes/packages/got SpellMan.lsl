@@ -31,10 +31,6 @@ list COOLDOWNS = [];            // (int)buttonID, (float)finish_time
 #define clearQueue() QUEUE_SPELL = -1; BFL=BFL&~BFL_QUEUE_SELF_CAST; SpellAux$setQueue(QUEUE_SPELL)
 #define startSpell(spell) if(castSpell(spell) == FALSE){llStopSound();llPlaySound("2967371a-f0ec-d8ad-4888-24b3f8f3365c", .2);clearQueue();}
 
-// Recaches the team of the active target
-#define recacheTarget() CACHE_ROOT_TARGET = l2k(data,0); CACHE_ROOT_TARGET_TEAM = l2i(data,2)
-
-
 // Global cooldown. Set by bridge.
 float GCD = 1.5;
 float GCD_ENDS; 	// Script time when global cooldown ends
@@ -65,6 +61,7 @@ integer QUEUE_SPELL = -1;		// Spell to cast after finishing the current cast
 float CACHE_MANA;
 float RANGE_ADD;
 float HEIGHT_ADD;
+integer PLAYER_FOCUS;
 
 list PLAYERS;					// Me and coop player
 
@@ -78,6 +75,7 @@ integer BFL;
 
 
 // This is a code block that checks if a player is visible. Ret is an optional return value
+
 #define CODE$VISION_CHECK(ret) \
 string targ = llList2String(SPELL_TARGS, 0); \
 if(targ != (string)LINK_ROOT && targ != "AOE"){ \
@@ -106,6 +104,8 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     float h = llFabs(b.z/2); \
 */
 
+#define recacheTarget() CACHE_ROOT_TARGET = l2k(data,0); CACHE_ROOT_TARGET_TEAM = l2i(data,2)
+
 // Default event handler
 onEvt(string script, integer evt, list data){
     if(script == "#ROOT"){
@@ -126,6 +126,8 @@ onEvt(string script, integer evt, list data){
 			if(release&CONTROL_DOWN)
 				BFL = BFL&~BFL_CROUCH_HELD;    
 		}
+		else if(evt == RootEvt$focus)
+			PLAYER_FOCUS = l2i(data, 0);
 		
 		// This is how spells are cast.
 		else if(evt == evt$TOUCH_START){
@@ -190,14 +192,25 @@ onEvt(string script, integer evt, list data){
 // This is a macro that turns flags into targets
 // Returns a list of targets or ["AOE"], or ["Q"] to queue on target change
 
-#define flagsToTargets(targets, var) var = []; \
-if(targets & TARG_AOE)var = ["AOE"]; \
-else if(targets == TARG_CASTER)var = [LINK_ROOT]; \
+#define flagsToTargets(targets, var) \
+var = []; \
+if(targets & TARG_AOE){ \
+	var = ["AOE"]; \
+} \
+else if(targets == TARG_CASTER){ \
+	var = [LINK_ROOT]; \
+} \
 else{ \
-	key targ = CACHE_ROOT_TARGET;\
-    if(targ == llGetOwner())targ = ""; \
-    if(isset(targ) && (~targets&TARG_CASTER || (BFL&(BFL_CROUCH_HELD|BFL_QUEUE_SELF_CAST)) == 0)){ \
-        if(targets&TARG_PC && CACHE_ROOT_TARGET_TEAM == TEAM)var = [targ]; \
+	key targ = CACHE_ROOT_TARGET; \
+	integer noTarg = targ == ""; \
+    if(targ == llGetOwner()){ \
+		targ = ""; \
+	} \
+    \
+	if(isset(targ) && (~targets&TARG_CASTER || (BFL&(BFL_CROUCH_HELD|BFL_QUEUE_SELF_CAST)) == 0)){ \
+        if(targets&TARG_PC && CACHE_ROOT_TARGET_TEAM == TEAM){ \
+			var = [targ]; \
+		} \
         else if( \
 			targets&TARG_NPC && \
 			CACHE_ROOT_TARGET_TEAM != TEAM \
@@ -205,12 +218,18 @@ else{ \
 			var = [targ]; \
 		}\
     } \
-    else if(BFL&(BFL_QUEUE_SELF_CAST|BFL_CROUCH_HELD) && count(PLAYERS) > 1 && targets&TARG_PC && ~targets&TARG_NPC && CACHE_ROOT_TARGET_TEAM != TEAM){ \
-		var = [l2k(PLAYERS, 1)];\
+    else if( \
+		BFL&(BFL_QUEUE_SELF_CAST|BFL_CROUCH_HELD) && \
+		count(PLAYERS) > 1 && \
+		targets&TARG_PC && \
+		(CACHE_ROOT_TARGET_TEAM != TEAM || noTarg) \
+	){ \
+		var = [l2k(PLAYERS, PLAYER_FOCUS)];\
 	} \
+	\
 	if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \
-	else if(targets&TARG_NPC && !isset(targ) && SPELL_ON_TARG == -1){ \
-		var = ["Q"];\
+	else if(targets&TARG_NPC && !isset(targ) && SPELL_ON_TARG == -1 && var == []){ \
+		var = ["Q"]; \
 	}\
 }
 
@@ -327,6 +346,8 @@ integer castSpell(integer nr){
 	// SUCCESS
     // Grab the casttime and multiply it
     float casttime = spellCasttime(data, nr);
+	if(casttime < 0)
+		casttime = 0;
 	clearQueue();
 	
 	// Set the current spell being cast
@@ -439,7 +460,7 @@ spellEnd(){
     
     SpellAux$spellEnd();
     
-    if(spellCasttime(data, SPELL_CASTED)){
+    if(spellCasttime(data, SPELL_CASTED) > 0){
         ThongMan$particles(0, 1, "[]");
     }
 	

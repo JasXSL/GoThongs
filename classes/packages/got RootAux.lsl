@@ -208,11 +208,14 @@ default
 			
 			else if(message == "reset"){resetAll();}
 			
+			/*
+			Not needed anymore
 			else if(message == "continueQuest"){ 
 				AMS$(ARoot$continueQuest); 
 				Portal$killAll(); 
 				Bridge$continueQuest();
 			} 
+			*/
 
 			
 			else if(message == "potion"){ 

@@ -21,6 +21,8 @@
 #include "got/_core.lsl"
 #define InteractConf$ALLOW_ML_LCLICK
 
+list PLAYER_HUDS;
+
 key level = "";
 integer CROSSHAIR;
 integer onInteract(key obj, string task, list params){
@@ -46,17 +48,28 @@ integer onInteract(key obj, string task, list params){
 	else if(task == "CLEAR_CAM"){
 		RLV$clearCamera((str)LINK_ROOT);
 	}
-	/*
+	
     else if(task == "CUSTOM"){
-        raiseEvent(InteractEvt$onInteract, mkarr(([obj, task])));
+        Status$coopInteract(obj);
     }
-	*/
+	
     else 
 		return FALSE;
 	return TRUE;
 }
 onDesc(key obj, string text){
-    if(text == "CUSTOM")text = "Coop Player";
+	// CUSTOM works through additionalAllow
+    if(text == "CUSTOM"){
+		integer pos = llListFindList(additionalAllow, [(str)obj]);
+		if(pos == -1)
+			obj = "";
+		else{
+			text = llGetDisplayName(obj);
+			parseDesc(l2k(PLAYER_HUDS, pos), resources, status, fx, sex, team, monsterflags);
+			if(status&StatusFlag$coopBreakfree)
+				text = "Break Free";
+		}
+	}
     
     if(obj == "_PRIMSWIM_CLIMB_"){
         obj = llGetKey();
@@ -80,6 +93,8 @@ evt(string script, integer evt, list data){
             additionalAllow = data;
             if(llList2Key(additionalAllow, 0) == llGetOwner())additionalAllow = llDeleteSubList(additionalAllow,0,0);
         }
+		else if(evt == RootEvt$coop_hud)
+			PLAYER_HUDS = data;
     }
 }
 

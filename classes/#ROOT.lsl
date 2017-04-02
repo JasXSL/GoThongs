@@ -10,12 +10,15 @@
 #define RootMethod$attached 9					// Sent as omni com on HUD attach - Also used to get the coop player's HUD
 #define RootMethod$refreshTarget 10				// (key)id, Force a target refresh command if id is "" or we are currently targeting ID
 
+
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed
 #define RootEvt$targ 3							// [(key)targ, (key)icon, (int)team]
 #define RootEvt$players 4						// (arr)players
-#define RootEvt$level 5							// [(key)id] - Whenever a new cell has been ressed
+#define RootEvt$level 5							// [(key)id, (bool)isChallenge] - Whenever a new cell has been ressed
 #define RootEvt$coop_hud 6						// ["", (key)player1, (key)player2...] - Id of coop HUDs. Used by GUI
+#define RootEvt$focus 7							// (int)index of player
+
 
 //#define Root$refreshThong(targ) runMethod(targ, "#ROOT", RootMethod$refreshThong, [], TNN)
 //#define Root$setThongIni(on) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setThongIni, [on], TNN)

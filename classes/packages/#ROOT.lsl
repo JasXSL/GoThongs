@@ -17,7 +17,7 @@ key TARG;
 key TARG_ICON;
 integer TARG_TEAM;
 integer TEAM = TEAM_PC;
-
+integer PLAYER_FOCUS;			// Player focus target
 
 key ROOT_LEVEL;			// Current level being played
 
@@ -86,13 +86,18 @@ integer setTarget(key t, key icon, integer force, integer team){
     
 	TARG_ICON = icon;
 	
+	integer preFocus = PLAYER_FOCUS;
 	// Make sure we target a HUD if we target a player
-	if(t == llGetOwner())
+	if(t == llGetOwner()){
 		t = llGetKey();
+		PLAYER_FOCUS = 0;
+	}
 	else{
 		integer pos = llListFindList(getPlayers(), [(str)t]);
-		if(~pos)
+		if(~pos){
 			t = l2k(COOP_HUDS, pos);
+			PLAYER_FOCUS = pos;
+		}
 	}
 	// Try to fetch from description
 	if(team == -1){
@@ -103,7 +108,9 @@ integer setTarget(key t, key icon, integer force, integer team){
     TARG = t;
     
     raiseEvent(RootEvt$targ, mkarr(([t, icon, team])));
-    
+    if(PLAYER_FOCUS != preFocus)
+		raiseEvent(RootEvt$focus, (str)PLAYER_FOCUS);
+	
 	// Check if target still exists
 	if(t)
 		multiTimer(["T", "", 2, TRUE]);
@@ -305,6 +312,7 @@ default
         else if(METHOD == RootMethod$setParty){
 			
 			string pre = mkarr(PLAYERS);
+			
             PLAYERS = [(string)llGetOwner()];
 			COOP_HUDS = [];
 			
@@ -321,9 +329,14 @@ default
 				)
             }
 			
-			else
+			else if(pre != mkarr(PLAYERS))
                 AMS$(ARoot$coopDisband);
             
+			if(PLAYER_FOCUS >= count(PLAYERS)){
+				PLAYER_FOCUS = 0;
+				raiseEvent(RootEvt$focus, (str)PLAYER_FOCUS);
+			}
+			
 			integer i;
 			for(i=0; i<count(PLAYERS); ++i)
 				COOP_HUDS += "";
@@ -393,7 +406,15 @@ default
 	else if(METHOD == RootMethod$setLevel){
 		key pre = ROOT_LEVEL;
 		ROOT_LEVEL = id;
-		raiseEvent(RootEvt$level, mkarr([ROOT_LEVEL]));
+		list split = llJson2List(prDesc(ROOT_LEVEL));
+		integer isChallenge;
+		list_shift_each(split, val,
+			list d = llJson2List(val);
+			if(l2i(d, 0) == LevelDesc$difficulty)
+				isChallenge = l2i(d, 2);
+		)
+		
+		raiseEvent(RootEvt$level, mkarr(([ROOT_LEVEL, isChallenge])));
 			
 		if(pre != ROOT_LEVEL && !method$byOwner){
 			qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");

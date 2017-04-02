@@ -18,6 +18,7 @@ if(STATUS_FLAGS_PRE != STATUS_FLAGS){ \
 #define TIMER_INVUL "c"
 #define TIMER_CLIMB_ROOT "d"
 #define TIMER_COMBAT "e"
+#define TIMER_COOP_BREAKFREE "f"
 
 #define updateCombatTimer() multiTimer([TIMER_COMBAT, "", StatusConst$COMBAT_DURATION, FALSE])
 
@@ -28,7 +29,7 @@ integer BFL = 1;
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
 #define BFL_STATUS_SENT 0x20		// Status sent
 #define BFL_AVAILABLE_BREAKFREE 0x40
-#define BFL_AO_OFF 0x80
+
 #define BFL_QTE 0x100			// In a quicktime event
 
 // Cache
@@ -76,6 +77,8 @@ list fxConversions; // See got FXCompiler.lsl
 integer fxTeam = -1;
 
 key ROOT_LEVEL;
+integer CHALLENGE_MODE;
+#define isChallenge() (llKey2Name(ROOT_LEVEL) != "" && CHALLENGE_MODE)
 
 list SPELL_DMG_TAKEN_MOD; 
 
@@ -205,9 +208,18 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 			
 			toggleClothes();
 			
-			multiTimer([TIMER_BREAKFREE, "", 20, FALSE]);
-			GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, 20);
-
+			float dur = 20;
+			if(isChallenge()){
+				dur = 90;
+				if(STATUS_FLAGS & StatusFlag$boss_fight)
+					dur = 0;
+				else
+					multiTimer([TIMER_COOP_BREAKFREE, "", 20, FALSE]);
+			}
+			if(dur){
+				multiTimer([TIMER_BREAKFREE, "", dur, FALSE]);
+				GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, dur);
+			}
 			Status$monster_rapeMe();
 			Rape$activateTemplate();
 		}
@@ -220,6 +232,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 			
             STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$dead;
 			STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
+			STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$coopBreakfree;
 			
             raiseEvent(StatusEvt$dead, 0);
             Rape$end();
@@ -340,7 +353,10 @@ onEvt(string script, integer evt, list data){
                 Status$fullregen();
             }
         }
-		else if(evt == RootEvt$level){ROOT_LEVEL = llList2String(data, 0);}
+		else if(evt == RootEvt$level){
+			ROOT_LEVEL = llList2String(data, 0);
+			CHALLENGE_MODE = l2i(data, 1);
+		}
 		else if(evt == evt$BUTTON_PRESS && l2i(data, 0)&CONTROL_UP && BFL&BFL_AVAILABLE_BREAKFREE && STATUS_FLAGS&StatusFlag$dead){
 			Status$fullregen();
 		}
@@ -509,16 +525,7 @@ timerEvent(string id, string data){
 		integer inCombat = (STATUS_FLAGS&StatusFlags$combatLocked)>0;
 		
 		integer ainfo = llGetAgentInfo(llGetOwner());
-		// Checks if agent is no longer sitting or swimming
-		if(BFL&BFL_AO_OFF && ~STATUS_FLAGS&StatusFlag$swimming && ~ainfo & AGENT_SITTING){
-			BFL = BFL&~BFL_AO_OFF;
-			llRegionSayTo(llGetOwner(), -8888, (string)llGetOwner()+"booton");
-		}
-		else if(~BFL&BFL_AO_OFF && ((STATUS_FLAGS&StatusFlag$swimming) || ainfo & AGENT_SITTING)){
-			llRegionSayTo(llGetOwner(), -8888, (string)llGetOwner()+"bootoff");
-			BFL = BFL|BFL_AO_OFF;
-		}
-		
+
 		#define DEF_MANA_REGEN 0.025
 		#define DEF_HP_REGEN 0.015
 		#define DEF_PAIN_REGEN 0.05
@@ -583,7 +590,11 @@ timerEvent(string id, string data){
 		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$combat;
 		saveFlags();
 	}
-	
+	else if(id == TIMER_COOP_BREAKFREE){
+		llRezAtRoot("BreakFree", llGetPos(), ZERO_VECTOR, ZERO_ROTATION, 1);
+		STATUS_FLAGS = STATUS_FLAGS|StatusFlag$coopBreakfree;
+		saveFlags();
+	}
 }
 
 
@@ -759,7 +770,10 @@ default
 		multiTimer(["OP", "", .2, FALSE]);
 	}
     
-    else if(METHOD == StatusMethod$fullregen){
+    else if(
+		METHOD == StatusMethod$fullregen || 
+		(METHOD == StatusMethod$coopInteract && STATUS_FLAGS&StatusFlag$coopBreakfree)
+	){
 		
 		integer ignoreInvul = l2i(PARAMS, 0);
         Rape$end();
@@ -777,6 +791,7 @@ default
         STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped;
         STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$pained;
         STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$aroused;
+		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$coopBreakfree;
         raiseEvent(StatusEvt$dead, 0);
         
         AnimHandler$anim("got_loss", FALSE, 0, 0);
@@ -826,8 +841,14 @@ default
 	else if(METHOD == StatusMethod$toggleBossFight){
 		integer on = (int)method_arg(0);
 		if((on && STATUS_FLAGS&StatusFlag$boss_fight) || (!on&&~STATUS_FLAGS&StatusFlag$boss_fight))return;
-		if(on)STATUS_FLAGS = STATUS_FLAGS | StatusFlag$boss_fight;
-		else STATUS_FLAGS = STATUS_FLAGS &~ StatusFlag$boss_fight;
+		if(on){
+			STATUS_FLAGS = STATUS_FLAGS | StatusFlag$boss_fight;
+		}
+		else{
+			STATUS_FLAGS = STATUS_FLAGS &~ StatusFlag$boss_fight;
+			if(STATUS_FLAGS & StatusFlag$dead)
+				Status$fullregen();
+		}
 		saveFlags();
 	}
     else if(METHOD == StatusMethod$setTeam){

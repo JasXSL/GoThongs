@@ -29,7 +29,7 @@
 #define StatusMethod$loading 14			// (bool)loading - Sets loading flag
 #define StatusMethod$setDifficulty 15	// (int)difficulty - between 0->5
 #define StatusMethod$stacksChanged 16	// (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
-// #define StatusMethod$refreshCombat 17	// void - Refreshes the combat timer
+#define StatusMethod$coopInteract 17		// void - Coop player has interacted with you
 #define StatusMethod$toggleBossFight 18			// (bool)fight - Received from GUI, toggles boss fight on or off
 #define StatusMethod$setTeam 19					// (int)team - PC/NPC
 
@@ -106,7 +106,7 @@
 #define StatusFlag$invul 0x400		// Invulnerable after rape
 #define StatusFlag$combat 0x800		// In combat
 #define StatusFlag$boss_fight 0x1000// In boss fight
-
+#define StatusFlag$coopBreakfree 0x2000	// Coop player can break you free now (challenge mode)
 
 #define StatusFlags$combatLocked (StatusFlag$combat|StatusFlag$boss_fight)
 #define StatusFlags$noCast (StatusFlag$dead|StatusFlag$raped|StatusFlag$climbing)
@@ -149,6 +149,7 @@
 #define Status$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Status", StatusMethod$stacksChanged, [pid, added, duration, stacks], TNN)
 #define Status$refreshCombat() llMessageLinked(LINK_ROOT, TASK_REFRESH_COMBAT, "", "") 
 #define Status$toggleBossFight(on) runMethod((str)LINK_ROOT, "got Status", StatusMethod$toggleBossFight, [on], TNN)
+#define Status$coopInteract(targ) runMethod((str)targ, "got Status", StatusMethod$coopInteract, [], TNN)
 
 // Monster
 #define Status$dropAggro(targ) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ], TNN)

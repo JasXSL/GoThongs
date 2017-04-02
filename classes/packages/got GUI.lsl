@@ -10,8 +10,8 @@ integer BFL;
 #define BFL_UPDATE_QUEUE 0x4		// Bars update queue
 
 #define BAR_STRIDE 2
-list BARS = [0,0,0,0,0,0];  // [(int)portrait, (int)bars], self, friend, target
-list FX_PRIMS = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+list BARS = [0,0,0,0,0,0,0,0,0,0];  // [(int)portrait, (int)bars], target, self, coop0, coop1, coop2
+list FX_PRIMS = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 list PARTY_ICONS = [];
 
 list SPELL_UPDATE_QUEUE;	// (key)id, (csv)data 
@@ -20,8 +20,11 @@ list SPELL_UPDATE_QUEUE;	// (key)id, (csv)data
 integer TEAM = TEAM_PC;
 
 key TARG;
-key COOP_HUD;
 list PLAYERS;
+list PLAYER_HUDS;
+integer PLAYER_FOCUS;
+#define FOCUS_BORDER <0.820, 0.820, 0.820>
+
 key default_tx = "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e";
 integer CACHE_FX_FLAGS = 0;
 
@@ -73,7 +76,21 @@ onEvt(string script, integer evt, list data){
 			toggle(TRUE);
         }
 		else if(evt == RootEvt$coop_hud){
-			COOP_HUD = l2k(data, 1);
+			PLAYER_HUDS = llListReplaceList(data, [llGetKey()], 0,0);
+		}
+		else if(evt == RootEvt$focus){
+			PLAYER_FOCUS = l2i(data, 0);
+			list out = []; integer i;
+			for(i=0; i<count(PLAYER_HUDS); ++i){
+				vector color = <0,0,0>;
+				if(i == PLAYER_FOCUS)
+					color = FOCUS_BORDER;
+				out+= [
+					PRIM_LINK_TARGET, l2i(BARS, BAR_STRIDE*(i+1)),
+					PRIM_COLOR, 0, color, .75
+				];
+			}
+			PP(0,out);
 		}
     }
 	else if(script == "got Status" && evt == StatusEvt$team){
@@ -99,7 +116,7 @@ updateTarget(key targ, key texture, integer team){
 			color = <1,.5,.5>;
 		
         out+=[
-            PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2),
+            PRIM_LINK_TARGET, llList2Integer(BARS, 0),
             PRIM_POSITION, offs1+base_offs,
             PRIM_COLOR, 0, color, 1,
             PRIM_COLOR, 1, <1,1,1>, 1,
@@ -110,7 +127,7 @@ updateTarget(key targ, key texture, integer team){
         ];
         if(texture)out+=[PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0];
         out+=[
-            PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2+1),
+            PRIM_LINK_TARGET, llList2Integer(BARS, 1),
             PRIM_POSITION, offs2+base_offs,
             PRIM_COLOR, 0, ZERO_VECTOR, .25,
             PRIM_COLOR, 1, ZERO_VECTOR, .5,
@@ -125,22 +142,22 @@ updateTarget(key targ, key texture, integer team){
             PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25,0,0>, 0
         ];
         integer i;
-		for(i=16; i<24; i++){
+		for(i=8; i<16; i++){
 			out+= [
 				PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), 
-				PRIM_POSITION, <0.044754, 0.048681+0.022*(i-16), 0.352110>,
+				PRIM_POSITION, <0.044754, 0.048681+0.022*(i-8), 0.352110>+base_offs,
 				PRIM_COLOR, ALL_SIDES, ZERO_VECTOR, 0
 			];
 		}
     }else{
         out+= [
-            PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2), 
+            PRIM_LINK_TARGET, llList2Integer(BARS, 0), 
             PRIM_POSITION, ZERO_VECTOR,
-            PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE*2+1),
+            PRIM_LINK_TARGET, llList2Integer(BARS, 1),
             PRIM_POSITION, ZERO_VECTOR
         ];
 		integer i;
-		for(i=16; i<24; i++){
+		for(i=8; i<16; i++){
 			// Spinner
 			out+= [
 				PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), 
@@ -172,9 +189,7 @@ default
 	timer(){
 		// Tick the updates
 		
-		list statuses = [
-			llGetKey(), COOP_HUD, TARG, boss
-		];
+		list statuses = [TARG]+PLAYER_HUDS+[ boss];
 		list out = [];
 		
 		if(llKey2Name(boss) == "" && boss != ""){
@@ -196,10 +211,10 @@ default
 			if(t){
 				list data = llGetObjectDetails(t, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
 				list split = explode("$", l2s(data, 1));
-				n = l2i(split, 2);
+				n = l2i(split, 2); // Resource block
 				// PC
-				if(l2i(data, 0))
-					n = l2i(split, 0);
+				if(l2i(data, 0)) // Attached
+					n = l2i(split, 0); // HP block is in a different position of the description for PC
 			}
 			
 			statuses = llListReplaceList(statuses, [n], i, i);
@@ -211,32 +226,44 @@ default
 		
 		if(statusChanged(statuses)){
 			status_pre = statuses;
-			
+
 			// Cycle status bars
 			for(i=0; i<count(statuses); i++){
 				integer n = l2i(statuses, i);
+				
+				integer bar = llList2Integer(BARS, 1); 						// Targ
+				if(i)
+					bar = llList2Integer(BARS, BAR_STRIDE*i+1); 			// A player or boss
+				
 				if(~n){				
-					integer bar = llList2Integer(BARS, 1); 							// Owner
-					if(i == 2)bar = llList2Integer(BARS, BAR_STRIDE*2+1); 			// Targ
-					else if(i == 1)bar = llList2Integer(BARS, BAR_STRIDE+1);		// Coop
 					
+						
+					list faces = [2,3,4,5]; // HP, Mana, Arousal, pain
+					
+					if(i>1 && i != count(statuses)-1)
+						faces = [1,2,3,4];
 					
 					float hp = (n>>21&127) / 127.0;
 					float mana = (n>>14&127) / 127.0;
 					float ars = (n>>7&127) / 127.0;
 					float pin = (n&127) / 127.0;
 					
+					vector overlay = <1,1,1>;
+					if(hp <= 0)
+						overlay = <.5,0,0>;
+					
 					list dta = [
-						PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <.25-.5*hp,0,0>, 0,
-						PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <.25-.5*mana,0,0>, 0,
-						PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25-.5*ars,0,0>, 0,
-						PRIM_COLOR, 4, <1,.5,1>*(.5+ars*.5), 0.5+(float)floor(ars)/2,
-						PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25-.5*pin,0,0>, 0,
-						PRIM_COLOR, 5, <.5,.5,1>*(.5+pin*.5), 0.5+(float)floor(pin)/2
+						PRIM_TEXTURE, l2i(faces,0), default_tx, <.5,1,0>, <.25-.5*hp,0,0>, 0,
+						PRIM_TEXTURE, l2i(faces,1), default_tx, <.5,1,0>, <.25-.5*mana,0,0>, 0,
+						PRIM_TEXTURE, l2i(faces,2), default_tx, <.5,1,0>, <.25-.5*ars,0,0>, 0,
+						PRIM_COLOR, l2i(faces,2), <1,.5,1>*(.5+ars*.5), 0.5+(float)floor(ars)/2,
+						PRIM_TEXTURE, l2i(faces,3), default_tx, <.5,1,0>, <.25-.5*pin,0,0>, 0,
+						PRIM_COLOR, l2i(faces,3), <.5,.5,1>*(.5+pin*.5), 0.5+(float)floor(pin)/2,
+						
 					];
 					
 					// Boss top bar
-					if(i == 3){
+					if(i == count(statuses)-1){
 						bar = P_BOSS_HP;
 						dta = [
 							PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <.25-.5*hp,0,0>, 0
@@ -244,6 +271,9 @@ default
 					}
 					
 					out+=[PRIM_LINK_TARGET, bar]+dta;
+					out+=[PRIM_LINK_TARGET, bar-1, PRIM_COLOR, 1, overlay, 1];
+				}else{
+					out+=[PRIM_LINK_TARGET, bar-1, PRIM_COLOR, 1, <1,1,1>, .5];
 				}
 			}
 		}
@@ -263,9 +293,10 @@ default
 			
 			if(id == "")id = llGetKey();
 			// These aren't bars so we can't use id2bars
-			if(id == llGetKey())bars+=0;
-			if(id == TARG)bars += 2;
-			if(id == COOP_HUD)bars += 1;
+			if(id == llGetKey())
+				bars+=0;
+			if(id == TARG)
+				bars += 1;
 				
 			if(bars == [])
 				jump execIconUpdateContinue;
@@ -346,14 +377,12 @@ default
         links_each(nr, name, 
             integer n = (integer)llGetSubString(name, -1, -1); 
             if(
-                llGetSubString(name, 0, 2) == "FRB" || 
-                llGetSubString(name, 0, 1) == "FR" || 
-                llGetSubString(name, 0, 1) == "OP"
+                llGetSubString(name, 0, 1) == "FR" ||  // Targ
+                llGetSubString(name, 0, 1) == "OP"    // Player
             ){
                 integer pos = (n-1)*BAR_STRIDE; 
-                if(llGetSubString(name, 0, 1) == "FR")pos+=BAR_STRIDE*2;
+                if(llGetSubString(name, 0, 1) != "FR")pos+=BAR_STRIDE;
                 if(llGetSubString(name, 2, 2) == "B")pos++;
-                if(llGetSubString(name, 3, 3) == "O")pos++;
                 BARS = llListReplaceList(BARS, [nr], pos, pos);
             }
 			else if(llGetSubString(name, 0, 1) == "FX"){
@@ -377,12 +406,13 @@ default
 		GCHAN = GUI_CHAN(llGetOwner());
 		llListen(GCHAN, "", "", "");
 		llListen(GCHAN+1, "", "", "");
-		llSetTimerEvent(0.5); // tick status bars
 		
+		
+		//toggle(TRUE);
     } 
 	
 	listen(integer chan, string name, key id, string message){
-		if(chan == GCHAN+1){
+		if(chan == GCHAN+1 && id == TARG){
 			updateSpellIcons(id, message);
 		}
 	}
@@ -565,7 +595,7 @@ default
 		
 		list out;
 		integer i;
-		for(i=0; i<2; i++){
+		for(i=0; i<4; i++){
 			integer exists = FALSE;
 			if(llGetListLength(players)>i)exists = TRUE;
 			
@@ -575,78 +605,101 @@ default
 			if(show && exists){
 				vector offs1 = <0,.12,0.25>;
 				vector offs2 = <0,.26,0.253>;
-				vector offs3 = <0,.29,0.236>;
+				float width = 0.07422;
+				vector scale = <0.07862, 0.01523, 0.07422>;
+				vector barscale = <0.21838, 0.01000, 0.06641>;
+				list colors = [2,3,4,5]; // Faces of HP, Mana, Arousal, Pain
+				vector border = FOCUS_BORDER;
 				if(i){
-					offs1.y=-offs1.y;
-					offs2.y=-offs2.y;
-					offs3.y=-offs3.y;
+					offs1.y=-offs1.y-(width*(i-1)*1.05);
+					offs2.y=offs1.y;
+					scale = <0.07422, 0.07422, 0.07862>;
+					barscale = scale;
+					barscale.y = 0.08394;
+					colors = [1,2,3,4];
+					border = ZERO_VECTOR;
 				}
+				
+				float bgAlpha = 1;
+				if(llKey2Name(l2k(PLAYER_HUDS, i)) == "")
+					bgAlpha = .5;
 				
 				out+=[
 					// Self
-					PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE),
+					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+BAR_STRIDE*i),
 					PRIM_POSITION, offs1,
-					PRIM_COLOR, 0, ZERO_VECTOR, 1,
-					PRIM_COLOR, 1, <1,1,1>, 1,
+					PRIM_COLOR, 0, border, .75,
+					PRIM_COLOR, 1, <1,1,1>, bgAlpha,
 					PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0,
 					PRIM_COLOR, 2, <1,1,1>, 0,
 					PRIM_COLOR, 3, <1,1,1>, 0,
 					PRIM_COLOR, 4, <1,1,1>, 0,
 					PRIM_COLOR, 5, <1,1,1>, 0,
+					PRIM_SIZE, scale,
 					
-					PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE+1),
+					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+BAR_STRIDE*i+1),
 					PRIM_POSITION, offs2+<.05,0,0>,
 					PRIM_COLOR, 0, ZERO_VECTOR, .25,
 					PRIM_COLOR, 1, ZERO_VECTOR, .5,
-					PRIM_COLOR, 2, <1,.5,.5>, 1,
-					PRIM_COLOR, 3, <.5,.8,1>, 1,
-					PRIM_COLOR, 4, <1,.5,1>, 1,
-					PRIM_COLOR, 5, <.5,.5,1>, 1,
+					PRIM_COLOR, l2i(colors,0), <1,.5,.5>, 1,
+					PRIM_COLOR, l2i(colors,1), <.5,.8,1>, 1,
+					PRIM_COLOR, l2i(colors,2), <1,.5,1>, 1,
+					PRIM_COLOR, l2i(colors,3), <.5,.5,1>, 1,
 					
-					PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <-.25,0,0>, 0,
-					PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <-.25,0,0>, 0,
-					PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25,0,0>, 0,
-					PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25,0,0>, 0
+					PRIM_TEXTURE, l2i(colors,0), default_tx, <.5,1,0>, <-.25,0,0>, 0,
+					PRIM_TEXTURE, l2i(colors,1), default_tx, <.5,1,0>, <-.25,0,0>, 0,
+					PRIM_TEXTURE, l2i(colors,2), default_tx, <.5,1,0>, <.25,0,0>, 0,
+					PRIM_TEXTURE, l2i(colors,3), default_tx, <.5,1,0>, <.25,0,0>, 0,
+					PRIM_SIZE, barscale
 					
 				];
-				integer x;
-				for(x=0; x<8; x++){
-					float a = x;
-					vector pos = <0.044754, 0.228554, 0.234596>;
-					if(i){
-						pos.y = -pos.y;
-						a = -a;
+					
+				// Owner only spell icons
+				if(i==0){
+					integer x;
+					for(x=0; x<8; x++){
+						float a = x;
+						vector pos = <0.044754, 0.228554, 0.234596>;
+						if(i){
+							pos.y = -pos.y;
+							a = -a;
+						}
+						pos += <0,0.022*a,0>;
+						out+= [
+							PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i*8+x), 
+							PRIM_SIZE, <0.02184, 0.02191, 0.01312>,
+							PRIM_POSITION, pos,
+							PRIM_COLOR, ALL_SIDES, <1,1,1>, 0
+						];
 					}
-					pos += <0,0.022*a,0>;
-					out+= [
-						PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i*8+x), 
-						PRIM_SIZE, <0.02184, 0.02191, 0.01312>,
-						PRIM_POSITION, pos,
-						PRIM_COLOR, ALL_SIDES, <1,1,1>, 0
-					];
 				}
 			}else{ 
 				out+= [
-					PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE), 
+					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE), 
 					PRIM_POSITION, ZERO_VECTOR,
 					
-					PRIM_LINK_TARGET, llList2Integer(BARS, i*BAR_STRIDE+1),
+					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE+1),
 					PRIM_POSITION, ZERO_VECTOR
 				];
-				integer x;
-				for(x=0; x<8; x++){
-					out+= [
-						PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i*8+x),
-						PRIM_POSITION, ZERO_VECTOR,
-						PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0
-					];
+				if(i == 0){
+					integer x;
+					for(x=0; x<8; x++){
+						out+= [
+							PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, x),
+							PRIM_POSITION, ZERO_VECTOR,
+							PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0
+						];
+					}
 				}
 			}
+			llSetLinkPrimitiveParamsFast(0, out);
+			out = [];
 		}
 		
 		BFL = BFL|BFL_TOGGLED;
 		
 		if(!show){
+			llSetTimerEvent(0); // It's hidden Yo, stop ticking
 			BFL = BFL&~BFL_TOGGLED;
 			GUI$toggleLoadingBar((string)LINK_THIS, FALSE, 0);
 			GUI$toggleSpinner((string)LINK_THIS, FALSE, "");
@@ -660,6 +713,8 @@ default
 			];
 			updateTarget("","",0);
 		}
+		else 
+			llSetTimerEvent(0.5); // tick status bars
 		
 		llSetLinkPrimitiveParamsFast(0, out);
 	}
