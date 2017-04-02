@@ -188,7 +188,9 @@ default
 
 	timer(){
 		// Tick the updates
-		
+		if(~BFL&BFL_TOGGLED)
+			return;
+			
 		list statuses = [TARG]+PLAYER_HUDS+[ boss];
 		list out = [];
 		
@@ -221,9 +223,7 @@ default
 		}
 		
 		
-		
-		// Update bars if changed
-		
+
 		if(statusChanged(statuses)){
 			status_pre = statuses;
 
@@ -231,13 +231,22 @@ default
 			for(i=0; i<count(statuses); i++){
 				integer n = l2i(statuses, i);
 				
-				integer bar = llList2Integer(BARS, 1); 						// Targ
-				if(i)
-					bar = llList2Integer(BARS, BAR_STRIDE*i+1); 			// A player or boss
+				integer bar = l2i(BARS, 1); 						// Targ
+				integer portrait = l2i(BARS, 0);
+				if(i){
+					bar = l2i(BARS, BAR_STRIDE*i+1); 			// A player or boss
+					portrait = l2i(BARS, BAR_STRIDE*i);
+				}
 				
+				// Boss
+				if(i == count(statuses)-1){
+					bar = P_BOSS_HP;
+					portrait = P_BOSS_PORTRAIT;
+				}
+				
+
 				if(~n){				
 					
-						
 					list faces = [2,3,4,5]; // HP, Mana, Arousal, pain
 					
 					if(i>1 && i != count(statuses)-1)
@@ -258,26 +267,26 @@ default
 						PRIM_TEXTURE, l2i(faces,2), default_tx, <.5,1,0>, <.25-.5*ars,0,0>, 0,
 						PRIM_COLOR, l2i(faces,2), <1,.5,1>*(.5+ars*.5), 0.5+(float)floor(ars)/2,
 						PRIM_TEXTURE, l2i(faces,3), default_tx, <.5,1,0>, <.25-.5*pin,0,0>, 0,
-						PRIM_COLOR, l2i(faces,3), <.5,.5,1>*(.5+pin*.5), 0.5+(float)floor(pin)/2,
-						
+						PRIM_COLOR, l2i(faces,3), <.5,.5,1>*(.5+pin*.5), 0.5+(float)floor(pin)/2
 					];
 					
 					// Boss top bar
-					if(i == count(statuses)-1){
-						bar = P_BOSS_HP;
+					if(i == count(statuses)-1)
 						dta = [
 							PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <.25-.5*hp,0,0>, 0
 						];
-					}
+					
 					
 					out+=[PRIM_LINK_TARGET, bar]+dta;
-					out+=[PRIM_LINK_TARGET, bar-1, PRIM_COLOR, 1, overlay, 1];
+					out+=[PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, overlay, 1];
 				}else{
-					out+=[PRIM_LINK_TARGET, bar-1, PRIM_COLOR, 1, <1,1,1>, .5];
+					out+=[PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, <1,1,1>, .5];
 				}
+				
 			}
 		}
-
+	
+		
 		// Updates spell icons
 		integer snap = timeSnap();
 		@execIconUpdateContinue;
@@ -407,7 +416,7 @@ default
 		llListen(GCHAN, "", "", "");
 		llListen(GCHAN+1, "", "", "");
 		
-		
+		llSetTimerEvent(0.5); // tick status bars
 		//toggle(TRUE);
     } 
 	
@@ -587,7 +596,9 @@ default
 
     else if(METHOD == GUIMethod$toggle){
 		integer show = l2i(PARAMS, 0);
-		if(show)BFL = BFL|BFL_FIRST_ENABLED;
+		if(show){
+			BFL = BFL|BFL_FIRST_ENABLED;
+		}
 		if(~BFL&BFL_FIRST_ENABLED && show)return;
 		
 		list players = PLAYERS;
@@ -623,7 +634,7 @@ default
 				float bgAlpha = 1;
 				if(llKey2Name(l2k(PLAYER_HUDS, i)) == "")
 					bgAlpha = .5;
-				
+
 				out+=[
 					// Self
 					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+BAR_STRIDE*i),
@@ -674,6 +685,9 @@ default
 					}
 				}
 			}else{ 
+				
+				list h = [llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE), llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE+1)];
+				
 				out+= [
 					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE), 
 					PRIM_POSITION, ZERO_VECTOR,
@@ -691,6 +705,9 @@ default
 						];
 					}
 				}
+				
+				
+				
 			}
 			llSetLinkPrimitiveParamsFast(0, out);
 			out = [];
@@ -699,7 +716,6 @@ default
 		BFL = BFL|BFL_TOGGLED;
 		
 		if(!show){
-			llSetTimerEvent(0); // It's hidden Yo, stop ticking
 			BFL = BFL&~BFL_TOGGLED;
 			GUI$toggleLoadingBar((string)LINK_THIS, FALSE, 0);
 			GUI$toggleSpinner((string)LINK_THIS, FALSE, "");
@@ -713,8 +729,6 @@ default
 			];
 			updateTarget("","",0);
 		}
-		else 
-			llSetTimerEvent(0.5); // tick status bars
 		
 		llSetLinkPrimitiveParamsFast(0, out);
 	}

@@ -567,7 +567,7 @@ timerEvent(string id, string data){
 		}
 		string s = llDumpList2String(out,",");
 		GUI$setMySpellTextures(out);
-		list p = llDeleteSubList(PLAYERS,0,0)+TARGETING;
+		list p = TARGETING;
 		list_shift_each(p, val, 
 			GUI$setSpellTextures(val, s);
 		)
