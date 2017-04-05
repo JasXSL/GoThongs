@@ -22,7 +22,7 @@
 #define Portal$iniData(targ, data, spawnround, requester) runMethod(targ, "got Portal", PortalMethod$iniData, [data, spawnround, requester], TNN)
 #define Portal$removeBySpawnround(spawnround) runOmniMethod("got Portal", PortalMethod$removeBySpawnround, [spawnround], TNN)
 #define Portal$removeSpawnedByThis() runOmniMethod("got Portal", PortalMethod$removeBySpawner, [llGetKey()], TNN)
-
+#define Portal$kill(targ) runMethod((str)targ, "got Portal", PortalMethod$remove, [], TNN)
 
 #define portalLive() (!(int)j(llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0),1) && llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0)!="")
 // Get spawn desc config

@@ -69,6 +69,7 @@
 #define StatusEvt$resources 12				// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain, (float)hpPerc] - PC only
 #define StatusEvt$monster_aggro 13			// [player1, player2...] - Players who have aggroed the monster in order of max aggro
 #define StatusEvt$team 14					// (int)team - Team has been updated
+#define StatusEvt$interacted 15				// (key)id - Another player has interacted with you
  
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC

@@ -14,6 +14,8 @@ integer CHALLENGE;
 
 // (str)name, (vec)pos
 list MONSTERS_KILLED;
+integer pin;
+integer DEATHS;
 
 integer BFL;
 #define BFL_MONSTERS_LOADED 0x1
@@ -25,6 +27,9 @@ integer BFL;
 #define BFL_COMPLETED 0x20
 // Prevents auto load from running multiple times when the level is rezzed live
 #define BFL_AUTOLOADED 0x40
+
+#define BFL_WIPE_TRACKER 0x80 // enables the wipe tracker
+#define BFL_WIPED 0x100		// Unable to finish the quest
 
 
 list LOADQUEUE = REQUIRE;			// Required scripts to be remoteloaded
@@ -99,10 +104,24 @@ timerEvent(string id, string data){
 		)
 		MONSTERS_KILLED = [];
 	}
+	
+	else if(id == "WIPE"){
+		BFL = BFL&~BFL_WIPED;
+		DEATHS = 0;
+		Portal$killAll();
+		multiTimer(["RESTART", "", 2, FALSE]);
+		runOnPlayers(targ,
+			Status$fullregenTarget(targ);
+		)
+	}
+	
+	else if(id == "RESTART"){
+		runMethod((string)LINK_THIS, cls$name, LevelMethod$load, [FALSE], TNN);
+	}
 
 }
 
-integer pin;
+
 default
 {
     on_rez(integer mew){
@@ -328,6 +347,19 @@ default
     }
 	if(METHOD == LevelMethod$died){
 		raiseEvent(LevelEvt$playerDied, (str)id);
+		++DEATHS;
+		
+		integer viable; // Players in region
+		runOnPlayers(targ,
+			if(llKey2Name(targ) != "")
+				++viable;
+		)
+		
+		if(BFL&BFL_WIPE_TRACKER && DEATHS >= viable && viable){
+			BFL = BFL|BFL_WIPED;
+			raiseEvent(LevelEvt$wipe, "");
+			multiTimer(["WIPE", "", 6, FALSE]);
+		}
 		return;
 	}
 	if(METHOD == LevelMethod$getObjectives){
@@ -344,6 +376,9 @@ default
     
 // OWNER ONLY
 	if(METHOD == LevelMethod$setFinished && method$byOwner){
+		if(BFL&BFL_WIPED)
+			return;
+			
 		integer added;
 		if((integer)method_arg(0) == -1){
 			PLAYERS_COMPLETED = PLAYERS;
@@ -480,7 +515,9 @@ default
         Remoteloader$load(cls$name, pin, 2);
 		qd("Updating level code...");
 	}
-    
+    if(METHOD == LevelMethod$enableWipeTracker && method$byOwner){
+		BFL = BFL|BFL_WIPE_TRACKER;
+	}
     
     
     

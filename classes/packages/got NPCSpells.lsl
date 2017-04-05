@@ -13,6 +13,8 @@ key spell_targ;
 key spell_targ_real;	// HUD or same as spell_targ
 
 list CACHE;			// Spell arrays from localconf
+list CUSTOMCAST;
+
 //list PLAYERS;
 list AGGROED;
 
@@ -105,7 +107,7 @@ onEvt(string script, integer evt, list data){
         if(evt == MonsterEvt$runtimeFlagsChanged){
             RUNTIME_FLAGS = llList2Integer(data,0);
 			if(RUNTIME_FLAGS&Monster$RF_NO_SPELLS && BFL&BFL_CASTING){
-				endCast(FALSE);
+				endCast(FALSE, TRUE);
 			}
         }
     }else if(script == "got Status"){
@@ -120,7 +122,8 @@ onEvt(string script, integer evt, list data){
 			}
         }else if(evt == StatusEvt$dead){
             BFL = BFL|BFL_DEAD;
-            if(BFL&BFL_CASTING)endCast(FALSE);
+            if(BFL&BFL_CASTING)
+				endCast(FALSE, TRUE);
 			updateText();
         }
 		else if(evt == StatusEvt$monster_aggro){
@@ -133,12 +136,18 @@ onEvt(string script, integer evt, list data){
     */
 }
 
-endCast(integer success){
+endCast(integer success, integer force){
     if(~BFL&BFL_CASTING)return;
     integer evt = NPCSpellsEvt$SPELL_CAST_INTERRUPT;
     
 	list d = llJson2List(llList2String(CACHE, spell_id));
+	if(spell_id == -1)
+		d = CUSTOMCAST;
+	
     integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
+	if(flags&NPCS$FLAG_NO_INTERRUPT && !success && (!force || spell_id == -1))
+		return;
+	
     float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
 	
     if(recasttime>0 && (success || ~flags&NPCS$FLAG_RESET_CD_ON_INTERRUPT)){
@@ -146,14 +155,17 @@ endCast(integer success){
         multiTimer(["CD_"+(string)spell_id, "", recasttime, FALSE]);
     }
 	
-    if(success)evt = NPCSpellsEvt$SPELL_CAST_FINISH;
+    if(success)
+		evt = NPCSpellsEvt$SPELL_CAST_FINISH;
 	// Set internal interrupt timer
     else if(~flags&NPCS$FLAG_RESET_CD_ON_INTERRUPT){
         BFL = BFL|BFL_INTERRUPTED;
         multiTimer(["IR", "", 3, FALSE]);
     }
     raiseEvent(evt, mkarr(([spell_id, spell_targ, spell_targ_real])));
-    Monster$unsetFlags(monster_flags);
+    
+	if(monster_flags)
+		Monster$unsetFlags(monster_flags);
 
     
     multiTimer(["CB"]);
@@ -165,11 +177,17 @@ endCast(integer success){
 	updateText();
 }
 
-startCast(integer spid, key targ){
-	if(BFL&(BFL_RECENT_CAST|BFL_CASTING) || RUNTIME_FLAGS&Monster$RF_NO_SPELLS)return;
+startCast(integer spid, key targ, integer isCustom){
+	if(
+		(
+			BFL&(BFL_RECENT_CAST|BFL_CASTING) || 
+			RUNTIME_FLAGS&Monster$RF_NO_SPELLS
+		) && !isCustom
+	)return;
 
-	parseDesc(aggro_target, resources, status, fx, sex, team, rf);
-    if(status&StatusFlags$NON_VIABLE)return;
+	parseDesc(targ, resources, status, fx, sex, team, rf);
+    if(status&StatusFlags$NON_VIABLE && !isCustom)
+		return;
 	// Data comes from parseDesc, 0 is the attach point.
 	
 	key real = targ;
@@ -185,19 +203,22 @@ startCast(integer spid, key targ){
 	
     spell_targ = targ;
 	spell_targ_real = real;
-    list d = llJson2List(llList2String(CACHE, spid));
+    
+	list d = llJson2List(llList2String(CACHE, spid));
+	if(isCustom)
+		d = CUSTOMCAST;
+		
     integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
     float casttime = llList2Float(d, NPCS$SPELL_CASTTIME)*fxCTM;
     float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
     
     if(flags&NPCS$FLAG_LOOK_OVERRIDE){
         Monster$lookOverride(targ);
-		if(casttime<=0)multiTimer(["LAT", "", 1, FALSE]); // Stop lookat
+		if(casttime<=0)
+			multiTimer(["LAT", "", 1, FALSE]); // Stop lookat
 	}
     
 	BFL = BFL|BFL_CASTING;
-    
-
     BFL = BFL&~BFL_INTERRUPTED;
        
                        
@@ -215,7 +236,7 @@ startCast(integer spid, key targ){
     spell_id = spid;
        
 	if(casttime <=0.1){
-		endCast(TRUE); // Immediately finish the cast
+		endCast(TRUE, FALSE); // Immediately finish the cast
 	}else{
 		// Non instant
 		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ, spell_targ_real])));
@@ -286,7 +307,7 @@ timerEvent(string id, string data){
                             LocalConf$checkCastSpell(llList2Integer(r, i), targ, "SPELL;"+llList2String(r,i)+";"+(string)targ);
                         }
                         else{
-							startCast(spid, targ);
+							startCast(spid, targ, FALSE);
 							return;
 						}
                         if(~flags&(NPCS$ALLOW_MULTIPLE_CHECKS|NPCS$FLAG_REQUEST_CASTSTART)){
@@ -305,7 +326,7 @@ timerEvent(string id, string data){
         if(~pos)cooldowns = llDeleteSubList(cooldowns, pos, pos);
     }
     else if(id == "CAST"){
-        endCast(TRUE);
+        endCast(TRUE, FALSE);
     }
     else if(id == "CB")updateText();
     else if(id == "US")Monster$unsetFlags((integer)data);
@@ -361,7 +382,7 @@ default
         fxCDM = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		 \
         if(BFL&BFL_CASTING && FXFLAGS&fx$NOCAST) \
-            endCast(FALSE); \
+            endCast(FALSE, TRUE); \
 	} \
 	else if(nr == TASK_MONSTER_SETTINGS)\
 		onSettings(llJson2List(s));
@@ -380,7 +401,7 @@ default
     if(method$isCallback){
         if(llGetSubString(CB, 0, 5) == "SPELL;" && SENDER_SCRIPT == "got LocalConf"){
             list split = llParseString2List(CB, [";"], []);
-            startCast(llList2Integer(split, 1), llList2String(split, 2));
+            startCast(llList2Integer(split, 1), llList2String(split, 2), FALSE);
         }
         return;
     }
@@ -406,7 +427,7 @@ default
 			raiseEvent(NPCSpellsEvt$SPELLS_SET, SENDER_SCRIPT);
         }
         else if(METHOD == NPCSpellsMethod$interrupt){
-            endCast(FALSE);
+            endCast(FALSE, FALSE);
         }
 		else if(METHOD == NPCSpellsMethod$setOutputStatusTo){
 			OUTPUT_STATUS_TO = PARAMS;
@@ -423,12 +444,18 @@ default
 		}
 		else if(METHOD == NPCSpellsMethod$silence){
 			if(l2i(PARAMS, 0)){
-				endCast(FALSE);
+				endCast(FALSE, FALSE);
 				BFL = BFL|BFL_SILENCED;
 			}
 			else{
 				BFL = BFL&~BFL_SILENCED;
 			}
+		}
+		else if(METHOD == NPCSpellsMethod$customCast){
+			endCast(FALSE, TRUE);
+			//flags, casttime, name, targ
+			CUSTOMCAST = [l2i(PARAMS, 0), l2f(PARAMS, 1), 0, 0, method_arg(2), 0]; // Should match the normal cache
+			startCast(-1, method_arg(3), TRUE);
 		}
     }
 	

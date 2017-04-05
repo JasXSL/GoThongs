@@ -8,6 +8,8 @@
 
 key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
 
+string CURRENT_ASSET;
+
 // Inputs:
 // 1. Items to spawn are added into the queue
 list queue;			// [(str)objectName, (vec)objectRezPos, (rot)objectRezRot, (str)objectDesc, (bool)debug, (bool)temp_on_rez, (str)spawnround, (key)sender]
@@ -52,9 +54,10 @@ next() {
 	if(asset == "_CB_"){
 	
 		// Waits for queue to finish before loading more. This works because done() triggers next()
-		if(processing > 0){
+		if(processing > 1){	// 1 is because the "_CB_" call counts as processing
 			return;
 		}
+	
 		sendCallback(
 			llList2String(queue, 1), 
 			llList2String(queue, 2), 
@@ -62,7 +65,7 @@ next() {
 			"", 
 			llList2String(queue, 4)
 		);
-		queue = llDeleteSubList(queue, 0, 4);
+		queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
 		next();
 		return;
 	}
@@ -78,11 +81,16 @@ next() {
 	// Set/reset clean up timer
 	multiTimer(["FORCE_NEXT", 1, 30, FALSE]);
 	
+	CURRENT_ASSET = asset;
 	// Spawn it
 	_portal_spawn_std(asset, llList2Vector(queue, 1), llList2Rot(queue, 2), -<0,0,8>, llList2Integer(queue, 4), TRUE, llList2Integer(queue, 5));
 	
 	// Store the data in a separate array which is also used to check if we're currently rezzing
-	queue_rez = [llList2String(queue, 3), llList2String(queue, 6), llList2String(queue, 7)];
+	queue_rez = [
+		llList2String(queue, 3), // Desc
+		llList2String(queue, 6), // Spawnround
+		llList2String(queue, 7)  // Sender
+	];
 	
 	// Remove from the main queue
 	queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
@@ -98,8 +106,9 @@ done(key id){
 		// Spawn another asset if possible
 		next();
 	}
-	else
+	else{
 		qd("done() was run on an unknown UUID: "+(str)id+"\nqueue_desc was: "+mkarr(queue_desc));
+	}
 }
 
 timerEvent(string id, string data){
@@ -144,6 +153,10 @@ default
 	
 	// An item was spawned
 	object_rez(key id){
+		// Memory leak here when not spawning with standard
+		if(llKey2Name(id) != CURRENT_ASSET)
+			return;
+		
 		// move it from queue_rez to queue_desc
 		queue_desc += [id] + queue_rez;
 		queue_rez = [];
@@ -228,7 +241,10 @@ default
 							id,
 							SENDER_SCRIPT,
 							METHOD,
-							llList2String(dta, 1)
+							llList2String(dta, 1),
+							0,
+							0,
+							0
 						];
 					}
 					else if(llGetInventoryType(asset) == INVENTORY_OBJECT){

@@ -4,13 +4,11 @@
 integer BFL;
 #define BFL_HAS_ASSETS 0x1
 #define BFL_HAS_SPAWNS 0x2
-#define BFL_INI 0x4
 
 timerEvent(string id, string data){
 	if(id == "INI"){
 		list d = [BFL&BFL_HAS_ASSETS, BFL&BFL_HAS_SPAWNS];
 		raiseEvent(LevelLoaderEvt$defaultStatus, mkarr(d));
-		BFL = BFL|BFL_INI;
 	}
 }
 
@@ -101,9 +99,10 @@ default
 		
 
 			// Send out
-		out+= llList2Json(JSON_ARRAY, [
-			"_CB_", "[\"HUD\","+mkarr(groups)+"]"
-		]);
+		if(out)
+			out+= llList2Json(JSON_ARRAY, [
+				"_CB_", "[\"HUD\","+mkarr(groups)+"]"
+			]);
 		Spawner$spawnThese(llGetOwner(), out);
 		BFL = BFL|BFL_HAS_SPAWNS;
 		
@@ -148,9 +147,11 @@ default
 			)
 		)
 		
-		out+= llList2Json(JSON_ARRAY, [
-			"_CB_", "[\"CUSTOM\","+mkarr(groups)+"]"
-		]);
+		if(out)
+			out+= llList2Json(JSON_ARRAY, [
+				"_CB_", "[\"CUSTOM\","+mkarr(groups)+"]"
+			]);
+		
 		Spawner$spawnThese(LINK_THIS, out);
 		BFL = BFL|BFL_HAS_ASSETS;
 		

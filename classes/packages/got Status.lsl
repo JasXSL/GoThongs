@@ -195,12 +195,14 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 				raiseEvent(StatusEvt$death_hit, "");
 		}
 		else{
+			// Player died
 			if(STATUS_FLAGS&StatusFlag$dead)return FALSE;
 			// DEATH HANDLED HERE
 			SpellMan$interrupt();
 			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
 			BFL = BFL&~BFL_AVAILABLE_BREAKFREE;
 			
+			Level$died();
 			
 			outputStats();
 			raiseEvent(StatusEvt$dead, 1);
@@ -348,8 +350,6 @@ onEvt(string script, integer evt, list data){
             integer prim = llList2Integer(data, 0);
             string ln = llGetLinkName(prim);
             if(ln == "QUIT"){
-				// Quit button hit.
-				Level$died();
                 Status$fullregen();
             }
         }
@@ -855,6 +855,10 @@ default
 		TEAM_DEFAULT = llList2Integer(PARAMS, 0);
 		outputStats();
 	} 
+	
+	if(METHOD == StatusMethod$coopInteract)
+		raiseEvent(StatusEvt$interacted, (str)id);
+	
 	
     // Public code can be put here
 

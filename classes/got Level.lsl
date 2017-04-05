@@ -17,6 +17,7 @@
 #define LevelMethod$getPlayers 15	// void - Forces a LevelEvt$players event to trigger
 #define LevelMethod$potionUsed 16	// name - Potion with PotionsFlag$raise_event used
 #define LevelMethod$difficulty 17	// (int)difficulty, (bool)isChallenge - Sets difficulty on the level
+#define LevelMethod$enableWipeTracker 18	// Resets and enables the wipe tracker. The wipe tracker will reset the quest if count(PLAYERS) players have died
 
 #define LevelMethod$despawn 0x71771E5	// Deletes a level
 
@@ -52,6 +53,8 @@
 #define LevelEvt$playerDied 11		// [(key)hud] - Raised when a player dies
 #define LevelEvt$difficulty 12		// (int)difficulty, (bool)challenge - This is only raised when a quest starts. Mostly useful for challenge mode since you can't change difficulty.
 
+#define LevelEvt$wipe 13			// All players dead (wipe tracker enabled)
+
 // Level description config: [[(int)task, (var)param1, (var)param2...]...]
 #define LevelDesc$additionalScripts 0			// List of names of scripts to wait for evt$SCRIPT_INIT from
 #define LevelDesc$difficulty 1					// (int)difficulty, (int)isChallenge
@@ -79,6 +82,7 @@
 #define Level$cellData(data) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellData, [data], TNN)
 #define Level$cellDesc(desc) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellDesc, [desc], TNN)
 #define Level$difficulty(difficulty, challenge) runMethod(ROOT_LEVEL, "got Level", LevelMethod$difficulty, [difficulty, challenge], TNN)
+#define Level$enableWipeTracker() runMethod((str)LINK_THIS, "got Level", LevelMethod$enableWipeTracker, [], TNN)
 
 #define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)
 #define Level$getObjectives() runMethod(ROOT_LEVEL, "got Level", LevelMethod$getObjectives, [], TNN)
@@ -91,6 +95,7 @@
 #define Level$spawnNPC(asset) Level$spawnAsset(a)
 #define Level$spawnLive(asset, pos, rot) Level$spawnAsset(a)
 #define Level$spawnLiveTarg(targ, asset, pos, rot) Level$spawnAsset(a)
+
 
 
 
