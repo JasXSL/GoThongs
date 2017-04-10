@@ -201,9 +201,9 @@ string statsToText(list stats){
 /*
 
 else if(script == "got NPCSpells"){
-        if(evt == NPCSpellsEvt$SPELL_CAST_START)onSpellStart(l2i(data, 0), l2s(data, 1));
-        else if(evt == NPCSpellsEvt$SPELL_CAST_FINISH)onSpellFinish(l2i(data, 0), l2s(data, 1));
-        else if(evt == NPCSpellsEvt$SPELL_CAST_INTERRUPT)onSpellInterrupt(l2i(data, 0), l2s(data, 1));
+        if(evt == NPCSpellsEvt$SPELL_CAST_START)onSpellStart(l2i(data, 0), l2s(data, 2));
+        else if(evt == NPCSpellsEvt$SPELL_CAST_FINISH)onSpellFinish(l2i(data, 0), l2s(data, 2));
+        else if(evt == NPCSpellsEvt$SPELL_CAST_INTERRUPT)onSpellInterrupt(l2i(data, 0), l2s(data, 2));
         
     }
 

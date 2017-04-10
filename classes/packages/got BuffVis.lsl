@@ -100,6 +100,14 @@ default
         }
         
     }
+	else if(METHOD == BuffVisMethod$remInventory){
+		
+		list_shift_each(PARAMS, name,
+			if(llGetInventoryType(name) == INVENTORY_OBJECT)
+				llRemoveInventory(name);
+		)
+		
+	}
     
     // End link message code
     #define LM_BOTTOM  

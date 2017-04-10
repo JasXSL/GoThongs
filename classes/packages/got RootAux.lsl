@@ -78,6 +78,7 @@ timerEvent(string id, string data){
 		list monsters = llJson2List(llList2String(MANIFEST, 5));
 		list rapes = llJson2List(llList2String(MANIFEST, 6));
 		list weapons = llJson2List(llList2String(MANIFEST, 7));
+		list LTB = llJson2List(l2s(MANIFEST, 8));
 		
 		if(
 			!check(0, attachments, TRUE) ||
@@ -86,7 +87,8 @@ timerEvent(string id, string data){
 			!check(INVENTORY_OBJECT, spell_effects, FALSE) ||
 			!check(INVENTORY_OBJECT, monsters, FALSE) ||
 			!check(INVENTORY_OBJECT, rapes, FALSE) ||
-			!check(INVENTORY_OBJECT, weapons, FALSE) 
+			!check(INVENTORY_OBJECT, weapons, FALSE) ||
+			!check(INVENTORY_OBJECT, LTB, FALSE)
 		){
 			// Something failed, stop
 			return purge();
@@ -98,6 +100,8 @@ timerEvent(string id, string data){
 		Rape$remInventory(rapes);
 		LevelSpawner$remInventory(levels); 
 		WeaponLoader$remInventory(weapons);
+		BuffVis$remInventory(LTB);
+		
 		
 		llOwnerSay("Mod integrity checked! Finalizing install...");
 		multiTimer(["B", "", 3, FALSE]);
@@ -115,6 +119,7 @@ timerEvent(string id, string data){
 		list monsters = llJson2List(llList2String(MANIFEST, 5));
 		list rapes = llJson2List(llList2String(MANIFEST, 6));
 		list weapons = llJson2List(llList2String(MANIFEST, 7));
+		list LTB = llJson2List(l2s(MANIFEST, 8));
 		MANIFEST = [];
 		
 		links_each(nr, name,
@@ -131,6 +136,9 @@ timerEvent(string id, string data){
 				llGiveInventoryList(lk, "", levels);
 			else if(name == "WEAPONS" && weapons != [])
 				llGiveInventoryList(lk, "", weapons);
+			else if(name == "LTB" && LTB != [])
+				llGiveInventoryList(lk, "", LTB);
+			
 		)
 		multiTimer(["C", "", 3, FALSE]);
 	}
@@ -188,16 +196,6 @@ default
 			else if(message == "switch"){ 
 				Evts$cycleEnemy(); 
 			} 
-			/*
-			// Self targeting
-			else if(message == "self"){ 
-				Root$targetThis(llGetOwner(), TEXTURE_PC, TRUE, TEAM_PC);
-			} 
-			Todo: Multi coop targeting through s-1 to s-3
-			else if(message == "coop"){
-				Root$targetThis(llList2Key(PLAYERS, 1), TEXTURE_COOP, TRUE, -1);
-			} 
-			*/
 			
 			else if(llGetSubString(message, 0, 5) == "player"){
 				integer n = (int)llGetSubString(message, 6, -1);
@@ -208,16 +206,7 @@ default
 			
 			else if(message == "reset"){resetAll();}
 			
-			/*
-			Not needed anymore
-			else if(message == "continueQuest"){ 
-				AMS$(ARoot$continueQuest); 
-				Portal$killAll(); 
-				Bridge$continueQuest();
-			} 
-			*/
 
-			
 			else if(message == "potion"){ 
 				Potions$use((string)LINK_ROOT); 
 			} 
@@ -289,6 +278,8 @@ default
 		if(assets)features+= (string)llGetListLength(assets)+" Rapes";
 		assets = llJson2List(llList2String(MANIFEST, 7));
 		if(assets)features+= (string)llGetListLength(assets)+" Weapons";
+		assets = llJson2List(llList2String(MANIFEST, 8));
+		if(assets)features+= (string)llGetListLength(assets)+" LTB Visuals";
 		
 		
 		if(features == []){

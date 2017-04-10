@@ -131,7 +131,9 @@ default
             check(INVENTORY_ANIMATION, llJson2List(llList2String(MANIFEST, 3)), FALSE) && // Animations
             check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 4)), FALSE) && // SpellFX
             check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 5)), FALSE) && // Monsters
-            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 6)), FALSE) // Rapes
+            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 6)), FALSE) && // Rapes
+			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 7)), FALSE) && // Weapons
+			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 8)), FALSE) 	// LTB
         );
         if(!s){
 			text("Error found.\nTouch to override.");
