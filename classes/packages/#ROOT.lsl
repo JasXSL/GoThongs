@@ -295,8 +295,10 @@ default
 		if(CB == "ATTACHED"){
 			integer pos = llListFindList(PLAYERS, [(str)llGetOwnerKey(id)]);
 			if(~pos){
+				//qd("Got HUD from CALLBACK "+llGetDisplayName(llGetOwnerKey(id)));
 				COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
 				raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
+				runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
 			}
 		}
 		
@@ -314,7 +316,7 @@ default
 			string pre = mkarr(PLAYERS);
 			
             PLAYERS = [(string)llGetOwner()];
-			COOP_HUDS = [];
+			COOP_HUDS = []; 
 			
 			
 			
@@ -341,6 +343,7 @@ default
 			for(i=0; i<count(PLAYERS); ++i)
 				COOP_HUDS += "";
 			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
+			runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
 			
             savePlayers();
 			
@@ -374,7 +377,8 @@ default
 			}
 			savePlayers();
 		}
-		
+		else if(METHOD == RootMethod$debugHuds)
+			qd(mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0)));
     }
     
     if(METHOD == RootMethod$getPlayers){
@@ -395,7 +399,9 @@ default
 		integer pos = llListFindList(PLAYERS, [(str)okey]);
 		if(~pos){
 			COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
+			runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
 			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
+			//qd("Got HUD from ATTACHED "+llGetDisplayName(llGetOwnerKey(id))+" :: "+llKey2Name(id));
 		}
 		
 	}
@@ -421,6 +427,7 @@ default
 			return;
 		}
 		CB_DATA = getPlayers();
+		runMethod(id, SENDER_SCRIPT, gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
 	}
 	else if(METHOD == RootMethod$refreshTarget){
 		// Refresh active target

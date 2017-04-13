@@ -51,6 +51,7 @@ integer onInteract(key obj, string task, list params){
 	
     else if(task == "CUSTOM"){
         Status$coopInteract(obj);
+		Level$playerInteract(level, obj);
     }
 	
     else 

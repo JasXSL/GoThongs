@@ -33,6 +33,7 @@
 #define TASK_FX -1003						// Contains FXCEevt$ values. Replaces PassivesEvt$data - All float types are shortened by f2i
 #define TASK_MONSTER_SETTINGS -1004			// See got Monster Monster$updateSettings(settings)
 
+
 // Include the XOBJ framework
 #include "xobj_core/_ROOT.lsl"
 // Here you can also include xobj headers like:
@@ -100,8 +101,15 @@
 
 // Helper function to run code on all players. Requires players to be stored in a global list named PLAYERS
 #define runOnPlayers(pkey, code) {integer i; for(i=0; i<llGetListLength(PLAYERS); i++){key pkey = llList2Key(PLAYERS, i); code}}
+// Helper function to run code on all player HUDs. Requires players to be stored in a global list named PLAYER_HUDS
+#define runOnHUDs(pkey, code) {integer i; for(i=0; i<llGetListLength(PLAYER_HUDS); i++){key pkey = llList2Key(PLAYER_HUDS, i); code}}
+
 
 #include "got/classes/#ROOT.lsl"
+
+// STD Methods
+#define gotMethod$setHuds -1000 		// Updates party HUDs
+
 
 #define SITE_URL "http://jasx.org/lsl/got/hud2/index.php"
 

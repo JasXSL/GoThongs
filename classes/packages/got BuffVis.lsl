@@ -86,7 +86,7 @@ default
         integer i;
         for(i=0; i<count(VIS) && VIS != []; i+= VIS_STRIDE){
             
-            if(l2i(VIS, 0) == n){
+            if(l2i(VIS, i) == n){
                 // Remove
                 key targ = l2k(VIS, i+3);
                 if(targ){
@@ -98,6 +98,7 @@ default
             }
             
         }
+		
         
     }
 	else if(METHOD == BuffVisMethod$remInventory){

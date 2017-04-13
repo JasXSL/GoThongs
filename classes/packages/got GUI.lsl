@@ -20,12 +20,11 @@ list SPELL_UPDATE_QUEUE;	// (key)id, (csv)data
 integer TEAM = TEAM_PC;
 
 key TARG;
-list PLAYERS;
 list PLAYER_HUDS;
 integer PLAYER_FOCUS;
 #define FOCUS_BORDER <0.820, 0.820, 0.820>
 
-key default_tx = "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e";
+#define default_tx "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e"
 integer CACHE_FX_FLAGS = 0;
 
 integer P_QUIT;
@@ -64,125 +63,106 @@ key boss;				// ID of boss (used if boss is a monster)
 	if(~pos) \
 		SPELL_UPDATE_QUEUE = llListReplaceList(SPELL_UPDATE_QUEUE, [data], pos+1, pos+1); \
 	else \
-		SPELL_UPDATE_QUEUE += [id, data]; \
+		SPELL_UPDATE_QUEUE += [id, data]; 
 
-
-onEvt(string script, integer evt, list data){
-    if(script == "#ROOT"){
-        if(evt == RootEvt$targ){
-            updateTarget(l2s(data, 0), l2s(data, 1), l2i(data, 2));
-        }else if(evt == RootEvt$players){
-			PLAYERS = data;
-			toggle(TRUE);
-        }
-		else if(evt == RootEvt$coop_hud){
-			PLAYER_HUDS = llListReplaceList(data, [llGetKey()], 0,0);
-		}
-		else if(evt == RootEvt$focus){
-			PLAYER_FOCUS = l2i(data, 0);
-			list out = []; integer i;
-			for(i=0; i<count(PLAYER_HUDS); ++i){
-				vector color = <0,0,0>;
-				if(i == PLAYER_FOCUS)
-					color = FOCUS_BORDER;
-				out+= [
-					PRIM_LINK_TARGET, l2i(BARS, BAR_STRIDE*(i+1)),
-					PRIM_COLOR, 0, color, .75
-				];
-			}
-			PP(0,out);
-		}
-    }
-	else if(script == "got Status" && evt == StatusEvt$team){
-		TEAM = l2i(data,0);
+#define onEvt(script, evt, data) \
+    if(script == "#ROOT"){ \
+        if(evt == RootEvt$targ){ \
+            key targ = l2s(data, 0); \
+			key texture = l2s(data, 1); \
+			integer team = l2i(data, 2); \
+			TARG = targ; \
+			list out = [ \
+					PRIM_LINK_TARGET, llList2Integer(BARS, 0),  \
+					PRIM_POSITION, ZERO_VECTOR, \
+					PRIM_LINK_TARGET, llList2Integer(BARS, 1), \
+					PRIM_POSITION, ZERO_VECTOR \
+			]; \
+			integer i; \
+			for(i=8; i<16; i++){ \
+				out+= [ \
+					PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i),  \
+					PRIM_POSITION, ZERO_VECTOR,  \
+					PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0  \
+				]; \
+			} \
+			if(targ != ""){ \
+				vector offs1 = <0,-.05,0.37>; \
+				vector offs2 = <0.05,.08,0.371>; \
+				vector base_offs = <0,0,.02>; \
+				 \
+				vector color = <.5,1,.5>; \
+				if(team != TEAM) \
+					color = <1,.5,.5>; \
+				 \
+				out=[ \
+					PRIM_LINK_TARGET, llList2Integer(BARS, 0), \
+					PRIM_POSITION, offs1+base_offs, \
+					PRIM_COLOR, 0, color, 1, \
+					PRIM_COLOR, 1, <1,1,1>, 1, \
+					PRIM_COLOR, 2, <1,1,1>, 0, \
+					PRIM_COLOR, 3, <1,1,1>, 0, \
+					PRIM_COLOR, 4, <1,1,1>, 0, \
+					PRIM_COLOR, 5, <1,1,1>, 0 \
+				]; \
+				if(texture)out+=[PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0]; \
+				out+=[ \
+					PRIM_LINK_TARGET, llList2Integer(BARS, 1), \
+					PRIM_POSITION, offs2+base_offs, \
+					PRIM_COLOR, 0, ZERO_VECTOR, .25, \
+					PRIM_COLOR, 1, ZERO_VECTOR, .5, \
+					PRIM_COLOR, 2, <1,.5,.5>, 1, \
+					PRIM_COLOR, 3, <.5,.8,1>, 1, \
+					PRIM_COLOR, 4, <1,.5,1>, 1, \
+					PRIM_COLOR, 5, <.5,.5,1>, 1, \
+					 \
+					PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <.25,0,0>, 0, \
+					PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <.25,0,0>, 0, \
+					PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25,0,0>, 0, \
+					PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25,0,0>, 0 \
+				]; \
+				integer i; \
+				for(i=8; i<16; i++){ \
+					out+= [ \
+						PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i),  \
+						PRIM_POSITION, <0.044754, 0.048681+0.022*(i-8), 0.352110>+base_offs, \
+						PRIM_COLOR, ALL_SIDES, ZERO_VECTOR, 0 \
+					]; \
+				} \
+			} \
+			llSetLinkPrimitiveParamsFast(0, out); \
+        } \
+		else if(evt == RootEvt$coop_hud){ \
+			PLAYER_HUDS = llListReplaceList(data, [llGetKey()], 0,0); \
+			toggle(TRUE); \
+		} \
+		else if(evt == RootEvt$focus){ \
+			PLAYER_FOCUS = l2i(data, 0); \
+			list out = []; integer i; \
+			for(i=0; i<count(PLAYER_HUDS); ++i){ \
+				vector color = <0,0,0>; \
+				if(i == PLAYER_FOCUS) \
+					color = FOCUS_BORDER; \
+				out+= [ \
+					PRIM_LINK_TARGET, l2i(BARS, BAR_STRIDE*(i+1)), \
+					PRIM_COLOR, 0, color, .75 \
+				]; \
+			} \
+			PP(0,out); \
+		} \
+    } \
+	else if(script == "got Status" && evt == StatusEvt$team){ \
+		TEAM = l2i(data,0); \
+	} \
+	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons){ \
+		PARTY_ICONS = data; \
+		GUI$toggle(TRUE); \
 	}
-	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons){
-		PARTY_ICONS = data;
-		GUI$toggle(TRUE);
-	}
-}
 
 
-updateTarget(key targ, key texture, integer team){
-    TARG = targ;
-    list out;
-    if(targ != ""){
-        vector offs1 = <0,-.05,0.37>;
-        vector offs2 = <0.05,.08,0.371>;
-		vector base_offs = <0,0,.02>;
-		
-		vector color = <.5,1,.5>;
-		if(team != TEAM)
-			color = <1,.5,.5>;
-		
-        out+=[
-            PRIM_LINK_TARGET, llList2Integer(BARS, 0),
-            PRIM_POSITION, offs1+base_offs,
-            PRIM_COLOR, 0, color, 1,
-            PRIM_COLOR, 1, <1,1,1>, 1,
-            PRIM_COLOR, 2, <1,1,1>, 0,
-            PRIM_COLOR, 3, <1,1,1>, 0,
-            PRIM_COLOR, 4, <1,1,1>, 0,
-            PRIM_COLOR, 5, <1,1,1>, 0
-        ];
-        if(texture)out+=[PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0];
-        out+=[
-            PRIM_LINK_TARGET, llList2Integer(BARS, 1),
-            PRIM_POSITION, offs2+base_offs,
-            PRIM_COLOR, 0, ZERO_VECTOR, .25,
-            PRIM_COLOR, 1, ZERO_VECTOR, .5,
-            PRIM_COLOR, 2, <1,.5,.5>, 1,
-            PRIM_COLOR, 3, <.5,.8,1>, 1,
-            PRIM_COLOR, 4, <1,.5,1>, 1,
-            PRIM_COLOR, 5, <.5,.5,1>, 1,
-            
-            PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <.25,0,0>, 0,
-            PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <.25,0,0>, 0,
-            PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25,0,0>, 0,
-            PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25,0,0>, 0
-        ];
-        integer i;
-		for(i=8; i<16; i++){
-			out+= [
-				PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), 
-				PRIM_POSITION, <0.044754, 0.048681+0.022*(i-8), 0.352110>+base_offs,
-				PRIM_COLOR, ALL_SIDES, ZERO_VECTOR, 0
-			];
-		}
-    }else{
-        out+= [
-            PRIM_LINK_TARGET, llList2Integer(BARS, 0), 
-            PRIM_POSITION, ZERO_VECTOR,
-            PRIM_LINK_TARGET, llList2Integer(BARS, 1),
-            PRIM_POSITION, ZERO_VECTOR
-        ];
-		integer i;
-		for(i=8; i<16; i++){
-			// Spinner
-			out+= [
-				PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i), 
-				PRIM_POSITION, ZERO_VECTOR, 
-				PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0
-			];
-		}
-    }
-	// Make sure target status is scheduled for update
-	status_pre = llListReplaceList(status_pre, [0], 2, 2);
-    llSetLinkPrimitiveParamsFast(0, out);
-}
 
 
 integer GCHAN;
-list status_pre;
-integer statusChanged(list check){
-	if(check != status_pre)return TRUE;
-	integer i;
-	for(i=0; i<count(check); i++){
-		if(l2i(check, i) != l2i(status_pre, i))return TRUE;
-	}
-	return FALSE;
-}
-
 default 
 {
 
@@ -192,101 +172,108 @@ default
 			return;
 			
 		list statuses = [TARG]+PLAYER_HUDS+[ boss];
+		list statuses_flags;
+		integer i;
+		
+		
 		list out = [];
 		
 		if(llKey2Name(boss) == "" && boss != ""){
 			GUI$toggleBoss(LINK_THIS, "", FALSE);
-			/*
-			boss = "";
-			Status$toggleBossFight(false);
-			statuses = llListReplaceList(statuses, [""], 3, 3);
-			*/
 		}
 		
 		
 		// Loops through the keys above and sets to -1 if not found, or a bitwise resource block
-		integer i;
 		for(i=0; i<llGetListLength(statuses); i++){
 			integer n = -1;
 			key t = l2k(statuses, i);
+			integer s = 0;
 			
-			if(t){
+			if(llKey2Name(t)){
 				list data = llGetObjectDetails(t, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
 				list split = explode("$", l2s(data, 1));
 				n = l2i(split, 2); // Resource block
+				s = l2i(split, 5);
 				// PC
-				if(l2i(data, 0)) // Attached
+				if(l2i(data, 0)){ // Attached
 					n = l2i(split, 0); // HP block is in a different position of the description for PC
+					s = l2i(split, 1); // Same with status
+				}
 			}
-			
+			statuses_flags += s;
 			statuses = llListReplaceList(statuses, [n], i, i);
 		}
 		
-		
-
-		if(statusChanged(statuses)){
-			status_pre = statuses;
-
-			// Cycle status bars
-			for(i=0; i<count(statuses); i++){
-				integer n = l2i(statuses, i);
+		// Cycle status bars
+		for(i=0; i<count(statuses); i++){
+			integer n = l2i(statuses, i);
 				
-				integer bar = l2i(BARS, 1); 						// Targ
-				integer portrait = l2i(BARS, 0);
-				if(i){
-					bar = l2i(BARS, BAR_STRIDE*i+1); 			// A player or boss
-					portrait = l2i(BARS, BAR_STRIDE*i);
-				}
-				
-				// Boss
-				if(i == count(statuses)-1){
-					bar = P_BOSS_HP;
-					portrait = P_BOSS_PORTRAIT;
-				}
-				
-
-				if(~n){				
-					
-					list faces = [2,3,4,5]; // HP, Mana, Arousal, pain
-					
-					if(i>1 && i != count(statuses)-1)
-						faces = [1,2,3,4];
-					
-					float hp = (n>>21&127) / 127.0;
-					float mana = (n>>14&127) / 127.0;
-					float ars = (n>>7&127) / 127.0;
-					float pin = (n&127) / 127.0;
-					
-					vector overlay = <1,1,1>;
-					if(hp <= 0)
-						overlay = <.5,0,0>;
-					
-					list dta = [
-						PRIM_TEXTURE, l2i(faces,0), default_tx, <.5,1,0>, <.25-.5*hp,0,0>, 0,
-						PRIM_TEXTURE, l2i(faces,1), default_tx, <.5,1,0>, <.25-.5*mana,0,0>, 0,
-						PRIM_TEXTURE, l2i(faces,2), default_tx, <.5,1,0>, <.25-.5*ars,0,0>, 0,
-						PRIM_COLOR, l2i(faces,2), <1,.5,1>*(.5+ars*.5), 0.5+(float)floor(ars)/2,
-						PRIM_TEXTURE, l2i(faces,3), default_tx, <.5,1,0>, <.25-.5*pin,0,0>, 0,
-						PRIM_COLOR, l2i(faces,3), <.5,.5,1>*(.5+pin*.5), 0.5+(float)floor(pin)/2
-					];
-					
-					// Boss top bar
-					if(i == count(statuses)-1)
-						dta = [
-							PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <.25-.5*hp,0,0>, 0
-						];
-					
-					
-					out+=[PRIM_LINK_TARGET, bar]+dta;
-					out+=[PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, overlay, 1];
-				}else{
-					out+=[PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, <1,1,1>, .5];
-				}
-				
+			integer bar = l2i(BARS, 1); 						// Targ
+			integer portrait = l2i(BARS, 0);
+			if(i){
+				bar = l2i(BARS, BAR_STRIDE*i+1); 			// A player or boss
+				portrait = l2i(BARS, BAR_STRIDE*i);
 			}
-		}
+				
+			// Boss
+			if(i == count(statuses)-1){
+				bar = P_BOSS_HP;
+				portrait = P_BOSS_PORTRAIT;
+			}
+				
+			list data_out = [PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, <1,1,1>, .5];
+			
+			if(~n){				
+						
+				list faces = [2,3,4,5]; // HP, Mana, Arousal, pain
+						
+				if(i>1 && i != count(statuses)-1)
+					faces = [1,2,3,4];
+						
+				float hp = (n>>21&127) / 127.0;
+				float mana = (n>>14&127) / 127.0;
+				float ars = (n>>7&127) / 127.0;
+				float pin = (n&127) / 127.0;
+				integer flags = l2i(statuses_flags, i);
+					
+				vector overlay = <1,1,1>;
+
+				if(flags&StatusFlag$dead)
+					overlay = <.5,0,0>;
+				else if(flags&StatusFlag$coopBreakfree)
+					overlay = <.5,.75,1>;
+						
+						
+				list dta = [
+					PRIM_TEXTURE, l2i(faces,0), default_tx, <.5,1,0>, <.25-.5*hp,0,0>, 0,
+					PRIM_TEXTURE, l2i(faces,1), default_tx, <.5,1,0>, <.25-.5*mana,0,0>, 0,
+					PRIM_TEXTURE, l2i(faces,2), default_tx, <.5,1,0>, <.25-.5*ars,0,0>, 0,
+					PRIM_COLOR, l2i(faces,2), <1,.5,1>*(.5+ars*.5), 0.5+(float)floor(ars)/2,
+					PRIM_TEXTURE, l2i(faces,3), default_tx, <.5,1,0>, <.25-.5*pin,0,0>, 0,
+					PRIM_COLOR, l2i(faces,3), <.5,.5,1>*(.5+pin*.5), 0.5+(float)floor(pin)/2
+				];
+				
+				// Boss top bar
+				if(i == count(statuses)-1)
+					dta = [
+						PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <.25-.5*hp,0,0>, 0
+					];
+				
+					
+				data_out =
+					[PRIM_LINK_TARGET, bar]+dta+
+					[PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, overlay, 1]
+				;
+			}
 	
-		
+			
+			out+= data_out;
+					
+		}
+	//}
+	
+		PP(0,out);
+		out = [];
 		// Updates spell icons
 		integer snap = timeSnap();
 		@execIconUpdateContinue;
@@ -411,11 +398,9 @@ default
 		//return;
 
         toggle(FALSE);
-		PLAYERS = [(string)llGetOwner()];
 		GCHAN = GUI_CHAN(llGetOwner());
 		llListen(GCHAN, "", "", "");
 		llListen(GCHAN+1, "", "", "");
-		
 		llSetTimerEvent(0.5); // tick status bars
 		//toggle(TRUE);
     } 
@@ -506,19 +491,18 @@ default
     // This needs to show the proper breakfree messages
     else if(METHOD == GUIMethod$toggleQuit){
 		integer show = l2i(PARAMS, 0);
-        list out;
+        list out = [
+            PRIM_LINK_TARGET, P_QUIT,
+            PRIM_POSITION, ZERO_VECTOR
+        ];
+		
 		if(show){
-            out+= [
+            out = [
                 PRIM_LINK_TARGET, P_QUIT,
                 PRIM_TEXTURE, 0, "d44be195-0e8a-1a25-c3ed-c5372b8e39ad", <1,.5,0>, <0.,0.25,0>, 0,
                 PRIM_POSITION, RPB_ROOT_POS,
                 PRIM_SIZE, RPB_SCALE
            ];
-        }else{
-            out+= [
-                PRIM_LINK_TARGET, P_QUIT,
-                PRIM_POSITION, ZERO_VECTOR
-            ];
         }
         llSetLinkPrimitiveParamsFast(0,out);
     }
@@ -600,15 +584,12 @@ default
 			BFL = BFL|BFL_FIRST_ENABLED;
 		}
 		if(~BFL&BFL_FIRST_ENABLED && show)return;
-		
-		list players = PLAYERS;
-		
-		
+
 		list out;
 		integer i;
 		for(i=0; i<4; i++){
 			integer exists = FALSE;
-			if(llGetListLength(players)>i)exists = TRUE;
+			if(llGetListLength(PLAYER_HUDS)>i)exists = TRUE;
 			
 			key texture = l2k(PARTY_ICONS, i);
 			if(texture){}else{texture = "d1f4998d-edb0-4067-da12-d651a3dbe9ac";}
@@ -727,7 +708,7 @@ default
 				PRIM_LINK_TARGET, P_POTION, PRIM_POSITION, ZERO_VECTOR,
 				PRIM_LINK_TARGET, P_PROGRESS, PRIM_POSITION, ZERO_VECTOR
 			];
-			updateTarget("","",0);
+			onEvt("#ROOT", RootEvt$targ, []);
 		}
 		
 		llSetLinkPrimitiveParamsFast(0, out);

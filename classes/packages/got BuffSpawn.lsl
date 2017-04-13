@@ -25,6 +25,7 @@ default
         idOwnerCheck
         
         list conf = llJson2List(message);
+		
 		while(conf){
 			integer k = l2i(conf, 0);
 			string v = l2s(conf, 1);
@@ -34,8 +35,9 @@ default
 				CONF_POS = (vector)v;
 			else if(k == BuffSpawnConf$rot)
 				CONF_ROT = (rotation)v;
-			else if(k == BuffSpawnConf$meta)
+			else if(k == BuffSpawnConf$meta){
 				raiseEvent(BuffSpawnEvt$meta, v);
+			}
 		}
 		
 		llSetTimerEvent(.1);

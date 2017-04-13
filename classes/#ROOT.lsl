@@ -1,6 +1,6 @@
 #define RootMethod$reset 0						// Reset script
 #define RootMethod$statusControls 1				// (int)controls - Additional controls for root to take
-//#define RootMethod$refreshThong 2				// (int)phys_id - Update thong
+#define RootMethod$debugHuds 2					// void - Owner-says a JSON array of the coop HUDs
 //#define RootMethod$setThongIni 3				// (int)has_thong		- Initialize thong
 #define RootMethod$setTarget 4					// (key)target, (key)texture, (int)force_override, (int)team
 #define RootMethod$getPlayers 5					// NULL - Returns an array of players

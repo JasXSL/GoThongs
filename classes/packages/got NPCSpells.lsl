@@ -10,7 +10,8 @@ integer monster_flags;
 integer spell_flags;
 integer spell_id;
 key spell_targ;
-key spell_targ_real;	// HUD or same as spell_targ
+key spell_targ_real;							// HUD or same as spell_targ
+string spells_set_by_script = "got LocalConf"; 	// Script that set the spells
 
 list CACHE;			// Spell arrays from localconf
 list CUSTOMCAST;
@@ -304,7 +305,7 @@ timerEvent(string id, string data){
                     if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0 && !(status&StatusFlags$NON_VIABLE) && ~fx&fx$UNVIABLE){
                         if(flags&NPCS$FLAG_REQUEST_CASTSTART){
                             // Request start cast
-                            LocalConf$checkCastSpell(llList2Integer(r, i), targ, "SPELL;"+llList2String(r,i)+";"+(string)targ);
+							runMethod((str)LINK_ROOT, spells_set_by_script, LocalConfMethod$checkCastSpell, [llList2Integer(r, i), targ], "SPELL;"+llList2String(r,i)+";"+(string)targ);
                         }
                         else{
 							startCast(spid, targ, FALSE);
@@ -399,7 +400,7 @@ default
     
     // Here's where you receive callbacks from running methods
     if(method$isCallback){
-        if(llGetSubString(CB, 0, 5) == "SPELL;" && SENDER_SCRIPT == "got LocalConf"){
+        if(llGetSubString(CB, 0, 5) == "SPELL;"){
             list split = llParseString2List(CB, [";"], []);
             startCast(llList2Integer(split, 1), llList2String(split, 2), FALSE);
         }
@@ -409,6 +410,7 @@ default
     if(method$byOwner){
         if(METHOD == NPCSpellsMethod$setSpells){
 			
+			spells_set_by_script = SENDER_SCRIPT;
 			// Clear cooldowns from previous spells
 			list_shift_each(cooldowns, cd,
 				multiTimer(["CD_"+cd]);

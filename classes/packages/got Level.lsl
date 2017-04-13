@@ -6,6 +6,8 @@
 integer slave;
 list PLAYERS = [];
 list PLAYERS_COMPLETED;
+list PLAYERS_HUDS;	 // Should match PLAYERS
+
 integer START_PARAM;
 
 // These are generally only relevant in challenge mode
@@ -374,7 +376,15 @@ default
         return;
     }
     
+	if(METHOD == LevelMethod$playerInteract){
+		raiseEvent(LevelEvt$playerInteract, mkarr(([llGetOwnerKey(id), method_arg(0)])));
+	}
+	
 // OWNER ONLY
+	if(method$byOwner && METHOD == gotMethod$setHuds){
+		raiseEvent(LevelEvt$playerHUDs, mkarr(PARAMS));
+	}
+
 	if(METHOD == LevelMethod$setFinished && method$byOwner){
 		if(BFL&BFL_WIPED)
 			return;
