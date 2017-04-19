@@ -35,7 +35,11 @@ dropPotion(){
 	rotation rot = llGetRot();
 	if(FLAGS&PotionsFlag$is_in_hud){
 		Spawner$spawnInt(NAME, pos, rot, "", FALSE, TRUE, ""); 
-	}else{
+	}
+	else if(FLAGS&PotionsFlag$raise_drop_event){
+		Level$potionDropped(NAME);
+	}
+	else{
 		LevelAux$spawnLiveTarg(ROOT_LEVEL, NAME, pos, rot);
 	}
 	

@@ -44,6 +44,7 @@
 
 #define PortalEvt$desc_updated 1		// Portal has received a custom desc from the level
 #define PortalEvt$spawner 2				// (key)spawner - Spawner is the key of the object that requested the spawn
+#define PortalEvt$playerHUDs 3			// (arr)huds - Player HUDs have changed
 
 _portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, integer debug, integer reqDesc, integer temp){
 	vector mpos = llGetPos();

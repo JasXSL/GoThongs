@@ -72,8 +72,8 @@ integer fxHighlight;	// Bitwise combination, 0x1 for rest, 0x2 for abil1 etc
 float befuddle = 1;		// Chance to cast at a random target
 
 // Abil prims
-list ABILS = [0,0,0,0,0];
-list ABILS_BG = [0,0,0,0,0];
+list ABILS = [0,0,0,0,0,0];
+list ABILS_BG = [0,0,0,0,0,0];
 #define ABIL_BG_SCALE <0.15680, 0.04833, 0.02577>
 #define ABIL_BORDER_COLOR <.6, .6, .6>
 #define ABIL_BORDER_ALPHA .5
@@ -144,7 +144,7 @@ onEvt(string script, integer evt, list data){
 			integer hideOn = (StatusFlag$dead|StatusFlag$loading);
 			
 			if(BFL&BFL_INI && (!(pre&hideOn) && STATUS_FLAGS&hideOn) || (pre&hideOn && !(STATUS_FLAGS&hideOn))){
-				toggleSpellButtons(TRUE);		// Auto hides if dead. So we can just go with TRUE for both cases
+				SpellAux$toggle(TRUE);		// Auto hides if dead. So we can just go with TRUE for both cases
 			} 
 		}
 		
@@ -189,45 +189,6 @@ onEvt(string script, integer evt, list data){
 		SPELL_DMG_DONE_MOD = llJson2List(llList2String(data,0));
 		manacostMulti = llJson2List(llList2String(data,1));
 	}
-}
-
-
-toggleSpellButtons(integer show){
-	integer i; list out;
-	if(!show || STATUS_FLAGS&(StatusFlag$dead|StatusFlag$loading)){
-        for(i=0; i<llGetListLength(ABILS); i++){
-            out += [
-                PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-                PRIM_POSITION, ZERO_VECTOR,
-                PRIM_COLOR, 2, <1,1,1>, 0,
-				PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
-                PRIM_POSITION, ZERO_VECTOR
-            ];
-        }
-    }else{
-        for(i=0; i<llGetListLength(ABILS); i++){
-			if(count(CACHE)/CSTRIDE <= i) //TODO: Changeme
-				out+= [PRIM_POSITION, ZERO_VECTOR];
-			else{
-            vector pos = <0, 0.29586-0.073965-0.14793*(i-1), .31>;
-            if(i == 0)pos = <0,0,.27>;
-			if(i == 5)pos = <0,0,.35>;
-				out += [
-					PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-					PRIM_POSITION, pos,
-					PRIM_COLOR, 0, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA,
-					PRIM_COLOR, 1, <1,1,1>, 1, 
-					PRIM_COLOR, 3, <0,0,0>, 0,
-					PRIM_COLOR, 4, <0,0,0>, 0,
-					PRIM_COLOR, 5, <0,0,0>, 0,
-					PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
-					PRIM_POSITION, pos+<.02,0,0>,
-					PRIM_COLOR, 0, <1,1,1>, 0
-				];
-			}
-        }
-    }
-	llSetLinkPrimitiveParamsFast(0, out);
 }
 
 
@@ -289,8 +250,8 @@ default
 			}
         )
 		llSetLinkPrimitiveParamsFast(0, out);
-		toggleSpellButtons(FALSE);
-		//SpellAux$cache(); - Only turn on for debugging
+		SpellAux$toggle(FALSE);
+		//SpellAux$cache(); // - Only turn on for debugging
 	}
 	
 	
@@ -307,7 +268,7 @@ default
 		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\
 		list out = []; \
 		integer i; \
-		for(i=0; i<5; i++){ \
+		for(i=0; i<count(ABILS_BG); i++){ \
 			integer check = (int)llPow(2,i); \
 			if(fxHighlight&check){ \
 				out+= [ \
@@ -324,6 +285,7 @@ default
 		} \
 		PP(0,out); \
 	}
+	
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -382,6 +344,49 @@ default
             )
         }
 		
+		else if(METHOD == SpellAuxMethod$toggle){
+		
+			integer show = l2i(PARAMS, 0);
+			integer i;  list out;
+			if(!show || STATUS_FLAGS&(StatusFlag$dead|StatusFlag$loading)){
+				for(i=0; i<llGetListLength(ABILS); i++){
+					out += [
+						PRIM_LINK_TARGET, llList2Integer(ABILS, i),
+						PRIM_POSITION, ZERO_VECTOR,
+						PRIM_COLOR, 2, <1,1,1>, 0,
+						PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
+						PRIM_POSITION, ZERO_VECTOR
+					];
+				}
+			}else{
+				for(i=0; i<llGetListLength(ABILS); i++){
+					if(count(CACHE)/CSTRIDE <= i){ //TODO: Changeme
+						out+= [
+							PRIM_LINK_TARGET, l2i(ABILS, i), PRIM_POSITION, ZERO_VECTOR,
+							PRIM_LINK_TARGET, l2i(ABILS_BG, i), PRIM_POSITION, ZERO_VECTOR
+						];
+					}else{
+						vector pos = <0, 0.29586-0.073965-0.14793*(i-1), .31>;
+						if(i == 0)pos = <0,0,.27>;
+						if(i == 5)pos = <0,0,.35>;
+						out+= [
+							PRIM_LINK_TARGET, llList2Integer(ABILS, i),
+							PRIM_POSITION, pos,
+							PRIM_COLOR, 0, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA,
+							PRIM_COLOR, 1, <1,1,1>, 1, 
+							PRIM_COLOR, 3, <0,0,0>, 0,
+							PRIM_COLOR, 4, <0,0,0>, 0,
+							PRIM_COLOR, 5, <0,0,0>, 0,
+							PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
+							PRIM_POSITION, pos+<.02,0,0>,
+							PRIM_COLOR, 0, <1,1,1>, 0
+						];
+					}
+				}
+			}
+			PP(0, out);
+			
+		}
 
         else if(METHOD == SpellAuxMethod$startCast){
 			BFL = BFL|BFL_CASTING;
@@ -593,7 +598,7 @@ default
 			if(CACHE){
 				BFL = BFL|BFL_INI;
 				llSetLinkPrimitiveParamsFast(0, set);
-				toggleSpellButtons(TRUE);
+				SpellAux$toggle(TRUE);
 				GUI$toggle(TRUE);
 			}
         }

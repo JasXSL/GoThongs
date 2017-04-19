@@ -6,6 +6,7 @@
 #define RQSTRIDE 2
 list required;				// [(bool)fromHUD, (str)script]
 list PLAYERS;
+list PLAYER_HUDS;
 
 key spawner;				// Key of prim that spawned me
 key requester;				// Key of priom that requested this spawn. Can be "" if internal from the HUD, and can be same as spawner
@@ -19,7 +20,7 @@ integer BFL;
 
 
 #define BFL_INI 11
-#define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); raiseEvent(PortalEvt$spawner, (str)requester); raiseEvent(PortalEvt$desc_updated, INI_DATA); }
+#define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); raiseEvent(PortalEvt$spawner, (str)requester); raiseEvent(PortalEvt$desc_updated, INI_DATA); raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS)); }
 
 // Fetches desc from spawner
 #define fetchDesc() llRegionSayTo(spawner, playerChan(spawner), "SP")
@@ -240,11 +241,10 @@ default
         
         if(SENDER_SCRIPT == "#ROOT" && METHOD == RootMethod$getPlayers && CB == "INI" && llGetStartParameter() == 2){
             PLAYERS = llJson2List(method_arg(0));
-			
 			multiTimer(["INI"]);
 			BFL = BFL|BFL_GOT_PLAYERS;
+			PLAYER_HUDS = llJson2List(method_arg(1));
 			checkIni()
-			
         } 
         return;
     }
@@ -270,6 +270,12 @@ default
 			if(method_arg(0) == requester){
 				llDie();
 			}
+		}
+		
+		else if(METHOD == gotMethod$setHuds){
+			PLAYER_HUDS = PARAMS;
+			raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
+			
 		}
 		
 		// Forces the portal to load as if it was live

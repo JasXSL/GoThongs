@@ -141,6 +141,6 @@
 	#define fx$TAG_LIFTED 4						// Lifted in the air by the leg hand
 	#define fx$TAG_LUBED 5						// Triggered by trap, can be used by monsters
 	#define fx$TAG_NAKED 6
-	
+	#define fx$TAG_ACTIVE_MITIGATION 7			// Used by tank active mitigation abilities
 	
 	

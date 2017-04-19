@@ -7,6 +7,7 @@
 #define PotionsFlag$no_drop 0x1			// Don't spawn an item if replaced
 #define PotionsFlag$raise_event 0x2		// Raise event on the current level when potion is consumed
 #define PotionsFlag$is_in_hud 0x4		// The potion is in HUD. Just have your avatar drop it
+#define PotionsFlag$raise_drop_event 0x8	// Raise an event on drop instead of spawning a new one, does not work with flag is_in_hud
 
 #define PotionsEvt$pickup 1				// (str)potion_name
 #define PotionsEvt$drop 2				// (str)potion_name

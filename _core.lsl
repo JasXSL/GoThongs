@@ -167,6 +167,16 @@ if(l2i(_data, 0)){ \
 	monsterflags = 0;\
 }\
 
+// Same as above but only gets sex
+#define parseSex(targ, var) \
+list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+list _split = explode("$", l2s(_data, 1)); \
+integer var = 0; \
+if(l2i(_data, 0)) \
+	var = l2i(_split, 3);
+	
+	
+
 // Returns an array of hp, mana, arousal, pain
 #define splitResources(n) [(n>>21&127) / 127.0, (n>>14&127) / 127.0, (n>>7&127) / 127.0, (n&127) / 127.0]
 

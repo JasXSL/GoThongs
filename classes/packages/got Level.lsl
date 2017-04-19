@@ -466,6 +466,10 @@ default
 	if(METHOD == LevelMethod$potionUsed){
 		raiseEvent(LevelEvt$potion, mkarr(([llGetOwnerKey(id), method_arg(0)])));
 	}
+	if(METHOD == LevelMethod$potionDropped){
+		raiseEvent(LevelEvt$potionDropped, mkarr(([id, method_arg(0)])));
+	}
+	
 	
 	if(METHOD == LevelMethod$cellData && method$byOwner){
 		string dta = method_arg(0);

@@ -382,7 +382,7 @@ default
     }
     
     if(METHOD == RootMethod$getPlayers){
-		CB_DATA = [mkarr(getPlayers())];
+		CB_DATA = [mkarr(getPlayers()), mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0))];
 	}
 	
 	else if(METHOD == RootMethod$attached){

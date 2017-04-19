@@ -302,7 +302,7 @@ timerEvent(string id, string data){
 					parseDesc(targ, resources, status, fx, sex, team, rf);
 					
 					
-                    if((range<=0 || dist<range) && dist>=minrange && llList2Integer(ray, -1) == 0 && !(status&StatusFlags$NON_VIABLE) && ~fx&fx$UNVIABLE){
+                    if((range<=0 || dist<range) && (~flags&NPCS$FLAG_IGNORE_TANK || targ != aggro_target) && dist>=minrange && llList2Integer(ray, -1) == 0 && !(status&StatusFlags$NON_VIABLE) && ~fx&fx$UNVIABLE){
                         if(flags&NPCS$FLAG_REQUEST_CASTSTART){
                             // Request start cast
 							runMethod((str)LINK_ROOT, spells_set_by_script, LocalConfMethod$checkCastSpell, [llList2Integer(r, i), targ], "SPELL;"+llList2String(r,i)+";"+(string)targ);

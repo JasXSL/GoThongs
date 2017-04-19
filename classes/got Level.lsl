@@ -19,7 +19,7 @@
 #define LevelMethod$difficulty 17	// (int)difficulty, (bool)isChallenge - Sets difficulty on the level
 #define LevelMethod$enableWipeTracker 18	// Resets and enables the wipe tracker. The wipe tracker will reset the quest if count(PLAYERS) players have died
 #define LevelMethod$playerInteract 19		// (key)interactee - Sent from the interactor
-
+#define LevelMethod$potionDropped 20		// (str)name - Potion with PotionsFlag$raise_drop_event has been dropped
 
 #define LevelMethod$despawn 0x71771E5	// Deletes a level
 
@@ -58,7 +58,7 @@
 #define LevelEvt$wipe 13			// All players dead (wipe tracker enabled)
 #define LevelEvt$playerHUDs 14		// (arr)HUDs - Raised when party changes
 #define LevelEvt$playerInteract 15	// (key)interactor, (key)interactee - Sent from the interactor 
-
+#define LevelEvt$potionDropped 16	// (key)HUD, (str)potion - Raised when a player drops a potion with PotionsFlag$raise_drop_event
 
 // Level description config: [[(int)task, (var)param1, (var)param2...]...]
 #define LevelDesc$additionalScripts 0			// List of names of scripts to wait for evt$SCRIPT_INIT from
@@ -94,6 +94,7 @@
 #define Level$bind(player) runLimitMethod(player, "got Level", LevelMethod$bindToLevel, [], TNN, 100)
 #define Level$getPlayers() runMethod((str)LINK_THIS, "got Level", LevelMethod$getPlayers, [], TNN)
 #define Level$potionUsed(name) runMethod(ROOT_LEVEL, "got Level", LevelMethod$potionUsed, [name], TNN)
+#define Level$potionDropped(name) runMethod(ROOT_LEVEL, "got Level", LevelMethod$potionDropped, [name], TNN)
 
 #define Level$playerHUDs(huds) runOmniMethod("got Level", LevelMethod$playerHUDs, huds, TNN)
 #define Level$playerInteract(level, victim) runMethod(level, "got Level", LevelMethod$playerInteract, [victim], TNN)
