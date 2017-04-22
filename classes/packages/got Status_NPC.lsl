@@ -556,18 +556,18 @@ default
 					amount*=maxHP;
 					
 				if(amount<0){
-					if(RUNTIME_FLAGS&Monster$RF_INVUL)return;
 					amount*=fxModDmgTaken;
-					
 					parseDesc(attacker, _r, _s, _f, _st, team, _mo)
 					if(attacker != "" && team != TEAM){
 						aggro(attacker, llFabs(amount));
 					}
-					raiseEvent(StatusEvt$hurt, llList2Json(JSON_ARRAY, [(str)amount, attacker]));
 				}
 				else{
 					amount*= fxModHealingTaken;
 				}
+				
+				raiseEvent(StatusEvt$hurt, llList2Json(JSON_ARRAY, [(str)amount, attacker]));
+				if(amount<0 && RUNTIME_FLAGS&Monster$RF_INVUL)return;
 				
 				HP += amount;
 				if(HP<=0 && HP != pre){

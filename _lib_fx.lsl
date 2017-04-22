@@ -105,6 +105,7 @@
 	#define fx$CONVERSION 57					// (int)conversion1, (int)conversion2... - PC ONLY - See got FXCompiler.lsl
 	#define fx$LTB 58							// (str)asset, (arr)conf - PC Only - Spawns a long term buff visual which sticks around on the affected player until the spell is removed.
 	#define fx$REFRESH_SPRINT 59				// void - PC Only - Instant only. Refreshes sprint
+	#define fx$HP_ADD 60						// (float)amount - PC only - Increases max HP by amount nr of points.
 	
 // conditions
 	// Built in

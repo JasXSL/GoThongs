@@ -31,12 +31,6 @@ list FX_CACHE;
 
 // Calculates bonus damage for particular spells
 list SPELL_DMG_DONE_MOD = [-1,-1,-1,-1,-1];		// [rest, abil1, abil2...]
-float spdmdm(integer index){
-    float out = llList2Float(SPELL_DMG_DONE_MOD, index);
-	if(out == -1)return 1;
-	if(out<0)return 0;
-    return out;
-}
 
 integer BFL;
 #define BFL_INI 0x1
@@ -53,6 +47,7 @@ list PARTICLE_CACHE;
 float CACHE_AROUSAL;
 float CACHE_PAIN;
 float CACHE_CRIT;
+float CACHE_MAX_HP = 100;
 
 // Flags from got Status
 integer STATUS_FLAGS;
@@ -96,11 +91,15 @@ string runMath(string FX, integer index, key targ){
 	if(llFabs(ang)>PI_BY_TWO){
 		B = 1;
 	}
-
+	float spdmdm = llList2Float(SPELL_DMG_DONE_MOD, index);
+	if(spdmdm == -1)spdmdm = 1;
+	else if(spdmdm<0)spdmdm = 0;
 	
 	string consts = llList2Json(JSON_OBJECT, [
 		// Damage done multiplier
-        "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm(index)*difDmgMod()),
+        "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm*difDmgMod()),
+		// Raw multiplier not affected by team or difficulty
+		"R", (dmdmod*aroused*CACHE_CRIT*spdmdm),
 		// Points of arousal
 		"A", CACHE_AROUSAL,
 		// Points of pain
@@ -110,10 +109,12 @@ string runMath(string FX, integer index, key targ){
 		// Cooldown modifier
 		"H", cdmod,
 		// Spell damage done mod for index, added into D
-		"M", spdmdm(index),
+		"M", spdmdm,
 		// HEaling done multiplier
 		"h", hdmod,
-		"T", TEAM
+		"T", TEAM,
+		// Max HP
+		"mhp", CACHE_MAX_HP
     ]);
 	
     integer i;
@@ -156,7 +157,7 @@ onEvt(string script, integer evt, list data){
 			// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
 			CACHE_AROUSAL = llList2Float(data, 4);
 			CACHE_PAIN = llList2Float(data, 6);
-			
+			CACHE_MAX_HP = l2f(data, 1);
 			float mana = l2f(data, 2);
 			integer i;
 			
@@ -229,6 +230,7 @@ list getBorderColorAndAlpha(integer index, vector color, float alpha){
 default
 {
 	state_entry(){
+		PLAYERS = [(str)llGetOwner()];
 		list out;
 		links_each(nr, name, 
             integer n = (integer)llGetSubString(name, -1, -1); 

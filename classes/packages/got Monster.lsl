@@ -37,7 +37,10 @@ integer height_add;		// LOS check height offset from the default 0.5m above root
 float fxSpeed = 1;			// FX speed modifier
 float fxCooldownMod = 1;	// Used for attack speed
 
-integer RUNTIME_FLAGS;  // Flags that can be set from other script, see got Monster head file
+integer RUNTIME_FLAGS;  		// Flags that can be set from other script, see got Monster head file
+integer RUNTIME_FLAGS_SPELL;	// Flags set from npcspells
+
+#define getRF() (RUNTIME_FLAGS|RUNTIME_FLAGS_SPELL)
 
 integer BFL = 0x20;            // Don't roam unless a player is in range
 #define BFL_IN_RANGE 0x1            // Monster is within attack range
@@ -63,7 +66,7 @@ integer moveInDir(vector dir){
 	vector gpos = llGetPos();
     
 	float sp = getSpeed();
-    if(~RUNTIME_FLAGS&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp>0){
+    if(~getRF()&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp>0){
         
         if(~BFL&BFL_CHASING && ~BFL&BFL_SEEKING)sp/=2;
 
@@ -71,7 +74,7 @@ integer moveInDir(vector dir){
 		vector a = <0,0,0.5+hAdd()>;	// Max climb distance
 		vector b = <0,0,-1>;	// Max drop distance
 		// If flying, go directly towards the target 
-		if(RUNTIME_FLAGS&Monster$RF_FLYING){
+		if(getRF()&Monster$RF_FLYING){
 			a = b = ZERO_VECTOR;
 		}
 		
@@ -79,7 +82,7 @@ integer moveInDir(vector dir){
         list r = llCastRay((gpos+dir+a), (gpos+dir+b), ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
         if(
 			// Too steep drop
-			(~RUNTIME_FLAGS&Monster$RF_FLYING && llList2Integer(r, -1) <=0) || 
+			(~getRF()&Monster$RF_FLYING && llList2Integer(r, -1) <=0) || 
 			// Inside a wall
 			llVecDist(llGetPos()+dir+<0,0,1>, llList2Vector(r, 1))<.1
 		){
@@ -92,14 +95,14 @@ integer moveInDir(vector dir){
         */
 		
 		vector z = llList2Vector(r, 1);
-		if(RUNTIME_FLAGS&Monster$RF_FLYING)
+		if(getRF()&Monster$RF_FLYING)
 			z = gpos+dir;
 			
         llSetKeyframedMotion([z-gpos, .25/sp], [KFM_DATA, KFM_TRANSLATION]);
         toggleMove(TRUE);
     }else toggleMove(FALSE);
     
-    if(~RUNTIME_FLAGS&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED)
+    if(~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED)
         llLookAt(gpos+<dir.x, dir.y, 0>, 1, 1);
     return TRUE;
 }
@@ -118,7 +121,7 @@ anim(string anim, integer start){
 }
 
 toggleMove(integer on){
-    if(on && ~BFL&BFL_MOVING && ~BFL&BFL_STOPON && ~RUNTIME_FLAGS&Monster$RF_IMMOBILE){
+    if(on && ~BFL&BFL_MOVING && ~BFL&BFL_STOPON && ~getRF()&Monster$RF_IMMOBILE){
         BFL = BFL|BFL_MOVING;
         anim("walk", true);
     }else if(!on && BFL&BFL_MOVING){
@@ -129,7 +132,7 @@ toggleMove(integer on){
 }
 
 #define updateLookAt() \
-	if(~RUNTIME_FLAGS&Monster$RF_NOROT || FXFLAGS&fx$F_STUNNED){ \
+	if(~getRF()&Monster$RF_NOROT || FXFLAGS&fx$F_STUNNED){ \
 		vector pp = prPos(chasetarg); \
 		vector gpos = llGetPos(); \
 		if(look_override)pp = prPos(look_override); \
@@ -143,7 +146,7 @@ timerEvent(string id, string data){
         
         // Try to find a target
         if(STATE == MONSTER_STATE_IDLE){
-            if(RUNTIME_FLAGS&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED)return;
+            if(getRF()&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED)return;
             
 			//llSetLinkPrimitiveParamsFast(2, [PRIM_TEXT, (str)wander+"\n"+portalConf$desc, <1,1,1>, 1]);
             // Find a random pos to go to maybe
@@ -164,8 +167,8 @@ timerEvent(string id, string data){
         
         
         else if(STATE == MONSTER_STATE_SEEKING){
-            if(RUNTIME_FLAGS&Monster$RF_IMMOBILE || FXFLAGS&fx$F_ROOTED)return;
-            if(RUNTIME_FLAGS&Monster$RF_FOLLOWER){	// Followers can't seek
+            if(getRF()&Monster$RF_IMMOBILE || FXFLAGS&fx$F_ROOTED)return;
+            if(getRF()&Monster$RF_FOLLOWER){	// Followers can't seek
 				setState(MONSTER_STATE_IDLE);
 				return;
 			}
@@ -245,7 +248,7 @@ timerEvent(string id, string data){
 					BFL&BFL_IN_RANGE && 
 					~BFL&BFL_STOPON && 
 					~FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED) && 
-					~RUNTIME_FLAGS&Monster$RF_PACIFIED && 
+					~getRF()&Monster$RF_PACIFIED && 
 					// Attack LOS, hAdd() IS added
 					llList2Integer(llCastRay(llGetPos()+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
 				){
@@ -289,7 +292,7 @@ timerEvent(string id, string data){
                 list ray = llCastRay(llGetPos()+add, ppos+add, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
 
                 if(llList2Integer(ray, -1)>0){
-                    if(RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO)return;
+                    if(getRF()&Monster$RF_FREEZE_AGGRO)return;
                     string desc = prDesc(llList2Key(ray, 0));
                     Status$dropAggro(chasetarg); 
 
@@ -364,7 +367,7 @@ onEvt(string script, integer evt, list data){
             vector pos = llList2Vector(odata,0);
             vector dpos = llList2Vector(ifdata, 0);
             
-            if(~RUNTIME_FLAGS&Monster$RF_NOROT && chasetarg != "")
+            if(~getRF()&Monster$RF_NOROT && chasetarg != "")
                 llLookAt(<dpos.x, dpos.y, pos.z>, 1,1);
             
             float dist = llVecDist(pos, dpos);
@@ -446,7 +449,7 @@ onSettings(list settings){
 		hitbox = 3;
     
 	if(flagsChanged)
-		raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)RUNTIME_FLAGS);
+		raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)getRF());
 	
 	if(~BFL&BFL_INITIALIZED){
 		BFL = BFL|BFL_INITIALIZED; 
@@ -499,16 +502,23 @@ default
     
     // Public
     if(METHOD == MonsterMethod$toggleFlags){
-        integer pre = RUNTIME_FLAGS;
-        RUNTIME_FLAGS = RUNTIME_FLAGS|(integer)method_arg(0);
-        RUNTIME_FLAGS = RUNTIME_FLAGS&~(integer)method_arg(1);
+        integer pre = getRF();
+		// Basic flags
+		if(!l2i(PARAMS, 2)){
+			RUNTIME_FLAGS = RUNTIME_FLAGS|(integer)method_arg(0);
+			RUNTIME_FLAGS = RUNTIME_FLAGS&~(integer)method_arg(1);
+        }
+		// Spell flags
+		else{
+			RUNTIME_FLAGS_SPELL = RUNTIME_FLAGS_SPELL|(integer)method_arg(0);
+			RUNTIME_FLAGS_SPELL = RUNTIME_FLAGS_SPELL&~(integer)method_arg(1);
+		}
         
-        
-        raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)RUNTIME_FLAGS);
-        if(RUNTIME_FLAGS&Monster$RF_IMMOBILE){
+        raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)getRF());
+        if(getRF()&Monster$RF_IMMOBILE){
             toggleMove(FALSE);
         }  
-        if(pre&Monster$RF_NOROT && RUNTIME_FLAGS&Monster$RF_NOROT){
+        if(pre&Monster$RF_NOROT && getRF()&Monster$RF_NOROT){
             llStopLookAt();
         }
 		

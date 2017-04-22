@@ -257,7 +257,7 @@ integer addMana(float amount, string spellName, integer flags, integer ignoreCon
     float pre = MANA;
     amount*=spdmtm(spellName);
 	if(flags&SMAFlag$IS_PERCENTAGE)
-		amount*=maxDurability();
+		amount*=maxMana();
     
 	// Run conversions
 	if(!ignoreConversion)
@@ -640,6 +640,8 @@ default
 		fxModPainTaken = i2f(l2f(data,FXCUpd$PAIN_MULTI)); \
 		fxModArousalTaken = i2f(l2f(data,FXCUpd$AROUSAL_MULTI)); \
 		 \
+		float maxhppre = maxDurability(); \
+		float perc = DURABILITY/maxhppre; \
 		fxModMaxHpPerc = i2f(l2f(data, FXCUpd$HP_MULTIPLIER)); \
 		fxModMaxHpNr = llList2Integer(data, FXCUpd$HP_ADD); \
 		fxModMaxManaPerc = i2f(l2f(data, FXCUpd$MANA_MULTIPLIER)); \
@@ -654,6 +656,7 @@ default
 		fxModHealingTaken = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
 		fxTeam = l2i(data, FXCUpd$TEAM); \
 		fxConversions = llJson2List(l2s(data, FXCUpd$CONVERSION)); \
+		if(maxhppre != maxDurability()){ DURABILITY = maxDurability()*perc;}\
         outputStats(); \
 		toggleClothes(); \
     } \

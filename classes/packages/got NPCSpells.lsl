@@ -29,9 +29,8 @@ integer BFL;
 float spells_per_sec_limit = 0.5;			// Max spells per sec that can be cast
 
 // Effects
-integer STATUS_FLAGS = 0; 
-// See ots Monster
-integer RUNTIME_FLAGS;
+integer STATUS_FLAGS = 0; 					// Status flags
+integer RUNTIME_FLAGS;						// Monster flags
 // FX
 integer FXFLAGS = 0;
 float fxModDmgDone = 1;
@@ -166,7 +165,7 @@ endCast(integer success, integer force){
     raiseEvent(evt, mkarr(([spell_id, spell_targ, spell_targ_real])));
     
 	if(monster_flags)
-		Monster$unsetFlags(monster_flags);
+		Monster$unsetSpellFlags(monster_flags);
 
     
     multiTimer(["CB"]);
@@ -243,7 +242,7 @@ startCast(integer spid, key targ, integer isCustom){
 		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ, spell_targ_real])));
 		multiTimer(["CAST", "", casttime, FALSE]);
 		multiTimer(["CB", "", .1, TRUE]);
-		Monster$setFlags(monster_flags);
+		Monster$setSpellFlags(monster_flags);
 		updateText();
 	}
     
@@ -330,7 +329,7 @@ timerEvent(string id, string data){
         endCast(TRUE, FALSE);
     }
     else if(id == "CB")updateText();
-    else if(id == "US")Monster$unsetFlags((integer)data);
+    else if(id == "US")Monster$unsetSpellFlags((integer)data);
 }
 
 // Settings received

@@ -18,6 +18,7 @@ list SPELL_HIGHLIGHTS; 		// [id, (int)index]
 list HEAL_DONE_MOD;			// [id, (float)multi] - Healing done (need to mutliply by h in the spell)
 list BEFUDDLE; 				// [id, (float)chanceMulti]
 list CONVERSIONS;			// [id, (arr)conversions]
+list HP_ADD;				// [id, (float)add]
 
 integer current_visual;
 
@@ -119,6 +120,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			RLV$cubeTask(llDeleteSubList(fx, 0, 0));
 		else if(t == fx$REFRESH_SPRINT)
 			RLV$setSprintPercent(LINK_ROOT, 1);
+		
     }
     
     if(resource_updates){
@@ -188,6 +190,10 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
 		else if(t == fx$BEFUDDLE){
 			BEFUDDLE = manageList(FALSE, BEFUDDLE, [pid, l2f(fx, 1)]);
 		}
+		else if(t == fx$HP_ADD)
+			HP_ADD = manageList(FALSE, HP_ADD, [pid, l2f(fx, 1)]);
+		
+		
 		
 		else if(t == fx$CONVERSION)
 			CONVERSIONS = manageList(FALSE, CONVERSIONS, [pid,mkarr(llDeleteSubList(fx, 0, 0))]);
@@ -254,6 +260,9 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 			CONVERSIONS = manageList(TRUE, CONVERSIONS, [pid,0]);
 		else if(t == fx$LTB)
 			BuffVis$rem(pid);
+		else if(t == fx$HP_ADD)
+			HP_ADD = manageList(TRUE, HP_ADD, [pid, 0]);
+		
     }
 }
 
@@ -326,6 +335,7 @@ updateGame(){
 	// Befuddle mod, multi
 	float befuddle = compileList(BEFUDDLE, 0, 1, 2, TRUE);
 	
+	float hp_add = compileList(HP_ADD, 0,1,2,FALSE);
 	
 	integer team = -1;
 	if(TEAM_MOD)
@@ -385,7 +395,7 @@ updateGame(){
 		f2i(pm), 			// 09 PAIN_MULTI
 		f2i(am),			// 10 AROUSAL_MULTI
 		// These don't use f2i for now since these have no active effects, but if you add active effects at some point you should f2i them here and then i2f them in got Passives
-		0,					// 11 HP_ADD
+		f2i(hp_add),		// 11 HP_ADD
 		1,					// 12 HP_MULTI
 		0,					// 13 MANA_ADD
 		1,					// 14 MANA_MULTI

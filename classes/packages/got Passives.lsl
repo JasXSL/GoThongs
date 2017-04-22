@@ -554,7 +554,7 @@ default
 			i2f(l2f(set, 9)),		\
 			i2f(l2f(set, 10)),		\
 			\
-			l2i(set, 11),			\
+			i2f(l2f(set, 11)),		\
 			l2f(set, 12),			\
 			l2i(set, 13),			\
 			l2f(set, 14),			\
