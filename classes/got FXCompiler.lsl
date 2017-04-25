@@ -41,7 +41,7 @@
 	#define FXCUpd$BEFUDDLE 27			// (float)multiplier
 	#define FXCUpd$CONVERSION 28		// (arr)conversions - Converts damage types into another. See below
 	#define FXCUpd$SPRINT_FADE_MULTI 29	// (float)multiplier - Lower = longer sprint
-
+	#define FXCUpd$BACKSTAB_MULTI 30	// (float)multiplier - Increases or lowers damage from behind
 	
 // Settings that are are not multiplicative
 #define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$DODGE, FXCUpd$CRIT, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD, FXCUpd$TEAM]
@@ -115,7 +115,8 @@ recacheFlags(){
 	else if(t == fx$TRIGGER_SOUND){ \
         list sounds = [l2s(fx,1)]; \
         if(llJsonValueType(l2s(fx,1), []) == JSON_ARRAY)sounds = llJson2List(l2s(fx,1)); \
-        llTriggerSound(randElem(sounds), llList2Float(fx, 2)); \
+        if(!l2i(fx,2))llTriggerSound(randElem(sounds), llList2Float(fx, 2)); \
+		else triggerSoundOn(llGetKey(), randElem(sounds), llList2Float(fx, 2)); \
     } \
 	else if(t == fx$FULLREGEN)Status$fullregen(); \
 	else if(t == fx$DISPEL){ \

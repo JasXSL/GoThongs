@@ -85,7 +85,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
         else if(t == fx$ANIM)AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, 0);
  
         else if(t == fx$INTERRUPT)
-            SpellMan$interrupt();
+            SpellMan$interrupt(l2i(fx, 1));
         
         else if(t == fx$RESET_COOLDOWNS){
             SpellMan$resetCooldowns(l2i(fx,1));
@@ -413,7 +413,8 @@ updateGame(){
 		team,				// 26 Team override
 		f2i(befuddle),		// 27 Befuddle
 		mkarr(conv),		// 28 Conversions
-		f2i(1.0)			// 29 Sprint fade
+		f2i(1.0),			// 29 Sprint fade
+		f2i(1.0)			// 30 Backstab mul
 	])); 
 }
 

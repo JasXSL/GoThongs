@@ -198,7 +198,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 			// Player died
 			if(STATUS_FLAGS&StatusFlag$dead)return FALSE;
 			// DEATH HANDLED HERE
-			SpellMan$interrupt();
+			SpellMan$interrupt(TRUE);
 			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
 			BFL = BFL&~BFL_AVAILABLE_BREAKFREE;
 			

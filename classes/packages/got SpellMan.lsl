@@ -87,14 +87,14 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
 		integer inRange = (llVecDist(pos, llGetPos())<3 && llVecDist(<gpos.x,gpos.y,0>,<pos.x,pos.y,0>)<0.5);\
         if(llFabs(ang)>PI_BY_TWO && !inRange){ \
             A$(ASpellMan$errTargInFront); \
-            SpellMan$interrupt(); \
+            SpellMan$interrupt(TRUE); \
             return ret; \
         } \
     }\
     list ray = llCastRay(llGetPos()+<0,0,.5>, pos+<0,0,1+HEIGHT_ADD>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); \
     if(llList2Integer(ray, -1) == 1 && llList2Key(ray,0) != targ){ \
         A$(ASpellMan$errVisionObscured); \
-        SpellMan$interrupt(); \
+        SpellMan$interrupt(TRUE); \
         return ret; \
     } \
 }
@@ -115,7 +115,7 @@ onEvt(string script, integer evt, list data){
 			// interrupt if casting and pressing an arrow key
             if(BFL&BFL_CASTING && ~BFL&BFL_START_CAST && !canCastWhileMoving())
                 if(pressed&(CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT))
-                    SpellMan$interrupt();
+                    SpellMan$interrupt(TRUE);
 					
 			// Selfcast key
             if(pressed&CONTROL_DOWN)
@@ -521,9 +521,9 @@ default
         mcm = i2f(l2f(data, FXCUpd$MANACOST)); \
         fxflags = llList2Integer(data, FXCUpd$FLAGS); \
         if(BFL&BFL_CASTING){ \
-            if(fxflags&fx$NOCAST)SpellMan$interrupt(); \
+            if(fxflags&fx$NOCAST)SpellMan$interrupt(TRUE); \
             else if(fxflags&fx$F_PACIFIED && SPELL_WRAPPER_FLAGS&WF_DETRIMENTAL) \
-                SpellMan$interrupt(); \
+                SpellMan$interrupt(TRUE); \
         } \
 	}
 	
@@ -556,18 +556,16 @@ default
             
         }
         else if(METHOD == SpellManMethod$interrupt){
-            if(BFL&BFL_CASTING){
-                SpellAux$stopCast(SPELL_CASTED);
-                multiTimer(["CAST"]);
-                integer casting = BFL&BFL_CASTING;
-                if(casting){
-                    raiseEvent(SpellManEvt$interrupted, "");
-                    A$(ASpellMan$interrupted);
-                }
-                spellEnd();
-                if(casting)
-                    SpellFX$startSound("6b050b67-295b-972d-113e-97bf21ccbb8f", .5, FALSE);
-            }
+            if(~BFL&BFL_CASTING || (fxflags&fx$F_NO_INTERRUPT && !l2i(PARAMS, 0)))
+				return;
+            
+			SpellAux$stopCast(SPELL_CASTED);
+            multiTimer(["CAST"]);
+
+			raiseEvent(SpellManEvt$interrupted, "");
+			A$(ASpellMan$interrupted);
+			spellEnd();				
+            SpellFX$startSound("6b050b67-295b-972d-113e-97bf21ccbb8f", .5, FALSE);
         }
         else if(METHOD == SpellManMethod$rebuildCache){
 			CACHE = [];

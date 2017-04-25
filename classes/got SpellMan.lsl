@@ -19,7 +19,7 @@
 #define SpellMan$NO_SWIM 0x200
 
 #define SpellMan$hotkey(text) runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$hotkey, [text], TNN)
-#define SpellMan$interrupt() runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$interrupt, [], TNN)
+#define SpellMan$interrupt(force) runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$interrupt, [force], TNN)
 #define SpellMan$rebuildCache() runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$rebuildCache, [], TNN)
 #define SpellMan$spellComplete() runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$spellComplete, [], TNN)
 #define SpellMan$purgeCache() runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$purgeCache, [], TNN)

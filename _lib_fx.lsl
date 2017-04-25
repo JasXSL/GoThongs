@@ -14,7 +14,7 @@
 	#define fx$AROUSE 2							// [(int)amount_to_add[, (int)flags]]
 	#define fx$PAIN 3							// [(int)amount_to_add[, (int)flags]]
 	#define fx$MANA 4							// [(int)amount_to_add[, (int)flags]]
-	#define fx$TRIGGER_SOUND 5					// [(key)uuid, (float)vol] - UUID can also be a JSON array of random sounds
+	#define fx$TRIGGER_SOUND 5					// [(key)uuid, (float)vol, (bool)self_only] - UUID can also be a JSON array of random sounds
 	#define fx$HITFX 6							// [(vec)color, (int)flags]
 		#define fxhfFlag$NOANIM 1					// Don't use standard takehit anim
 		#define fxhfFlag$NOSOUND 2					// Don't use a default sound
@@ -53,6 +53,7 @@
 		#define fx$F_CAST_WHILE_MOVING 0x1000		// PC - Allows you to cast while moving
 		#define fx$F_SHOW_GENITALS 0x2000			// PC - Renders the character naked
 		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
+		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE)
@@ -63,7 +64,7 @@
 	#define fx$CASTTIME_MULTI 18				// (float)add
 	#define fx$SPELL_DMG_TAKEN_MOD 19			// (str)spellName, (float)add - PC only SpellName is the FX package name :: Increases efficiency of dur/man/ars/pain sections of a spell, useful for heals too
 	#define fx$ICON 20							// (key)icon, (str)description
-	#define fx$INTERRUPT 21						// 
+	#define fx$INTERRUPT 21						// (bool)force - Force will override fx$F_NO_INTERRUPT
 	#define fx$SPELL_DMG_DONE_MOD 22			// (int)index, (float)add - Index is the index of the spell, 0 is rest and then 1-4 for the others :: Increases efficiency of spells cast by you with this name
 	#define fx$FULLREGEN 23						// NULL - Fully restores a player
 	#define fx$DISPEL 24						// (int)detrimental, (int)nr

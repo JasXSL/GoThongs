@@ -65,6 +65,7 @@ float hdmod = 1;		// Healing done mod
 list manacostMulti = [1,1,1,1,1];
 integer fxHighlight;	// Bitwise combination, 0x1 for rest, 0x2 for abil1 etc
 float befuddle = 1;		// Chance to cast at a random target
+float backstabMulti = 1;	// Additional damage when attacking from behind
 
 // Abil prims
 list ABILS = [0,0,0,0,0,0];
@@ -86,10 +87,12 @@ string runMath(string FX, integer index, key targ){
     float aroused = 1;
     if(STATUS_FLAGS&StatusFlag$aroused)aroused = .9;
 	
+	float bsMul = 1;
 	integer B = 0;
 	myAngZ(targ, ang)
-	if(llFabs(ang)>PI_BY_TWO){
+	if(llFabs(ang)>PI_BY_TWO && targ != ""){
 		B = 1;
+		bsMul = backstabMulti;
 	}
 	float spdmdm = llList2Float(SPELL_DMG_DONE_MOD, index);
 	if(spdmdm == -1)spdmdm = 1;
@@ -97,9 +100,9 @@ string runMath(string FX, integer index, key targ){
 	
 	string consts = llList2Json(JSON_OBJECT, [
 		// Damage done multiplier
-        "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm*difDmgMod()),
+        "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm*difDmgMod()*bsMul),
 		// Raw multiplier not affected by team or difficulty
-		"R", (dmdmod*aroused*CACHE_CRIT*spdmdm),
+		"R", (dmdmod*aroused*CACHE_CRIT*spdmdm*bsMul),
 		// Points of arousal
 		"A", CACHE_AROUSAL,
 		// Points of pain
@@ -268,6 +271,7 @@ default
 		integer pre = fxHighlight; \
 		fxHighlight = llList2Integer(data, FXCUpd$SPELL_HIGHLIGHTS); \
 		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\
+		backstabMulti = i2f(l2f(data,FXCUpd$BACKSTAB_MULTI)); \
 		list out = []; \
 		integer i; \
 		for(i=0; i<count(ABILS_BG); i++){ \

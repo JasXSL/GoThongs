@@ -54,7 +54,8 @@ list compiled_actives = [
 	-1, // 26 Team
 	1,	// 27 Befuddle
 	"[]",  // 28 (arr)Conversion
-	1	// Sprint fade multiplier
+	1,	// 29 Sprint fade multiplier
+	1	// 30 Backstab multiplier
 ];      // Compiled actives defaults
 
 /*
@@ -573,7 +574,8 @@ default
 			l2i(set, 26), 			\
 			i2f(l2f(set,27)),		\
 			l2s(set,28),				\
-			i2f(l2i(set,FXCUpd$SPRINT_FADE_MULTI))		\
+			i2f(l2i(set,FXCUpd$SPRINT_FADE_MULTI)),		\
+			i2f(l2i(set,FXCUpd$BACKSTAB_MULTI)) \
 		]; \
         output(); \
 	}
@@ -610,7 +612,8 @@ default
 			26						// Team = -1
 			27						// Befuddle = 1
 			28,						// Conversions = []
-			29						// Sprint fade = 1
+			29,						// Sprint fade = 1
+			30						// Backstab multi = 1
 		]; \
 	*/
 	

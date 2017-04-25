@@ -215,9 +215,7 @@ default
 			
 			// The icons are split into blocks of 8
 			string targ = (string)LINK_ROOT;
-
-			if(floor((float)button/8) == 1)targ = llList2String(PLAYERS, 1);
-			else if(floor((float)button/8) == 2 && TARG != llGetOwner())targ = TARG;
+			if(floor((float)button/8) == 1 && TARG != llGetOwner())targ = TARG;
 
             Status$getTextureDesc(targ, desc);
         }
