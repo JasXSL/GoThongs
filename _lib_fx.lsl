@@ -115,6 +115,7 @@
 	
 	// User defined
 	#define fx$COND_SAME_TEAM 0					// [(bool)inverse] - Same team
+	#define fx$COND_SELF 13						// void - This spell effect was sent by the caster
 	#define fx$COND_HAS_STATUS 3				// [(int)flags, OR(int)flags] - [FLAG_X|FLAG_Y] = has at least one flag. [FLAG_X, FLAG_Y] has BOTH flags
 	#define fx$COND_HAS_FXFLAGS 4				// [(int)flags, OR(int)flags] - Same as above. Except for fxflags
 
@@ -129,7 +130,7 @@
 	#define fx$COND_CASTER_IS_BEHIND 11			// NULL - If the caster is behind the victim
 	
 	#define fx$COND_HAS_GENITALS 12				// (int)bitflags - See _core
-		
+	
 	
 // Reserved names:
 	#define FXN$INFUSION "_I"					// Bloodlust

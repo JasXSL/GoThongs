@@ -110,14 +110,20 @@ float spdmtm(string spellName){
     return 1;
 }
 
+
 outputTextures(){
 	integer i; list out;
 	for(i=0; i<llGetListLength(SPELL_ICONS); i+=SPSTRIDE){
 		out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
 	}
 	string s = llDumpList2String(out,",");
-    for(i=0; i<llGetListLength(OUTPUT_STATUS_TO); i++)
-        GUI$setSpellTextures(llList2Key(OUTPUT_STATUS_TO, i), s);
+	list opstat = OUTPUT_STATUS_TO;
+	if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){ 
+		opstat = PLAYERS;
+	}
+    list_shift_each(opstat, val,
+        GUI$setSpellTextures(val, s);
+	)
 }
 
 
@@ -247,9 +253,8 @@ outputStats(integer force, integer line){
 		BFL = BFL|BFL_STATUS_QUEUE;
 		return;
 	}
-	if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
-		OUTPUT_STATUS_TO = PLAYERS;
-	}
+	
+	
 	
 	if(STATUS_FLAGS_PRE != STATUS_FLAGS){
 		raiseEvent(StatusEvt$flags, llList2Json(JSON_ARRAY,[STATUS_FLAGS, STATUS_FLAGS_PRE]));
@@ -424,11 +429,15 @@ anim(string anim, integer start){
 	    if(evt == MonsterEvt$runtimeFlagsChanged){ \
             integer pre = RUNTIME_FLAGS; \
 			RUNTIME_FLAGS = llList2Integer(data,0); \
+			list opstat = OUTPUT_STATUS_TO; \
+			if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){ \
+				opstat = PLAYERS; \
+			} \
 			if( \
 				(pre&Monster$RF_NO_TARGET) != (RUNTIME_FLAGS&Monster$RF_NO_TARGET) &&  \
 				RUNTIME_FLAGS&Monster$RF_NO_TARGET \
 			){ \
-				list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);) \
+				list_shift_each(opstat, val, Root$clearTargetOn(val);) \
 			} \
 			updateDesc(); \
         } \

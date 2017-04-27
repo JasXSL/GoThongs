@@ -198,7 +198,7 @@ default
 			if(n >= count(PLAYERS))
 				return;
 			
-			setTarget(l2s(PLAYERS, n), l2s(PLAYER_TEXTURES, n), TRUE, TEAM);    // Add player default texture
+			setTarget(l2s(PLAYERS, n), l2s(PLAYER_TEXTURES, n), TRUE, -1);    // Add player default texture
 		}
 		
 		// Target frame

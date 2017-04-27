@@ -276,8 +276,7 @@ integer preCheck(key sender, list package, integer team){
         list dta = llJson2List(cond);
 		integer c = llList2Integer(dta,0); 	// Condition ID, rest of condl is vars 
         dta = llDeleteSubList(dta,0,0);		// Vars
-		
-		
+
         integer inverse = (c<0);				// Should return TRUE if validation fails, otherwise false
         c = llAbs(c);
         
@@ -311,6 +310,10 @@ integer preCheck(key sender, list package, integer team){
 			inverse = l2i(dta,0);
 			add = (TEAM == team);
 		}
+		
+		else if(c == fx$COND_SELF)
+			add = (sender == "s");
+		
 		// User defined conditions
         else{
 			add = checkCondition(sender, c, dta, flags, team);

@@ -20,7 +20,7 @@
 	#define NPCS$FLAG_LOOK_OVERRIDE 0x200		// Forces the monster to look at the victim even if it's not the target
 	#define NPCS$ALLOW_MULTIPLE_CHECKS 0x400	// Use with FLAG_CAST_AT_RNADOM - Even if a player matches, it will still query all
 	#define NPCS$FLAG_IGNORE_TANK 0x800			// Ignores the currently aggroed target
-	
+	#define NPCS$FLAG_IGNORE_HASTE 0x1000		// Ignores haste modifier
 	
 	#define NPCS$STUN (NPCS$FLAG_ROOT|NPCS$FLAG_PACIFY|NPCS$FLAG_NOROT)
 	

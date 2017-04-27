@@ -35,7 +35,7 @@ string Passives_buildTrigger(integer targ, string script, integer evt, list args
 
     // All triggers are evaluated and targets are added to a list to receive the effect.
     // Targets are unique
-    // AOE requires TARG_SELF if it should hit self as well
+    // AOE requires TARG_SELF (-3 for both) if it should hit self as well
     
 /*
 [

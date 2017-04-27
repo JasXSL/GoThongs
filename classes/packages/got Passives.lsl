@@ -451,11 +451,14 @@ onEvt(string script, integer evt, list data){
 			//qd("targFlag: "+(str)targFlag);
 			//qd("range: "+(string)range);
 			
-			if(targFlag == Passives$TARG_SELF)
+			if(targFlag < 0 && llAbs(targFlag) & llAbs(Passives$TARG_SELF)){
 				FX$run("", wrapper);
-			else if(targFlag == Passives$TARG_AOE)
+			}
+			if(targFlag < 0 && llAbs(targFlag) & llAbs(Passives$TARG_AOE)){
 				FX$aoe(max_targs/10., llGetKey(), wrapper, TEAM_PC);
-			else if(llVecDist(llGetPos(), prPos(l2s(data, targFlag)))< range || range <= 0) {
+			}
+			
+			if(targFlag > -1 && (llVecDist(llGetPos(), prPos(l2s(data, targFlag)))< range || range <= 0)) {
 				FX$send(l2s(data, targFlag), llGetKey(), wrapper, TEAM_PC);
 				//qd("Sent FX to "+llKey2Name(l2s(data, targFlag))+" ("+l2s(data, targFlag)+")");
 			}

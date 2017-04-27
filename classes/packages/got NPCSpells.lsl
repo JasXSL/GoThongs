@@ -209,8 +209,13 @@ startCast(integer spid, key targ, integer isCustom){
 		d = CUSTOMCAST;
 		
     integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
-    float casttime = llList2Float(d, NPCS$SPELL_CASTTIME)*fxCTM;
-    float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
+    float casttime = llList2Float(d, NPCS$SPELL_CASTTIME);
+	float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME);
+    
+	if(~flags&NPCS$FLAG_IGNORE_HASTE){
+		casttime*=fxCTM;
+		recasttime*=fxCDM;
+	}
     
     if(flags&NPCS$FLAG_LOOK_OVERRIDE){
         Monster$lookOverride(targ);
