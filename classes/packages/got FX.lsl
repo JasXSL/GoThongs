@@ -53,67 +53,67 @@ integer FX_FLAGS;
 
 // Searches packages and returns the index
 list find(list names, list senders, list tags, list pids, list flags){
-    list out; integer i;
+    list out; integer i = -PSTRIDE;
 
-    for(i=0; i<llGetListLength(PACKAGES); i+=PSTRIDE){ // Cycle all packages
-        
-		integer add = TRUE; // If this should be added to output
-		integer x; 
-		list slice = pSlice(i);
+	@findContinue;
+	i+=PSTRIDE;
+	if(i>llGetListLength(PACKAGES))
+		return out;
+	
+	integer x; 
+	list slice = pSlice(i);
+	
 		
-        string n = pName(slice);		// Name of package
-        string u = pSender(slice);		// Package sender
-		
-		// See if we can find the name of this package in names
-        if(l2s(names,0) != "" && llListFindList(names, [n])==-1){
-			add = FALSE;
+	// See if we can find the name of this package in names
+    if(l2s(names,0) != "" && llListFindList(names, [pName(slice)]) != -1){
+		out+= i;
+		jump findContinue;
+	}
+	
+	
+	// See if we can find a package with these flags
+	for(x=0; x<count(flags); ++x){
+		integer inverse = l2i(flags,x) < 0;
+		integer f = llAbs(l2i(flags, x));
+		if(f && (
+			// Success if we don't have any of the flags
+			(!inverse && (pFlags(slice)&f)) || 
+			// Success if we do have any of the flags
+			(inverse && !(pFlags(slice)&f))
+		)){
+			out+= i;
+			jump findContinue;
 		}
-		
-		// See if we can find a package with these flags
-		if(add && flags != []){
-			for(x=0; x<count(flags) && add; ++x){
-				integer inverse = l2i(flags,x) < 0;
-				integer f = llAbs(l2i(flags, x));
-				if(f && (
-					// Fail if we don't have any of the flags
-					(!inverse && !(pFlags(slice)&f)) || 
-					// Fail if we do have any of the flags
-					(inverse && pFlags(slice)&f)
-				)){
-					add = FALSE;
-				}
-			}
+	}
+	
+	// See if we can find a package sent by this person
+	if(l2s(senders,0) != "" && ~llListFindList(senders, [pSender(slice)])){
+		out+= i;
+		jump findContinue;
+	}
+	
+	// See if we can find a tag
+	if(llList2Integer(pids,0)!=0 && ~llListFindList(pids, [llList2Integer(PACKAGES, i)])){
+		out+= i;
+		jump findContinue;
+	}
+	
+	
+	// See if it has any of these tags
+	list t = llJson2List(pTags(slice));
+	integer found;
+	for(x = 0; x<llGetListLength(tags) && llList2Integer(tags,0) != 0 && !found; x++){
+		if(~llListFindList(tags, llList2List(t, x, x))){
+			out+= i;
+			jump findContinue;
 		}
-		
-		// See if we can find a package sent by this person
-        if(add && l2s(senders,0) != ""){
-            if(llListFindList(senders, [u]) == -1){
-				add = FALSE;
-			}
-        }
-		
-		// See if we can find a tag
-        if(add && llList2Integer(pids,0)!=0){
-            if(llListFindList(pids, [llList2Integer(PACKAGES, i)]) == -1)
-				add = FALSE;
-        }
-		
-		// See if it has any of these tags
-		list t = llJson2List(pTags(slice));
-        if(add && tags != [] && llList2Integer(tags,0) != 0){
-			integer found;
-            for(x = 0; x<llGetListLength(tags) && !found; x++){
-                if(~llListFindList(tags, llList2List(t, x, x)))
-					found = TRUE;
-            }
-			if(!found)
-				add = FALSE;
-        }
-		
-		// in that case we add the index
-        if(add)
-			out+=i;
-    }
+	}
+	
+	// Not found, continue
+	jump findContinue;
+    
+	
+	// This will never be fired
     return out;
 }
 	
@@ -123,34 +123,43 @@ onEvt(string script, integer evt, list data){
 	if(script == "got Status" && evt == StatusEvt$team){
 		TEAM = llList2Integer(data, 0);
 	}
+	
+	// Extended events
+    #ifdef FXConf$useEvtListener
+    evtListener(script, evt, data);
+    #endif
 		
+	// Ignore own events, intevents use "" as script
+	if(script == cls$name)
+		return;
 		
-// Ignore own events, intevents use "" as script
-if(script != cls$name){
 	// Find packages to open (should contain indexes from PACKAGES)
 	list packages = [];
 	key dispeller;
 	
 	// If internal event, run on a specific ID by data
 	list no_id = [INTEVENT_SPELL_ADDED, INTEVENT_DODGE, INTEVENT_PACKAGE_RAN];			// Internal event that aren't bound to a specific ID
-    if(script == "" && llListFindList(no_id, [evt]) == -1){
+    
+	// This was an internal event
+	if(script == "" && llListFindList(no_id, [evt]) == -1){
 		
-		if(evt == INTEVENT_DISPEL){
+		if(evt == INTEVENT_DISPEL)
 			dispeller = llList2String(data, 1);
-		}
 		
 		packages = find([], [], [], [llList2Integer(data,0)], []);	// Returns ID
-		
+		jump wasInternal;
 	}
+	
 	// This was an external event
-    else{
-		// This works because the only strings in evt_index are the labels
-        integer pos = llListFindList(EVT_INDEX, [script+"_"+(string)evt]);
-        if(~pos){
-            packages = find([],[],[],getEvtIdsByIndex(pos), []);
-        }
-    }
-    
+	// This works because the only strings in evt_index are the labels
+	integer pos = llListFindList(EVT_INDEX, [script+"_"+(string)evt]);
+	if(~pos){
+		packages = find([],[],[],getEvtIdsByIndex(pos), []);
+	}
+    @wasInternal;
+	
+	
+	
 	// Cycle through all packages that have this event, remember that the packages are just list of indexes from PACKAGES
     while(llGetListLength(packages)){
         list slice = pSlice(l2i(packages, 0));					// Get the package slice to work on
@@ -185,12 +194,12 @@ if(script != cls$name){
 					list eva = explode("||", llList2String(against, i));
 										
 					// Event data from event
-					string cur = llList2String(data, i);
+					// string cur = llList2String(data, i);
 				
 					// Validate comparison here, currently a simple == check, could be expanded with num comparisons
 					if(
 						l2s(eva,0) != "" && 	// If the event condition at index is unset, it should always be accepted
-						llListFindList(eva, [cur]) == -1				// But if it's not unset and not the same as the condition, then we fail
+						llListFindList(eva, [llList2String(data, i)]) == -1				// But if it's not unset and not the same as the condition, then we fail
 					){
 						//qd("Fail validating "+l2s(eva,0)+" against '"+cur+"'");
 						jump evtNext;			// Jumps are fiddly but saves memory
@@ -236,11 +245,8 @@ if(script != cls$name){
         }
         
     }
-}
-	// Extended events
-    #ifdef FXConf$useEvtListener
-    evtListener(script, evt, data);
-    #endif
+
+	
 }
 
 // Validates a package before it can be accepted
@@ -368,10 +374,6 @@ timerEvent(string id, string data){
 } 
 default
 {
-    on_rez(integer start){
-        llResetScript();
-    }
-	
 	state_entry(){
 		PLAYERS = [(str)llGetOwner()];
 		if(llGetStartParameter())
@@ -673,6 +675,7 @@ default
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
 			list find = llListSort(find(names, senders, tags, pids, flags), 1, FALSE);	
 
+			
 			// Jump since we can't have continues
 			@delContinue;
 			while(find != [] && amount!=0){

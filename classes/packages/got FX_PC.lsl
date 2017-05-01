@@ -39,13 +39,14 @@ else if(script == "#ROOT"){ \
 #define isDead() (STATUS&(StatusFlag$dead|StatusFlag$raped))
 
 integer checkCondition(key caster, integer cond, list data, integer flags, integer team){
-	if(~flags&PF_ALLOW_WHEN_QUICKRAPE && FX_FLAGS&fx$F_QUICKRAPE){
+	if(
+		(~flags&PF_ALLOW_WHEN_QUICKRAPE && FX_FLAGS&fx$F_QUICKRAPE) ||
+		(cond == fx$COND_IS_NPC && TEAM == TEAM_PC) ||
+		(cond == fx$COND_HAS_GENITALS && ((GENITALS & llList2Integer(data,0)) != llList2Integer(data,0)))
+	){
 		return FALSE;
 	}
 
-    if(cond == fx$COND_IS_NPC && TEAM == TEAM_PC){
-		return FALSE;
-    }
 	
     if(cond == fx$COND_HAS_STATUS){
         list_shift_each(data, val, 
@@ -65,11 +66,7 @@ integer checkCondition(key caster, integer cond, list data, integer flags, integ
 		prAngX(caster, ang);
 		return (llFabs(ang)<PI_BY_TWO  && ~FX_FLAGS&fx$F_ALWAYS_BACKSTAB);
 	}
-	
-	if(cond == fx$COND_HAS_GENITALS){
-		return ((GENITALS & llList2Integer(data,0)) == llList2Integer(data,0));
-	}
-	
+
     list greaterCheck = [fx$COND_HP_GREATER_THAN, fx$COND_MANA_GREATER_THAN, fx$COND_AROUSAL_GREATER_THAN, fx$COND_PAIN_GREATER_THAN];
     integer pos;
     if(~(pos=llListFindList(greaterCheck, [cond]))){

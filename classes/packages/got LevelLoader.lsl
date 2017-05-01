@@ -99,14 +99,14 @@ default
 		
 
 		// Send out
-		if(out){
+		if(out)
 			Spawner$spawnThese(llGetOwner(), out);
-			out = [llList2Json(JSON_ARRAY, [
-				"_CB_", "[\"HUD\","+mkarr(groups)+"]"
-			])];
-			Spawner$spawnThese(llGetOwner(), out);
-		}
 			
+		
+		out = [llList2Json(JSON_ARRAY, [
+			"_CB_", "[\"HUD\","+mkarr(groups)+"]"
+		])];
+		Spawner$spawnThese(llGetOwner(), out);
 		
 		
 		BFL = BFL|BFL_HAS_SPAWNS;
@@ -152,13 +152,13 @@ default
 			)
 		)
 		
-		if(out){
+		if(out)
 			Spawner$spawnThese(LINK_THIS, out);
-			out = [llList2Json(JSON_ARRAY, [
-				"_CB_", "[\"CUSTOM\","+mkarr(groups)+"]"
-			])];
-			Spawner$spawnThese(LINK_THIS, out);
-		}
+			
+		out = [llList2Json(JSON_ARRAY, [
+			"_CB_", "[\"CUSTOM\","+mkarr(groups)+"]"
+		])];
+		Spawner$spawnThese(LINK_THIS, out);
 
 		BFL = BFL|BFL_HAS_ASSETS;
 		
