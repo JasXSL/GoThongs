@@ -29,7 +29,20 @@ outputBindStatus(key id, integer bound){
 	llRegionSayTo(id, GotAPI$chan(llGetOwnerKey(id)), msg);
 }
 
-
+timerEvent(string id, string data){
+	
+	// Make sure the asset remains within the region
+	if(id == "P"){
+		integer i;
+		for(i=0; i<count(bindings) && bindings != []; i+=2){
+			if(llKey2Name(l2k(bindings, i)) == ""){
+				bindings = llDeleteSubList(bindings, i, i+1);
+				i-=2;
+			}
+		}
+		
+	}
+}
 default
 {
     state_entry()
@@ -37,7 +50,10 @@ default
 		chan = GotAPI$chan(llGetOwner());
 		llListen(chan, "", "", "");
 		llRegionSay(chan, GotAPI$buildAction(GotAPI$actionIni, []));
+		multiTimer(["P", "", 10, TRUE]);
     }
+	
+	timer(){multiTimer([]);}
 	
 	listen(integer chan, string name, key id, string message){
 		key okey = llGetOwnerKey(id);

@@ -25,7 +25,7 @@ list PACKAGES;     // OLD: (int)pid, (key)id, (arr)package, (int)stacks, (int)ti
 
 list EVT_INDEX;     // [scriptname_evt, (int)numPids, pid, pid]...
 // Takes an index of scriptname_evt (ex: 0) and uses the length int to get the PIDs
-#define getEvtIdsByIndex(index) llList2List(EVT_INDEX, index+2, index+2+llList2Integer(EVT_INDEX, index+1))
+#define getEvtIdsByIndex(index) llList2List(EVT_INDEX, index+2, index+2+llList2Integer(EVT_INDEX, index+1)-1)
 
 list TAG_CACHE;     // [(int)tag1...]
 list PLAYERS;		// Contains the players
@@ -610,12 +610,13 @@ default
 								// Add this new effect PID to the index
 								list pids = getEvtIdsByIndex(pos)+PID;
 								// Update the index
-								EVT_INDEX = llListReplaceList(EVT_INDEX, [count(pids)]+pids, pos+1, pos+1+llList2Integer(EVT_INDEX, pos+1)-1);
+								EVT_INDEX = llListReplaceList(EVT_INDEX, [count(pids)]+pids, pos+1, pos+1+count(pids)-1);
 							}
 							// Add to the index
 							else{
 								EVT_INDEX += [find, 1, PID];
 							}
+														
 						} 
 						
 						
@@ -786,7 +787,7 @@ default
 									EVT_INDEX = llDeleteSubList(EVT_INDEX, pos, pos+2);
 								}else{
 									// Update the index
-									EVT_INDEX = llListReplaceList(EVT_INDEX, [count(dta)]+dta, pos+1, pos+1+llList2Integer(EVT_INDEX, pos+1)-1);
+									EVT_INDEX = llListReplaceList(EVT_INDEX, [count(dta)]+dta, pos+1, pos+1+llList2Integer(EVT_INDEX, pos+1));
 								}
 							}
 						}
@@ -806,6 +807,9 @@ default
 					
 					// Delete from packages
 					PACKAGES = llDeleteSubList(PACKAGES, i, i+PSTRIDE-1);
+					
+					//qd("PACKAGE LEN "+(str)(count(PACKAGES)/PSTRIDE)+" EVT LEN: "+(str)count(EVT_INDEX));
+
 				}
 			}
         }
