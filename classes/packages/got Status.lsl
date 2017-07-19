@@ -128,6 +128,7 @@ float runConversions(integer type, float amount){
 	list conversions = [FXC$CONVERSION_HP,FXC$CONVERSION_MANA,FXC$CONVERSION_AROUSAL,FXC$CONVERSION_PAIN];
 	list resources = [0,0,0,0];
 	
+	
 	for(i=0; i<count(fxConversions); ++i){
 		integer conv = l2i(fxConversions, i);
 		integer d = FXC$conversionNonDetrimental(conv);
@@ -148,6 +149,7 @@ float runConversions(integer type, float amount){
 			resources = llListReplaceList(resources, [l2f(resources, ndx)+amt], ndx, ndx);
 		}
 	}
+	
 	
 	if(l2f(resources, 0))
 		addDurability(l2f(resources,0), "", 0, FALSE, TRUE);
@@ -723,8 +725,18 @@ default
 			raiseEvent(StatusEvt$difficulty, DIFFICULTY);
 			
 			if(DIFFICULTY != pre){
-				list names = ["Casual", "Normal", "Hard", "Very Hard", "Brutal", "Bukakke"];
-				Alert$freetext(LINK_THIS, "Difficulty set to "+llList2String(names, DIFFICULTY), TRUE, TRUE);
+				list names = [
+					xme(XLS(([XLS_EN, "Casual"]))), 
+					xme(XLS(([XLS_EN, "Normal"]))), 
+					xme(XLS(([XLS_EN, "Hard"]))), 
+					xme(XLS(([XLS_EN, "Very Hard"]))), 
+					xme(XLS(([XLS_EN, "Brutal"]))), 
+					xme(XLS(([XLS_EN, "Bukakke"])))
+				];
+				
+				Alert$freetext(LINK_THIS, XLS(([
+					XLS_EN, "Difficulty set to "+llList2String(names, DIFFICULTY)
+				])), TRUE, TRUE);
 			}
 		
 		}

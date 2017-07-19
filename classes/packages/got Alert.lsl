@@ -1,3 +1,5 @@
+
+
 #include "got/_core.lsl"
 
 #define TIMER_FADE "a"
@@ -101,6 +103,8 @@ default
 				qd("Text missing for "+SENDER_SCRIPT+" : "+(string)id);
                 return;
             }
+			text = xme(text);
+			
 			alert(text, (integer)method_arg(1), method_arg(2));
         }
 	}

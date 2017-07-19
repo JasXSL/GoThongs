@@ -209,7 +209,6 @@ timerEvent(string id, string data){
 		BFL = BFL|BFL_DO_WARP;
 	}
 	else if(id == "REVIVE"){
-		qd("Reviving");
 		Status$fullregen();
 	}
 }

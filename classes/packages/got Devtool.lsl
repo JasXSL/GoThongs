@@ -31,14 +31,18 @@ default
         } \
         else if(message=="pos")llOwnerSay("Your pos: "+(str)llGetPos()); \
         else if(llGetSubString(message, 0, 8) == "load live"){ \
-            qd("Loading live..."); \
+            qd(xme(XLS(([ \
+				XLS_EN, "Loading live..." \
+			])))); \
             string round = JSON_INVALID; \
             if(message != "load live") \
                 round = llStringTrim(llGetSubString(message, 9, -1), STRING_TRIM); \
             Level$loadSharp(round); \
         } \
         else if(llGetSubString(message,0,3) == "load"){ \
-            qd("Loading dummies..."); \
+            qd(xme(XLS(([ \
+				XLS_EN, "Loading dummies..." \
+			])))); \
             string group = JSON_INVALID; \
             if(message != "load")group = llGetSubString(message, 5, -1); \
             Level$loadDebug(group); \

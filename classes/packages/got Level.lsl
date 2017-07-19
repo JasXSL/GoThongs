@@ -1,3 +1,7 @@
+/*
+	XLS Translations Needed
+*/
+
 #define SCRIPT_IS_ROOT
 #define USE_EVENTS
 #define ALLOW_USER_DEBUG 1
@@ -59,7 +63,11 @@ onEvt(string script, integer evt, list data){
 		
 		// Load finished
 		if(LOADQUEUE+LOAD_ADDITIONAL == [] && ~BFL&BFL_INI){
-			Alert$freetext(llGetOwner(), "Loading from HUD", FALSE, FALSE);
+		
+			Alert$freetext(llGetOwner(), XLS(([
+				XLS_EN, "Loading from HUD"
+			])), FALSE, FALSE);
+			
 			Root$setLevel();
 			BFL = BFL|BFL_INI;
 		}
@@ -253,7 +261,9 @@ default
 					Devtool$spawnAt("_STARTPOINT_P2", p2+llGetPos(), ZERO_ROTATION);
 			}else{
 				// Send player to start
-				Alert$freetext(llGetOwner(), "Loading Cell.. Please wait.", FALSE, FALSE);
+				Alert$freetext(llGetOwner(), XLS(([
+					XLS_EN, "Loading Cell.. Please wait."
+				])), FALSE, FALSE);
 				
 				list positions = [
 					p1,
@@ -314,7 +324,9 @@ default
 				)
 				
 				multiTimer(["INI"]);
-				Alert$freetext(llGetOwner(), "Players: "+implode(", ", pnames), FALSE, FALSE);
+				Alert$freetext(llGetOwner(), XLS(([
+					XLS_EN, "Players: "+implode(", ", pnames)
+				])), FALSE, FALSE);
 				if(START_PARAM){
 					runMethod((string)LINK_THIS, cls$name, LevelMethod$load, [FALSE], TNN);
 				}
@@ -425,7 +437,9 @@ default
 				Bridge$completeCell(llGetOwner(), 0, 0, TRUE);
 				Portal$killAll();
 				
-				qd("Loading next stage.");
+				qd(xme(XLS(([
+					XLS_EN, "Loading next stage."
+				]))));
 				return;
             }
             llOwnerSay("Cell test completed!");
@@ -434,15 +448,23 @@ default
 		else if(added){
 			// Not done
 			integer i;
-			for(i=0; i<llGetListLength(PLAYERS); i++){
-				string msg = "Someone has reached the level exit.";
-				if(llListFindList(PLAYERS_COMPLETED, [llList2String(PLAYERS, i)]) == -1){
-					msg += " Waiting for you to do the same.";
+			runOnPlayers(targ,
+				
+				string msg = xparse(targ, XLS(([
+					XLS_EN, "Someone has reached the level exit."
+				])));
+				
+				if(llListFindList(PLAYERS_COMPLETED, [targ]) == -1){
+					msg += xparse(targ, XLS(([
+						XLS_EN, " Waiting for you to do the same."
+					])));
 				}else{
-					msg += " Waiting for coop player.";
+					msg += xparse(targ, XLS(([
+						XLS_EN, " Waiting for coop player."
+					])));
 				}
-				Alert$freetext(llList2Key(PLAYERS, i), msg, TRUE, TRUE);
-			}
+				Alert$freetext(targ, msg, TRUE, TRUE);
+			)
 		}
 		return;
     }
@@ -527,7 +549,9 @@ default
 		pin = floor(llFrand(0xFFFFFFF));
 		llSetRemoteScriptAccessPin(pin);
         Remoteloader$load(cls$name, pin, 2);
-		qd("Updating level code...");
+		qd(xme(XLS(([
+				XLS_EN, "Updating level code..."
+		]))));
 	}
     if(METHOD == LevelMethod$enableWipeTracker && method$byOwner){
 		BFL = BFL|BFL_WIPE_TRACKER;

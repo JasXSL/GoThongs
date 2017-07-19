@@ -121,7 +121,9 @@ default
                 llMessageLinked(LINK_THIS, slave, llList2Json(JSON_ARRAY, [id, v, pin, 2]), "rm_slave");
             }
             else if(llGetInventoryType(v) != INVENTORY_NONE) llGiveInventory(id, v);
-			else qd(v+" could not be loaded onto "+llKey2Name(id)+" because it doesn't exist.");
+			else qd(xme(XLS(([
+				XLS_EN, v+" could not be loaded onto "+llKey2Name(id)+" because it doesn't exist."
+			]))));
         )
         
     }

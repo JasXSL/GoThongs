@@ -36,6 +36,8 @@
 
 // Include the XOBJ framework
 #include "xobj_core/_ROOT.lsl"
+#include "xobj_core/libraries/XLS.lsl"
+
 // Here you can also include xobj headers like:
 #include "xobj_core/classes/jas Dialog.lsl"
 #include "xobj_core/classes/jas Supportcube.lsl"

@@ -238,7 +238,9 @@ default
 		// Resets the script
         else if(METHOD == ThongManMethod$reset){
             if((int)method_arg(0))
-				qd("Resetting");
+				qd(xme(XLS(([
+					XLS_EN, "Resetting"
+				]))));
             llResetScript();
         }
 		

@@ -124,7 +124,9 @@ timerEvent(string id, string data){
 	}
 	// Something has gotten stuck
 	else if(id == "FORCE_NEXT"){
-		qd("Error! An item didn't spawn in a timely fashion. This is usually caused by high lag in the region. Debug:");
+		qd(xme(XLS(([
+			XLS_EN, "Error! An item didn't spawn in a timely fashion. This is usually caused by high lag in the region. Debug:"
+		]))));
 		qd("Main queue: "+mkarr(queue));
 		qd("Flushing assets awaiting desc: "+mkarr(queue_desc));
 		qd("Asset being spawned: "+mkarr(queue_rez));

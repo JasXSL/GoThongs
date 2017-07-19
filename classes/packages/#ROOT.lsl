@@ -421,7 +421,9 @@ default
 		raiseEvent(RootEvt$level, mkarr(([ROOT_LEVEL, isChallenge])));
 			
 		if(pre != ROOT_LEVEL && !method$byOwner){
-			qd("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
+			qd(xme(XLS(([
+				XLS_EN, "You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!"
+			]))));
 			return;
 		}
 		CB_DATA = getPlayers();

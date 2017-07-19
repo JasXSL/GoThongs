@@ -11,7 +11,9 @@ integer custom_saved;
 
 timerEvent(string id, string data){
     if(id == "SAVE"){
-        qd("Save: \n"+(string)assets_saved+" HUD assets\n"+(string)points_saved+" spawnpoints\n"+(string)custom_saved+" custom assets");
+        qd(xme(XLS(([
+			XLS_EN, "Save: \n"+(string)assets_saved+" HUD assets\n"+(string)points_saved+" spawnpoints\n"+(string)custom_saved+" custom assets"
+		]))));
     }
     else if(id == "S"){
         // Start save
@@ -47,7 +49,9 @@ list trimVecRot(list vec_or_rot, integer places, integer returnString){
 // Returns [(str)table, (int)internal_index, (str)data] or [] if not found
 list getAssetByIndex(integer customAsset, integer globalIndex){
 	if(globalIndex<0){
-		qd("Negative indexes are no longer allowed");
+		qd(xme(XLS(([
+			XLS_EN, "Negative indexes are no longer allowed"
+		]))));
 		return [];
 	}
 	// Tables
@@ -241,14 +245,20 @@ default
         
 		list asset = getAssetByIndex(!HUD, index);
 		if(asset == [])
-			return qd("Item not found: "+(str)index);
+			return qd(xme(XLS(([
+				XLS_EN, "Item not found: "+(str)index
+			]))));
 		
 		list parse = llJson2List(l2s(asset, 2));
 		if(HUD){
-			llOwnerSay("Spawning from HUD: "+llList2String(parse, 0));
+			qd(xme(XLS(([
+				XLS_EN, "Spawning from HUD: "+llList2String(parse, 0)]
+			))));
 			Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetPos(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}else{
-			llOwnerSay("Spawning from INV: "+llList2String(parse, 0));
+			qd(xme(XLS(([
+				XLS_EN, "Spawning from INV: "+llList2String(parse, 0)
+			]))));
 			Spawner$spawnInt(llList2String(parse, 0), (vector)llList2String(parse,1)+llGetPos(), (rotation)llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}
     }
@@ -262,7 +272,7 @@ default
         for(i=0; i<llGetListLength(data); i++){
 			list spawns = llJson2List(db3$get(l2s(data, i), []));
 			list_shift_each(spawns, val,
-				llOwnerSay("["+(string)n+"] "+val);
+				qd("["+(string)n+"] "+val);
 				++n;
 			)
         }
@@ -279,14 +289,18 @@ default
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
 		if(asset == [])
-			return qd("Error: Item not found.");
+			return qd(xme(XLS(([
+				XLS_EN, "Error: Item not found."
+			]))));
 		
 		list data = llJson2List(l2s(asset, 2));
 		
 		data = llListReplaceList(data, [newVal], field, field);
 
         db3$setOther(l2s(asset, 0), [l2i(asset, 1)], mkarr(data));
-        llOwnerSay("Item updated. Say 'listAssets' or 'listSpawns' for updated index");
+        llOwnerSay(xme(XLS(([
+			XLS_EN, "Item updated. Say 'listAssets' or 'listSpawns' for updated index"
+		]))));
 		
 	}
     
@@ -296,14 +310,18 @@ default
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
 		if(asset == [])
-			return qd("Error: Item not found.");
+			return qd(xme(XLS(([
+				XLS_EN, "Error: Item not found."
+			]))));
 		string table = l2s(asset, 0);
 		integer localIndex = l2i(asset, 1);
 		
 		list out = llJson2List(db3$get(table, []));
 		out = llDeleteSubList(out, localIndex, localIndex);
 		db3$setOther(table, [], mkarr(out));
-        llOwnerSay("Asset removed. Say 'listAssets' or 'listSpawns' for updated index");
+        qd(xme(XLS(([
+			XLS_EN, "Asset removed. Say 'listAssets' or 'listSpawns' for updated index"
+		]))));
     }
     
     #define LM_BOTTOM  
