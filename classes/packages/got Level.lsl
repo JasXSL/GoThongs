@@ -116,6 +116,7 @@ timerEvent(string id, string data){
 	}
 	
 	else if(id == "WIPE"){
+	
 		BFL = BFL&~BFL_WIPED;
 		DEATHS = 0;
 		Portal$killAll();
@@ -372,7 +373,7 @@ default
 		if(BFL&BFL_WIPE_TRACKER && DEATHS >= viable && viable){
 			BFL = BFL|BFL_WIPED;
 			raiseEvent(LevelEvt$wipe, "");
-			multiTimer(["WIPE", "", 6, FALSE]);
+			multiTimer(["WIPE", "", 20, FALSE]);
 		}
 		return;
 	}

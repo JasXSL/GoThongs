@@ -9,7 +9,7 @@ list PLAYERS;
 list PLAYER_HUDS;
 
 key spawner;				// Key of prim that spawned me
-key requester;				// Key of priom that requested this spawn. Can be "" if internal from the HUD, and can be same as spawner
+key requester;				// Key of priom that requested this spawn. Can be "" if internal from the HUD, and can be same as spawner. Defaults to spawner
 
 integer BFL;
 #define BFL_SCRIPTS_INITIALIZED 1
@@ -113,6 +113,8 @@ default
     }
     state_entry()
     {
+	
+		requester = mySpawner();
 		PLAYERS = [(string)llGetOwner()];
         initiateListen();
 		llListen(AOE_CHAN, "", "", "");

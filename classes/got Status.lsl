@@ -33,7 +33,8 @@
 #define StatusMethod$toggleBossFight 18			// (bool)fight - Received from GUI, toggles boss fight on or off
 #define StatusMethod$setTeam 19					// (int)team - PC/NPC
 
-
+#define StatusMethod$debug 20			// void - Outputs your resources in human readable format
+#define StatusMethod$kill 21			// PC only for now - Kills the player immediately
 	
 
 // Monster only
@@ -151,6 +152,8 @@
 #define Status$refreshCombat() llMessageLinked(LINK_ROOT, TASK_REFRESH_COMBAT, "", "") 
 #define Status$toggleBossFight(on) runMethod((str)LINK_ROOT, "got Status", StatusMethod$toggleBossFight, [on], TNN)
 #define Status$coopInteract(targ) runMethod((str)targ, "got Status", StatusMethod$coopInteract, [], TNN)
+#define Status$kill(targ) runMethod((str)targ, "got Status", StatusMethod$kill, [], TNN)
+
 
 // Monster
 #define Status$dropAggro(targ) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ], TNN)

@@ -34,8 +34,9 @@ integer onInteract(key obj, string task, list params){
     else if(task == "STDIN"){
 		// Real key is the key of the link that was interacted with, usually the same key as obj but might be a sub-link when ROOT is used
         string t = obj;
-		if(l2s(params, 0) == "ROOT")
+		if(l2s(params, 0) == "ROOT"){
 			t = prRoot(obj);
+		}
 		LocalConf$stdInteract(t, llGetOwner(), [real_key]);	
 	}
     else if(task == "LVIN"){
@@ -58,6 +59,9 @@ integer onInteract(key obj, string task, list params){
 		return FALSE;
 	return TRUE;
 }
+
+
+
 onDesc(key obj, string text){
 	// CUSTOM works through additionalAllow
     if(text == "CUSTOM"){

@@ -196,37 +196,10 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 			if(pre != DURABILITY)
 				raiseEvent(StatusEvt$death_hit, "");
 		}
-		else{
-			// Player died
-			if(STATUS_FLAGS&StatusFlag$dead)return FALSE;
-			// DEATH HANDLED HERE
-			SpellMan$interrupt(TRUE);
-			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
-			BFL = BFL&~BFL_AVAILABLE_BREAKFREE;
+		else
+			onDeath();
 			
-			Level$died();
-			
-			outputStats();
-			raiseEvent(StatusEvt$dead, 1);
-			AnimHandler$anim("got_loss", TRUE, 0, 0);
-			
-			toggleClothes();
-			
-			float dur = 20;
-			if(isChallenge()){
-				dur = 90;
-				if(STATUS_FLAGS & StatusFlag$boss_fight)
-					dur = 0;
-				else
-					multiTimer([TIMER_COOP_BREAKFREE, "", 20, FALSE]);
-			}
-			if(dur){
-				multiTimer([TIMER_BREAKFREE, "", dur, FALSE]);
-				GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, dur);
-			}
-			Status$monster_rapeMe();
-			Rape$activateTemplate();
-		}
+		
     }else{
         if(DURABILITY > maxDurability())DURABILITY = maxDurability();
         if(STATUS_FLAGS&StatusFlag$dead){
@@ -341,6 +314,40 @@ float spdmtm(string spellName){
     return 1;
 }
 
+
+onDeath(){
+
+	// Player died
+	if(STATUS_FLAGS&StatusFlag$dead)return;
+	// DEATH HANDLED HERE
+	SpellMan$interrupt(TRUE);
+	STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
+	BFL = BFL&~BFL_AVAILABLE_BREAKFREE;
+	
+	Level$died();
+	
+	outputStats();
+	raiseEvent(StatusEvt$dead, 1);
+	AnimHandler$anim("got_loss", TRUE, 0, 0);
+	
+	toggleClothes();
+	
+	float dur = 20;
+	if(isChallenge()){
+		dur = 90;
+		if(STATUS_FLAGS & StatusFlag$boss_fight)
+			dur = 0;
+		else
+			multiTimer([TIMER_COOP_BREAKFREE, "", 20, FALSE]);
+	}
+	if(dur){
+		multiTimer([TIMER_BREAKFREE, "", dur, FALSE]);
+		GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, dur);
+	}
+	Status$monster_rapeMe();
+	Rape$activateTemplate();
+
+}
 
 onEvt(string script, integer evt, list data){
     if(script == "#ROOT"){
@@ -742,6 +749,20 @@ default
 		}
     }
 
+	if(METHOD == StatusMethod$debug && method$byOwner){
+		qd(
+			"HP: "+(str)DURABILITY+"/"+(str)maxDurability()+" | "+
+			"Mana: "+(str)MANA+"/"+(str)maxMana()+" | "+
+			"Ars: "+(str)AROUSAL+"/"+(str)maxArousal()+" | "+
+			"Pain: "+(str)PAIN+"/"+(str)maxPain()
+		);
+	}
+	
+	if(METHOD == StatusMethod$kill){
+		DURABILITY = 0;
+		onDeath();
+	}
+	
 	if(METHOD == StatusMethod$batchUpdateResources){
 		while(PARAMS){
 			integer type = l2i(PARAMS, 0);
@@ -789,7 +810,7 @@ default
 		METHOD == StatusMethod$fullregen || 
 		(METHOD == StatusMethod$coopInteract && STATUS_FLAGS&StatusFlag$coopBreakfree)
 	){
-		
+				
 		integer ignoreInvul = l2i(PARAMS, 0);
         Rape$end();
         
@@ -861,8 +882,10 @@ default
 		}
 		else{
 			STATUS_FLAGS = STATUS_FLAGS &~ StatusFlag$boss_fight;
+			/*
 			if(STATUS_FLAGS & StatusFlag$dead)
 				Status$fullregen();
+			*/
 		}
 		saveFlags();
 	}
