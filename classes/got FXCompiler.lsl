@@ -115,7 +115,7 @@ recacheFlags(){
 	else if(t == fx$TRIGGER_SOUND){ \
         list sounds = [l2s(fx,1)]; \
         if(llJsonValueType(l2s(fx,1), []) == JSON_ARRAY)sounds = llJson2List(l2s(fx,1)); \
-        if(!l2i(fx,2))llTriggerSound(randElem(sounds), llList2Float(fx, 2)); \
+        if(!l2i(fx,3))llTriggerSound(randElem(sounds), llList2Float(fx, 2)); \
 		else triggerSoundOn(llGetKey(), randElem(sounds), llList2Float(fx, 2)); \
     } \
 	else if(t == fx$FULLREGEN)Status$fullregen(); \

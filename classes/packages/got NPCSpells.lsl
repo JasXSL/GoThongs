@@ -79,13 +79,24 @@ updateText(){
 	
 	if(BFL&BFL_DEAD) text = "";
     else if(BFL&BFL_CASTING && CAST_END_TIME != CAST_START_TIME){
+	
+		list d = llJson2List(llList2String(CACHE, spell_id));
+		if(spell_id == -1)
+			d = CUSTOMCAST;
+		integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
+	
         color = <.8,.6,1>;
         integer tBlocks = llRound((CAST_END_TIME-llGetTime())/(CAST_END_TIME-CAST_START_TIME)*5);
         string add = CACHE_NAME;
         for(i=0; i<5; i++){
             if(i<tBlocks)
                 add = "⇒"+add+"⇐";
+			else
+				add = " "+add+" ";
         }
+		if(flags&NPCS$FLAG_NO_INTERRUPT){
+			add = "🔒"+add+"🔒";
+		}
         
         text += "\n"+add;
     }else if(BFL&BFL_INTERRUPTED){
@@ -271,6 +282,7 @@ timerEvent(string id, string data){
 		}
         if(FXFLAGS & fx$NOCAST){return;}
         
+		
 		// Create an index of [(int)index, (str)data]
         list r;
         integer i;
@@ -323,7 +335,7 @@ timerEvent(string id, string data){
             }
         }
         
-        multiTimer(["F", "", 2, TRUE]);
+        multiTimer(["F", "", 1, TRUE]);
     }
     else if(llGetSubString(id, 0, 2) == "CD_"){
         integer id = (integer)llGetSubString(id, 3, -1);
@@ -428,7 +440,7 @@ default
             }
 			
 			// Start frame ticker
-            multiTimer(["F", "", 1+llFrand(4), TRUE]);
+            multiTimer(["F", "", 1+llFrand(2), TRUE]);
 			
 			raiseEvent(NPCSpellsEvt$SPELLS_SET, SENDER_SCRIPT);
         }

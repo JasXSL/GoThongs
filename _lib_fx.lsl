@@ -47,7 +47,7 @@
 		#define fx$F_BLINDED 0x40					// Makes screen black
 		#define fx$F_NOROT 0x80						// Unable to rotate
 		#define fx$F_BLURRED 0x100					// Blurry screen
-		#define fx$F_ALWAYS_BACKSTAB 0x200			// Attacks against affected target are always counted as behind
+		#define fx$F_ALWAYS_BACKSTAB 0x200			// Single target Attacks against affected target are always counted as behind
 		#define fx$F_NO_PULL 0x400					// Blocks fx$PULL (37)
 		#define fx$F_NO_DEATH 0x800					// PC - Prevents the player from going below 0 HP and instead raises StatusEvt$death_hit
 		#define fx$F_CAST_WHILE_MOVING 0x1000		// PC - Allows you to cast while moving

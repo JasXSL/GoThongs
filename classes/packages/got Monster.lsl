@@ -523,6 +523,10 @@ default
         }
 		
     }
+	else if(METHOD == MonsterMethod$seekStop){
+		BFL = BFL&~BFL_SEEKING;
+		setState(MONSTER_STATE_IDLE);
+	}
 	else if(METHOD == MonsterMethod$seek){
 		BFL = BFL|BFL_SEEKING;
 		setState(MONSTER_STATE_SEEKING);

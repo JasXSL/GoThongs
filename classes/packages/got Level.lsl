@@ -41,58 +41,43 @@ integer BFL;
 list LOADQUEUE = REQUIRE;			// Required scripts to be remoteloaded
 list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
 
-onEvt(string script, integer evt, list data){
-	if(evt == evt$SCRIPT_INIT && ~BFL&BFL_INI){
-		integer pos = llListFindList(LOADQUEUE, [script]);
-		if(~pos){
-			LOADQUEUE = llDeleteSubList(LOADQUEUE, pos, pos);
-			
-			if(LOADQUEUE == []){
-				
-				// Loadqueue raises script init with the pin that other scripts can use once the official scripts have been downloaded
-				db3$set([LevelShared$isSharp], (string)START_PARAM);
-				raiseEvent(evt$SCRIPT_INIT, (str)pin);				
-				
-			} 
-		}
-		
-		pos = llListFindList(LOAD_ADDITIONAL, [script]);
-		if(~pos){
-			LOAD_ADDITIONAL = llDeleteSubList(LOAD_ADDITIONAL, pos, pos);
-		}
-		
-		// Load finished
-		if(LOADQUEUE+LOAD_ADDITIONAL == [] && ~BFL&BFL_INI){
-		
-			Alert$freetext(llGetOwner(), XLS(([
-				XLS_EN, "Loading from HUD"
-			])), FALSE, FALSE);
-			
-			Root$setLevel();
-			BFL = BFL|BFL_INI;
-		}
-		
-	}
-	
-	if(script == "got LevelLoader" && evt == LevelLoaderEvt$defaultStatus){
-		
-		integer assets = l2i(data, 0);
-		integer spawns = l2i(data, 1);
-				
-		if(!assets){
-			Level$loaded(LINK_THIS, 0);
-		}
-		if(!spawns){
-			Level$loaded(LINK_THIS, 1);
-		}
-		
-		if(assets || spawns){
-			multiTimer(["LOAD_FINISH", "", 60, FALSE]);
-		}
+#define onEvt(script, evt, data) \
+	if(evt == evt$SCRIPT_INIT && ~BFL&BFL_INI){ \
+		integer pos = llListFindList(LOADQUEUE, [script]); \
+		if(~pos){ \
+			LOADQUEUE = llDeleteSubList(LOADQUEUE, pos, pos); \
+			if(LOADQUEUE == []){ \
+				db3$set([LevelShared$isSharp], (string)START_PARAM); \
+				raiseEvent(evt$SCRIPT_INIT, (str)pin);			  \
+			}  \
+		} \
+		pos = llListFindList(LOAD_ADDITIONAL, [script]); \
+		if(~pos){ \
+			LOAD_ADDITIONAL = llDeleteSubList(LOAD_ADDITIONAL, pos, pos); \
+		} \
+		if(LOADQUEUE+LOAD_ADDITIONAL == [] && ~BFL&BFL_INI){ \
+			Alert$freetext(llGetOwner(), "Loading from HUD", FALSE, FALSE); \
+			Root$setLevel(); \
+			BFL = BFL|BFL_INI; \
+		} \
+	} \
+	 \
+	if(script == "got LevelLoader" && evt == LevelLoaderEvt$defaultStatus){ \
+		integer assets = l2i(data, 0); \
+		integer spawns = l2i(data, 1); \
+		if(!assets){ \
+			Level$loaded(LINK_THIS, 0); \
+		} \
+		if(!spawns){ \
+			Level$loaded(LINK_THIS, 1); \
+		} \
+		if(assets || spawns){ \
+			multiTimer(["LOAD_FINISH", "", 60, FALSE]); \
+		} \
 	}
 	
 	
-}
+
 
 timerEvent(string id, string data){
 	
@@ -262,9 +247,7 @@ default
 					Devtool$spawnAt("_STARTPOINT_P2", p2+llGetPos(), ZERO_ROTATION);
 			}else{
 				// Send player to start
-				Alert$freetext(llGetOwner(), XLS(([
-					XLS_EN, "Loading Cell.. Please wait."
-				])), FALSE, FALSE);
+				Alert$freetext(llGetOwner(), "Loading Cell.. Please wait.", FALSE, FALSE);
 				
 				list positions = [
 					p1,
@@ -325,9 +308,7 @@ default
 				)
 				
 				multiTimer(["INI"]);
-				Alert$freetext(llGetOwner(), XLS(([
-					XLS_EN, "Players: "+implode(", ", pnames)
-				])), FALSE, FALSE);
+				Alert$freetext(llGetOwner(), "Players: "+implode(", ", pnames), FALSE, FALSE);
 				if(START_PARAM){
 					runMethod((string)LINK_THIS, cls$name, LevelMethod$load, [FALSE], TNN);
 				}
@@ -399,27 +380,32 @@ default
 	}
 
 	if(METHOD == LevelMethod$setFinished && method$byOwner){
+		// Block finishing quest while everyone is dead
 		if(BFL&BFL_WIPED)
 			return;
-			
+		
+		key p = llGetOwnerKey(method_arg(0));
 		integer added;
+		// Force override
 		if((integer)method_arg(0) == -1){
 			PLAYERS_COMPLETED = PLAYERS;
 		}
-        else if(llListFindList(PLAYERS_COMPLETED, [method_arg(0)]) == -1 && method_arg(0) != ""){		
-			PLAYERS_COMPLETED += [method_arg(0)];
+		// This player has not completed
+        else if(llListFindList(PLAYERS_COMPLETED, [p]) == -1 && p != NULL_KEY){		
+			PLAYERS_COMPLETED += p;
 			added = TRUE;
 		}
 		
+		// See which players are in the region
 		list needed;
 		runOnPlayers(targ,
 			if(llKey2Name(targ) != "")
-				needed+= targ;
+				needed+= llGetOwnerKey(targ);
 		)
 		
 		if(needed == [])return;
 		
-		// Done
+		// All done
         if(PLAYERS_COMPLETED == needed && ~BFL&BFL_COMPLETED){
 			runOnPlayers(targ,
 				GUI$toggleObjectives(targ, FALSE); // Clear objectives
@@ -438,32 +424,24 @@ default
 				Bridge$completeCell(llGetOwner(), 0, 0, TRUE);
 				Portal$killAll();
 				
-				qd(xme(XLS(([
-					XLS_EN, "Loading next stage."
-				]))));
+				qd("Loading next stage.");
 				return;
             }
             llOwnerSay("Cell test completed!");
 			return;
         }
+		// This person tapped the exit for the first time
 		else if(added){
 			// Not done
 			integer i;
 			runOnPlayers(targ,
 				
-				string msg = xparse(targ, XLS(([
-					XLS_EN, "Someone has reached the level exit."
-				])));
+				string msg = llGetDisplayName(p)+" has reached the level exit.";
 				
-				if(llListFindList(PLAYERS_COMPLETED, [targ]) == -1){
-					msg += xparse(targ, XLS(([
-						XLS_EN, " Waiting for you to do the same."
-					])));
-				}else{
-					msg += xparse(targ, XLS(([
-						XLS_EN, " Waiting for coop player."
-					])));
+				if(llListFindList(PLAYERS_COMPLETED, [llGetOwnerKey(targ)]) == -1){
+					msg += " Waiting for you to do the same.";
 				}
+				
 				Alert$freetext(targ, msg, TRUE, TRUE);
 			)
 		}
@@ -550,9 +528,7 @@ default
 		pin = floor(llFrand(0xFFFFFFF));
 		llSetRemoteScriptAccessPin(pin);
         Remoteloader$load(cls$name, pin, 2);
-		qd(xme(XLS(([
-				XLS_EN, "Updating level code..."
-		]))));
+		qd("Updating level code...");
 	}
     if(METHOD == LevelMethod$enableWipeTracker && method$byOwner){
 		BFL = BFL|BFL_WIPE_TRACKER;

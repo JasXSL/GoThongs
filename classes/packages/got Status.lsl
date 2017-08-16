@@ -508,7 +508,6 @@ outputStats(){
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
     if(FXFLAGS&fx$F_STUNNED || BFL&BFL_QTE || (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading|StatusFlag$cutscene) && ~STATUS_FLAGS&StatusFlag$raped)){
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
-		//qd("FX: "+(str)FXFLAGS+" :: BFL: "+(str)BFL+" SF: "+(str)STATUS_FLAGS);
 	}
     if(FXFLAGS&fx$F_ROOTED || (STATUS_FLAGS&(StatusFlag$casting|StatusFlag$swimming) && ~FXFLAGS&fx$F_CAST_WHILE_MOVING) || BFL&BFL_CLIMB_ROOT){
 		controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
@@ -722,7 +721,6 @@ default
 			if(pos == -1)return;
 			
 			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
-            //qd("Refreshing spell icons: "+mkarr(SPELL_ICONS));
 			multiTimer(["OP", "", .1, FALSE]);
 		}
 		else if(METHOD == StatusMethod$setDifficulty){

@@ -3,6 +3,7 @@
 #define MonsterMethod$KFM 3				// (arr)kfm_a, (arr)kfm_b - Runs a keyframed motion on an npc
 #define MonsterMethod$atkspeed 4		// (float)speed
 #define MonsterMethod$seek 5			// (var)targ, (float)dist, (str)callback - Tries to walk the monster to a location. Targ can be a key or a global vector. Raises MonsterEvt$seekFail or MonsterEvt$seekComplete with callback
+#define MonsterMethod$seekStop 6		// Stops the current seek action
 
 
 #define Monster$stop() runMethod((string)LINK_THIS, "got Monster", MonsterMethod$toggleFlags, [Monster$RF_IMMOBILE|Monster$RF_PACIFIED, 0], TNN)
@@ -16,6 +17,7 @@
 #define Monster$lookOverride(targ) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$lookOverride, [targ], TNN)
 #define Monster$atkspeed(speed) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$atkspeed, [atkspeed], TNN)
 #define Monster$seek(targ, seekTarg, dist, callback) runMethod((str)targ, "got Monster", MonsterMethod$seek, [seekTarg, dist, callback], TNN)
+#define Monster$seekStop(targ) runMethod((str)targ, "got Monster", MonsterMethod$seekStop, [], TNN)
 
 
 // Settings = [aggrorange, speed]

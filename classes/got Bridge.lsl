@@ -73,7 +73,7 @@
 	#define BSUD$W_BACK_OH_OFFSET 9		// vec Offhand back offset
 	#define BSUD$WDATA 10				// arr Weapondata
 	#define BSUD$ENCHANTS 11			// arr Passives
-	
+	#define BSUD$IGNORE_TOKEN 12		// bool ignore - Don't reload the website
 	
 	
 #define Bridge$userData() db3$get("got Bridge", [BridgeShared$userData])

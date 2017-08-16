@@ -87,10 +87,13 @@ string runMath(string FX, integer index, key targ){
     float aroused = 1;
     if(STATUS_FLAGS&StatusFlag$aroused)aroused = .9;
 	
+	
+	parseFxFlags(targ, fxf)
+	
 	float bsMul = 1;
 	integer B = 0;
 	myAngZ(targ, ang)
-	if(llFabs(ang)>PI_BY_TWO && targ != ""){
+	if((llFabs(ang)>PI_BY_TWO || fxf & fx$F_ALWAYS_BACKSTAB) && targ != ""){
 		B = 1;
 		bsMul = backstabMulti;
 	}
@@ -103,6 +106,8 @@ string runMath(string FX, integer index, key targ){
         "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm*difDmgMod()*bsMul),
 		// Raw multiplier not affected by team or difficulty
 		"R", (dmdmod*aroused*CACHE_CRIT*spdmdm*bsMul),
+		// Critical hit
+		"C", CACHE_CRIT,
 		// Points of arousal
 		"A", CACHE_AROUSAL,
 		// Points of pain

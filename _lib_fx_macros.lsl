@@ -13,3 +13,15 @@
 #define fxlib$hitFX(target, color, flags) FX$send(target, "", "[0,0,0,0,[0,0,\"\",[[6,\""+(str)color+"\", "+(str)(flags)+"]],[],[],[],0,0,0]]", TEAM_PC)
 #define fxlib$blind(target, duration) FX$send(target, "", "[0,0,0,0,["+(str)duration+",0,\"_blind\",[[13,64]],[],[],[],0,0,0]]", TEAM_PC)
 
+#define fxlib$teleportPlayer(targ, position) \
+	RLV$cubeTaskOn(targ, SupportcubeBuildTeleport(position))
+	
+	
+// Teleports players in a radius based on num players
+#define fxlib$teleportPlayers(position, radius) \
+	integer i; integer num = count(PLAYERS); \
+	runOnPlayers(targ, \
+		vector base = position+(<llCos(i*(PI/num)), llSin(i*(PI/num)),0>*radius); \
+		fxlib$teleportPlayer(targ, base); \
+		++i; \
+	) \

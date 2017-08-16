@@ -37,7 +37,7 @@ integer onInteract(key obj, string task, list params){
 		if(l2s(params, 0) == "ROOT"){
 			t = prRoot(obj);
 		}
-		LocalConf$stdInteract(t, llGetOwner(), [real_key]);	
+		LocalConf$stdInteract(t, llGetOwner(), ([real_key, mkarr(params)]));	
 	}
     else if(task == "LVIN"){
 		list players = additionalAllow+llGetOwner();
