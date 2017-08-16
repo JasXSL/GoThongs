@@ -52,67 +52,75 @@ integer FX_FLAGS;
 
 
 // Searches packages and returns the index
-list find(list names, list senders, list tags, list pids, list flags){
+list find(list names, list senders, list tags, list pids, list flags, integer verb){
     list out; integer i = -PSTRIDE;
 
+	//qd("Finding N: "+mkarr(names)+" S: "+mkarr(senders)+" T: "+mkarr(tags)+" PID: "+mkarr(pids)+" F: "+mkarr(flags));
+	//qd("ALL: "+mkarr(PACKAGES));
+	
 	@findContinue;
 	i+=PSTRIDE;
-	if(i>llGetListLength(PACKAGES))
+	if(i>llGetListLength(PACKAGES)){
+		//qd("Out: "+mkarr(out));
 		return out;
+	}
 	
 	integer x; 
 	list slice = pSlice(i);
 	
+	
 		
-	// See if we can find the name of this package in names
-    if(l2s(names,0) != "" && llListFindList(names, [pName(slice)]) != -1){
-		out+= i;
+	// Continue if names are set and name not found
+    if(l2s(names,0) != "" && llListFindList(names, [pName(slice)]) == -1)
 		jump findContinue;
-	}
 	
 	
-	// See if we can find a package with these flags
+	// See if we have at least one of these flags
+	integer fl = pFlags(slice);
 	for(x=0; x<count(flags); ++x){
 		integer inverse = l2i(flags,x) < 0;
 		integer f = llAbs(l2i(flags, x));
 		if(f && (
 			// Success if we don't have any of the flags
-			(!inverse && (pFlags(slice)&f)) || 
+			(inverse && (fl&f)) || 
 			// Success if we do have any of the flags
-			(inverse && !(pFlags(slice)&f))
+			(!inverse && !(fl&f))
 		)){
-			out+= i;
-			jump findContinue;
+			// Break because of success
+			x = 9001;
 		}
 	}
+	// Unbroken, the flag is not in this package
+	if(x != 9001 && l2i(flags, 0))
+		jump findContinue;
 	
 	// See if we can find a package sent by this person
-	if(l2s(senders,0) != "" && ~llListFindList(senders, [pSender(slice)])){
-		out+= i;
+	if(l2s(senders,0) != "" && llListFindList(senders, [(str)pSender(slice)]) == -1){
 		jump findContinue;
 	}
 	
-	// See if we can find a tag
-	if(llList2Integer(pids,0)!=0 && ~llListFindList(pids, [llList2Integer(PACKAGES, i)])){
-		out+= i;
+	// Require a PID
+	if(llList2Integer(pids,0)!=0 && llListFindList(pids, [llList2Integer(PACKAGES, i)]) == -1){
 		jump findContinue;
 	}
 	
 	
-	// See if it has any of these tags
+	// Require a tag
 	list t = llJson2List(pTags(slice));
 	integer found;
 	for(x = 0; x<llGetListLength(tags) && llList2Integer(tags,0) != 0 && !found; x++){
 		if(~llListFindList(tags, llList2List(t, x, x))){
-			out+= i;
-			jump findContinue;
+			x = 9001;
 		}
 	}
+	if(x != 9001 && l2i(tags, 0))
+		jump findContinue;
 	
-	// Not found, continue
+	// Success, continue
+	out+= i;
 	jump findContinue;
     
-	
+	qd("Out: "+mkarr(out));
 	// This will never be fired
     return out;
 }
@@ -146,7 +154,7 @@ onEvt(string script, integer evt, list data){
 		if(evt == INTEVENT_DISPEL)
 			dispeller = llList2String(data, 1);
 		
-		packages = find([], [], [], [llList2Integer(data,0)], []);	// Returns ID
+		packages = find([], [], [], [llList2Integer(data,0)], [], FALSE);	// Returns ID
 		jump wasInternal;
 	}
 	
@@ -154,7 +162,7 @@ onEvt(string script, integer evt, list data){
 	// This works because the only strings in evt_index are the labels
 	integer pos = llListFindList(EVT_INDEX, [script+"_"+(string)evt]);
 	if(~pos){
-		packages = find([],[],[],getEvtIdsByIndex(pos), []);
+		packages = find([],[],[],getEvtIdsByIndex(pos), [], FALSE);
 	}
     @wasInternal;
 	
@@ -564,7 +572,7 @@ default
 						if(flags&PF_FULL_UNIQUE)
 							s = [];
 						
-						list exists = find([name], s, [], [], []);
+						list exists = find([name], s, [], [], [], FALSE);
 						if(exists){
 							// It exists, schedule an add stack
 							// Manage stacks
@@ -674,9 +682,7 @@ default
 			key sender = id;
 			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
-			list find = llListSort(find(names, senders, tags, pids, flags), 1, FALSE);	
-
-			
+			list find = llListSort(find(names, senders, tags, pids, flags, FALSE), 1, FALSE);	
 			// Jump since we can't have continues
 			@delContinue;
 			while(find != [] && amount!=0){

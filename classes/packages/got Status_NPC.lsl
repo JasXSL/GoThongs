@@ -1,3 +1,9 @@
+/*
+	
+	WARNING
+	This script is saturated. You cannot add more features to it.
+	
+*/
 #define USE_EVENTS
 #define IS_NPC
 //#define DEBUG DEBUG_UNCOMMON
@@ -82,8 +88,8 @@ list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 #define setTeam(team) TEAM_DEFAULT = team; outputStats(FALSE,__LINE__)
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
-// Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add$(int)status_flags$(int)monster_flags
-#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)range_add+"$"+(str)height_add+"$"+(str)STATUS_FLAGS+"$"+(str)RUNTIME_FLAGS);}
+// Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add$(int)status_flags$(int)monster_flags$(int)fx_flags
+#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)range_add+"$"+(str)height_add+"$"+(str)STATUS_FLAGS+"$"+(str)RUNTIME_FLAGS+"$"+(str)FXFLAGS);}
 
 
 dropAggro(key player, integer complete){
@@ -95,19 +101,6 @@ dropAggro(key player, integer complete){
         else AGGRO = llListReplaceList(AGGRO, [llList2Integer(AGGRO, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
     }
     aggro("",0);
-}
-
-float spdmtm(string spellName){
-    if(!isset(spellName))return 1;
-    integer i;
-    for(i=0; i<llGetListLength(SPELL_DMG_TAKEN_MOD); i+=2){
-        if(llList2String(SPELL_DMG_TAKEN_MOD, i) == spellName){
-            float nr = llList2Float(SPELL_DMG_TAKEN_MOD, i+1);
-            if(nr <0)return 0;
-            return nr;
-        }
-    }
-    return 1;
 }
 
 
@@ -149,7 +142,6 @@ outputTextures(){
 
 
 aggro(key player, float ag){
-	//qd(RUNTIME_FLAGS&Monster$RF_FREEZE_AGGRO);
     if(BFL&BFL_NOAGGRO || RUNTIME_FLAGS&(Monster$RF_FREEZE_AGGRO|Monster$RF_NOAGGRO))return;
     
 	list pre = AGGRO;
@@ -227,7 +219,6 @@ aggro(key player, float ag){
 
 outputStats(integer force, integer line){
 
-	// qd(line) <- Debugging
 	
 	// NPC has been ressurected
 	if(HP>0 && STATUS_FLAGS&StatusFlag$dead){
@@ -236,7 +227,6 @@ outputStats(integer force, integer line){
 		MaskAnim$restartOverride("idle");
 		AGGRO = [];
 		aggroTarg = "";
-		//qd("Aggro reset");
 	}
 	
 	// Check team
@@ -459,6 +449,7 @@ anim(string anim, integer start){
         Root$targetMe(l2s(data, 1), icon, TRUE, TEAM); \
 	} \
 
+	
 
 default 
 {
@@ -560,7 +551,23 @@ default
 			// Apply
 			if(type == SMBUR$durability){
 				float pre = HP;
-				amount*=spdmtm(spellName);
+				
+				float spdmtm = 1;
+
+				integer i;
+				for(i=0; i<count(SPELL_DMG_TAKEN_MOD); i+=2){
+					if(llList2String(SPELL_DMG_TAKEN_MOD, i) == spellName){
+						float nr = llList2Float(SPELL_DMG_TAKEN_MOD, i+1);
+						if(nr <0)
+							spdmtm = 0;
+						spdmtm = nr;
+						i = count(SPELL_DMG_TAKEN_MOD);
+					}
+				}
+				
+				amount*=spdmtm;
+				
+				
 				if(flags&SMAFlag$IS_PERCENTAGE)
 					amount*=maxHP;
 					
@@ -580,49 +587,8 @@ default
 				
 				HP += amount;
 				if(HP<=0 && HP != pre){
-					HP = 0;
-					outputStats(TRUE,__LINE__);
-					if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
-						runOnPlayers(targ, GUI$toggleBoss(targ, "", FALSE);)
-					}
-					list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
-					
-					Level$idEvent(LevelEvt$idDied, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)), portalConf$spawnround);
-					
-					
-					STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
-					raiseEvent(StatusEvt$dead, "1");
-					anim("die", TRUE);
-					
-					llSleep(.1);
-					anim("idle", FALSE);
-					anim("walk", FALSE);
-					anim("attack", FALSE);
-					BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
-					llSetObjectDesc("");			// Prevent targeting
-					
-					
-					
-					
-					if(deathsound)llTriggerSound(deathsound, 1);
-					
-					// The monster will remove itself
-					if(~RUNTIME_FLAGS&Monster$RF_NO_DEATH){
-						// Drop loot
-						list d = llListRandomize(llJson2List(drops), 1);
-						list_shift_each(d, val,
-							if(llFrand(1)<(float)j(val, 1)){ 
-								Spawner$spawn(j(val,0), (llGetPos()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
-								d = [];
-							}
-						)
-						llSleep(2);
-						llDie();
-					}
-					else{
-						// The monster will die but not delete itself
-						raiseEvent(StatusEvt$death_hit, "");
-					}
+					Status$kill(LINK_THIS);
+					return;
 				}
 				else if(HP > maxHP)HP = maxHP;
 				
@@ -635,7 +601,6 @@ default
 	}
 	
 	if(METHOD == StatusMethod$fullregen){
-		//qd("Fullregen ran");
 		BFL = BFL|BFL_INITIALIZED;
 		HP = maxHP;
 		outputStats(TRUE,__LINE__);
@@ -691,20 +656,19 @@ default
 			if(pos == -1)return;
 			
 			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
-            //qd("Refreshing spell icons: "+mkarr(SPELL_ICONS));
 			multiTimer(["OT", .1, FALSE]);
 		}
     }
     
-    if(method$byOwner){
-		// Sets runtime flags
-        if(METHOD == StatusMethod$monster_setFlag){
-            STATUS_FLAGS = STATUS_FLAGS|(integer)method_arg(0);
-        }
-        else if(METHOD == StatusMethod$monster_remFlag){
-            STATUS_FLAGS = STATUS_FLAGS&~(integer)method_arg(0);
-        }
-    }
+
+	// Sets runtime flags
+	if(METHOD == StatusMethod$monster_setFlag){
+		STATUS_FLAGS = STATUS_FLAGS|(integer)method_arg(0);
+	}
+	else if(METHOD == StatusMethod$monster_remFlag){
+		STATUS_FLAGS = STATUS_FLAGS&~(integer)method_arg(0);
+	}
+
 	
 	
     
@@ -722,6 +686,52 @@ default
         }
 		NPCSpells$setOutputStatusTo(OUTPUT_STATUS_TO);
     }
+	
+	else if(METHOD == StatusMethod$kill){
+		HP = 0;
+		
+		if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){
+			runOnPlayers(targ, GUI$toggleBoss(targ, "", FALSE);)
+		}
+		list_shift_each(OUTPUT_STATUS_TO, val, Root$clearTargetOn(val);)
+		
+		Level$idEvent(LevelEvt$idDied, llList2String(CUSTOM_ID, 0), mkarr(llDeleteSubList(CUSTOM_ID, 0, 0)), portalConf$spawnround);
+		
+		
+		STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
+		raiseEvent(StatusEvt$dead, "1");
+		anim("die", TRUE);
+		
+		llSleep(.1);
+		anim("idle", FALSE);
+		anim("walk", FALSE);
+		anim("attack", FALSE);
+		BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
+		llSetObjectDesc("");			// Prevent targeting
+
+		
+		if(deathsound)llTriggerSound(deathsound, 1);
+		
+		// The monster will remove itself
+		if(~RUNTIME_FLAGS&Monster$RF_NO_DEATH){
+			// Drop loot
+			list d = llListRandomize(llJson2List(drops), 1);
+			list_shift_each(d, val,
+				if(llFrand(1)<(float)j(val, 1)){ 
+					Spawner$spawn(j(val,0), (llGetPos()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
+					d = [];
+				}
+			)
+			llSleep(2);
+			llDie();
+		}
+		else{
+			// The monster will die but not delete itself
+			raiseEvent(StatusEvt$death_hit, "");
+		}
+		
+		outputStats(TRUE,__LINE__);
+	}
 	
 	else if(METHOD == StatusMethod$monster_rapeMe && ~RUNTIME_FLAGS&Monster$RF_INVUL){
 		
