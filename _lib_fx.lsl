@@ -47,13 +47,14 @@
 		#define fx$F_BLINDED 0x40					// Makes screen black
 		#define fx$F_NOROT 0x80						// Unable to rotate
 		#define fx$F_BLURRED 0x100					// Blurry screen
-		#define fx$F_ALWAYS_BACKSTAB 0x200			// Single target Attacks against affected target are always counted as behind
+		#define fx$F_ALWAYS_BACKSTABBED 0x200		// Single target Attacks against affected target are always counted as behind
 		#define fx$F_NO_PULL 0x400					// Blocks fx$PULL (37)
 		#define fx$F_NO_DEATH 0x800					// PC - Prevents the player from going below 0 HP and instead raises StatusEvt$death_hit
 		#define fx$F_CAST_WHILE_MOVING 0x1000		// PC - Allows you to cast while moving
 		#define fx$F_SHOW_GENITALS 0x2000			// PC - Renders the character naked
 		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
 		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
+		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE)
@@ -127,7 +128,8 @@
 	#define fx$COND_IS_NPC 9					// NULL - Victim is NPC
 	#define fx$COND_TARGETING_CASTER 10			// NULL - NPC ONLY, If the victim currently has the sender as their target
 	
-	#define fx$COND_CASTER_IS_BEHIND 11			// NULL - If the caster is behind the victim
+	// Too much code required for this. Use backstab Boolean B in math for player backstabs, or calculate two different effects on NPCs
+	//#define fx$COND_CASTER_IS_BEHIND 11			// NULL - If the caster is behind the victim
 	
 	#define fx$COND_HAS_GENITALS 12				// (int)bitflags - See _core
 	

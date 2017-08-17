@@ -61,11 +61,6 @@ integer checkCondition(key caster, integer cond, list data, integer flags, integ
         )
         return FALSE;
     }
-    
-	if(cond == fx$COND_CASTER_IS_BEHIND){
-		prAngX(caster, ang);
-		return (llFabs(ang)<PI_BY_TWO  && ~FX_FLAGS&fx$F_ALWAYS_BACKSTAB);
-	}
 
     list greaterCheck = [fx$COND_HP_GREATER_THAN, fx$COND_MANA_GREATER_THAN, fx$COND_AROUSAL_GREATER_THAN, fx$COND_PAIN_GREATER_THAN];
     integer pos;

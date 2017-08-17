@@ -66,6 +66,7 @@ list manacostMulti = [1,1,1,1,1];
 integer fxHighlight;	// Bitwise combination, 0x1 for rest, 0x2 for abil1 etc
 float befuddle = 1;		// Chance to cast at a random target
 float backstabMulti = 1;	// Additional damage when attacking from behind
+integer fxFlags = 0;
 
 // Abil prims
 list ABILS = [0,0,0,0,0,0];
@@ -93,7 +94,7 @@ string runMath(string FX, integer index, key targ){
 	float bsMul = 1;
 	integer B = 0;
 	myAngZ(targ, ang)
-	if((llFabs(ang)>PI_BY_TWO || fxf & fx$F_ALWAYS_BACKSTAB) && targ != ""){
+	if((llFabs(ang)>PI_BY_TWO || fxf & fx$F_ALWAYS_BACKSTABBED || fxFlags&fx$F_ALWAYS_BEHIND) && targ != ""){
 		B = 1;
 		bsMul = backstabMulti;
 	}
@@ -273,6 +274,7 @@ default
 		manamod = i2f(l2f(data, FXCUpd$MANACOST)); \
 		cdmod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		hdmod = i2f(l2f(data, FXCUpd$HEAL_DONE_MOD)); \
+		fxFlags = l2i(data, FXCUpd$FLAGS);\
 		integer pre = fxHighlight; \
 		fxHighlight = llList2Integer(data, FXCUpd$SPELL_HIGHLIGHTS); \
 		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\

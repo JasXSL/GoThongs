@@ -43,13 +43,7 @@ integer checkCondition(key caster, integer cond, list data, integer flags, integ
         )
         return FALSE;
     }
-	
-	if(cond == fx$COND_CASTER_IS_BEHIND){
-		prAngZ(caster, ang);
-		if(llFabs(ang)<PI_BY_TWO && ~FX_FLAGS&fx$F_ALWAYS_BACKSTAB)return FALSE;
-		return TRUE;
-	}
-	
+
     if(cond == fx$COND_HP_GREATER_THAN){
         if(hp<=llList2Float(data, 0))return FALSE;
     }
