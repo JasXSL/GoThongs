@@ -54,10 +54,11 @@ integer FX_FLAGS;
 // Searches packages and returns the index
 list find(list names, list senders, list tags, list pids, list flags, integer verb){
     list out; integer i = -PSTRIDE;
-
-	//qd("Finding N: "+mkarr(names)+" S: "+mkarr(senders)+" T: "+mkarr(tags)+" PID: "+mkarr(pids)+" F: "+mkarr(flags));
-	//qd("ALL: "+mkarr(PACKAGES));
-	
+	/*
+	if(verb){
+		qd("Finding N: "+mkarr(names)+" S: "+mkarr(senders)+" T: "+mkarr(tags)+" PID: "+mkarr(pids)+" F: "+mkarr(flags));
+	}
+	*/
 	@findContinue;
 	i+=PSTRIDE;
 	if(i>llGetListLength(PACKAGES)){
@@ -76,23 +77,25 @@ list find(list names, list senders, list tags, list pids, list flags, integer ve
 	
 	
 	// See if we have at least one of these flags
+	// This checks for succeed, the break is handled after the loop
 	integer fl = pFlags(slice);
 	for(x=0; x<count(flags); ++x){
 		integer inverse = l2i(flags,x) < 0;
 		integer f = llAbs(l2i(flags, x));
 		if(f && (
-			// Success if we don't have any of the flags
-			(inverse && (fl&f)) || 
-			// Success if we do have any of the flags
-			(!inverse && !(fl&f))
+			// Succeed if we don't have any of the flags
+			(inverse && !(fl&f)) || 
+			// Succeed we have any of the flags
+			(!inverse && (fl&f))
 		)){
 			// Break because of success
 			x = 9001;
 		}
 	}
-	// Unbroken, the flag is not in this package
-	if(x != 9001 && l2i(flags, 0))
+	// Unbroken, none of the flags were proper
+	if(x < 9001 && l2i(flags, 0)){
 		jump findContinue;
+	}
 	
 	// See if we can find a package sent by this person
 	if(l2s(senders,0) != "" && llListFindList(senders, [(str)pSender(slice)]) == -1){
@@ -113,14 +116,13 @@ list find(list names, list senders, list tags, list pids, list flags, integer ve
 			x = 9001;
 		}
 	}
-	if(x != 9001 && l2i(tags, 0))
+	if(x < 9001 && l2i(tags, 0))
 		jump findContinue;
 	
 	// Success, continue
 	out+= i;
 	jump findContinue;
     
-	qd("Out: "+mkarr(out));
 	// This will never be fired
     return out;
 }
@@ -682,7 +684,7 @@ default
 			key sender = id;
 			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
-			list find = llListSort(find(names, senders, tags, pids, flags, FALSE), 1, FALSE);	
+			list find = llListSort(find(names, senders, tags, pids, flags, TRUE), 1, FALSE);	
 			// Jump since we can't have continues
 			@delContinue;
 			while(find != [] && amount!=0){
