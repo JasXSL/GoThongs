@@ -32,7 +32,7 @@
 		
 	#define fx$ANIM 7							// [(str)anim(or array), (int)start]
 	#define fx$DODGE 8							// (float)chance_to_add - Adds a chance to dodge bad spells unless undodgable
-	#define fx$DEBUG 9							// [(str)message]
+	//#define fx$DEBUG 9							// [(str)message]
 	#define fx$REM_BY_NAME 10					// [(str)name, (int)raise_event]
 	#define fx$REM_THIS 11						// [(int)raise_event] - Only works within a tick
 	#define fx$THONG_VISUAL 12					// see ThongManMethod$fxVisual
@@ -55,6 +55,7 @@
 		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
 		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
 		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind
+		
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE)
@@ -108,6 +109,8 @@
 	#define fx$LTB 58							// (str)asset, (arr)conf - PC Only - Spawns a long term buff visual which sticks around on the affected player until the spell is removed.
 	#define fx$REFRESH_SPRINT 59				// void - PC Only - Instant only. Refreshes sprint
 	#define fx$HP_ADD 60						// (float)amount - PC only - Increases max HP by amount nr of points.
+	#define fx$GRAVITY 61						// (float)n - PC only - Overrides gravity, the last call is the active one
+	#define fx$PUSH 62							// (vec)dir - PC only - Applies an impulse
 	
 // conditions
 	// Built in

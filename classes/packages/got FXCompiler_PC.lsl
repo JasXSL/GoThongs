@@ -1,3 +1,4 @@
+
 #include "got/_core.lsl"
 integer TEAM = TEAM_PC;
 
@@ -19,6 +20,7 @@ list HEAL_DONE_MOD;			// [id, (float)multi] - Healing done (need to mutliply by 
 list BEFUDDLE; 				// [id, (float)chanceMulti]
 list CONVERSIONS;			// [id, (arr)conversions]
 list HP_ADD;				// [id, (float)add]
+list GRAVITY;				// [id, (float)set]
 
 integer current_visual;
 
@@ -51,6 +53,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			resource_updates += SMBUR$buildPain(l2f(fx,1)*stacks, pname, l2i(fx,2));
         else if(t == fx$MANA)
 			resource_updates += SMBUR$buildMana(l2f(fx,1)*stacks, pname, l2i(fx,2));
+		
 		else if(t == fx$SPAWN_MONSTER){
 			
 			vector rot = llRot2Euler(llGetRot());
@@ -65,8 +68,13 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			Spawner$spawnInt(l2s(fx, 1), pos+((vector)l2s(fx, 2)*r), llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,3)*r, l2s(fx,4), FALSE, TRUE, "");
 			
 		}
-		
 
+		else if(t == fx$PUSH){
+			vector z = llGetVel();
+			vector apply = (vector)l2s(fx, 1)*llGetMass();//-<0,0,z.z>;
+			llApplyImpulse(apply, FALSE);
+		}
+		
 		else if(t == fx$HITFX){
             ThongMan$hit(l2s(fx,1));
             // Also flags and stuff here
@@ -115,7 +123,8 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		else if(t == fx$SPAWN_VFX){
 			SpellFX$spawnInstant(mkarr(llDeleteSubList(fx,0,0)), llGetOwner());
 		}
-		else if(t == fx$ALERT)Alert$freetext(LINK_ROOT, l2s(fx,1), llList2Integer(fx,2), llList2Integer(fx, 3));
+		else if(t == fx$ALERT)
+			Alert$freetext(LINK_ROOT, l2s(fx,1), llList2Integer(fx,2), llList2Integer(fx, 3));
 		else if(t == fx$CUBETASKS)
 			RLV$cubeTask(llDeleteSubList(fx, 0, 0));
 		else if(t == fx$REFRESH_SPRINT)
@@ -161,6 +170,11 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
         else if(t == fx$PAIN_MULTI)
             PAIN_MULTI = manageList(FALSE, PAIN_MULTI, [pid,llList2Float(fx, 1)]);
         
+		else if(t == fx$GRAVITY)
+            GRAVITY = manageList(FALSE, GRAVITY, [pid,llList2Float(fx, 1)]);
+        
+		
+		
 		else if(t == fx$SPELL_DMG_DONE_MOD){
 			SPELL_DMG_DONE_MOD = manageList(FALSE, SPELL_DMG_DONE_MOD, [pid,llList2Integer(fx,1), llList2Float(fx, 2)]);
         }
@@ -253,9 +267,13 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 		}
 		else if(t == fx$HEALING_DONE_MULTI)
 			HEAL_DONE_MOD = manageList(TRUE, HEAL_DONE_MOD, [pid, 0]);
+		else if(t == fx$GRAVITY)
+			GRAVITY = manageList(TRUE, GRAVITY, [pid, 0]);
+		
 		else if(t == fx$BEFUDDLE){
 			BEFUDDLE = manageList(TRUE, BEFUDDLE, [pid, 0]);
 		}
+		
 		else if(t == fx$CONVERSION)
 			CONVERSIONS = manageList(TRUE, CONVERSIONS, [pid,0]);
 		else if(t == fx$LTB)
@@ -340,6 +358,11 @@ updateGame(){
 	integer team = -1;
 	if(TEAM_MOD)
 		team = l2i(TEAM_MOD, -1);
+		
+	float grav = 0;
+	if(GRAVITY)
+		grav = l2f(GRAVITY, -1);
+	llSetBuoyancy(grav);
 	
     // Compile lists of spell specific modifiers
     list spdmtm; // SPELL_DMG_TAKEN_MOD - [(str)spellName, (float)dmgmod]
@@ -417,5 +440,4 @@ updateGame(){
 		f2i(1.0)			// 30 Backstab mul
 	])); 
 }
-
 #include "got/classes/packages/got FXCompiler.lsl"
