@@ -458,7 +458,10 @@ default
 		if((key)method_arg(0)){
 			
 			// If not forcing manual HP updates
-			if(!l2i(PARAMS, 1))
+			if(llStringLength(l2s(PARAMS, 1)) == 36){
+				boss = l2k(PARAMS, 1);
+			}
+			else if(!l2i(PARAMS, 1))
 				boss = id;
 			
 			

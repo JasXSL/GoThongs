@@ -52,7 +52,7 @@ default
 		rotation rot = llEuler2Rot(<0,0,r.z>);
 		vector ascale = llGetAgentSize(llGetOwner());
 		
-		vector posOut = pos-<0,0,ascale.z/2>+(CONF_POS*ascale.z*rot);
+		vector posOut = pos-<0,0,ascale.z/2>+(<CONF_POS.x, CONF_POS.y, CONF_POS.z*ascale.z>*rot);
 		rotation rotOut = CONF_ROT*rot;
 		llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_POSITION, posOut, PRIM_ROTATION, rotOut]);
 		

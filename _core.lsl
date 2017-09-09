@@ -185,6 +185,14 @@ integer var = l2i(_split, 5); \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 1);
 	
+// Same as above but only gets team
+#define parseTeam(targ, var) \
+list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+list _split = explode("$", l2s(_data, 1)); \
+integer var = l2i(_split, 1); \
+if(l2i(_data, 0)) \
+	var = l2i(_split, 4);
+	
 // Same as above but only gets FX flags
 #define parseFxFlags(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \

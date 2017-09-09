@@ -4,7 +4,10 @@
 
 #define BuffSpawnMethod$purge 0 			// void - Removes ALL LTB spawns in the region
 
-#define BuffSpawnConf$pos 0					// (vec)offset - Offsets from agent feet, multiplied by agent height & rotation
+/*
+	Conf is a 2 stride list of [(int)id, (var)data]
+*/
+#define BuffSpawnConf$pos 0					// (vec)offset - Offsets from agent feet, multiplied by rotation, z is multiplied against agent size
 #define BuffSpawnConf$rot 1					// (rot)offset - Offsets from agent Z rotation
 #define BuffSpawnConf$meta 2				// (var)any - Raises a BuffSpawnEvt$meta event
 
@@ -14,3 +17,4 @@
 
 #define BuffSpawn$purge() runOmniMethod("got BuffSpawn", BuffSpawnMethod$purge, [], TNN)
 #define BuffSpawn$purgeTarg(targ) runMethod(targ, "got BuffSpawn", BuffSpawnMethod$purge, [], TNN)
+

@@ -1,23 +1,31 @@
+/*
+	
+	THIS SCRIPT IS SATURATED.
+	ADDITIONS WILL LEAD TO STACK HEAPS
+
+*/
 #define USE_EVENTS
 #include "got/_core.lsl"
 
 integer TEAM = TEAM_PC;
 
+// Contains the fx data
+#define CSTRIDE 4
 // This is the actual spell data cached
 list CACHE;
-#define spellWrapper(data) llList2String(data, 0)
-#define spellSelfcast(data) llList2String(data, 1)
-#define spellRange(data) llList2Float(data, 2)
-#define spellFlags(data) llList2Integer(data, 3)
+#define spellWrapper(spellnr) llList2String(CACHE, spellnr*CSTRIDE+0)
+#define spellSelfcast(spellnr) llList2String(CACHE, spellnr*CSTRIDE+1)
+#define spellRange(spellnr) llList2Float(CACHE, spellnr*CSTRIDE+2)
+#define spellFlags(spellnr) llList2Integer(CACHE, spellnr*CSTRIDE+3)
 
-#define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
+#define nrToIndex(nr) nr*CSTRIDE
+//#define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
 #define difDmgMod() llPow(0.9, DIFFICULTY)
 
 list CACHE_MANA_COST = [0,0,0,0,0]; 	// Mana cost of all spells
-integer CACHE_LOW_MANA = 0;		// Bitfield of 00000 spells with higher mana cost than mana cache
+integer CACHE_LOW_MANA = 0;				// Bitfield of 00000 spells with higher mana cost than mana cache
 
-// Contains the fx data
-#define CSTRIDE 4
+
 
 integer DIFFICULTY;
 
@@ -77,18 +85,11 @@ list ABILS_BG = [0,0,0,0,0,0];
 #define ABIL_BORDER_HIGHLIGHTED_COLOR <1,1,.5>
 #define ABIL_BORDER_HIGHLIGHTED_ALPHA 1
 
+#define aroused 1-(float)(STATUS_FLAGS&StatusFlag$aroused)/StatusFlag$aroused*.1
+#define pmod 1./count(PLAYERS)
+
 string runMath(string FX, integer index, key targ){
     list split = llParseString2List(FX, ["$MATH$"], []);
-    float pmod = 1;
-	
-	integer p = count(PLAYERS);
-	if(p<1)p=1;
-    pmod = 1./p;
-	
-    float aroused = 1;
-    if(STATUS_FLAGS&StatusFlag$aroused)aroused = .9;
-	
-	
 	parseFxFlags(targ, fxf)
 	
 	float bsMul = 1;
@@ -133,68 +134,65 @@ string runMath(string FX, integer index, key targ){
         integer q = llSubStringIndex(block, "\"");
         string math = llGetSubString(block, 0, q-1);
         block = llGetSubString(block, q+1, -1);
-        float m = mathToFloat(math, 0, consts);
-		split = llListReplaceList(split, [(string)m+block], i, i);
+		split = llListReplaceList(split, [(string)mathToFloat(math, 0, consts)+block], i, i);
     }
     return llDumpList2String(split, "");
 }
 
 onEvt(string script, integer evt, list data){
-    if(script == "#ROOT"){
-        if(evt == RootEvt$players)
-            PLAYERS = data;
+    if(script == "#ROOT" && evt == RootEvt$players){
+        PLAYERS = data;
     }
 	
+	else if(script == "got Status" && evt == StatusEvt$flags){
+
+		integer pre = STATUS_FLAGS;
+		STATUS_FLAGS = llList2Integer(data,0);
+		
+		integer hideOn = (StatusFlag$dead|StatusFlag$loading);
+		
+		if(BFL&BFL_INI && (!(pre&hideOn) && STATUS_FLAGS&hideOn) || (pre&hideOn && !(STATUS_FLAGS&hideOn))){
+			SpellAux$toggle(TRUE);		// Auto hides if dead. So we can just go with TRUE for both cases
+		} 
+	}
+		
+	else if(script == "got Status" && evt == StatusEvt$difficulty){
+		DIFFICULTY = l2i(data, 0);
+	}
 	
-	else if(script == "got Status"){
-		if(evt == StatusEvt$flags){
-			integer pre = STATUS_FLAGS;
-			STATUS_FLAGS = llList2Integer(data,0);
-			
-			integer hideOn = (StatusFlag$dead|StatusFlag$loading);
-			
-			if(BFL&BFL_INI && (!(pre&hideOn) && STATUS_FLAGS&hideOn) || (pre&hideOn && !(STATUS_FLAGS&hideOn))){
-				SpellAux$toggle(TRUE);		// Auto hides if dead. So we can just go with TRUE for both cases
-			} 
-		}
+	else if(script == "got Status" && evt == StatusEvt$resources){
+		// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
+		CACHE_AROUSAL = llList2Float(data, 4);
+		CACHE_PAIN = llList2Float(data, 6);
+		CACHE_MAX_HP = l2f(data, 1);
+		float mana = l2f(data, 2);
+		integer i;
 		
-		else if(evt == StatusEvt$difficulty){
-			DIFFICULTY = l2i(data, 0);
-		}
-		
-		else if(evt == StatusEvt$resources){
-			// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
-			CACHE_AROUSAL = llList2Float(data, 4);
-			CACHE_PAIN = llList2Float(data, 6);
-			CACHE_MAX_HP = l2f(data, 1);
-			float mana = l2f(data, 2);
-			integer i;
-			
-			list out;
-			for(i=0; i<count(CACHE_MANA_COST); i++){
-				integer nr = (integer)llPow(i, 2);
-				float cost = llList2Float(CACHE_MANA_COST, i)*manamod*llList2Float(manacostMulti, i);
-				if(~CACHE_LOW_MANA&nr && cost>mana){
-					CACHE_LOW_MANA = CACHE_LOW_MANA|nr;
-					out+= [
-						PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-						PRIM_COLOR, 1, <1,1,1>, .5
-					];
-				}else if(CACHE_LOW_MANA&nr && cost <= mana){
-					CACHE_LOW_MANA = CACHE_LOW_MANA&~nr;
-					out+= [
-						PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-						PRIM_COLOR, 1, <1,1,1>, 1
-					];
-				}
-				
+		list out;
+		for(i=0; i<count(CACHE_MANA_COST); i++){
+			integer nr = (integer)llPow(i, 2);
+			float cost = llList2Float(CACHE_MANA_COST, i)*manamod*llList2Float(manacostMulti, i);
+			if(~CACHE_LOW_MANA&nr && cost>mana){
+				CACHE_LOW_MANA = CACHE_LOW_MANA|nr;
+				out+= [
+					PRIM_LINK_TARGET, llList2Integer(ABILS, i),
+					PRIM_COLOR, 1, <1,1,1>, .5
+				];
+			}else if(CACHE_LOW_MANA&nr && cost <= mana){
+				CACHE_LOW_MANA = CACHE_LOW_MANA&~nr;
+				out+= [
+					PRIM_LINK_TARGET, llList2Integer(ABILS, i),
+					PRIM_COLOR, 1, <1,1,1>, 1
+				];
 			}
 			
-			llSetLinkPrimitiveParamsFast(0, out);
 		}
-		else if(evt == StatusEvt$team)
-			TEAM = l2i(data,0);
+		
+		llSetLinkPrimitiveParamsFast(0, out);
 	}
+	else if(script == "got Status" && evt == StatusEvt$team)
+		TEAM = l2i(data,0);
+	
 	else if(script == "got FXCompiler" && evt == FXCEvt$spellMultipliers){
 		SPELL_DMG_DONE_MOD = llJson2List(llList2String(data,0));
 		manacostMulti = llJson2List(llList2String(data,1));
@@ -310,10 +308,6 @@ default
         CB - The callback you specified when you sent a task 
     */ 
     
-    // Here's where you receive callbacks from running methods
-    if(method$isCallback)
-        return;
-    
     if(method$internal){
 	// SCRIPTME 
 		// Visuals
@@ -371,32 +365,44 @@ default
 						PRIM_POSITION, ZERO_VECTOR
 					];
 				}
-			}else{
-				for(i=0; i<llGetListLength(ABILS); i++){
-					if(count(CACHE)/CSTRIDE <= i){ //TODO: Changeme
-						out+= [
-							PRIM_LINK_TARGET, l2i(ABILS, i), PRIM_POSITION, ZERO_VECTOR,
-							PRIM_LINK_TARGET, l2i(ABILS_BG, i), PRIM_POSITION, ZERO_VECTOR
-						];
-					}else{
-						vector pos = <0, 0.29586-0.073965-0.14793*(i-1), .31>;
-						if(i == 0)pos = <0,0,.27>;
-						if(i == 5)pos = <0,0,.35>;
-						out+= [
-							PRIM_LINK_TARGET, llList2Integer(ABILS, i),
-							PRIM_POSITION, pos,
-							PRIM_COLOR, 0, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA,
-							PRIM_COLOR, 1, <1,1,1>, 1, 
-							PRIM_COLOR, 3, <0,0,0>, 0,
-							PRIM_COLOR, 4, <0,0,0>, 0,
-							PRIM_COLOR, 5, <0,0,0>, 0,
-							PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
-							PRIM_POSITION, pos+<.02,0,0>,
-							PRIM_COLOR, 0, <1,1,1>, 0
-						];
-					}
+				PP(0,out);
+				return;
+			}
+			
+			// Else
+			for(i=0; i<llGetListLength(ABILS); i++){
+				if(count(CACHE)/CSTRIDE <= i){ //TODO: Changeme
+					out+= [
+						PRIM_LINK_TARGET, l2i(ABILS, i), PRIM_POSITION, ZERO_VECTOR,
+						PRIM_LINK_TARGET, l2i(ABILS_BG, i), PRIM_POSITION, ZERO_VECTOR
+					];
+				}
+				
+				else{
+					vector pos = <0, 0.29586-0.073965-0.14793*(i-1), .31>;
+					if(i == 0)pos = <0,0,.27>;
+					if(i == 5)pos = <0,0,.35>;
+					
+					// Check disabled spells here
+					integer f = l2i(CACHE, nrToIndex(i)+3);
+					if(f&SpellMan$HIDE) // 0x400 = disabled
+						pos = ZERO_VECTOR;
+					
+					out+= [
+						PRIM_LINK_TARGET, llList2Integer(ABILS, i),
+						PRIM_POSITION, pos,
+						PRIM_COLOR, 0, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA,
+						PRIM_COLOR, 1, <1,1,1>, 1, 
+						PRIM_COLOR, 3, <0,0,0>, 0,
+						PRIM_COLOR, 4, <0,0,0>, 0,
+						PRIM_COLOR, 5, <0,0,0>, 0,
+						PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
+						PRIM_POSITION, pos+<.02,0,0>,
+						PRIM_COLOR, 0, <1,1,1>, 0
+					];
 				}
 			}
+			
 			PP(0, out);
 			
 		}
@@ -440,13 +446,11 @@ default
 			
             key sound = llList2String(sounds, 0);
             float vol = llList2Float(sounds, 1);
-            if(vol<=0)vol = 1;
-            if(sound){
-                if(loop)
-                    ThongMan$loopSound(sound, vol);
-                else
-                    llTriggerSound(sound, vol);
-            }
+            if(sound != "" && loop){
+                ThongMan$loopSound(sound, vol);
+			}
+            else if(sound)
+                llTriggerSound(sound, vol);
 			
         }
         
@@ -461,10 +465,9 @@ default
 				stopCast(SPELL_CASTED);
 			
 			
-            list data = nrToData(SPELL_CASTED);
 			list visual = llList2List(FX_CACHE, SPELL_CASTED*FXSTRIDE, SPELL_CASTED*FXSTRIDE+FXSTRIDE-1);
 
-			integer flags = spellFlags(data);
+			integer flags = spellFlags(SPELL_CASTED);
             
 			CACHE_CRIT = 1;
 			if(llFrand(1)<critmod && ~flags&SpellMan$NO_CRITS){
@@ -505,16 +508,15 @@ default
 			
 			
 			// RunMath should be done against certain targets for backstab to work
-            string FX = spellWrapper(data);
-			
+
             // Handle AOE
             if((string)SPELL_TARGS == "AOE"){
-                FX$aoe(spellRange(data), llGetKey(), runMath(FX,SPELL_CASTED, ""), TEAM);  
+                FX$aoe(spellRange(SPELL_CASTED), llGetKey(), runMath(spellWrapper(SPELL_CASTED),SPELL_CASTED, ""), TEAM);  
                 SPELL_TARGS = [LINK_ROOT];
             }
 			
 			else if(llFrand(1) < befuddle-1){
-				float r = spellRange(data);
+				float r = spellRange(SPELL_CASTED);
 				string targ = randElem(PLAYERS);
 				if(targ == llGetOwner())
 					SPELL_TARGS = [LINK_ROOT];
@@ -553,13 +555,13 @@ default
                 }
 				
 				if((string)SPELL_TARGS != "AOE"){
-					FX$send(val, llGetKey(), runMath(FX,SPELL_CASTED, val), TEAM);
+					FX$send(val, llGetKey(), runMath(spellWrapper(SPELL_CASTED),SPELL_CASTED, val), TEAM);
 				}
             )
+			visuals = [];
 			
-            string SELF = spellSelfcast(data);
-            if(SELF != "[]" && SELF != "")
-                FX$run(llGetOwner(), runMath(SELF, SPELL_CASTED, ""));
+            if(llStringLength(spellSelfcast(SPELL_CASTED)) > 2)
+                FX$run(llGetOwner(), runMath(spellSelfcast(SPELL_CASTED), SPELL_CASTED, ""));
             
             
             
@@ -580,8 +582,12 @@ default
             integer i;
             for(i=0; i<5; i++){
 				
-                list d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
-                CACHE+= llList2String(d, 2); // Wrapper
+				list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
+				if(d == [])
+					d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
+                
+				
+				CACHE+= llList2String(d, 2); // Wrapper
                 CACHE+= llList2String(d, 9); // Selfcast
                 CACHE+= llList2Float(d, 6); // Range
 				CACHE+= llList2Integer(d, 5); // Flags

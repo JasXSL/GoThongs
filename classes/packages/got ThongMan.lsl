@@ -231,6 +231,8 @@ default
 		else if(METHOD == ThongManMethod$loopSound){
 			key id = method_arg(0);
 			float vol = (float)method_arg(1);
+			if(vol <= 0)
+				vol = 1;
 			if(id)llLoopSound(id, vol);
 			else llStopSound();
 		}

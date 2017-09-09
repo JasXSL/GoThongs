@@ -444,6 +444,13 @@ default
 			
 			raiseEvent(NPCSpellsEvt$SPELLS_SET, SENDER_SCRIPT);
         }
+		else if(METHOD == NPCSpellsMethod$disableSpells){
+			list_shift_each(PARAMS, id,
+				multiTimer(["CD_"+id]);
+				if(llListFindList(cooldowns, [(int)id]) == -1)
+					cooldowns+= id;
+			)
+		}
         else if(METHOD == NPCSpellsMethod$interrupt){
             endCast(FALSE, FALSE);
         }

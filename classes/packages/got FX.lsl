@@ -148,8 +148,9 @@ onEvt(string script, integer evt, list data){
 	key dispeller;
 	
 	// If internal event, run on a specific ID by data
-	list no_id = [INTEVENT_SPELL_ADDED, INTEVENT_DODGE, INTEVENT_PACKAGE_RAN];			// Internal event that aren't bound to a specific ID
-    
+	
+	// Internal event that aren't bound to a specific ID
+	list no_id = [INTEVENT_SPELL_ADDED, INTEVENT_DODGE, INTEVENT_PACKAGE_RAN];			
 	// This was an internal event
 	if(script == "" && llListFindList(no_id, [evt]) == -1){
 		
@@ -211,7 +212,6 @@ onEvt(string script, integer evt, list data){
 						l2s(eva,0) != "" && 	// If the event condition at index is unset, it should always be accepted
 						llListFindList(eva, [llList2String(data, i)]) == -1				// But if it's not unset and not the same as the condition, then we fail
 					){
-						//qd("Fail validating "+l2s(eva,0)+" against '"+cur+"'");
 						jump evtNext;			// Jumps are fiddly but saves memory
 					}
 				}
@@ -219,6 +219,7 @@ onEvt(string script, integer evt, list data){
 				
 				// We have validated that this event should be accepted, let's extract the wrapper
 				string wrapper = llList2String(evdata, 4);
+				
 					
 				// We can use <index> and <-index> tags to replace with data from the event
 				for(i=0; i<llGetListLength(data); i++){

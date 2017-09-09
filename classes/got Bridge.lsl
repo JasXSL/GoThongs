@@ -85,7 +85,10 @@
 	#define BSSAA$fxwrapper 2
 	#define BSSAA$mana 3
 	#define BSSAA$cooldown 4
+	
+	// Generic flags: caster = 1, victim = 2, friends = 4, opponents = 8, dispeller = 0x10, no_facing = 0x20, aoe = 0x40, no_gcd = 0x80, no_crit = 0x100, no_swim = 0x200, 0x400 = hide
 	#define BSSAA$target_flags 5
+	
 	#define BSSAA$range 6
 	#define BSSAA$casttime 7
 	#define BSSAA$fx 8

@@ -6,6 +6,7 @@
 #define NPCSpellsMethod$setConf 6			// (float)max_spells_per_sec
 #define NPCSpellsMethod$silence 7		// (int)silence - Silence
 #define NPCSpellsMethod$customCast 8		// (int)flags, (float)casttime, (str)name, (key)targ - Casts a custom spell. The index will be -1
+#define NPCSpellsMethod$disableSpells 9		// (int)spell1, (int)spell2...
 
 // For the spells array
 #define NPCS$SPELL_FLAGS 0			// 
@@ -47,5 +48,6 @@
 #define NPCSpells$setOutputStatusTo(targs) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setOutputStatusTo, targs, TNN)
 #define NPCSpells$silence(silenced) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$silence, [silenced], TNN)
 #define NPCSpells$customCast(flags, casttime, name, targ) runMethod((str)LINK_THIS, "got NPCSpells", NPCSpellsMethod$customCast, [flags, casttime, name, targ], TNN)
+#define NPCSpells$disableSpells(targ, spells) runMethod((str)targ, "got NPCSpells", NPCSpellsMethod$disableSpells, spells, TNN)
 
 

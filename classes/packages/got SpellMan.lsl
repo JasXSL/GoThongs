@@ -2,7 +2,7 @@
 #include "got/_core.lsl"
 
 /* This is the spell data cache */
-list CACHE;                     // [(int)id, (arr)wrapper, (float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (arr)fx, (arr)selfcastWrapper]
+list CACHE;                     // [(float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (int)wrapperflags]
 list GCD_FREE;    				// Spells that are freed from global cooldown        
 
 integer TEAM = TEAM_PC;
@@ -206,7 +206,7 @@ else{ \
     if(targ == llGetOwner()){ \
 		targ = ""; \
 	} \
-    \
+     \
 	if(isset(targ) && (~targets&TARG_CASTER || (BFL&(BFL_CROUCH_HELD|BFL_QUEUE_SELF_CAST)) == 0)){ \
         if(targets&TARG_PC && CACHE_ROOT_TARGET_TEAM == TEAM){ \
 			var = [targ]; \
@@ -254,7 +254,7 @@ integer castSpell(integer nr){
     }
 	
 	// Cannot cast right now because of FX silence
-    if(fxflags&fx$NOCAST || llGetAgentInfo(llGetOwner())&AGENT_SITTING || fxflags&fx$F_QUICKRAPE){
+    if(fxflags&fx$NOCAST || llGetAgentInfo(llGetOwner())&AGENT_SITTING || fxflags&fx$F_QUICKRAPE || spt&SpellMan$HIDE){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
@@ -579,7 +579,12 @@ default
 			
             integer i;
             for(i=0; i<5; i++){
-			    list d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
+			    
+				list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
+				if(d == [])
+					d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
+				
+				
                 if((integer)llList2Integer(d,5)&SpellMan$NO_GCD)GCD_FREE += TRUE;
                 else GCD_FREE+=FALSE;
                 
@@ -606,11 +611,10 @@ default
         }
     }
 	
-	// Owner only below here
-	if(!method$byOwner)return;
     if(METHOD == SpellManMethod$replace){
-		DB3$setOther(BridgeSpells$name+(str)((int)method_arg(0)+1), [], method_arg(1));
-		SpellMan$rebuildCache();
+		DB3$setOther(BridgeSpells$name+"_temp"+(str)((int)method_arg(0)+1), [], method_arg(1));
+		if(l2i(PARAMS, 2))
+			SpellMan$rebuildCache();
 	}
 	
     

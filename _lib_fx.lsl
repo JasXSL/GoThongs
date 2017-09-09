@@ -150,5 +150,4 @@
 	#define fx$TAG_LUBED 5						// Triggered by trap, can be used by monsters
 	#define fx$TAG_NAKED 6
 	#define fx$TAG_ACTIVE_MITIGATION 7			// Used by tank active mitigation abilities
-	
-	
+	#define fx$TAG_VULNERABLE 8					// Used in pvp events

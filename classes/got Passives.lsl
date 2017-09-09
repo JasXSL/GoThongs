@@ -15,6 +15,9 @@
 #define Passives$FLAG_REM_ON_CLEANUP 0x1				// Removes the passive on cleanup
 
 #define Passives$set(targ, name, passives, flags) runMethod((string)targ, "got Passives", PassivesMethod$set, [name, mkarr(passives), flags], TNN)
+// Same as above but uses a string instead of a list
+#define Passives$setString(targ, name, passives, flags) runMethod((string)targ, "got Passives", PassivesMethod$set, [name, passives, flags], TNN)
+
 #define Passives$rem(targ, name) runMethod((string)targ, "got Passives", PassivesMethod$rem, [name], TNN)
 #define Passives$get(targ, callback) runMethod((string)targ, "got Passives", PassivesMethod$get, [], callback)
 #define Passives$setActive(active) llMessageLinked(LINK_ROOT, TASK_PASSIVES_SET_ACTIVES, mkarr(active), "")

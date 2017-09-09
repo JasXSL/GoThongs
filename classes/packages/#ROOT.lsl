@@ -164,6 +164,11 @@ default
 			BridgeSpells$name+"2",
 			BridgeSpells$name+"3",
 			BridgeSpells$name+"4",
+			BridgeSpells$name+"_temp0",
+			BridgeSpells$name+"_temp1",
+			BridgeSpells$name+"_temp2",
+			BridgeSpells$name+"_temp3",
+			BridgeSpells$name+"_temp4",
 			"got Bridge"
 		];
 		db3$addTables(tables);

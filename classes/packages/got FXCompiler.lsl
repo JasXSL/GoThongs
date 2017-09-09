@@ -84,10 +84,12 @@ list manageList(integer rem, list input, list data){
 
 default 
 {
-	#ifdef IS_NPC
+	#ifdef IS_NPC 
 	state_entry(){
+		
 		if(llGetStartParameter())
 			raiseEvent(evt$SCRIPT_INIT, "");
+
 	}
 	#endif
 	
