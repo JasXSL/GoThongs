@@ -9,8 +9,8 @@ float lastclick;
 integer lcb;
 
 list PLAYER_TEXTURES;
-list PLAYERS;
-list COOP_HUDS;
+list PLAYERS;			// STRINGS
+list COOP_HUDS;			// KEYS
 list ADDITIONAL; 		// Additional players
 
 key TARG;
@@ -219,9 +219,12 @@ default
 		// Boss
 		else if(llGetSubString(ln, 0,4) == "BOSS_"){
 			string boss = l2s(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_DESC]), 0);
+			if(boss == llGetKey())
+				boss = "";
 			integer pos = llListFindList(PLAYERS, [boss]);
 			if(pos == -1)
-				pos = llListFindList(COOP_HUDS, [boss]);
+				pos = llListFindList(COOP_HUDS, [(key)boss]);
+
 			if(~pos)
 				setTarget(l2s(PLAYERS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
 			else

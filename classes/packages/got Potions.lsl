@@ -3,6 +3,9 @@
 integer BFL;
 #define BFL_CD 0x1
 
+integer P_POTION;
+#define POTION_POS <0.000000, 0.323226, 0.307781>
+
 string NAME;
 key TEXTURE;
 integer CHARGES_REMAINING;
@@ -55,8 +58,44 @@ remPotion(){
 	FLAGS = 0;
 	COOLDOWN = 0;
 	DATA = "";
-	GUI$togglePotion("", 0);
+	hidePotionVisual();
 }
+
+setPotionVisual(key texture, integer stacks){
+	if(stacks>9)stacks = 9;
+	list data = [PRIM_POSITION, ZERO_VECTOR];
+	if(texture){
+		data = [
+			PRIM_COLOR, ALL_SIDES, <1,1,1>, 0,
+			PRIM_POSITION, POTION_POS, PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0, 
+			PRIM_COLOR, 0, <1,1,1>, .5,
+			PRIM_COLOR, 1, <1,1,1>, 1
+		];
+		if(stacks>0){
+			data+=[
+				PRIM_COLOR, 4, <1,1,1>, 1,
+				PRIM_TEXTURE, 4, "cd23a6a1-3d0e-532c-4383-bf3e9b878d57", <1./10,1,0>, <1./20-1./10*(6-stacks), 0, 0>, 0
+			];
+		}
+	}
+	llSetLinkPrimitiveParamsFast(P_POTION, data);
+}
+
+hidePotionVisual(){
+	PP(P_POTION, ([PRIM_POSITION, ZERO_VECTOR]));
+}
+
+setCDVisual(float cd){
+	list out = [PRIM_COLOR, 2, <0,0,0>, 0];
+	if(cd>0){
+		llSetLinkTextureAnim(P_POTION, 0, 2, 16, 16, 0, 0, 0);
+		out = [PRIM_COLOR, 2, <0,0,0>, .5, PRIM_TEXTURE, 2, "a0adbf17-dc55-9bd3-879e-4ba5527063b4", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>,0];
+		llSetLinkTextureAnim(P_POTION, ANIM_ON, 2, 16, 16, 0, 0, 16.*16./cd);
+	}
+	llSetLinkPrimitiveParamsFast(P_POTION, out);
+}
+
+
 
 default 
 {
@@ -65,7 +104,10 @@ default
     
     state_entry(){
 		memLim(1.5);
-		GUI$togglePotion(TEXTURE, CHARGES_REMAINING);
+		links_each(nr, name,
+			if(name == "POTION")P_POTION = nr;
+		)
+		hidePotionVisual();
 	}
 	
 	touch_start(integer total){
@@ -117,7 +159,7 @@ default
 		
 		if(CHARGES_REMAINING == 0)CHARGES_REMAINING = 1;
 		
-		GUI$togglePotion(TEXTURE, CHARGES_REMAINING);
+		setPotionVisual(TEXTURE, CHARGES_REMAINING);
 		raiseEvent(PotionsEvt$pickup, NAME);
     }
 	else if(METHOD == PotionsMethod$resetCooldown){
@@ -146,11 +188,11 @@ default
 		if(CHARGES_REMAINING <= 0 && CHARGES_REMAINING != -1){
 			remPotion();
 		}else{
-			GUI$togglePotion(TEXTURE, CHARGES_REMAINING);
+			setPotionVisual(TEXTURE, CHARGES_REMAINING);
 			if(COOLDOWN>0){
 				BFL = BFL|BFL_CD;
 				multiTimer(["CD", "", COOLDOWN, FALSE]);
-				GUI$potionCD(COOLDOWN);
+				setCDVisual(COOLDOWN);
 			}
 		}
 	}

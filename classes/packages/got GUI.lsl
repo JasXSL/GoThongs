@@ -36,8 +36,6 @@ integer P_BOSS_HP;
 integer P_BOSS_PORTRAIT;
 #define P_BOSS_PORTRAIT_POS <-0.102600, 0.19054, 1.022949>
 
-integer P_POTION;
-#define POTION_POS <0.000000, 0.323226, 0.307781>
 integer P_PROGRESS;
 #define PROGRESS_POS <0.000000, -0.328401, 0.307781>
 
@@ -389,7 +387,6 @@ default
             else if(name == "QUIT")P_QUIT = nr;
             else if(name == "SPINNER")P_SPINNER = nr;
 			else if(name == "BLIND")P_BLIND = nr;
-			else if(name == "POTION")P_POTION = nr;
 			else if(name == "PROGRESS")P_PROGRESS = nr;
 			else if(name == "BOSS_HEALTH")P_BOSS_HP = nr;
 			else if(name == "BOSS_PORTRAIT")P_BOSS_PORTRAIT = nr;
@@ -517,37 +514,8 @@ default
 		if(on)data = [PRIM_POSITION, PROGRESS_POS, PRIM_COLOR, ALL_SIDES, <1,1,1>, 0, PRIM_COLOR, 5, <1,1,1>, 1, PRIM_COLOR, 0, <1,1,1>,.5];
 		llSetLinkPrimitiveParamsFast(P_PROGRESS, data);
 	}
-	else if(METHOD == GUIMethod$togglePotion){
-		key texture = method_arg(0);
-		integer stacks = (int)method_arg(1);
-		if(stacks>9)stacks = 9;
-		list data = [PRIM_POSITION, ZERO_VECTOR];
-		if(texture){
-			data = [
-				PRIM_COLOR, ALL_SIDES, <1,1,1>, 0,
-				PRIM_POSITION, POTION_POS, PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0, 
-				PRIM_COLOR, 0, <1,1,1>, .5,
-				PRIM_COLOR, 1, <1,1,1>, 1
-			];
-			if(stacks>0){
-				data+=[
-					PRIM_COLOR, 4, <1,1,1>, 1,
-					PRIM_TEXTURE, 4, "cd23a6a1-3d0e-532c-4383-bf3e9b878d57", <1./10,1,0>, <1./20-1./10*(6-stacks), 0, 0>, 0
-				];
-			}
-		}
-		llSetLinkPrimitiveParamsFast(P_POTION, data);
-	}
-	else if(METHOD == GUIMethod$potionCD){
-		float cd = (float)method_arg(0);
-		list out = [PRIM_COLOR, 2, <0,0,0>, 0];
-		if(cd>0){
-			llSetLinkTextureAnim(P_POTION, 0, 2, 16, 16, 0, 0, 0);
-			out = [PRIM_COLOR, 2, <0,0,0>, .5, PRIM_TEXTURE, 2, "a0adbf17-dc55-9bd3-879e-4ba5527063b4", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>,0];
-			llSetLinkTextureAnim(P_POTION, ANIM_ON, 2, 16, 16, 0, 0, 16.*16./cd);
-		}
-		llSetLinkPrimitiveParamsFast(P_POTION, out);
-	}
+	
+	
 	
 	else if(METHOD == GUIMethod$toggleLoadingBar){
 		list out = [PRIM_SIZE, ZERO_VECTOR, PRIM_POSITION, ZERO_VECTOR, PRIM_TEXT, "", ZERO_VECTOR, 0];
@@ -708,9 +676,7 @@ default
 			out+= [
 				PRIM_LINK_TARGET, P_BOSS_HP, PRIM_POSITION, ZERO_VECTOR,
 				PRIM_LINK_TARGET, P_BOSS_PORTRAIT, PRIM_POSITION, ZERO_VECTOR,
-				
 				PRIM_LINK_TARGET, P_BLIND, PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR,
-				PRIM_LINK_TARGET, P_POTION, PRIM_POSITION, ZERO_VECTOR,
 				PRIM_LINK_TARGET, P_PROGRESS, PRIM_POSITION, ZERO_VECTOR
 			];
 			onEvt("#ROOT", RootEvt$targ, []);

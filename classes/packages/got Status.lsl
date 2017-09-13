@@ -173,7 +173,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 	if(flags&SMAFlag$IS_PERCENTAGE)
 		amount*=maxDurability();
 	
-    if(amount<0){
+    else if(amount<0){
         if(STATUS_FLAGS&StatusFlag$pained)amount*=1.1;
         amount*=fxModDmgTaken;
 		amount*=difMod();
@@ -184,7 +184,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 		amount*= fxModHealingTaken;
 		
 	// Run conversions
-	if(!ignoreConversion && !isRegen){
+	if(!ignoreConversion && !isRegen && ~flags&SMAFlag$IS_PERCENTAGE){
 		amount *= runConversions(FXC$CONVERSION_HP, amount);
 	}
     DURABILITY += amount;
@@ -235,7 +235,7 @@ integer addMana(float amount, string spellName, integer flags, integer ignoreCon
 		amount*=maxMana();
     
 	// Run conversions
-	if(!ignoreConversion)
+	else if(!ignoreConversion)
 		amount*=runConversions(FXC$CONVERSION_MANA, amount);	
 		
     MANA += amount;
@@ -251,7 +251,7 @@ integer addArousal(float amount, string spellName, integer flags, integer ignore
 	if(flags&SMAFlag$IS_PERCENTAGE){
 		amount*=maxArousal();
 	}
-    if(amount>0)amount*=fxModArousalTaken;
+    else if(amount>0)amount*=fxModArousalTaken;
 	
 	// Run conversions
 	if(!ignoreConversion)
@@ -280,10 +280,10 @@ integer addPain(float amount, string spellName, integer flags, integer ignoreCon
 		amount*=maxPain();
 	}
 		
-    if(amount>0)amount*=fxModPainTaken;
+    else if(amount>0)amount*=fxModPainTaken;
     
 	// Run conversions
-	if(!ignoreConversion)
+	if(!ignoreConversion && ~flags&SMAFlag$IS_PERCENTAGE)
 		amount*=runConversions(FXC$CONVERSION_PAIN, amount);	
 	
 	PAIN += amount;
