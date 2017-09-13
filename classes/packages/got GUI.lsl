@@ -472,13 +472,15 @@ default
 				PRIM_COLOR, 0, ZERO_VECTOR,1,
 				PRIM_COLOR, 1, <1,1,1>,1,
 				PRIM_TEXTURE, 1, method_arg(0), <1,1,1>, ZERO_VECTOR, 0,
+				PRIM_DESC, (str)boss,
 				PRIM_LINK_TARGET, P_BOSS_HP,
 				PRIM_POSITION, P_BOSS_HP_POS,
 				PRIM_COLOR, ALL_SIDES, <1,1,1>, 0,
 				PRIM_COLOR, 0, ZERO_VECTOR, 0.75,
 				PRIM_COLOR, 1, ZERO_VECTOR, 0.5,
 				PRIM_COLOR, 2, <1,.5,.5>, 1,
-				PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <-0.25,0,0>, 0
+				PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <-0.25,0,0>, 0,
+				PRIM_DESC, (str)boss
 			];
 			exists = TRUE;
 		}

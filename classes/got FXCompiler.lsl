@@ -106,9 +106,7 @@ recacheFlags(){
         else{ \
             fxs = llDeleteSubList(fx, 0, 2)+fxs; \
 		} \
-    }else if(t == fx$DEBUG){ \
-        qd("Debug FX: "+llList2String(fx,1)); \
-	} \
+    } \
 	else if(t == fx$REM_BY_NAME){ \
         FX$rem(llList2Integer(fx,2), l2s(fx,1), "", "", 0, FALSE, 0,0,0); \
 	} \
@@ -181,7 +179,7 @@ recacheFlags(){
 	else if(t == fx$HEALING_TAKEN_MULTI)\
 		HEAL_MOD = manageList(FALSE, HEAL_MOD, [pid,llList2Float(fx, 1)]); \
 	else if(t == fx$SET_TEAM)\
-		TEAM_MOD = manageList(FALSE, HEAL_MOD, [pid,l2i(fx, 1)]); \
+		TEAM_MOD = manageList(FALSE, TEAM_MOD, [pid,l2i(fx, 1)]); \
 	
 	
 // These are REM tasks that are shared

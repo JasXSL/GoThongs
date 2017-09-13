@@ -55,6 +55,7 @@
 		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
 		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
 		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind
+		#define fx$NO_PROCS 0x20000					// PC - Disables procs
 		
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
@@ -98,7 +99,7 @@
 		#define FXAF$CASTER 0x2						// Apply FX on caster
 		#define FXAF$AOE 0x4						// Apply FX on AOE
 	#define fx$ADD_STACKS 49					// (int)stacks, (str)name... - See FXMethod$addStacks -  Adds (resets timer) or removes stacks (does not affect timer)
-	#define fx$SPELL_HIGHLIGHT 50				// (int)index - PC Only - Draws a yellow border around a spell.
+	#define fx$SPELL_HIGHLIGHT 50				// (int)index - PC Only - Draws a yellow border around a spell. 0 is the bottom ability, then 1-4 for the upper row
 	#define fx$HEALING_TAKEN_MULTI 51			// (float)add - Increases or decreases healing received
 	#define fx$HEALING_DONE_MULTI 52			// (float)add - Increases or decreases healing done
 	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc - (PC only) Spawns a monster from HUD

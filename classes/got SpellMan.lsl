@@ -4,7 +4,7 @@
 #define SpellManMethod$spellComplete 4	// NULL - Internal
 #define SpellManMethod$purgeCache 5		// NULL - purges the cache
 #define SpellManMethod$resetCooldowns 6	// (int)bitfield, where 0x1=rest, 0x2=button1, 0x4=button2 etc
-#define SpellManMethod$replace 7		// (int)index, (arr)data, (int)update - Replaces a spell on the fly. Index of rest is -1, then 0,1,2,3 for the spells from left to right. See got Bridge BridgeSpells$name for data. Only updates if update is TRUE. Only set update on the last spell you send to the target.
+#define SpellManMethod$replace 7		// (int)index, (arr)data, (int)update - Replaces a spell on the fly. Index of rest is -1, then 0,1,2,3 for the spells from left to right. See got Bridge BridgeSpells$name for data. Only updates if update is TRUE. Only set update on the last spell you send to the target. Use [] data to reset
 
 #define SpellManShared$cooldowns 1		// (arr)cooldowns
 

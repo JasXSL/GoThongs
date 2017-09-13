@@ -13,6 +13,7 @@ list EVT_CACHE;			// (str)scriptName, (int)evt, (arr)evt_listener_IDs
 list EVT_LISTENERS;		// (int)id, (arr)targs, (int)max_targs, (float)proc_chance, (float)cooldown, (int)flags, (arr)wrapper
 #define EVTSTRIDE 7
 
+integer CACHE_FLAGS;
 
 list PASSIVES;
 // Nr elements before the attributes
@@ -305,6 +306,7 @@ output(){
     set_flags = set_flags&~unset_flags;
 	
     output = llListReplaceList(output, [set_flags], FXCUpd$FLAGS, FXCUpd$FLAGS);
+	CACHE_FLAGS = set_flags;
 	
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(output), "");
 }
@@ -394,7 +396,11 @@ onEvt(string script, integer evt, list data){
 		float proc = llFrand(1);
 		//qd("Proc: "+(str)proc+" < "+(str)proc_chance);
 		// Check prerequisites first
-		if(flags&Passives$PF_ON_COOLDOWN || proc>proc_chance)
+		if(
+			flags&Passives$PF_ON_COOLDOWN || 
+			proc>proc_chance || 
+			(CACHE_FLAGS&fx$NO_PROCS && ~flags&Passives$PF_OVERRIDE_PROC_BLOCK)
+		)
 			jump evtBreak; // Go to next event
 			
 					

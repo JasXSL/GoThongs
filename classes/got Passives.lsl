@@ -63,6 +63,7 @@ string Passives_buildTrigger(integer targ, string script, integer evt, list args
 */
 // Proc flags
 #define Passives$PF_ON_COOLDOWN 0x1
+#define Passives$PF_OVERRIDE_PROC_BLOCK 0x2				// Allow proc even if fx$NO_PROCS is set
 
 string Passives_buildProc(list triggers, integer max_targets, float proc_chance, float cooldown, integer flags, string wrapper){
     return llList2Json(JSON_ARRAY, [

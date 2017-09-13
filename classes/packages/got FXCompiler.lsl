@@ -40,10 +40,6 @@ list COOLDOWN_MULTI;   		// [id, (float)multiplier]
 // updateGame is now run at the end of the package parser
 
 
-onEvt(string script, integer evt, string data){
-	if(script == "got Status" && evt == StatusEvt$team)
-		TEAM = l2i(data, 0);
-}
 
 // If absolute it set, it will return nr stacks regardless of PF_NO_STACK_MULTIPLY, used for proper spell icon stack count
 integer getStacks(integer pid, integer absolute){
@@ -95,6 +91,15 @@ default
 	
 	link_message(integer link, integer nr, string s, key id){
 		if(nr == RESET_ALL)llResetScript();
+		
+		// Event handler
+		if(nr == EVT_RAISED){
+			list dta = llJson2List(s);
+			if(l2s(dta,0) == "got Status" && (int)((str)id) == StatusEvt$team){
+				TEAM = l2i(dta,1);
+			}
+		}
+
 		if(nr != TASK_FXC_PARSE)return;
 				
 		

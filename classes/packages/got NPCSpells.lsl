@@ -448,7 +448,7 @@ default
 			list_shift_each(PARAMS, id,
 				multiTimer(["CD_"+id]);
 				if(llListFindList(cooldowns, [(int)id]) == -1)
-					cooldowns+= id;
+					cooldowns+= (int)id;
 			)
 		}
         else if(METHOD == NPCSpellsMethod$interrupt){

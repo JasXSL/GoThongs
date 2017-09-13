@@ -142,7 +142,14 @@ default
     // Start up the script
     state_entry()
     { 
-		llDialog(llGetOwner(), "Welcome to GoThongs!\nThis project is licensed under [https://creativecommons.org/licenses/by-nc-sa/4.0/ Creative Commons BY-NC-SA 4.0]\nThe [http://jasx.org/?JB=gme&JBv=%7B%22g%22%3A%22jasxhud%22%7D JasX HUD] is required for RLV and sex.\nUse the [https://github.com/JasXSL/GoThongs/ GoThongs GitHub] for issues and pull requests.", [], 123);
+		llDialog(llGetOwner(), 
+"\n⚔️ WELCOME TO GAME OF THONGS! ⚔️\n \n"+
+"  ⚠ The [http://jasx.org/?JB=gme&JBv=%7B%22g%22%3A%22jasxhud%22%7D JasX HUD] is required to play!\n"+
+"  🗓 Join the secondlife:///app/group/6ff2300b-8199-518b-c5be-5be5d864fe1f/about group for support!\n"+
+"️  🔑 License [https://creativecommons.org/licenses/by-nc-sa/4.0/ Creative Commons BY-NC-SA 4.0]\n"+
+"  🖊 Source & Modding @ [https://github.com/JasXSL/GoThongs/ GitHub]\n"+
+"  🌐 [http://go-thongs.wikia.com/wiki/Go_Thongs_Wiki Community Wiki]", [], 123);
+
         clearDB3();
         PLAYERS = [(str)llGetOwner()];
         
@@ -208,6 +215,19 @@ default
 		
 		// Target frame
         else if(ln == "FRB1" || ln == "FR1")setTarget("", "", TRUE, 0);
+		
+		// Boss
+		else if(llGetSubString(ln, 0,4) == "BOSS_"){
+			string boss = l2s(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_DESC]), 0);
+			integer pos = llListFindList(PLAYERS, [boss]);
+			if(pos == -1)
+				pos = llListFindList(COOP_HUDS, [boss]);
+			if(~pos)
+				setTarget(l2s(PLAYERS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
+			else
+				Status$monster_attemptTarget(boss, TRUE);
+		}
+			
 		
 		// Scroll
 		else if(ln == "PROGRESS")Level$getObjectives();
