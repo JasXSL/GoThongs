@@ -1,5 +1,3 @@
-
-#define USE_EVENTS
 #include "got/_core.lsl"
 
 integer BFL;
@@ -41,6 +39,7 @@ default
             key targ = method_arg(1);
             if(!isset(item) || !isset(targ))return;
             queue+=[item, targ, llGetTime()];
+			
             llRezAtRoot(item, llGetPos()-<0,0,3>, ZERO_VECTOR, ZERO_ROTATION, 1);
         }
 		else if(METHOD == SpellFXMethod$remInventory){
@@ -88,7 +87,14 @@ default
             key targ = method_arg(1);
             
             boundsHeight(targ, b)
-            if(llGetAgentSize(targ))b = 0;
+			vector as = llGetAgentSize(targ);
+            if(as){
+				b = 0;
+				pos_offset.z *= as.z;
+			}
+			else{
+				pos_offset.z *= b;
+			}
             
 			vector vrot = llRot2Euler(prRot(targ));
 			if(~flags&SpellFXFlag$SPI_FULL_ROT)vrot = <0,0,vrot.z>;

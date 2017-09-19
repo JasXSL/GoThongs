@@ -4,6 +4,7 @@ integer CHAN;
 
 vector CONF_POS;
 rotation CONF_ROT;
+integer FLAGS;
 
 onEvt(string script, integer evt, list data){
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
@@ -38,6 +39,8 @@ default
 			else if(k == BuffSpawnConf$meta){
 				raiseEvent(BuffSpawnEvt$meta, v);
 			}
+			else if(k == BuffSpawnConf$flags)
+				FLAGS = BuffSpawnFlag$NO_ROT;
 		}
 		
 		llSetTimerEvent(.1);
@@ -54,7 +57,10 @@ default
 		
 		vector posOut = pos-<0,0,ascale.z/2>+(<CONF_POS.x, CONF_POS.y, CONF_POS.z*ascale.z>*rot);
 		rotation rotOut = CONF_ROT*rot;
-		llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_POSITION, posOut, PRIM_ROTATION, rotOut]);
+		list out = [PRIM_POSITION, posOut];
+		if(~FLAGS&BuffSpawnFlag$NO_ROT)
+			out+= [PRIM_ROTATION, rotOut];
+		llSetLinkPrimitiveParamsFast(LINK_THIS, out);
 		
 	}
     

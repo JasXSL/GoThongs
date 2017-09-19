@@ -455,7 +455,7 @@ spellEnd(){
     
     BFL = BFL&~BFL_CASTING;
     BFL = BFL&~BFL_START_CAST;
-    ThongMan$loopSound("",0);
+    ThongMan$sound("",0, FALSE);
     
     
     SpellAux$spellEnd();

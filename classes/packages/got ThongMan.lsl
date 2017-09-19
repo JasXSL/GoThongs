@@ -228,12 +228,18 @@ default
         }
 		
 		// Loop a sound
-		else if(METHOD == ThongManMethod$loopSound){
+		else if(METHOD == ThongManMethod$sound){
 			key id = method_arg(0);
 			float vol = (float)method_arg(1);
+			integer loop = l2i(PARAMS, 2);
 			if(vol <= 0)
 				vol = 1;
-			if(id)llLoopSound(id, vol);
+			if(id){
+				if(loop)
+					llLoopSound(id, vol);
+				else
+					llTriggerSound(id, vol);
+			}
 			else llStopSound();
 		}
 		

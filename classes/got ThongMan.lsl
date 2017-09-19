@@ -7,7 +7,7 @@
 #define ThongManMethod$particles 7			// (float)timeout, (int)prim, (arr)particle_list
 											// generally prim 1 is for casting, and prim 2 for received spell effects
 #define ThongManMethod$dead 8				// [(int)dead, (int)no_visual] - 
-#define ThongManMethod$loopSound 9			// (key)sound, (float)vol - Or "" to stop sound
+#define ThongManMethod$sound 9			// (key)sound, (float)vol, (int)loop - Or "" to stop sound
 #define ThongManMethod$void 10				// Void function for getting callbacks
 
 #define ThongMan$attached() runOmniMethod("got ThongMan", ThongManMethod$attached, [], TNN)
@@ -17,7 +17,7 @@
 #define ThongMan$fxVisual(params) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$fxVisual, params, TNN)
 #define ThongMan$particles(timeout, prim, particle_list) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$particles, [timeout, prim, particle_list], TNN)
 #define ThongMan$dead(dead, no_visual) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$dead, [dead, no_visual], TNN)
-#define ThongMan$loopSound(sound, vol) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$loopSound, [sound, vol], TNN)
+#define ThongMan$sound(sound, vol, loop) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$sound, [sound, vol, loop], TNN)
 #define ThongMan$reset(debug) runMethod(llGetOwner(), "got ThongMan", ThongManMethod$reset, [debug], TNN)
 
 #define ThongManEvt$hit 1					// [(vec)color]

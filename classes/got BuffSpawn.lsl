@@ -10,6 +10,8 @@
 #define BuffSpawnConf$pos 0					// (vec)offset - Offsets from agent feet, multiplied by rotation, z is multiplied against agent size
 #define BuffSpawnConf$rot 1					// (rot)offset - Offsets from agent Z rotation
 #define BuffSpawnConf$meta 2				// (var)any - Raises a BuffSpawnEvt$meta event
+#define BuffSpawnConf$flags 3				// (int)flags
+	#define BuffSpawnFlag$NO_ROT 0x1			// Ignore rotation
 
 #define BuffSpawnChan(targ) playerChan(targ)+0x69
 

@@ -132,9 +132,10 @@ string runMath(string FX, integer index, key targ){
         split = llListReplaceList(split, [llGetSubString(llList2String(split, i-1), 0, -2)], i-1, i-1);
         string block = llList2String(split, i);
         integer q = llSubStringIndex(block, "\"");
-        string math = llGetSubString(block, 0, q-1);
+        string math = implode("/", explode("\\/", llGetSubString(block, 0, q-1)));
+		float out = mathToFloat(math, 0, consts);
         block = llGetSubString(block, q+1, -1);
-		split = llListReplaceList(split, [(string)mathToFloat(math, 0, consts)+block], i, i);
+		split = llListReplaceList(split, [(string)out+block], i, i);
     }
     return llDumpList2String(split, "");
 }
@@ -407,6 +408,7 @@ default
 			
 		}
 
+		// Spell cast start
         else if(METHOD == SpellAuxMethod$startCast){
 			BFL = BFL|BFL_CASTING;
             integer nr = (integer)method_arg(0);				// SpellMan handles all the conversions from -1 to 0-5, so this is the true index
@@ -425,7 +427,6 @@ default
             list anims = [llList2String(visual, fxc$castAnim)];
             if(llJsonValueType((string)anims, []) == JSON_ARRAY)
                 anims = llJson2List((string)anims);
-
             
             list sounds = [llList2String(visual, fxc$castSound)];
             if(llJsonValueType((string)sounds, []) == JSON_ARRAY)
@@ -446,16 +447,12 @@ default
 			
             key sound = llList2String(sounds, 0);
             float vol = llList2Float(sounds, 1);
-            if(sound != "" && loop){
-                ThongMan$loopSound(sound, vol);
-			}
-            else if(sound)
-                llTriggerSound(sound, vol);
-			
+            if(sound)
+                ThongMan$sound(sound, vol, loop);
         }
         
 
-		
+		// Spell cast complete
         else if(METHOD == SpellAuxMethod$finishCast){
 			
             integer SPELL_CASTED = (integer)method_arg(0);					// Spell casted index 0-4

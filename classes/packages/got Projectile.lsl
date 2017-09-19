@@ -2,8 +2,18 @@
     V1
 */
 #include "got/_core.lsl"
-
+integer FLAGS;
 key TARGET;
+float MAX_DIST;
+float SPEED;
+float WIGGLE_POW = 0.5;
+float WIGGLE_ANGLE;
+
+vector endPos(){
+	boundsHeight(TARGET, b)
+    if(llGetAgentSize(TARGET))b = 0;
+	return prPos(TARGET)+<0,0,b/2>;
+}
 
 timerEvent(string id, string data){
     if(id == "FAIL")llDie();
@@ -13,15 +23,36 @@ timerEvent(string id, string data){
 }
 
 ini(){
-    raiseEvent(ProjectileEvt$gotTarget, TARGET);
     
-    if(!(integer)llGetObjectDesc() && !(integer)jVal(llGetObjectDesc(), [0])){
+    
+    if(!(integer)llGetObjectDesc() && !(integer)jVal(llGetObjectDesc(), [ProjectileDesc$preventDefault])){
+	
         multiTimer(["FAIL", "", 10, FALSE]);
         multiTimer(["STEP", "", .1, TRUE]);
-        vector vrot = llRot2Euler(prRot(llGetOwner()));
-        llSetRegionPos(prPos(llGetOwner())+<0,0,.5>+llRot2Fwd(llEuler2Rot(<0,0,vrot.z>))*.5);
+		
+		list data = llJson2List(llGetObjectDesc());
+        FLAGS = l2i(data, ProjectileDesc$flags);
+		SPEED = l2f(data, ProjectileDesc$speed);
+		WIGGLE_POW = l2f(data, ProjectileDesc$wiggleIntensity);
+		if(SPEED <= 0)
+			SPEED = 1;
+		else if(SPEED <= 0.1)
+			SPEED = 0.1;
+		
+		vector vrot = llRot2Euler(prRot(llGetOwner()));
+		vector startPos = prPos(llGetOwner())+<0,0,.5>+llRot2Fwd(llEuler2Rot(<0,0,vrot.z>))*.5;
+
+		rotation r = llRotBetween( <1.0,0.0,0.0>, llVecNorm( endPos() - startPos ) );
+        
+		
+		llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_ROTATION, r]);
+		llSetRegionPos(startPos);
         STEP();
-    }else multiTimer(["FAIL"]);
+		
+    }else 
+		multiTimer(["FAIL"]);
+	
+	raiseEvent(ProjectileEvt$gotTarget, TARGET);
 }
 
 float motion_time( float mt)
@@ -31,29 +62,66 @@ float motion_time( float mt)
     else return 0.11111111;
 }
 
+vector czBezier(float seg, vector start, vector handle1, vector handle2, vector end){
+    float u = 1-seg;
+    float sseg = seg*seg;
+    float uu = u*u;
+    return ((uu*u)*start)+(3*uu*seg*handle1)+(3*u*sseg*handle2)+((sseg*seg)*end);
+}
+
 STEP(){
-    boundsHeight(TARGET, b)
-    //qd(b);
-    if(llGetAgentSize(TARGET))b = 0;
-    vector to = prPos(TARGET)+<0,0,b/2>;
-     
     
+    vector to = endPos();
+	float dist = llVecDist(llGetPos(), to);
+	
+	if(MAX_DIST == 0){
+		MAX_DIST = dist;
+		WIGGLE_POW = (llFrand(WIGGLE_POW)-WIGGLE_POW/2)+WIGGLE_POW;
+		WIGGLE_ANGLE = llFrand(TWO_PI);
+	}
+	
     if(to == ZERO_VECTOR)llDie();
-    if(llVecDist(llGetPos(), to)<.5){
+    if(dist<.3){
         llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
         raiseEvent(ProjectileEvt$targetReached, TARGET);
         Status$hitfx(TARGET);
+		llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
         llSleep(2);
         llDie();
     }
     
-    float dist = llVecDist(llGetPos(), to);
+	
+	vector basepos = llVecNorm(to-llGetPos());
+	
+	vector add;
+	if(WIGGLE_POW){
+		/*
+		float d = dist;
+		if(d > MAX_DIST)
+			d = MAX_DIST;
+		vector start; vector end = <1,0,0>;
+		vector handleA = <0.153, 0, 0.3>;
+		vector handleB = <.226,0,0.024>;
+		float scaleModifier = MAX_DIST;
+		vector cur = czBezier(1.-(dist/MAX_DIST), start, handleA, handleB, end);
+		add = <0, 0, cur.z>*scaleModifier;
+		*/
+		float z = llSin((dist*2/MAX_DIST)*PI+PI_BY_TWO)*(dist/MAX_DIST);
+		rotation r = llRotBetween(<1,.0,.0>, basepos);
+		rotation angle = llEuler2Rot(<WIGGLE_ANGLE, 0, 0>);
+		add = <0,0,z*WIGGLE_POW>*angle*r;
+	}
+	
     if(dist>3)dist=3;
     
-    vector pos = llVecNorm(to-llGetPos());
-    rotation rot = llRotBetween(<0.0,.0,1.0>, pos)/llGetRot();
-    pos*=dist;
+    vector pos = basepos+add;
+    rotation rot = llRotBetween(<1,.0,.0>, pos)/llGetRot();
+	
+    pos*=dist*SPEED;
+	
     llSetKeyframedMotion([pos, rot, motion_time(.3*(dist/3))], []);
+	
+	
 }
 
 
