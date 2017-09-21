@@ -99,7 +99,7 @@
 		#define FXAF$CASTER 0x2						// Apply FX on caster
 		#define FXAF$AOE 0x4						// Apply FX on AOE
 	#define fx$ADD_STACKS 49					// (int)stacks, (str)name... - See FXMethod$addStacks -  Adds (resets timer) or removes stacks (does not affect timer)
-	#define fx$SPELL_HIGHLIGHT 50				// (int)index - PC Only - Draws a yellow border around a spell. 0 is the bottom ability, then 1-4 for the upper row
+	#define fx$SPELL_HIGHLIGHT 50				// (int)index, (int)min_stacks - PC Only - Draws a yellow border around a spell. 0 is the bottom ability, then 1-4 for the upper row. If min_stacks is set, then you need a minimum of that amount of stacks for it to proc
 	#define fx$HEALING_TAKEN_MULTI 51			// (float)add - Increases or decreases healing received
 	#define fx$HEALING_DONE_MULTI 52			// (float)add - Increases or decreases healing done
 	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc - (PC only) Spawns a monster from HUD

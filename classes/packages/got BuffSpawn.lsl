@@ -6,6 +6,8 @@ vector CONF_POS;
 rotation CONF_ROT;
 integer FLAGS;
 
+key TARG;
+
 onEvt(string script, integer evt, list data){
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
         llRegionSayTo(mySpawner(), CHAN, "INI");
@@ -27,12 +29,16 @@ default
         
         list conf = llJson2List(message);
 		
+		
+		
 		while(conf){
 			integer k = l2i(conf, 0);
 			string v = l2s(conf, 1);
 			conf = llDeleteSubList(conf, 0, 1);
 			
-			if(k == BuffSpawnConf$pos)
+			if(k == BuffSpawnConf$targ)
+				TARG = v;
+			else if(k == BuffSpawnConf$pos)
 				CONF_POS = (vector)v;
 			else if(k == BuffSpawnConf$rot)
 				CONF_ROT = (rotation)v;
@@ -43,17 +49,29 @@ default
 				FLAGS = BuffSpawnFlag$NO_ROT;
 		}
 		
+		if(TARG  == "" || TARG == NULL_KEY)
+			TARG = llGetOwner();
+			
 		llSetTimerEvent(.1);
         
     }
 	
 	timer(){
 		
-		list data = llGetObjectDetails(llGetOwner(), [OBJECT_POS, OBJECT_ROT]);
+		if(llKey2Name(TARG) == "")
+			llDie();
+			
+		list data = llGetObjectDetails(TARG, [OBJECT_POS, OBJECT_ROT]);
 		vector pos = l2v(data, 0);
 		vector r = llRot2Euler(l2r(data, 1));
 		rotation rot = llEuler2Rot(<0,0,r.z>);
-		vector ascale = llGetAgentSize(llGetOwner());
+		vector ascale = llGetAgentSize(TARG);
+		if(ascale == ZERO_VECTOR){
+			boundsHeight(TARG, b)
+			ascale.z = b;
+			pos.z+= ascale.z/2;
+		}
+			
 		
 		vector posOut = pos-<0,0,ascale.z/2>+(<CONF_POS.x, CONF_POS.y, CONF_POS.z*ascale.z>*rot);
 		rotation rotOut = CONF_ROT*rot;

@@ -87,6 +87,11 @@ default
 			raiseEvent(evt$SCRIPT_INIT, "");
 
 	}
+	changed(integer change){
+		if(change&(CHANGED_INVENTORY|CHANGED_ALLOWED_DROP)){
+			spawnEffects();
+		}
+	}
 	#endif
 	
 	link_message(integer link, integer nr, string s, key id){

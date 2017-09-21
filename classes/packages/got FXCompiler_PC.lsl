@@ -15,7 +15,7 @@ list SPELL_DMG_DONE_MOD;	// [id, (int)index, (float)multiplier]
 list SPELL_MANACOST_MULTI;	// [id, (int)index, (float)multiplier]
 list SPELL_CASTTIME_MULTI;	// [id, (int)index, (float)multiplier]
 list SPELL_COOLDOWN_MULTI;	// [id, (int)index, (float)multiplier]
-list SPELL_HIGHLIGHTS; 		// [id, (int)index]
+list SPELL_HIGHLIGHTS; 		// [id, (int)index, (int)minStacks]
 list HEAL_DONE_MOD;			// [id, (float)multi] - Healing done (need to mutliply by h in the spell)
 list BEFUDDLE; 				// [id, (float)chanceMulti]
 list CONVERSIONS;			// [id, (arr)conversions]
@@ -194,7 +194,7 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
 			HEAL_DONE_MOD = manageList(FALSE, HEAL_DONE_MOD, [pid, llList2Float(fx, 1)]);
 		
 		else if(t == fx$SPELL_HIGHLIGHT){
-			SPELL_HIGHLIGHTS = manageList(FALSE, SPELL_HIGHLIGHTS, [pid,llList2Integer(fx,1)]);
+			SPELL_HIGHLIGHTS = manageList(FALSE, SPELL_HIGHLIGHTS, [pid,llList2Integer(fx,1), l2i(fx, 2)]);
 		}
 		
 		else if(t == fx$ATTACH){
@@ -263,7 +263,7 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 		else if(t == fx$SPELL_COOLDOWN_MULTI) 
 			SPELL_COOLDOWN_MULTI = manageList(TRUE, SPELL_COOLDOWN_MULTI, [pid, 0, 0]); 
 		else if(t == fx$SPELL_HIGHLIGHT){
-			SPELL_HIGHLIGHTS = manageList(TRUE, SPELL_HIGHLIGHTS, [pid,0]);
+			SPELL_HIGHLIGHTS = manageList(TRUE, SPELL_HIGHLIGHTS, [pid,0,0]);
 		}
 		else if(t == fx$HEALING_DONE_MULTI)
 			HEAL_DONE_MOD = manageList(TRUE, HEAL_DONE_MOD, [pid, 0]);
@@ -401,8 +401,10 @@ updateGame(){
     Status$spellModifiers(spdmtm); 
 	
 	integer hlt;
-	for(i=0; i<count(SPELL_HIGHLIGHTS); i+=2)
-		hlt = hlt | (int)llPow(2,llList2Integer(SPELL_HIGHLIGHTS, i+1));
+	for(i=0; i<count(SPELL_HIGHLIGHTS); i+=3){
+		if(l2i(SPELL_HIGHLIGHTS, i+2) <= getStacks(l2i(SPELL_HIGHLIGHTS, i), TRUE))
+			hlt = hlt | (int)llPow(2,llList2Integer(SPELL_HIGHLIGHTS, i+1));
+	}
 	
 	// These are the FXCUpd$ values
 	Passives$setActive(([ 

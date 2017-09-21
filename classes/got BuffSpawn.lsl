@@ -7,6 +7,8 @@
 /*
 	Conf is a 2 stride list of [(int)id, (var)data]
 */
+
+#define BuffSpawnConf$targ -1				// (key)target - This is the target to follow, "" translates to llGetOwner
 #define BuffSpawnConf$pos 0					// (vec)offset - Offsets from agent feet, multiplied by rotation, z is multiplied against agent size
 #define BuffSpawnConf$rot 1					// (rot)offset - Offsets from agent Z rotation
 #define BuffSpawnConf$meta 2				// (var)any - Raises a BuffSpawnEvt$meta event

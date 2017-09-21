@@ -1,11 +1,19 @@
 #include "got/_core.lsl"
 
 // Conf is a 2-strided array of (int)index, (var)data
-// (int)spellID, (str)assetName, (arr)conf, (key)assetID
+// (key)follow_this_id, (int)spellID, (str)assetName, (arr)conf, (key)assetID
 list VIS;
-#define VIS_STRIDE 4
+#define visFollow 0
+#define visID 1
+#define visAssetName 2
+#define visConf 3
+#define visAssetKey 4
 
-#define getKeys() llList2ListStrided(llDeleteSubList(VIS, 0,2), 0, -1, VIS_STRIDE)
+#define VIS_STRIDE 5
+
+#define getKeys(id) \
+	llList2ListStrided(llDeleteSubList(VIS, 0,3), 0, -1, VIS_STRIDE)
+
 
 integer CHAN;
 
@@ -24,8 +32,8 @@ default
         string name = llKey2Name(id);
         
         for(i=0; i<count(VIS); i+=VIS_STRIDE){
-            if(l2s(VIS, i+1) == name && l2s(VIS, i+3) == ""){
-                VIS = llListReplaceList(VIS, [id], i+3, i+3);
+            if(l2s(VIS, i+visAssetName) == name && l2s(VIS, i+visAssetKey) == ""){
+                VIS = llListReplaceList(VIS, [id], i+visAssetKey, i+visAssetKey);
                 return;
             }
         }
@@ -44,9 +52,12 @@ default
                 pos*= VIS_STRIDE;
                 
                 // Send the conf
-                string conf = l2s(VIS, pos+2);
-                llRegionSayTo(id, CHAN, conf);
-                VIS = llListReplaceList(VIS, [""], pos+2, pos+2);
+                list conf = llJson2List(l2s(VIS, pos+visConf));
+				conf+= [-1,l2s(VIS, pos+visFollow)];
+				
+                llRegionSayTo(id, CHAN, mkarr(conf));
+				// Free memory
+                VIS = llListReplaceList(VIS, [""], pos+visConf, pos+visConf);
             }
             else{
                 BuffSpawn$purgeTarg(id);
@@ -62,7 +73,7 @@ default
         return;
     }
     
-    if(id != "")
+    if(!method$byOwner)
         return;
     
     if(METHOD == BuffVisMethod$add){
@@ -72,6 +83,7 @@ default
             return;
             
         VIS += [
+			id,
             l2i(PARAMS, 0),
             visual,
             method_arg(2),
@@ -86,9 +98,9 @@ default
         integer i;
         for(i=0; i<count(VIS) && VIS != []; i+= VIS_STRIDE){
             
-            if(l2i(VIS, i) == n){
+            if(l2i(VIS, i+visID) == n && l2s(VIS, i+visFollow) == (str)id){
                 // Remove
-                key targ = l2k(VIS, i+3);
+                key targ = l2k(VIS, i+visAssetKey);
                 if(targ){
                     BuffSpawn$purgeTarg(targ);
                 }

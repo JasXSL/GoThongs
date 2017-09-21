@@ -105,6 +105,14 @@ default
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
 
         }
+		else if(METHOD == SpellFXMethod$fetchInventory){
+			list items = llJson2List(method_arg(0));
+			list_shift_each(items, item,
+				if(llGetInventoryType(item) == INVENTORY_OBJECT)
+					llGiveInventory(id, item);
+			)
+		}
+		
     }
 
 

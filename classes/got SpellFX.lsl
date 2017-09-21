@@ -5,6 +5,7 @@
 										// Data is: [(str)obj, (vec)pos_offset, (rot)rot_offset, (int)flags[, (int)startParam=1]]
 										// startParam cannot be 0
 #define SpellFXMethod$remInventory 5	// [(arr)assets]
+#define SpellFXMethod$fetchInventory 6	// (arr)assets || (str)asset - Owner only, attempts an inventory give
 
 #define SpellFXFlag$SPI_FULL_ROT 1		// Don't limit rotation to Z
 
@@ -16,4 +17,5 @@
 #define SpellFX$stopSound()  runMethod((string)LINK_ALL_OTHERS, "got SpellFX", SpellFXMethod$sound, [""], TNN)
 #define SpellFX$spawnInstant(data, targ) runMethod((string)LINK_ALL_OTHERS, "got SpellFX", SpellFXMethod$spawnInstant, [data, targ], TNN)
 #define SpellFX$remInventory(assets) runMethod((string)LINK_SET, "got SpellFX", SpellFXMethod$remInventory, [mkarr(assets)], TNN)
+#define SpellFX$fetchInventory(assets) runMethod(llGetOwner(), "got SpellFX", SpellFXMethod$fetchInventory, [assets], TNN)
  

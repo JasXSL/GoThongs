@@ -3,8 +3,48 @@
 integer TEAM = TEAM_NPC;
 
 list SPEED_MULTI;			// [id, (float)multiplier]
+list CACHE_SFX;				// [(float)time, (arr)data]Spell FX to spawn when received
 
-
+// Spawn instant spell visuals that we have
+spawnEffects(){
+	
+	integer i;
+	for(i=0; i<count(CACHE_SFX) && CACHE_SFX != []; i+=2){
+		float time = l2f(CACHE_SFX, i);
+		list data = llJson2List(l2s(CACHE_SFX, i+1));
+		integer exists = llGetInventoryType(l2s(data, 0)) == INVENTORY_OBJECT;
+		// Allow 2 seconds
+		if(time < llGetTime()-2 || exists){
+			CACHE_SFX = llDeleteSubList(CACHE_SFX, i, i+1);
+			i-=2;
+		}
+		
+		if(exists){
+			// Now we can spawn
+            string name = llList2String(data, 0);
+            vector pos_offset = (vector)llList2String(data, 1);
+            rotation rot_offset = (rotation)llList2String(data, 2);
+			integer flags = llList2Integer(data, 3);
+			integer startParam = l2i(data, 4);
+			if(startParam == 0)
+				startParam = 1;
+			
+            boundsHeight(llGetKey(), b)
+			pos_offset.z *= b;
+			
+            
+			vector vrot = llRot2Euler(llGetRootRotation());
+			if(~flags&SpellFXFlag$SPI_FULL_ROT)
+				vrot = <0,0,-vrot.x>;
+			rotation rot = llEuler2Rot(vrot);
+			
+			vector to = llGetRootPosition()+<0,0,b/2>+pos_offset*rot;
+			
+            llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
+		}
+	}
+	
+}
 
 integer current_visual;
 
@@ -13,7 +53,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 	integer stacks = getStacks(pid, FALSE);
 	list resource_updates; // Updates for HP/Mana etc
 	list fxs = llJson2List(fxobjs);
-    
+    fxobjs = "";
 	
 	while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
@@ -21,6 +61,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		
         integer t = llList2Integer(fx, 0);
 		
+
 		// Shared between PC/NPC, defined in got FXCompiler header file
 		dumpFxInstants()
 		
@@ -44,6 +85,14 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
             Status$hitfx((string)LINK_ROOT);
         else if(t == fx$TAUNT)
 			Status$monster_taunt(caster, l2i(fx,1));
+		
+		else if(t == fx$SPAWN_VFX){
+			CACHE_SFX += [llGetTime(), mkarr(llDeleteSubList(fx,0,0))];
+			if(llGetInventoryType(l2s(fx, 1)) != INVENTORY_OBJECT){
+				SpellFX$fetchInventory(l2s(fx,1));
+			}
+			spawnEffects();
+		}
     }
     
     if(resource_updates){
@@ -73,6 +122,8 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
 		else if(t == fx$MOVE_SPEED){
 			SPEED_MULTI = manageList(FALSE, SPEED_MULTI, [pid,llList2Float(fx, 1)]);
 		}
+		else if(t == fx$LTB)
+			BuffVis$addToMe(pid, l2s(fx, 1), l2s(fx,2));
 		
     }
 	
@@ -97,6 +148,8 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 		if(t == fx$MOVE_SPEED){
 			SPEED_MULTI = manageList(TRUE, SPEED_MULTI, [pid,0]); 
 		}
+		else if(t == fx$LTB)
+			BuffVis$remFromMe(pid);
 		
         // Shared are defined in the got FXCompiler header file
         dumpFxRemsShared()

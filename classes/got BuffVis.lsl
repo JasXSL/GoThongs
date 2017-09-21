@@ -10,4 +10,10 @@
 
 #define BuffVis$add(id, visual, config) runMethod((str)LINK_ALL_OTHERS, "got BuffVis", BuffVisMethod$add, [id, visual, config], TNN)
 #define BuffVis$rem(id) runMethod((str)LINK_ALL_OTHERS, "got BuffVis", BuffVisMethod$rem, [id], TNN)
+
+#define BuffVis$addToMe(id, visual, config) runMethod(llGetOwner(), "got BuffVis", BuffVisMethod$add, [id, visual, config], TNN)
+#define BuffVis$remFromMe(id) runMethod(llGetOwner(), "got BuffVis", BuffVisMethod$rem, [id], TNN)
+
+
 #define BuffVis$remInventory(inventory) runMethod((str)LINK_ALL_OTHERS, "got BuffVis", BuffVisMethod$remInventory, inventory, TNN)
+
