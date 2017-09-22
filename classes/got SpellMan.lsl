@@ -9,9 +9,12 @@
 #define SpellManShared$cooldowns 1		// (arr)cooldowns
 
 
-#define SpellManEvt$interrupted 1	// NULL - NULL
-#define SpellManEvt$cast 2			// f2i((float)casttime), (key)target - Cast started - Not raised on instant cast
-#define SpellManEvt$complete 3 		// (int)spell_index, (key)target, (bool)detrimental - Spell finished casting. Index goes from 0 (rest) to 4 (last)
+#define SpellManEvt$interrupted 1	// (int)index, f2i(casttime) - Spell has been interrupted
+#define SpellManEvt$cast 2			// f2i((float)casttime), (key)target, (int)spellIndex - Cast started - Not raised on instant cast
+#define SpellManEvt$complete 3 		// (int)spell_index, (key)target, (bool)detrimental, (arr)all_targs, (bool)noWipe, (f2i)casttime - Spell finished casting. Index goes from 0 (rest) to 4 (last)
+#define SpellManEvt$recache 4		// void - Triggers a recache of spell data
+
+
 
 #define SpellMan$CASTER 0x1
 #define SpellMan$ENEMIES 0x8
