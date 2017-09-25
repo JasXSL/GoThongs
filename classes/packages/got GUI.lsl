@@ -208,6 +208,7 @@ default
 				
 			integer bar = l2i(BARS, 1); 						// Targ
 			integer portrait = l2i(BARS, 0);
+			float al = 0.5;
 			if(i){
 				bar = l2i(BARS, BAR_STRIDE*i+1); 			// A player or boss
 				portrait = l2i(BARS, BAR_STRIDE*i);
@@ -217,9 +218,11 @@ default
 			if(i == count(statuses)-1){
 				bar = P_BOSS_HP;
 				portrait = P_BOSS_PORTRAIT;
+				al = 1;
 			}
-				
-			list data_out = [PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, <1,1,1>, .5];
+			
+			
+			list data_out = [PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, <1,1,1>, 1];
 			
 			if(~n){				
 						

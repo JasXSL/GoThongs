@@ -17,9 +17,6 @@ onEvt(string script, integer evt, list data){
 
 default
 {
-    state_entry(){
-        memLim(1.5);
-    }
     
     #include "xobj_core/_LM.lsl"
     /*

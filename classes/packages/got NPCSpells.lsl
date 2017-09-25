@@ -469,7 +469,7 @@ default
 		}
 		else if(METHOD == NPCSpellsMethod$silence){
 			if(l2i(PARAMS, 0)){
-				endCast(FALSE, FALSE);
+				endCast(FALSE, TRUE);
 				BFL = BFL|BFL_SILENCED;
 			}
 			else{
