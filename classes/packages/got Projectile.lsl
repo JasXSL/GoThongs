@@ -118,8 +118,17 @@ STEP(){
     rotation rot = llRotBetween(<1,.0,.0>, pos)/llGetRot();
 	
     pos*=dist*SPEED;
+	float t = .3*(dist/3);
 	
-    llSetKeyframedMotion([pos, rot, motion_time(.3*(dist/3))], []);
+	if(t == 0)
+		return llDie();
+		
+	// Die if velocity is too great, prevents a script error
+	if(llVecMag(pos)/t > 200){
+		return llDie();
+	}
+	
+    llSetKeyframedMotion([pos, rot, motion_time(t)], []);
 	
 	
 }

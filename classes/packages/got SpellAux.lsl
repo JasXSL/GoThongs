@@ -48,8 +48,8 @@ float befuddle = 1;		// Chance to cast at a random target
 float backstabMulti = 1;	// Additional damage when attacking from behind
 integer fxFlags = 0;
 
-#define aroused 1-(float)(STATUS_FLAGS&StatusFlag$aroused)/StatusFlag$aroused*.1
-#define pmod 1./count(PLAYERS)
+#define aroused (1-(float)(STATUS_FLAGS&StatusFlag$aroused)/StatusFlag$aroused*.1)
+#define pmod (1./count(PLAYERS))
 
 string runMath(string FX, integer index, key targ){
     list split = llParseString2List(FX, ["$MATH$"], []);
@@ -65,7 +65,7 @@ string runMath(string FX, integer index, key targ){
 	float spdmdm = llList2Float(SPELL_DMG_DONE_MOD, index);
 	if(spdmdm == -1)spdmdm = 1;
 	else if(spdmdm<0)spdmdm = 0;
-	
+
 	string consts = llList2Json(JSON_OBJECT, [
 		// Damage done multiplier
         "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm*difDmgMod()*bsMul),
@@ -89,7 +89,7 @@ string runMath(string FX, integer index, key targ){
 		// Max HP
 		"mhp", CACHE_MAX_HP
     ]);
-	
+
     integer i;
     for(i=1; i<llGetListLength(split); i++){
         split = llListReplaceList(split, [llGetSubString(llList2String(split, i-1), 0, -2)], i-1, i-1);

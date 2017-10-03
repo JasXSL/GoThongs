@@ -20,6 +20,7 @@ vector rezpos;          // Position this was rezzed at. Used for roaming
 
 integer STATE;          // Current movement state
 
+#define dout(text) llSetText((str)(text), <1,1,1>, 1)
 
 integer FXFLAGS;
 key look_override = ""; // Key to override looking at from current target
@@ -70,7 +71,7 @@ integer moveInDir(vector dir){
         
         if(~BFL&BFL_CHASING && ~BFL&BFL_SEEKING)sp/=2;
 
-        dir = dir*.5*sp;
+        dir = dir*sp;
 		vector a = <0,0,0.5+hAdd()>;	// Max climb distance
 		vector b = <0,0,-1>;	// Max drop distance
 		// If flying, go directly towards the target 
@@ -78,13 +79,18 @@ integer moveInDir(vector dir){
 			a = b = ZERO_VECTOR;
 		}
 		
+		
+		
+		// Vertical raycast
+		vector rayStart = gpos+a;
 		// movement, hAdd() is not added
-        list r = llCastRay((gpos+dir+a), (gpos+dir+b), ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
-        if(
+        list r = llCastRay(rayStart, gpos+dir+b, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]);
+        vector hit = l2v(r, 1);
+		
+		//dout(llVecDist(rayStart, hit));
+		if(
 			// Too steep drop
-			(~getRF()&Monster$RF_FLYING && llList2Integer(r, -1) <=0) || 
-			// Inside a wall
-			llVecDist(llGetPos()+dir+<0,0,1>, llList2Vector(r, 1))<.1
+			(~getRF()&Monster$RF_FLYING && llList2Integer(r, -1) <=0)
 		){
             toggleMove(FALSE);
 			return FALSE;
@@ -102,7 +108,7 @@ integer moveInDir(vector dir){
         toggleMove(TRUE);
     }else toggleMove(FALSE);
     
-    if(~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED)
+    if(~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED && (look_override == "" || look_override == NULL_KEY))
         llLookAt(gpos+<dir.x, dir.y, 0>, 1, 1);
     return TRUE;
 }
@@ -132,7 +138,7 @@ toggleMove(integer on){
 }
 
 #define updateLookAt() \
-	if(~getRF()&Monster$RF_NOROT || FXFLAGS&fx$F_STUNNED){ \
+	if(~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED){ \
 		vector pp = prPos(chasetarg); \
 		vector gpos = llGetPos(); \
 		if(look_override)pp = prPos(look_override); \
@@ -363,11 +369,12 @@ onEvt(string script, integer evt, list data){
         if(task == FRAME_AUDIO)llPlaySound(llList2String(split,1), llList2Float(split,2));
         else if(task == Monster$atkFrame || (script == "got LocalConf" && evt == LocalConfEvt$emulateAttack)){
             list odata = llGetPrimitiveParams([PRIM_POSITION, PRIM_ROTATION]);
+
             list ifdata = llGetObjectDetails(chasetarg, [OBJECT_POS, OBJECT_ROT]);
             vector pos = llList2Vector(odata,0);
             vector dpos = llList2Vector(ifdata, 0);
             
-            if(~getRF()&Monster$RF_NOROT && chasetarg != "")
+            if(~getRF()&Monster$RF_NOROT && chasetarg != "" && (look_override == "" || look_override == NULL_KEY))
                 llLookAt(<dpos.x, dpos.y, pos.z>, 1,1);
             
             float dist = llVecDist(pos, dpos);
@@ -479,6 +486,7 @@ default
 	if(nr == TASK_FX){ \
 		list data = llJson2List(s); \
 		FXFLAGS = l2i(data, FXCUpd$FLAGS); \
+		if(RUNTIME_FLAGS & Monster$RF_IS_BOSS)FXFLAGS = FXFLAGS&~fx$F_STUNNED; \
 		fxSpeed = i2f(l2f(data, FXCUpd$MOVESPEED)); \
 		fxCooldownMod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		if(FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED))toggleMove(FALSE); \
