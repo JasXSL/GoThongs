@@ -209,7 +209,13 @@ default
 		multiTimer([]);
     }
 
-    #define LISTEN_LIMIT_FREETEXT if(llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1){return;}
+    #define LISTEN_LIMIT_FREETEXT \
+	if( \
+		llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1 && \
+		llGetOwnerKey(id) != llGetOwner() \
+	){ \
+		return; \
+	}
     #include "xobj_core/_LISTEN.lsl"
     
     #include "xobj_core/_LM.lsl"
@@ -376,7 +382,13 @@ default
 	
 // OWNER ONLY
 	if(method$byOwner && METHOD == gotMethod$setHuds){
+		PLAYERS = [];
+		integer i;
+		for(i=0; i<count(PARAMS); ++i){
+			PLAYERS += (str)llGetOwnerKey(l2k(PARAMS, i));
+		}
 		raiseEvent(LevelEvt$playerHUDs, mkarr(PARAMS));
+		raiseEvent(LevelEvt$players, mkarr(PLAYERS));
 	}
 
 	if(METHOD == LevelMethod$setFinished && method$byOwner){

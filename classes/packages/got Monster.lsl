@@ -329,11 +329,14 @@ timerEvent(string id, string data){
 onEvt(string script, integer evt, list data){
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
         rezpos = llGetPos();
-        PLAYERS = data;
+        
         LocalConf$ini();
 		multiTimer(["INI", "", 5, FALSE]);	// Some times localconf fails, I don't know why
     }
     
+	if(Portal$isPlayerListIfStatement)
+		PLAYERS = data;
+	
 	// Tunnels legacy into the new command
     else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
 		multiTimer(["INI"]);

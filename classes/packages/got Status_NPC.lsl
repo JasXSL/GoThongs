@@ -411,7 +411,7 @@ anim(string anim, integer start){
 
 
 #define onEvt(script, evt, data) \
-	if(script == "got Portal" && evt == evt$SCRIPT_INIT){ \
+	if(script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players)){ \
         PLAYERS = data; \
 		if(aggro_range)multiTimer(["A", 1, TRUE]); \
     } \
@@ -674,6 +674,7 @@ default
     
 	// This person has toggled targeting on you
     if(METHOD == StatusMethod$setTargeting){
+		//qd("Targeting received from "+llKey2Name(id));
         integer on = (integer)method_arg(0);
         integer pos = llListFindList(OUTPUT_STATUS_TO, [(str)id]);
         if(!on){

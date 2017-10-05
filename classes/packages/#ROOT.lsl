@@ -24,8 +24,12 @@ key ROOT_LEVEL;			// Current level being played
 integer BFL;
 #define BFL_WILDCARD 0x1
 
+
+#define sendHUDs() runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN)
+
 #define refreshTarget() \
 	setTarget(TARG, TARG_ICON, TRUE, -1);
+	
 
 // If you want to use listen override, it ends up here
 // onListenOverride(integer chan, key id, string message){}
@@ -324,7 +328,8 @@ default
 				//qd("Got HUD from CALLBACK "+llGetDisplayName(llGetOwnerKey(id)));
 				COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
 				raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
-				runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
+				//qd("Setting HUDs: "+mkarr(COOP_HUDS));
+				sendHUDs();
 			}
 		}
 		
@@ -369,7 +374,9 @@ default
 			for(i=0; i<count(PLAYERS); ++i)
 				COOP_HUDS += "";
 			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
-			runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
+			
+			sendHUDs();
+			//qd("Setting HUDs: "+mkarr(COOP_HUDS));
 			
             savePlayers();
 			
@@ -425,8 +432,9 @@ default
 		integer pos = llListFindList(PLAYERS, [(str)okey]);
 		if(~pos){
 			COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
-			runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
+			sendHUDs();
 			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
+			//qd("Setting HUDs: "+mkarr(COOP_HUDS));
 			//qd("Got HUD from ATTACHED "+llGetDisplayName(llGetOwnerKey(id))+" :: "+llKey2Name(id));
 		}
 		
@@ -455,7 +463,7 @@ default
 			return;
 		}
 		CB_DATA = getPlayers();
-		runMethod(id, SENDER_SCRIPT, gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN);
+		sendHUDs();
 	}
 	else if(METHOD == RootMethod$refreshTarget){
 		// Refresh active target

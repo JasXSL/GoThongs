@@ -223,13 +223,18 @@ default
 		multiTimer([]);
     }
     
-	#define LISTEN_LIMIT_FREETEXT if(llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1 && llList2String(PLAYERS, 0) != "*"){ \
+	#define LISTEN_LIMIT_FREETEXT \
+	if( \
+		llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1 && \
+		llList2String(PLAYERS, 0) != "*" && \
+		llGetOwnerKey(id) != llGetOwner() \
+	){ \
 		return; \
 	}
 	
     #include "xobj_core/_LISTEN.lsl"
     
-    
+    //#define LM_PRE qd("Got string: "+s);
     #include "xobj_core/_LM.lsl"
     /*
         Included in all these calls:
@@ -243,6 +248,7 @@ default
         
         if(SENDER_SCRIPT == "#ROOT" && METHOD == RootMethod$getPlayers && CB == "INI" && llGetStartParameter() == 2){
             PLAYERS = llJson2List(method_arg(0));
+			//qd("PLAYERS from root: "+mkarr(PLAYERS));
 			multiTimer(["INI"]);
 			BFL = BFL|BFL_GOT_PLAYERS;
 			PLAYER_HUDS = llJson2List(method_arg(1));
@@ -277,8 +283,15 @@ default
 		}
 		
 		else if(METHOD == gotMethod$setHuds){
+			
 			PLAYER_HUDS = PARAMS;
+			PLAYERS = [];
+			runOnHUDs(targ,
+				PLAYERS += (str)llGetOwnerKey(targ);
+			)
+			
 			raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
+			raiseEvent(PortalEvt$players, mkarr(PLAYERS));
 			
 		}
 		
