@@ -577,7 +577,7 @@ default
 				vector scale = <0.07862, 0.01523, 0.07422>;
 				vector barscale = <0.21838, 0.01000, 0.06641>;
 				list colors = [2,3,4,5]; // Faces of HP, Mana, Arousal, Pain
-				vector border = FOCUS_BORDER;
+				vector border;
 				if(i){
 					offs1.y=-offs1.y-(width*(i-1)*1.05);
 					offs2.y=offs1.y;
@@ -585,8 +585,9 @@ default
 					barscale = scale;
 					barscale.y = 0.08394;
 					colors = [1,2,3,4];
-					border = ZERO_VECTOR;
 				}
+				if(i == PLAYER_FOCUS)
+					border = FOCUS_BORDER;
 				
 				float bgAlpha = 1;
 				if(llKey2Name(l2k(PLAYER_HUDS, i)) == "")
