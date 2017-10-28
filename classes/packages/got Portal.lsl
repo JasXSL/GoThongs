@@ -17,7 +17,7 @@ integer BFL;
 #define BFL_IS_DEBUG 4
 #define BFL_HAS_DESC 8
 #define BFL_INITIALIZED 0x10
-
+#define BFL_PERSISTENT 0x20
 
 #define BFL_INI 11
 #define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); raiseEvent(PortalEvt$spawner, (str)requester); raiseEvent(PortalEvt$desc_updated, INI_DATA); raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS)); }
@@ -267,7 +267,18 @@ default
 			if((integer)method_arg(0))nr = 3;	// Use a positive int to just update without initializing
 			
 			Remoteloader$load(cls$name, p, nr);
-        }else if(METHOD == PortalMethod$remove && (llGetInventoryType("got LevelLite") == INVENTORY_NONE || REZ_PARAM)){
+        }else if(METHOD == PortalMethod$remove && 
+			(
+				(	
+					(
+						llGetInventoryType("got LevelLite") == INVENTORY_NONE || 
+						REZ_PARAM
+					) && 
+					~BFL&BFL_PERSISTENT
+				) || 
+				l2i(PARAMS, 0)
+			)
+		){
 			remove();
         }
 		else if(METHOD == PortalMethod$resetAll){
@@ -281,7 +292,12 @@ default
 				llDie();
 			}
 		}
-		
+		else if(METHOD == PortalMethod$persistence){
+			if(l2i(PARAMS, 0))
+				BFL = BFL|BFL_PERSISTENT;
+			else
+				BFL = BFL&~BFL_PERSISTENT;
+		}			
 		else if(METHOD == gotMethod$setHuds){
 			
 			PLAYER_HUDS = PARAMS;

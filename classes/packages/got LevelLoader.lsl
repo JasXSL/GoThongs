@@ -33,11 +33,11 @@ default
         CB - The callback you specified when you sent a task
     */
 	if(method$isCallback){
-		if(SENDER_SCRIPT == "got Spawner"){
+		if(SENDER_SCRIPT == "got Spawner" && (METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn)){
 			list parse = llJson2List(CB);
-			if(l2s(parse, 0) == "HUD" || l2s(parse, 0) == "CUSTOM"){
-				raiseEvent(LevelLoaderEvt$queueFinished, CB);
-			}
+			//if(l2s(parse, 0) == "HUD" || l2s(parse, 0) == "CUSTOM"){
+			raiseEvent(LevelLoaderEvt$queueFinished, CB);
+			//}
 		}
 		return;
 	}
@@ -54,7 +54,7 @@ default
 		if(l2s(groups, 0) == ""){
 			BFL = BFL&~BFL_HAS_ASSETS;
 			BFL = BFL&~BFL_HAS_SPAWNS;
-			multiTimer(["INI", "", 15, FALSE]);
+			multiTimer(["INI", "", 10, FALSE]);
 		}
 				
 		list out;					// Data to push to spawners

@@ -371,7 +371,9 @@ onEvt(string script, integer evt, list data){
 		}
         // Force update on targeting self, otherwise it requests
         else if(evt == RootEvt$targ && llList2Key(data, 0) == llGetOwner())outputStats();
-    }else if(script == "got SpellMan"){
+    }
+	
+	else if(script == "got SpellMan"){
         if(evt == SpellManEvt$cast || evt == SpellManEvt$interrupted || evt == SpellManEvt$complete){
             if(evt == SpellManEvt$cast){
                 // At least 1 sec to count as a cast
@@ -381,7 +383,9 @@ onEvt(string script, integer evt, list data){
             else STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$casting;
             outputStats();
         }
-    }else if(script == "got Bridge"){
+    }
+	
+	else if(script == "got Bridge"){
 		if(evt == BridgeEvt$userDataChanged){
 			Status$setDifficulty(l2i(data, 4));
 		}
@@ -404,6 +408,7 @@ onEvt(string script, integer evt, list data){
             AnimHandler$anim("got_loss", FALSE, 0, 0);
         }
     }
+	
 	else if(script == "jas Primswim"){
 		if(evt == PrimswimEvt$onWaterEnter){
 			
@@ -415,6 +420,7 @@ onEvt(string script, integer evt, list data){
 		}
 		outputStats();
 	}
+	
 	else if(script == "jas Climb"){
 		if(evt == ClimbEvt$start){
 			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$climbing;
@@ -429,12 +435,14 @@ onEvt(string script, integer evt, list data){
 		}
 		outputStats();
 	}
+	
 	else if(script == "jas RLV" && (evt == RLVevt$cam_set || evt == RLVevt$cam_unset)){
 		
 		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$cutscene;
 		if(evt == RLVevt$cam_set)STATUS_FLAGS = STATUS_FLAGS|StatusFlag$cutscene;
 		outputStats();
 	}
+	
 	else if(script == "got Evts" && evt == EvtsEvt$QTE){
 		BFL = BFL&~BFL_QTE;
 		if(l2i(data, 0)){

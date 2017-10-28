@@ -64,9 +64,11 @@ onEvt(string script, integer evt, list data){
 	if(script == "got Status" && evt == StatusEvt$team)
 		TEAM = l2i(data,0);
 	else if(script == "#ROOT"){
+	
 		if(evt == RootEvt$targ)
 			cache_targ = l2s(data, 0);
-		else if(evt == evt$BUTTON_RELEASE && QTE_STAGES > 0){
+			
+		else if(evt == evt$BUTTON_PRESS && QTE_STAGES > 0){
 			
 			list map = [
 				CONTROL_UP|CONTROL_FWD,
@@ -83,6 +85,7 @@ onEvt(string script, integer evt, list data){
 				}
 			}
 		}
+		
 		else if(evt == evt$TOUCH_START && QTE_STAGES > 0 && l2i(data, 0) == P_BUTTONS){
 
 			integer face = l2i(data, 2);
@@ -129,7 +132,7 @@ qteButtonTouched(integer button){
 		llPlaySound("dafef83b-035f-b2b8-319d-daac01b0936e", 1);
 		llSetLinkColor(P_BUTTONS, <1,.25,.25>, l2i(QTE_BORDERMAP, button));
 		llSetLinkTextureAnim(P_BUTTONS, ANIM_ON|LOOP|PING_PONG, l2i(QTE_BORDERMAP, button), 16,2, 0,0, 120);
-		multiTimer(["QTE", "", 3, FALSE]);
+		multiTimer(["QTE", "", 2, FALSE]);
 		BFL = BFL|BFL_QTE_PRESSED;
 	}
 	
@@ -147,8 +150,8 @@ toggleQTE(integer on){
 	
 	vector scale = <0.21188, 0.14059, 0.13547>;
 	vector pos = <0.023560, -0.303590, 0.647901>;
-	
 	llSetLinkPrimitiveParams(P_BUTTONS, [PRIM_SIZE, ZERO_VECTOR]);
+	
 	QTE_KEY = llFloor(llFrand(4));
 	integer i;
 	list out = [PRIM_POSITION, pos,PRIM_SIZE, scale];
@@ -156,14 +159,13 @@ toggleQTE(integer on){
 		vector color = ZERO_VECTOR;
 		if(i == QTE_KEY)
 			color = <.5,1,.5>;
-		
 		out+= [PRIM_COLOR, l2i(QTE_BORDERMAP, i), color, 1];
 	}
-	
 	llSetLinkTextureAnim(P_BUTTONS, ANIM_ON|LOOP|PING_PONG, l2i(QTE_BORDERMAP, QTE_KEY), 16,2, 0,0, 120);
 	PP(P_BUTTONS, out);
-	raiseEvent(EvtsEvt$QTE, (str)QTE_STAGES);
+	
 	BFL = BFL&~BFL_QTE_PRESSED;
+	
 }
 
 onQteEnd(integer success){
@@ -288,16 +290,23 @@ default
 		// Tells any active QTE sender that it has ended, useful if QTE ended by someone other than the one that initiated it
 		if(!QTE_STAGES)
 			onQteEnd(FALSE);
+		else
+			raiseEvent(EvtsEvt$QTE, (str)QTE_STAGES);
 		
 		CB_DATA = [EvtsEvt$QTE$APPLY];
 		list targ = [nr];
 		if(id != "")
 			targ = [id];
+			
 		QTE_SENDER_DATA = targ+[SENDER_SCRIPT, CB];
 		
+		
+		
 		float preDelay = l2f(PARAMS, 1);
-		if(preDelay)
+		if(preDelay){
 			multiTimer(["QTE", 0, preDelay, FALSE]);
+			BFL = BFL|BFL_QTE_PRESSED;
+		}
 		else
 			toggleQTE(QTE_STAGES);
 	}

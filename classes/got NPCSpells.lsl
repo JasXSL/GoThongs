@@ -34,9 +34,9 @@
 #define NPCS$buildSpell(flags, casttime, recast, range, name, minrange) llList2Json(JSON_ARRAY, [flags, casttime, recast, range, name, minrange])
 
 // Spell is the spell index, targ is the target (converted to owner key if attached), real is either same as targ or the HUD itself
-#define NPCSpellsEvt$SPELL_CAST_START 1				// (int)spell, (key)targ, (key)real
-#define NPCSpellsEvt$SPELL_CAST_FINISH 2			// (int)spell, (key)targ, (key)real
-#define NPCSpellsEvt$SPELL_CAST_INTERRUPT 3			// (int)spell, (key)targ, (key)real
+#define NPCSpellsEvt$SPELL_CAST_START 1				// (int)spell, (key)targ, (key)real, (str)spellName
+#define NPCSpellsEvt$SPELL_CAST_FINISH 2			// (int)spell, (key)targ, (key)real, (str)spellName
+#define NPCSpellsEvt$SPELL_CAST_INTERRUPT 3			// (int)spell, (key)targ, (key)real, (str)spellName
 #define NPCSpellsEvt$SPELLS_SET 4					// (str)script - Raises an event when setSpells has been ran, script is the name of the script that set spells
 
 

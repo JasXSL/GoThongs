@@ -37,6 +37,8 @@ integer BFL;
 #define BFL_WIPE_TRACKER 0x80 // enables the wipe tracker
 #define BFL_WIPED 0x100		// Unable to finish the quest
 
+// Required additional spawn groups before completing
+list SPAWNS_REQ = [];
 
 list LOADQUEUE = REQUIRE;			// Required scripts to be remoteloaded
 list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for

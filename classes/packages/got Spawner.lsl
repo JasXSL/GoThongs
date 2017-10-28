@@ -26,6 +26,8 @@ list queue_rez;		// [(str)desc, (str)spawnround, (key)sender]
 list queue_desc;	// [(key)idOfObject, (str)desc, (str)spawnround, (key)sender]
 #define QUEUEDESCSTRIDE 4
 
+// Timestamp when the last spawn took place
+float SPAWN_START;
 
 next() {
 	// Clear the completion timer
@@ -39,13 +41,20 @@ next() {
 		// To many description load requests. This should prevent the event queue from being full
 		processing >= CONCURRENCY
 	){
-		// Queue done, Give it 2 sec before telling the level the load queue is finished. Used in case a mod adds additional spawns.
+		// Queue done, Give it 5 sec before telling the level the load queue is finished. Used in case a mod adds additional spawns.
 		if(queue == []){
-			multiTimer(["B", "", 2, FALSE]);
+			float timeout = 10;
+			// If we have been spawning for more than 10 sec we are allowed to end this earlier
+			if(SPAWN_START+10 < llGetTime())
+				timeout = 2;
+			multiTimer(["B", "", timeout, FALSE]);
 			multiTimer(["FORCE_NEXT"]);
 		}
 		return;
 	}
+	
+	if(SPAWN_START == 0)
+		SPAWN_START = llGetTime();
 	
 	// Object Name
 	string asset = llList2String(queue, 0);
@@ -58,6 +67,7 @@ next() {
 			return;
 		}
 	
+		
 		sendCallback(
 			llList2String(queue, 1), 
 			llList2String(queue, 2), 
@@ -114,6 +124,7 @@ done(key id){
 timerEvent(string id, string data){
 	// B is sent once all objects have been spawned
 	if(id == "B"){
+		SPAWN_START = 0;
 		// If this spawner is inside the HUD, send to ROOT_LEVEL
 		#ifdef IS_HUD
 		Level$loaded(ROOT_LEVEL, TRUE);

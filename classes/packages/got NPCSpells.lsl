@@ -168,12 +168,13 @@ endCast(integer success, integer force){
 	
     if(success)
 		evt = NPCSpellsEvt$SPELL_CAST_FINISH;
+		
 	// Set internal interrupt timer
     else if(~flags&NPCS$FLAG_RESET_CD_ON_INTERRUPT){
         BFL = BFL|BFL_INTERRUPTED;
         multiTimer(["IR", "", 3, FALSE]);
     }
-    raiseEvent(evt, mkarr(([spell_id, spell_targ, spell_targ_real])));
+    raiseEvent(evt, mkarr(([spell_id, spell_targ, spell_targ_real, l2s(d, NPCS$SPELL_NAME)])));
     
 	if(monster_flags)
 		Monster$unsetSpellFlags(monster_flags);
@@ -255,7 +256,7 @@ startCast(integer spid, key targ, integer isCustom){
 		endCast(TRUE, FALSE); // Immediately finish the cast
 	}else{
 		// Non instant
-		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ, spell_targ_real])));
+		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ, spell_targ_real, l2s(d, NPCS$SPELL_NAME)])));
 		multiTimer(["CAST", "", casttime, FALSE]);
 		multiTimer(["CB", "", .1, TRUE]);
 		Monster$setSpellFlags(monster_flags);

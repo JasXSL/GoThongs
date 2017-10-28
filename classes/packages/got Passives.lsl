@@ -464,10 +464,25 @@ onEvt(string script, integer evt, list data){
 				FX$aoe(max_targs/10., llGetKey(), wrapper, TEAM_PC);
 			}
 			
-			if(targFlag > -1 && (llVecDist(llGetPos(), prPos(l2s(data, targFlag)))< range || range <= 0)) {
-				FX$send(l2s(data, targFlag), llGetKey(), wrapper, TEAM_PC);
-				//qd("Sent FX to "+llKey2Name(l2s(data, targFlag))+" ("+l2s(data, targFlag)+")");
+			// Use target from event
+			if(targFlag > -1){
+				
+				string t = l2s(data, targFlag);
+				// Target is a link, so it is us
+				if(strlen(t) != 36)
+					t = llGetKey();
+
+				if(llVecDist(llGetPos(), prPos(t))< range || range <= 0) {
+					if(t == llGetKey())
+						FX$run("", wrapper);
+					else
+						FX$send(l2s(data, targFlag), llGetKey(), wrapper, TEAM_PC);
+					//qd("Sent FX to "+llKey2Name(l2s(data, targFlag))+" ("+l2s(data, targFlag)+")");
+				}
+			
 			}
+			
+			
 					
 			// If we have sent to max targs, leave this event and go to the next
 			if(max_targs > 0){
