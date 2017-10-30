@@ -6,9 +6,13 @@ integer STATUS; // Flags from got Status
 
 integer BFL = 0x1;
 #define BFL_SHEATHED 0x1
+#define BFL_LOADED 0x2
 
 integer WFLAGS;
 #define WFLAG_UNSHEATHABLE 0x8
+// Thong flags
+integer TFLAGS;
+#define TFLAG_NO_WEAPONS 0x8
 
 string RHAND;
 key RHAND_ATT;
@@ -20,6 +24,8 @@ float W_SCALE = 1;
 
 list W_SOUNDS;
 
+
+#define unsheatable (WFLAGS&WFLAG_UNSHEATHABLE || TFLAGS&TFLAG_NO_WEAPONS)
 
 // FX
 integer FX_FLAGS;
@@ -45,12 +51,15 @@ vector BACK_OH_DEFAULT_POS = <0.11448, -0.37465, -0.04116>;
 
 onEvt(string script, integer evt, list data){
     
-    if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
-        
-        loadWeapon(data);
-        
-    }
-    
+    if(script == "got Bridge" && evt == BridgeEvt$userDataChanged)
+        loadWeapon(data);   
+    // thong data changed
+    else if(script == "got Bridge" && evt == BridgeEvt$data_change){
+		TFLAGS = l2i(data, 3);
+		reloadWeapon();
+	}
+		
+	
     if(script == "got Status" && evt == StatusEvt$flags){
         integer pre = STATUS;
         STATUS = l2i(data, 0);
@@ -64,6 +73,7 @@ onEvt(string script, integer evt, list data){
             Weapon$removeAll();
         }
     }
+	
     
 }
 
@@ -123,23 +133,35 @@ loadWeapon(list data){
     if((rotation)l2s(wdata, 9)){
         W_BACK_OFFHAND_ROT = (rotation)l2s(wdata, 9);
     }
-    // Check if custom exists from DB (Not yet in DB)
-    
-    if(WFLAGS&WFLAG_UNSHEATHABLE) 
-        BFL = BFL|BFL_SHEATHED;
-    
-    if(rhand != RHAND || lhand != LHAND){
+	
+	// At least 1 weapon prim has changed so we need to re-spawn
+	if(rhand != RHAND || lhand != LHAND){
         RHAND = rhand;
         LHAND = lhand;
         spawnWeapons();
     }
 
+	BFL = BFL|BFL_LOADED;
+	reloadWeapon();
+    
+}
+
+// Data has been received either about the weapon or thong
+reloadWeapon(){
+	if(~BFL&BFL_LOADED)
+		return;
+		
+	if(unsheatable && ~BFL&BFL_SHEATHED){ 
+		spawnWeapons();	
+        BFL = BFL|BFL_SHEATHED;
+    }
+	
     raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
 }
 
 // Returns an attachment slot
 integer getAttachSlot(integer rhand){
-    if(BFL&BFL_SHEATHED || WFLAGS&WFLAG_UNSHEATHABLE)
+    if(BFL&BFL_SHEATHED || unsheatable)
         return ATTACH_BACK;
     if(rhand)
         return W_MAINHAND_SLOT;
@@ -148,7 +170,7 @@ integer getAttachSlot(integer rhand){
 
 // Returns the position
 vector getAttachPos(integer rhand){
-    if(BFL&BFL_SHEATHED || WFLAGS&WFLAG_UNSHEATHABLE){
+    if(BFL&BFL_SHEATHED || unsheatable){
         if(rhand)
             return W_BACK_MAINHAND_POS;
         return W_BACK_OFFHAND_POS;
@@ -162,7 +184,7 @@ vector getAttachPos(integer rhand){
 // Returns rotation
 rotation getAttachRot(integer rhand){
     
-    if(BFL&BFL_SHEATHED || WFLAGS&WFLAG_UNSHEATHABLE){
+    if(BFL&BFL_SHEATHED || unsheatable){
         if(rhand)
             return W_BACK_MAINHAND_ROT;
         return W_BACK_OFFHAND_ROT;
@@ -302,24 +324,26 @@ default
             
 			raiseEvent(WeaponLoaderEvt$attackAnim, "");
 			
-			
+			integer set = ANIM_SET;
+			if(unsheatable)
+				set = 0;
 			
             list kit = ["attack_fists_1", "attack_fists_2", "attack_fists_3"];
             // 2handed
-            if(ANIM_SET == 1){
+            if(set == 1){
                 kit = ["stance_2h_1", "stance_2h_2", "stance_2h_3"];
             }
             // Piercing
-            if(ANIM_SET == 4){
+            if(set == 4){
                 kit = ["stance_1hpierce_1","stance_1hpierce_2","stance_1hpierce_3","stance_1hpierceoh_1","stance_1hpierceoh_2"];
             }
             
             // One handed default
-            if(ANIM_SET == 2 || ANIM_SET == 3){
+            if(set == 2 || set == 3){
                 kit = ["stance_1h_1", "stance_1h_2", "stance_1h_3"];
             }
             // Dual wield slash
-            if(ANIM_SET == 3){
+            if(set == 3){
                 kit+= ["stance_1hoh_1", "stance_1hoh_2"];
             }
             
@@ -356,12 +380,16 @@ default
             // True if we should sheathe
             integer sheathe = (n == -1 && ~BFL&BFL_SHEATHED) || n == 1;
             
+			integer set = ANIM_SET;
+			if(unsheatable)
+				set = 0;
+			
             // Limit updates to change
             if(
                 (!sheathe && BFL&BFL_SHEATHED) ||
                 (sheathe && ~BFL&BFL_SHEATHED)
             ){
-                if(ANIM_SET == 0){
+                if(!set){
                     llTriggerSound("1c7916eb-8ceb-1e39-c88d-94d1eaa2deb5", .1);
                 }else{
                     list anims = ["unsheathe", "unsheathe_ub"];
@@ -373,7 +401,7 @@ default
                     BFL = BFL|BFL_SHEATHED;
                 }
                 // Update the weapons
-                if(~WFLAGS&WFLAG_UNSHEATHABLE)
+                if(!unsheatable)
                     spawnWeapons();
 					
 				raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
@@ -385,7 +413,7 @@ default
             
             if(!p)return;
             if(!sheathe){
-                llSetAnimationOverride( "Standing", l2s(anim, ANIM_SET) );
+                llSetAnimationOverride( "Standing", l2s(anim, set) );
             }
             else{
                 llResetAnimationOverride("Standing");

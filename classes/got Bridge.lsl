@@ -19,6 +19,11 @@
 #define BridgeMethod$setBook 19			// (str)token - Loads a book
 #define BridgeMethod$monstersKilled 20	// [[(str)monster, (vec)pos]...]
 
+#define BridgeMethod$addEnchant 21		// (str)token, (int)amount - Adds an enchant to your inventory. Token can be obtained from the mod panel.
+#define BridgeMethod$addThong 22		// (str)token - Adds a thong to your inventory. Token can be obtained from the mod panel. This only works if the user does not have this thong already.
+
+
+
 #define Bridge$refreshThong() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$refreshThong, [], TNN)
 #define Bridge$getToken() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$getToken, [], TNN)
 #define Bridge$dialog(text) runMethod((string)LINK_SET, "got Bridge", BridgeMethod$dialog, [text], TNN)
@@ -43,11 +48,22 @@
 #define Bridge$savePos(offhand, back, pos, rot) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$savePos, [offhand, back, pos, rot], TNN)
 #define Bridge$saveScale(scale) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$saveScale, [scale], TNN)
 #define Bridge$unlockWeapon(targ, token) runMethod((str)targ, "got Bridge", BridgeMethod$unlockWeapon, [token], TNN)
+#define Bridge$addEnchant(targ, token, quant) runMethod((str)targ, "got Bridge", BridgeMethod$addEnchant, [token, quant], TNN)
+#define Bridge$addThong(targ, token) runMethod((str)targ, "got Bridge", BridgeMethod$addThong, [token], TNN)
+
 #define Bridge$setBook(book) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$setBook, [book], TNN)
 #define Bridge$monstersKilled(targ, data) runMethod((str)targ, "got Bridge", BridgeMethod$monstersKilled, data, TNN)
 
 
-#define BridgeEvt$data_change 1			// Thong data changed
+#define BridgeEvt$data_change 1			// Thong data changed:
+/*
+	[
+		(arr)reserved_placeholder,
+		(int)level,
+		(int)gcd,
+		(int)thongFlags
+	]
+*/
 #define BridgeEvt$spells_change 2		// (arr)spells
 #define BridgeEvt$thong_initialized 3	// void - Thong data fetched
 #define BridgeEvt$userDataChanged 4		// (arr)userData, see class User.php fn.getOut
@@ -59,6 +75,8 @@
 	#define BSS$BONUS_STATS 0			// (arr)stats - Replace these with passives instead
 	#define BSS$LEVEL 1					// (int)lv
 	#define BSS$EXPP 2					// (float)perc
+	
+	
 // User data
 #define BridgeShared$userData "b"
 	#define BSUD$FLAGS 0				// int Flags
