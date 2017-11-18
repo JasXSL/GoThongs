@@ -95,7 +95,14 @@
 	
 	
 #define Bridge$userData() db3$get("got Bridge", [BridgeShared$userData])
-	
+
+// See Spell Data Readme.txt
+#define Bridge$buildSpellVisual(rezzables, complete_anim, complete_sound, particles, cast_anim, cast_sound) \
+	llList2Json(JSON_ARRAY, [rezzables, complete_anim, complete_sound, particles, cast_anim, cast_sound])
+
+#define Bridge$buildSpell(texture, wrapper, mana, cooldown, targets, range, casttime, fx, selfcastWrapper) \
+	llList2Json(JSON_ARRAY, [texture, -1, wrapper, mana, cooldown, targets, range, casttime, fx, selfcastWrapper])
+
 // It needs a separate frame for spells, an ID nr of 0-4 is appended after _BSS_
 #define BridgeSpells$name "_BSS_"
 	#define BSSAA$texture 0

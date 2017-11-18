@@ -145,7 +145,11 @@ default
 				integer sp = llListFindList(stacksIds(), [PID]); 
 				if(~sp){ 
 					STACKS = llListReplaceList(STACKS, [s], sp*STACKSTRIDE+1, sp*STACKSTRIDE+1); 
-					Status$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
+					#ifdef IS_NPC
+						Status$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
+					#else
+						Evts$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
+					#endif
 					onStackUpdate(); 
 				} 
 			} 

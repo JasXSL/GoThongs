@@ -1,4 +1,7 @@
+#define USE_EVENTS
 #include "got/_core.lsl"
+
+list PLAYERS;
 
 string group = "";
 integer assets_saved;
@@ -8,6 +11,24 @@ integer custom_saved;
 #define HUD_TABLES Level$HUD_TABLES
 #define CUSTOM_TABLES Level$CUSTOM_TABLES
 
+// (str)name, (vec)pos
+list MONSTERS_KILLED;
+
+
+onEvt(string script, integer evt, list data){
+	
+	if(script == "got Level" && evt == LevelEvt$idDied){
+		
+		key id = l2s(data, 0);
+		vector pos = prPos(id);
+		list arr = [llKey2Name(id), "<"+roundTo(pos.x,2)+","+roundTo(pos.y,2)+","+roundTo(pos.z,2)+">"];
+		MONSTERS_KILLED += [mkarr(arr)];
+		
+	}
+	else if(script == "got Level" && evt == LevelEvt$players)
+		PLAYERS = data;
+
+}
 
 timerEvent(string id, string data){
     if(id == "SAVE"){
@@ -20,6 +41,13 @@ timerEvent(string id, string data){
         Portal$save();
         multiTimer(["SAVE", "", 10, FALSE]);
     }
+	else if(id == "KILLQUE" && MONSTERS_KILLED != []){
+		runOnPlayers(targ,
+			Bridge$monstersKilled(targ, MONSTERS_KILLED);
+		)
+		MONSTERS_KILLED = [];
+	}
+	
 }
 
 list trimVecRot(list vec_or_rot, integer places, integer returnString){
@@ -87,6 +115,7 @@ default
     state_entry()
     {
 		raiseEvent(evt$SCRIPT_INIT, "");
+		multiTimer(["KILLQUE", "", 2, TRUE]);
     }
     
     timer(){

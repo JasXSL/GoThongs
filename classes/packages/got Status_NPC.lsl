@@ -587,6 +587,7 @@ default
 				
 				HP += amount;
 				if(HP<=0 && HP != pre){
+					HP = 0;
 					Status$kill(LINK_THIS);
 					return;
 				}

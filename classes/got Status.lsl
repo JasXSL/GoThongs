@@ -21,14 +21,14 @@
 #define StatusMethod$get 7				// returns [STATUS_FLAGS, FXFLAGS, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), (int)sex_flags, (int)team]
 #define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, ]
 										// See got FXCompiler for more info
-#define StatusMethod$addTextureDesc 9	// pid, texture, desc, added, duration, stacks - Adds a spell icon
-#define StatusMethod$remTextureDesc 10	// (key)texture						
+#define StatusMethod$addTextureDesc 9	// NPC only. PC uses EvtMethod$addTextureDesc | pid, texture, desc, added, duration, stacks - Adds a spell icon
+#define StatusMethod$remTextureDesc 10	// NPC only. PC uses EvtMethod$remTextureDesc | (key)texture						
 #define StatusMethod$getTextureDesc 11	// (int)pos, (key)texture - Gets info about a spell by pos
 #define StatusMethod$setSex 12			// (int)sex - 
 #define StatusMethod$outputStats 13		// NULL - Forces stats update (pc only)
 #define StatusMethod$loading 14			// (bool)loading - Sets loading flag
 #define StatusMethod$setDifficulty 15	// (int)difficulty - between 0->5
-#define StatusMethod$stacksChanged 16	// (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
+#define StatusMethod$stacksChanged 16	// NPC Only, use got Evts for PC. (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
 #define StatusMethod$coopInteract 17		// void - Coop player has interacted with you
 #define StatusMethod$toggleBossFight 18			// (bool)fight - Received from GUI, toggles boss fight on or off
 #define StatusMethod$setTeam 19					// (int)team - PC/NPC
@@ -63,7 +63,7 @@
 //#define StatusEvt$monster_targData 5		// contains same vars as StatusMethod$get returns
 #define StatusEvt$monster_init 6			// Sent once the config has loaded
 #define StatusEvt$difficulty 7				// [(int)difficulty]
-#define StatusEvt$hurt 8					// [(float)amount, (key)id] - Raised when durability is damaged
+#define StatusEvt$hurt 8					// [(float)amount, (key)id] - Raised when durability is damaged. ID only exists on NPCs
 #define StatusEvt$death_hit 9				// void - HP has reached 0 but fx$F_NO_DEATH is set
 #define StatusEvt$genitals 10				// (int)genitals - Whenever genitals have changed. _core has a definition of these flags
 #define StatusEvt$loading_level 11			// [(key)level]
@@ -71,6 +71,7 @@
 #define StatusEvt$monster_aggro 13			// [player1, player2...] - Players who have aggroed the monster in order of max aggro
 #define StatusEvt$team 14					// (int)team - Team has been updated
 #define StatusEvt$interacted 15				// (key)id - Another player has interacted with you
+#define StatusEvt$targeted_by 16			// (arr)ids - List of players targeting me. PC only
  
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC

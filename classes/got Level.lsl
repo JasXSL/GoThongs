@@ -1,25 +1,27 @@
 #define LevelMethod$update 0		// Updates scripts from HUD
 #define LevelMethod$loaded 1		// (int)HUD_loaded - 2 = Scripts from HUD loaded, 1 = Monsters, 0 = Assets Whenever the loader has finished
-#define LevelMethod$died 2			// Add one to the death counter
+//#define LevelMethod$died 2			// MOVED to got LevelData
 #define LevelMethod$load 3			// (bool)edit_mode[, (str)group=JSON_INVALID] - Edit mode will let you move monsters and stuff around. JSON_INVALID = spawn at level start. Otherwise lets you spawn by group.
-#define LevelMethod$setFinished 4	// (key)player||(int)-1[, (bool)evtOnFinished] - Set that this player has finished the level. Once all players have finished, the cell moves to the next unless evtOnFinished is set in which case it raises LevelEvt$levelCompleted. If using the latter. Send this command again with "" for user to finalize. If player is -1, then all players have finished
+#define LevelMethod$setFinished 4	// [PROXY for got LevelData]
 #define LevelMethod$spawn 5			// [!MOVED to got LevelAux, forwarded from got Level for legacy purposes]
 #define LevelMethod$loadFinished 6	// void - Level has finished loading
-
-#define LevelMethod$getScripts 7	// (int)remotePin, (arr)scripts - Gets monster scripts from the level
+//#define LevelMethod$getScripts 7	// MOVED TO got LevelData 
 #define LevelMethod$interact 8		// (key)clicker, (key)asset - Raises an interaction event
 #define LevelMethod$trigger 9		// (key)person, (key)asset, (str)data - Raises an interaction event
 #define LevelMethod$idEvent 10		// (int)event, (str)id, (arr)data - Raises a LevelEvt$id* event
-#define LevelMethod$cellData 11		// (var)questData - QuestData received from database 
-#define LevelMethod$cellDesc 12		// (str)description - Cell Description received from database
+//#define LevelMethod$cellData 11		// MOVED to got LevelData
+//#define LevelMethod$cellDesc 12		// MOVED to got LevelData
 #define LevelMethod$getObjectives 13// void - Updates the sender on quest progress
 #define LevelMethod$bindToLevel 14	// void - Bind my HUD to any level
 #define LevelMethod$getPlayers 15	// void - Forces a LevelEvt$players event to trigger
 #define LevelMethod$potionUsed 16	// name - Potion with PotionsFlag$raise_event used
-#define LevelMethod$difficulty 17	// (int)difficulty, (bool)isChallenge - Sets difficulty on the level
-#define LevelMethod$enableWipeTracker 18	// Resets and enables the wipe tracker. The wipe tracker will reset the quest if count(PLAYERS) players have died
+//#define LevelMethod$difficulty 17	// MOVED TO got LevelData
+#define LevelMethod$enableWipeTracker 18	// [PROXY FOR got LevelData]
 #define LevelMethod$playerInteract 19		// (key)interactee - Sent from the interactor
 #define LevelMethod$potionDropped 20		// (str)name - Potion with PotionsFlag$raise_drop_event has been dropped
+
+#define LevelMethod$raiseEvent 21			// (int)event, (var)param1, (var)param2... - Internal only
+
 
 #define LevelMethod$despawn 0x71771E5	// Deletes a level
 
@@ -69,41 +71,28 @@
 #define Level$loadDebug(group) runOmniMethod("got Level", LevelMethod$load, [1,group], TNN)
 #define Level$loadSharp(group) runOmniMethod("got Level", LevelMethod$load, [0,group], TNN)
 #define Level$targLoadSharp(targ, group) runMethod((str)targ, "got Level", LevelMethod$load, [0,group], TNN)
-
 #define Level$intLoadSharp(group) runMethod((string)LINK_THIS, "got Level", LevelMethod$load, [0,group], TNN)
-
 #define Level$loadFinished() runMethod((string)LINK_THIS, "got Level", LevelMethod$loadFinished, [], TNN)
-
-
 #define Level$despawn() runOmniMethod("got Level", LevelMethod$despawn, [], TNN)
-#define Level$getScripts(targ, pin, scripts) runMethod((str)targ, "got Level", LevelMethod$getScripts, [pin, scripts], TNN)
 #define Level$trigger(user, data) runOmniMethod("got Level", LevelMethod$trigger, [user, data], TNN)
 #define Level$idEvent(evt, id, data, spawnround) runOmniMethod("got Level", LevelMethod$idEvent, [evt, id, data, spawnround], TNN)
 #define Level$loaded(targ, isHUD) runMethod((str)targ, "got Level", LevelMethod$loaded, [isHUD], TNN)
 #define Level$loadPerc(targ, id, perc) runMethod(targ, "got Level", LevelMethod$loadPerc, [id, perc], TNN)
-
-// These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}
-#define Level$died() runOnPlayers(targ, runOmniMethodOn(targ, "got Level", LevelMethod$died, [], TNN);)
-#define Level$cellData(data) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellData, [data], TNN)
-#define Level$cellDesc(desc) runMethod(ROOT_LEVEL, "got Level", LevelMethod$cellDesc, [desc], TNN)
-#define Level$difficulty(difficulty, challenge) runMethod(ROOT_LEVEL, "got Level", LevelMethod$difficulty, [difficulty, challenge], TNN)
-#define Level$enableWipeTracker() runMethod((str)LINK_THIS, "got Level", LevelMethod$enableWipeTracker, [], TNN)
-
-#define Level$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got Level", LevelMethod$setFinished, [player, overrideFinish], TNN)
+// ??? These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}
 #define Level$getObjectives() runMethod(ROOT_LEVEL, "got Level", LevelMethod$getObjectives, [], TNN)
 #define Level$bind(player) runLimitMethod(player, "got Level", LevelMethod$bindToLevel, [], TNN, 100)
 #define Level$getPlayers() runMethod((str)LINK_THIS, "got Level", LevelMethod$getPlayers, [], TNN)
 #define Level$potionUsed(name) runMethod(ROOT_LEVEL, "got Level", LevelMethod$potionUsed, [name], TNN)
 #define Level$potionDropped(name) runMethod(ROOT_LEVEL, "got Level", LevelMethod$potionDropped, [name], TNN)
-
 #define Level$playerHUDs(huds) runOmniMethod("got Level", LevelMethod$playerHUDs, huds, TNN)
 #define Level$playerInteract(level, victim) runMethod(level, "got Level", LevelMethod$playerInteract, [victim], TNN)
-
 // Moved functions
 #define Level$spawnAsset(asset) #error Level$spawn* has moved to LevelAux$spawn* You can just replace Level$ with LevelAux$
 #define Level$spawnNPC(asset) Level$spawnAsset(a)
 #define Level$spawnLive(asset, pos, rot) Level$spawnAsset(a)
 #define Level$spawnLiveTarg(targ, asset, pos, rot) Level$spawnAsset(a)
+#define Level$raiseEvent(evt, args) runMethod((str)LINK_THIS, "got Level", LevelMethod$raiseEvent, [evt]+args, TNN)
+
 
 
 

@@ -112,7 +112,8 @@ list find(list names, list senders, list tags, list pids, list flags, integer ve
 	list t = llJson2List(pTags(slice));
 	integer found;
 	for(x = 0; x<llGetListLength(tags) && llList2Integer(tags,0) != 0 && !found; x++){
-		if(~llListFindList(tags, llList2List(t, x, x))){
+		//if(~llListFindList(tags, llList2List(t, x, x))){
+		if( ~llListFindList(t, llList2List(tags, x,x)) ){
 			x = 9001;
 		}
 	}
@@ -518,6 +519,12 @@ default
 					#endif
 					
 					
+
+					// Raise event
+					raiseEvent(FXEvt$wrapperSuccess, mkarr(([
+						id,
+						(flags&WF_DETRIMENTAL) > 0
+					])));
 					
 					// Data to send to the FXCompiler
 					list send = [];
@@ -686,6 +693,7 @@ default
 			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
 			list find = llListSort(find(names, senders, tags, pids, flags, TRUE), 1, FALSE);	
+
 			// Jump since we can't have continues
 			@delContinue;
 			while(find != [] && amount!=0){

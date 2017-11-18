@@ -77,7 +77,7 @@ timerEvent(string id, string data){
 				if(fromHUD)
 					Remoteloader$load(mkarr(fromHUD), pin, 2);
 				if(fromLevel){
-					Level$getScripts(requester, pin, mkarr(fromLevel));
+					gotLevelData$getScripts(requester, pin, mkarr(fromLevel));
 				}
 			}
 			multiTimer([id, "", 60, FALSE]);
@@ -367,7 +367,7 @@ default
 									Remoteloader$load(mkarr(v), pin, 2);
 								}
 								else
-									Level$getScripts(requester, pin, mkarr(v));
+									gotLevelData$getScripts(requester, pin, mkarr(v));
 							}
 							// Remove this from data that is sent out, since we only need to send monster/status specific stuff
 							ini = llDeleteSubList(ini, i, i);

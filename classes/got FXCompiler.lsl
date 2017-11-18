@@ -148,6 +148,18 @@ recacheFlags(){
 		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9)); \
 	} \
 
+	
+// Texture desc, npc/pc specific
+#ifdef IS_NPC
+	#define ATD Status$addTextureDesc(pid, llList2String(fx, 1), llList2String(fx, 2), timesnap, (int)(duration*10), getStacks(pid, TRUE));
+	#define RTD Status$remTextureDesc(pid);
+#else
+	#define ATD Evts$addTextureDesc(pid, llList2String(fx, 1), llList2String(fx, 2), timesnap, (int)(duration*10), getStacks(pid, TRUE));
+	#define RTD Evts$remTextureDesc(pid);
+#endif
+
+
+
 
 // These are ADD tasks that are shared
 #define dumpFxAddsShared() \
@@ -166,7 +178,7 @@ recacheFlags(){
     else if(t == fx$SPELL_DMG_TAKEN_MOD) \
         SPELL_DMG_TAKEN_MOD = manageList(FALSE, SPELL_DMG_TAKEN_MOD, [pid,llList2String(fx,1), llList2Float(fx, 2)]); \
 	else if(t == fx$ICON){ \
-        Status$addTextureDesc(pid, llList2String(fx, 1), llList2String(fx, 2), timesnap, (int)(duration*10), getStacks(pid, TRUE)); \
+		ATD \
 	}else if(t == fx$DODGE) \
         DODGE_ADD = manageList(FALSE, DODGE_ADD, [pid,llList2Float(fx, 1)]); \
 	else if(t == fx$CASTTIME_MULTI){ \
@@ -199,7 +211,7 @@ recacheFlags(){
     else if(t == fx$SPELL_DMG_TAKEN_MOD) \
         SPELL_DMG_TAKEN_MOD = manageList(TRUE, SPELL_DMG_TAKEN_MOD, [pid, 0, 0]); \
     else if(t == fx$ICON){ \
-        Status$remTextureDesc(pid); \
+        RTD \
 	}\
     else if(t == fx$DODGE) \
         DODGE_ADD = manageList(TRUE, DODGE_ADD, [pid, 0]); \

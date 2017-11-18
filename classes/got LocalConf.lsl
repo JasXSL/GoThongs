@@ -17,7 +17,7 @@
 #define LocalConf$stdInteract(targ, sender, data) runMethod(targ, "got LocalConf", LocalConfMethod$stdInteract, [sender]+data, TNN)
 // Useful for monster scripts that aren't named LocalConf
 #define LocalConf$stdInteractByScript(targ, script, sender, data) runMethod(targ, script, LocalConfMethod$stdInteract, [sender]+data, TNN)
-#define LocalConf$generic(targ, params) runMethod(targ, "got LocalConf", LocalConfMethod$generic, params, TNN)
+#define LocalConf$generic(targ, params) runMethod((str)(targ), "got LocalConf", LocalConfMethod$generic, params, TNN)
 
 
 #define LocalConfEvt$iniData 1		// Separate from evt$SCRIPT_INIT in that this is raised on demand and contains script custom data

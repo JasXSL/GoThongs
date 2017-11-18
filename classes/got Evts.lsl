@@ -5,6 +5,11 @@
 	#define EvtsEvt$QTE$BUTTON 1				// (int)success - QTE button was hit. Success = proper button was hit
 	#define EvtsEvt$QTE$END 2					// (int)success - QTE has ended. Success = all buttons were hit
 	
+#define EvtsMethod$addTextureDesc 3	// pid, texture, desc, added, duration, stacks - Adds a spell icon
+#define EvtsMethod$remTextureDesc 4	// (key)texture						
+#define EvtsMethod$getTextureDesc 5	// (int)pos, (key)texture - Gets info about a spell by pos
+#define EvtsMethod$stacksChanged 6	// (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
+	
 #define EvtsEvt$QTE 1						// (int)numButtons - Quick time event, 0 for off
 
 	
@@ -13,3 +18,7 @@
 #define Evts$cycleEnemy() runMethod((string)LINK_SET, "got Evts", EvtsMethod$cycleEnemy, [], TNN)
 #define Evt$startQuicktimeEvent(targ, numButtons, preDelay, callback) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [numButtons, preDelay], callback)
 
+#define Evts$addTextureDesc(pid, texture, desc, added, duration, stacks) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks], TNN)
+#define Evts$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
+#define Evts$getTextureDesc(pid) runMethod((str)LINK_ROOT, "got Evts", EvtsMethod$getTextureDesc, [pid], TNN)
+#define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)

@@ -42,9 +42,6 @@ integer TEAM = TEAM_PC; 				// This is team out
 // Constant
 integer THONG_LEVEL = 1;
 
-#define SPSTRIDE 6
-list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
-
 // Effects
 integer STATUS_FLAGS = 0; 
 integer STATUS_FLAGS_PRE = 0;
@@ -324,7 +321,7 @@ onDeath(){
 	STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
 	BFL = BFL&~BFL_AVAILABLE_BREAKFREE;
 	
-	Level$died();
+	gotLevelData$died();
 	
 	outputStats();
 	raiseEvent(StatusEvt$dead, 1);
@@ -576,17 +573,6 @@ timerEvent(string id, string data){
 			outputStats();
 		}
 		
-    }else if(id == "OP"){
-		integer i; list out;
-		for(i=0; i<llGetListLength(SPELL_ICONS); i+=SPSTRIDE){
-			out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
-		}
-		string s = llDumpList2String(out,",");
-		GUI$setMySpellTextures(out);
-		list p = TARGETING;
-		list_shift_each(p, val, 
-			GUI$setSpellTextures(val, s);
-		)
     }
 	else if(id == TIMER_BREAKFREE){
 		// Show breakfree button
@@ -693,45 +679,8 @@ default
     }
     
     if(id == ""){
-        if(METHOD == StatusMethod$addTextureDesc){
-			// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
-            SPELL_ICONS += [
-				// PID
-				(integer)method_arg(0), 
-				// Texture
-				(key)method_arg(1), 
-				// Desc
-				(str)method_arg(2), 
-				// Added
-				(int)method_arg(3), 
-				// Duration
-				(int)method_arg(4), 
-				// Stacks
-				(int)method_arg(5)
-			];
-			multiTimer(["OP", "", .1, FALSE]);
-        }
-        else if(METHOD == StatusMethod$remTextureDesc){
-            integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if(pos == -1)return;
-			
-            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
-            multiTimer(["OP", "", .1, FALSE]);
-        }
-        else if(METHOD == StatusMethod$setSex){
-            GENITAL_FLAGS = (integer)method_arg(0);
-			raiseEvent(StatusEvt$genitals, GENITAL_FLAGS);
-        }
-		else if(METHOD == StatusMethod$stacksChanged){
-			integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if(pos == -1)return;
-			
-			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
-			multiTimer(["OP", "", .1, FALSE]);
-		}
-		else if(METHOD == StatusMethod$setDifficulty){
+        
+		if(METHOD == StatusMethod$setDifficulty){
 			
 			integer pre = DIFFICULTY;
 			DIFFICULTY = llList2Integer(PARAMS, 0);
@@ -753,6 +702,10 @@ default
 			}
 		
 		}
+		else if(METHOD == StatusMethod$setSex){
+            GENITAL_FLAGS = (integer)method_arg(0);
+			raiseEvent(StatusEvt$genitals, GENITAL_FLAGS);
+        }
     }
 
 	if(METHOD == StatusMethod$debug && method$byOwner){
@@ -794,13 +747,19 @@ default
 	}
 	
     else if(METHOD == StatusMethod$setTargeting){
-		integer on = llList2Integer(PARAMS, 0);
-		integer pos = llListFindList(TARGETING, [(str)id]);
+	
+		integer on = llList2Integer(PARAMS, 0); 				// Target or untarget
+		integer pos = llListFindList(TARGETING, [(str)id]);		// See if already targeting
+		
+		// Not targeting already, add
 		if(on && pos == -1 && llListFindList(PLAYERS, [(str)id]) == -1){
 			TARGETING += (str)id;
-		}else if(!on && ~pos){
+		}
+		// Targeting, remove
+		else if(!on && ~pos){
 			TARGETING = llDeleteSubList(TARGETING, pos, pos);
 		}
+		// Trim out owner
 		integer i;
 		for(i=0; i<llGetListLength(TARGETING) && TARGETING != []; i++){
 			if(llKey2Name(llList2String(TARGETING, i)) == ""){
@@ -808,8 +767,9 @@ default
 				i--;
 			}
 		}
+		// Immediately send stats
 		outputStats();
-		multiTimer(["OP", "", .2, FALSE]);
+		raiseEvent(StatusEvt$targeted_by, mkarr(TARGETING));
 	}
     
     else if(
@@ -853,15 +813,6 @@ default
     else if(METHOD == StatusMethod$spellModifiers){
         SPELL_DMG_TAKEN_MOD = llJson2List(method_arg(0));
     }
-    else if(METHOD == StatusMethod$getTextureDesc){
-        if(id == "")id = llGetOwner();
-		
-		integer pid = (integer)method_arg(0);
-        integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-        if(pos == -1)return;
-		
-		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
-    }
     else if(METHOD == StatusMethod$outputStats)
         outputStats();
     else if(METHOD == StatusMethod$loading){
@@ -899,6 +850,10 @@ default
 		TEAM_DEFAULT = llList2Integer(PARAMS, 0);
 		outputStats();
 	} 
+	
+	else if(METHOD == StatusMethod$getTextureDesc){
+		Evts$getTextureDesc((int)method_arg(0));
+    }
 	
 	if(METHOD == StatusMethod$coopInteract)
 		raiseEvent(StatusEvt$interacted, (str)id);

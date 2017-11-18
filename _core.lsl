@@ -98,6 +98,7 @@
 #include "./classes/got BuffVis.lsl"
 #include "./classes/got BuffSpawn.lsl"
 #include "./classes/got SpellVis.lsl"
+#include "./classes/got LevelData.lsl"
 
 
 

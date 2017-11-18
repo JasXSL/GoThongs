@@ -45,6 +45,7 @@ default
 
 // Spawn the level, this goes first as it's fucking memory intensive
     if(METHOD == LevelLoaderMethod$load && method$internal){
+	
         integer debug = (integer)method_arg(0);
 		
 		list groups = [method_arg(1)];
@@ -76,6 +77,7 @@ default
 				string group = llList2String(groups, pos);
 				
 				if(~pos){ 
+				
 					spawned++;
 					string chunk = llList2Json(JSON_ARRAY, [
 						llList2String(val, 0), 
@@ -93,6 +95,7 @@ default
 					}
 					// Add the chunk
 					out+= chunk;
+					
 				}
 			)
 		)
@@ -161,10 +164,9 @@ default
 		Spawner$spawnThese(LINK_THIS, out);
 
 		BFL = BFL|BFL_HAS_ASSETS;
-		
-		
 
 		out = [];
+		
     }
 	
 	

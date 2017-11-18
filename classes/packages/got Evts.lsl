@@ -16,6 +16,11 @@ key cache_targ;
 
 integer P_BUTTONS;
 
+#define SPSTRIDE 6
+list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
+
+
+list TARGETED_BY;	// Players currently actively targeting you
 
 #define descIsProper(desc) llGetSubString(desc, 0, 2) == "$M$" && (int)llGetSubString(desc, 3, 3) != TEAM
 
@@ -98,6 +103,10 @@ onEvt(string script, integer evt, list data){
 			qteButtonTouched(pos);
 		}
 	}
+	else if(evt == StatusEvt$targeted_by && script == "got Status"){
+		TARGETED_BY = data;
+		multiTimer(["OP", "", .2, FALSE]);
+	}
 }
 
 list QTE_SENDER_DATA;			// (key)id||(int)link, (str)scriptName, (str)custom
@@ -174,11 +183,25 @@ onQteEnd(integer success){
 	QTE_SENDER_DATA = [];
 }
 
+
 timerEvent(string id, string data){
 	if(id == "CACHE")
 		BFL = BFL&~BFL_RECENT_CACHE;
 	else if(id == "QTE")
 		toggleQTE(QTE_STAGES);
+	else if(id == "OP"){
+		integer i; list out;
+		for(i=0; i<llGetListLength(SPELL_ICONS) && i/SPSTRIDE < 8; i+=SPSTRIDE){
+			out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
+		}
+		string s = llDumpList2String(out,",");
+		GUI$setMySpellTextures(out);
+		list p = TARGETED_BY;
+		list_shift_each(p, val, 
+			GUI$setSpellTextures(val, s);
+		)
+    }
+	
 }
 
 default
@@ -254,6 +277,7 @@ default
     }
     
     if(method$internal){
+	
         if(METHOD == EvtsMethod$cycleEnemy){
 			
 			
@@ -282,9 +306,47 @@ default
 			}
 			multiTimer(["CACHE", "", 4, FALSE]);
 		}
+		
+		else if(METHOD == EvtsMethod$addTextureDesc){
+			// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
+            SPELL_ICONS += [
+				// PID
+				(integer)method_arg(0), 
+				// Texture
+				(key)method_arg(1), 
+				// Desc
+				(str)method_arg(2), 
+				// Added
+				(int)method_arg(3), 
+				// Duration
+				(int)method_arg(4), 
+				// Stacks
+				(int)method_arg(5)
+			];
+			multiTimer(["OP", "", .1, FALSE]);
+        }
+        else if(METHOD == EvtsMethod$remTextureDesc){
+            integer pid = (integer)method_arg(0);
+            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if(pos == -1)return;
+			
+            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
+            multiTimer(["OP", "", .1, FALSE]);
+        }
+		
+		else if(METHOD == EvtsMethod$stacksChanged){
+			
+			integer pid = (integer)method_arg(0);
+            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if(pos == -1)return;
+			
+			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
+			multiTimer(["OP", "", .1, FALSE]);
+		}
+		
     }
 	
-	else if(METHOD == EvtsMethod$startQuicktimeEvent){
+	if(METHOD == EvtsMethod$startQuicktimeEvent){
 		QTE_STAGES = l2i(PARAMS, 0);
 		
 		// Tells any active QTE sender that it has ended, useful if QTE ended by someone other than the one that initiated it
@@ -310,6 +372,16 @@ default
 		else
 			toggleQTE(QTE_STAGES);
 	}
+	
+	else if(METHOD == EvtsMethod$getTextureDesc){
+        if(id == "")id = llGetOwner();
+		
+		integer pid = (integer)method_arg(0);
+        integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+        if(pos == -1)return;
+		
+		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
+    }
 
     // Public code can be put here
 
