@@ -21,14 +21,17 @@ list fxspecular = [];
 
 // Sets default colors
 updateDefaults(){
+
     color = DEFAULT_COLOR;
     list specular = DEFAULT_SPECULAR;
     list glow = [PRIM_GLOW, ALL_SIDES, DEFAULT_GLOW];
     
     if(fxcolor != ZERO_VECTOR){
+	
         color = fxcolor;
         //specular = llListReplaceList(specular, ["59facb66-4a72-40a2-815c-7d9b42c56f60"], 2, 2);
         glow = llListReplaceList(glow, [fxglow], -1, -1);
+		
     }
 	
 	if(fxspecular != []){
@@ -41,6 +44,7 @@ updateDefaults(){
     list out;
     list all = jiggles;
     list_shift_each(all, val, 
+	
         out+=([PRIM_LINK_TARGET, (integer)val]);
         out+=([PRIM_COLOR, ALL_SIDES, color]);
         if((integer)val != root)out+=0;
@@ -48,14 +52,29 @@ updateDefaults(){
             out+=1;
         }
         out+=specular+glow;
+		
     )
+	all = colorMe;
+	
+	list_shift_each(all, val, 
+	
+        out+=([PRIM_LINK_TARGET, (integer)val]);
+        out+=([PRIM_COLOR, ALL_SIDES, color]);
+        out+=1;
+        out+=specular+glow;
+		
+    )
+	
     llSetLinkPrimitiveParamsFast(0, out);
 	debugUncommon("Update defaults");
+	
 }
 
 // Hides all jiggles except root
 restore(){ 
-	if(BFL&BFL_DEAD)return;
+
+	if(BFL&BFL_DEAD)
+		return;
 	
     list set = [];
     integer i;
@@ -63,14 +82,21 @@ restore(){
         if(llList2Integer(jiggles,i) != root)
             set+=[linkAlpha(llList2Integer(jiggles,i), 0, ALL_SIDES)];
     }
-    if(set)llSetLinkPrimitiveParamsFast(0, set); 
-	
+    
+	for( i=0; i<count(colorMe); ++i)
+		set+=[linkAlpha(llList2Integer(colorMe,i), 1, ALL_SIDES)];
+		
+	if(set)
+		llSetLinkPrimitiveParamsFast(0, set); 
+		
 	debugUncommon("Restore");
     updateDefaults();
+	
 }
 
 
 takeHit(vector col){
+
 	if(BFL&BFL_DEAD)return;
     
     hit = col;
@@ -94,6 +120,7 @@ takeHit(vector col){
 
 
 timerEvent(string id, string data){
+
     if(id == "A"){
         float d = (float)data;
         d-=.1;
@@ -109,9 +136,10 @@ timerEvent(string id, string data){
 		llLinkParticleSystem((integer)llGetSubString(id, 2, -1), []);
 	}
 	
-	else if(id == "P_2"){
+	else if(id == "P_2")
 		setOnInvolved([PRIM_COLOR, ALL_SIDES, <1,1,1>, 0]);
-	}
+	
+	
 }
 
 onEvt(string script, integer evt, list data){
@@ -124,31 +152,41 @@ onEvt(string script, integer evt, list data){
 
 setColorOnInvolved(vector col){
 	
-	integer i; list out;
-	for(i=0; i<llGetListLength(jiggles); i++){
+	integer i; list out; 
+	list all = jiggles+colorMe;
+	for(i=0; i<llGetListLength(all); i++){
 		
-		integer link = llList2Integer(jiggles, i);
+		integer link = llList2Integer(all, i);
 		llSetLinkColor(link, col, ALL_SIDES);
+		
 	}
 	//llSetLinkPrimitiveParamsFast(0, out);
 }
 
 setOnInvolved(list params){ // Also sets on prims that aren't involved in jiggling
+
 	// Sets primitive params on all the main prims
 	integer i; list out;
-	list all = jiggles;
-	for(i=0; i<llGetListLength(all); i++)out+=[PRIM_LINK_TARGET, llList2Integer(all, i)]+params;
+	list all = jiggles+colorMe;
+	for(i=0; i<llGetListLength(all); i++)
+		out+=[PRIM_LINK_TARGET, llList2Integer(all, i)]+params;
 	llSetLinkPrimitiveParamsFast(0, out);
 	debugUncommon("Setting on involved: "+mkarr(params));
+	
 }
 
 toggleOther(integer on){
+	
 	integer i;
-	for(i=0; i<llGetListLength(other); i++)llSetLinkAlpha(llList2Integer(other, i), on, ALL_SIDES);
+	for(i=0; i<llGetListLength(other); i++)
+		llSetLinkAlpha(llList2Integer(other, i), on, ALL_SIDES);
+		
 }
 
 integer root;
 list jiggles;
+list colorMe;
+
 list other; // Don't animate, but toggle on rape
 default
 {
@@ -158,6 +196,7 @@ default
     
     state_entry()
     {
+	
 		llStopSound();
         llListen(239186, "", llGetOwner(), "");
         initiateListen();
@@ -180,15 +219,23 @@ default
         }
         
         links_each(nr, name, 
+		
 			string s = (string)llGetLinkPrimitiveParams(nr, [PRIM_DESC]);
 			string m = llToLower(llGetSubString(name, 0, 3));
-            if(m == "main" || s == "colorme"){ 
+			
+            if( m == "main" || s == "colorme" ){ 
+			
                 jiggles += nr;
-                if((integer)llGetSubString(name, -1, -1) == 1 && m == "main"){
+                if((integer)llGetSubString(name, -1, -1) == 1 && m == "main")
                     root = nr;
-                }
+                
             }
-			else if(name != "DISREGARD" && nr>1)other+=nr;
+			else if( llToLower(name) == "color_not_frame" )
+				colorMe += nr;
+			
+			else if(name != "DISREGARD" && nr>1)
+				other+=nr;
+			
 			
         )
         

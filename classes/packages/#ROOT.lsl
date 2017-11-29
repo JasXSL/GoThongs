@@ -130,8 +130,11 @@ integer setTarget(key t, key icon, integer force, integer team){
 }
 
 list getPlayers(){
-	if(BFL&BFL_WILDCARD)return ["*"];
+
+	if( BFL&BFL_WILDCARD )
+		return ["*"];
 	return PLAYERS+ADDITIONAL;
+	
 }
 
 #define savePlayers() raiseEvent(RootEvt$players, mkarr(getPlayers()))
@@ -194,51 +197,71 @@ default
     
     // Touch handlers
     touch_start(integer total){
-        if(llDetectedKey(0) != llGetOwner())return;
-        string ln = llGetLinkName(llDetectedLinkNumber(0));
-        if(ln == "ROOT" || (ln == "BROWSER" && llDetectedTouchFace(0) == 3) || ln == "BROWSERBG"){
+	
+        if( llDetectedKey(0) != llGetOwner() )
+			return;
+        
+		string ln = llGetLinkName(llDetectedLinkNumber(0));
+        if(
+			ln == "ROOT" || 
+			( ln == "BROWSER" && llDetectedTouchFace(0) == 3 ) || 
+			ln == "BROWSERBG"
+		){
+		
             SharedMedia$toggleBrowser("");
             return;
+			
         }
-        else if(ln == "BOOKBG")
+        else if( ln == "BOOKBG" )
             SharedMedia$setBook("");
         
 		// Player clicked
-        else if(llGetSubString(ln, 0,1) == "OP"){
+        else if( llGetSubString(ln, 0,1) == "OP" ){
+		
 			integer n = (int)llGetSubString(ln, 2, -1);
-			if(llGetSubString(ln, 2, 2) == "B")
+			if( llGetSubString(ln, 2, 2) == "B" )
 				n = (int)llGetSubString(ln, 3, -1);
-				
+			
 			--n;
 			
-			if(n >= count(PLAYERS))
+			if( n >= count(PLAYERS) )
 				return;
 			
 			setTarget(l2s(PLAYERS, n), l2s(PLAYER_TEXTURES, n), TRUE, -1);    // Add player default texture
+			
 		}
 		
 		// Target frame
-        else if(ln == "FRB1" || ln == "FR1")setTarget("", "", TRUE, 0);
+        else if(
+			ln == "FRB1" || 
+			ln == "FR1"
+		)setTarget("", "", TRUE, 0);
 		
 		// Boss
 		else if(llGetSubString(ln, 0,4) == "BOSS_"){
+		
 			string boss = l2s(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_DESC]), 0);
-			if(boss == llGetKey())
+			if( boss == llGetKey() )
 				boss = "";
+				
 			integer pos = llListFindList(PLAYERS, [boss]);
-			if(pos == -1)
+			if( pos == -1 )
 				pos = llListFindList(COOP_HUDS, [(key)boss]);
 
-			if(~pos)
+			if( ~pos )
 				setTarget(l2s(PLAYERS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
 			else
 				Status$monster_attemptTarget(boss, TRUE);
+				
 		}
 			
 		
 		// Scroll
-		else if(ln == "PROGRESS")Level$getObjectives();
-        else if(llGetSubString(ln,0,1) == "FX"){
+		else if( ln == "PROGRESS" )
+			Level$getObjectives();
+        
+		else if( llGetSubString(ln,0,1) == "FX" ){
+		
 			integer button = (int)llGetSubString(ln, 2, -1);
 		
 			// The description contains the spell PID
@@ -386,9 +409,11 @@ default
     
     // ByOwner means the method was run by the owner of the prim
     if(method$byOwner){
-		if(METHOD == RootMethod$reset)
+	
+		if( METHOD == RootMethod$reset )
 			llResetScript();
-		else if(METHOD == RootMethod$manageAdditionalPlayer){
+		else if( METHOD == RootMethod$manageAdditionalPlayer ){
+		
 			integer rem = llList2Integer(PARAMS, 1);
 			string targ = method_arg(0);
 			integer pos = llListFindList(ADDITIONAL, [targ]);
@@ -398,17 +423,25 @@ default
 			)return;
 			
 			if(rem){
+			
 				ADDITIONAL = llDeleteSubList(ADDITIONAL, pos, pos);
-				if(targ == "*")BFL = BFL&~BFL_WILDCARD;
+				if( targ == "*" )
+					BFL = BFL&~BFL_WILDCARD;
+					
 			}
 			else{
+			
 				ADDITIONAL += targ;
 				if(targ == "*"){
+				
 					BFL = BFL|BFL_WILDCARD;
 					llDialog(llGetOwner(), "!! WARNING !!\nA script in the object "+llKey2Name(id)+" owned by you has enabled free for all mode.\nThis will allow ANYONE to run methods on your HUD.\nIf you didn't request this, please detach your HUD and remove the object: "+llKey2Name(id), [], 13298);
+					
 				}
+				
 			}
 			savePlayers();
+			
 		}
 		else if(METHOD == RootMethod$debugHuds)
 			qd(mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0)));
@@ -444,26 +477,33 @@ default
         setTarget(method_arg(0), method_arg(1), l2i(PARAMS, 2), l2i(PARAMS, 3));
     }
 	else if(METHOD == RootMethod$setLevel){
+	
 		key pre = ROOT_LEVEL;
 		ROOT_LEVEL = id;
 		list split = llJson2List(prDesc(ROOT_LEVEL));
 		integer isChallenge;
+		
 		list_shift_each(split, val,
+		
 			list d = llJson2List(val);
 			if(l2i(d, 0) == LevelDesc$difficulty)
 				isChallenge = l2i(d, 2);
+				
 		)
 		
 		raiseEvent(RootEvt$level, mkarr(([ROOT_LEVEL, isChallenge])));
 			
 		if(pre != ROOT_LEVEL && !method$byOwner){
+		
 			qd(xme(XLS(([
 				XLS_EN, "You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!"
 			]))));
 			return;
+			
 		}
 		CB_DATA = getPlayers();
 		sendHUDs();
+		
 	}
 	else if(METHOD == RootMethod$refreshTarget){
 		// Refresh active target

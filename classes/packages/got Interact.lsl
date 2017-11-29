@@ -26,81 +26,114 @@ list PLAYER_HUDS;
 key level = "";
 integer CROSSHAIR;
 integer onInteract(key obj, string task, list params){
-    if(task == "book"){
+
+    if( task == "book" ){
+	
         Bridge$setBook(llList2String(params, 0));
 		SharedMedia$setBook(llList2String(params, 0));
 		llPlaySound("01df6c43-069f-e7c8-6133-f1e706e2b672", .5);
+		
     }
-    else if(task == "STDIN"){
+    else if( task == "STDIN" ){
+	
 		// Real key is the key of the link that was interacted with, usually the same key as obj but might be a sub-link when ROOT is used
         string t = obj;
 		if(l2s(params, 0) == "ROOT"){
 			t = prRoot(obj);
 		}
 		LocalConf$stdInteract(t, llGetOwner(), ([real_key, mkarr(params)]));	
+		
 	}
-    else if(task == "LVIN"){
+    else if( task == "LVIN" ){
+		
 		list players = additionalAllow+llGetOwner();
 		integer i;
 		for(i=0; i<count(players); ++i){
 			runOmniMethodOn(l2s(players, i), "got Level", LevelMethod$interact, ([obj, mkarr(params)]), TNN);
 		}
+		
     }
-	else if(task == "CLEAR_CAM"){
+	else if( task == "CLEAR_CAM" )
 		RLV$clearCamera((str)LINK_ROOT);
-	}
 	
-    else if(task == "CUSTOM"){
-        Status$coopInteract(obj);
+    else if( task == "CUSTOM" ){
+        
+		Status$coopInteract(obj);
 		Level$playerInteract(level, obj);
+		
     }
-	
     else 
 		return FALSE;
 	return TRUE;
+	
 }
 
 
-
+string CACHE_TEXT;
 onDesc(key obj, string text){
+
+
+		
 	// CUSTOM works through additionalAllow
     if(text == "CUSTOM"){
-		integer pos = llListFindList(additionalAllow, [(str)obj]);
-		if(pos == -1)
+	
+		integer pos = llListFindList(additionalAllow, [(str)obj]) || l2s(additionalAllow, 0) == "*";
+		if( pos == -1 )
 			obj = "";
 		else{
+		
 			text = llGetDisplayName(obj);
 			parseDesc(l2k(PLAYER_HUDS, pos), resources, status, fx, sex, team, monsterflags);
-			if(status&StatusFlag$coopBreakfree)
+			if( status&StatusFlag$coopBreakfree )
 				text = "Break Free";
+			
 		}
+		
 	}
     
-    if(obj == "_PRIMSWIM_CLIMB_"){
-        obj = llGetKey();
+    if( obj == "_PRIMSWIM_CLIMB_" ){
+        
+		obj = llGetKey();
         text = "[E] Climb Out";
-    }
-    else{
-		text = "[E] "+text;
-	}
-	
-    if(obj){
-        llSetLinkPrimitiveParamsFast(CROSSHAIR, [PRIM_SIZE, <0.05, 0.05, 0.05>, PRIM_TEXT, text, <1,1,1>, 1, PRIM_ROT_LOCAL, llEuler2Rot(<0,-PI_BY_TWO,0>)]);
+		
     }
     else
+		text = "[E] "+text;
+	
+	if( text == CACHE_TEXT )
+		return;
+	
+    if( obj )
+        llSetLinkPrimitiveParamsFast(CROSSHAIR, [PRIM_SIZE, <0.05, 0.05, 0.05>, PRIM_TEXT, text, <1,1,1>, 1, PRIM_ROT_LOCAL, llEuler2Rot(<0,-PI_BY_TWO,0>)]);
+    
+    else
         llSetLinkPrimitiveParamsFast(CROSSHAIR, [PRIM_SIZE, ZERO_VECTOR, PRIM_TEXT, "", ZERO_VECTOR, 0, PRIM_ROT_LOCAL, ZERO_ROTATION]);
+	
+	
 }
 
 evt(string script, integer evt, list data){
-    if(script == "#ROOT"){
-        if(evt == RootEvt$level)level = llList2String(data,0);
-        else if(evt == RootEvt$players){
+
+    if( script == "#ROOT" ){
+	
+        if( evt == RootEvt$level )
+			level = llList2String(data,0);
+		
+        else if( evt == RootEvt$players ){
+		
+			ALLOW_ALL_AGENTS = FALSE;
             additionalAllow = data;
-            if(llList2Key(additionalAllow, 0) == llGetOwner())additionalAllow = llDeleteSubList(additionalAllow,0,0);
+            if(llList2Key(additionalAllow, 0) == llGetOwner())
+				additionalAllow = llDeleteSubList(additionalAllow,0,0);
+			else if( l2s(additionalAllow, 0) == "*" )
+				ALLOW_ALL_AGENTS = TRUE;
+			
         }
-		else if(evt == RootEvt$coop_hud)
+		else if( evt == RootEvt$coop_hud )
 			PLAYER_HUDS = data;
+			
     }
+	
 }
 
 integer preInteract(key obj){

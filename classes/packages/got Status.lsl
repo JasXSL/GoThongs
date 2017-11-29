@@ -92,9 +92,8 @@ list TARGETING;
 integer DIFFICULTY = 1;	// 
 #define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.7)+DIFFICULTY*3)*0.1)-0.4)
 
-
-        
 toggleClothes(){
+
 	// Show genitals
 	integer show = (STATUS_FLAGS&(StatusFlag$dead|StatusFlag$raped)) || FXFLAGS&fx$F_SHOW_GENITALS;
 	
@@ -105,13 +104,16 @@ toggleClothes(){
 			TRUE, 							// Hide thong
 			!(FXFLAGS&fx$F_SHOW_GENITALS)	// But don't show particles or sound if this was an FX call
 		);
-    }else if(!show && BFL&BFL_NAKED){
+    }
+	
+	else if(!show && BFL&BFL_NAKED){
 		BFL = BFL&~BFL_NAKED;
         llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed");
 		llSleep(1);
         llRegionSayTo(llGetOwner(), 1, "jasx.togglefolder Dressed/Groin, 0");
 		ThongMan$dead(FALSE, FALSE); 
     }
+	
 }
 
 // Returns conversion effects of a FXC$CONVERSION_* type

@@ -150,6 +150,22 @@
 ]
 
 
+string toGSCReadable( integer copper ){
+	
+	list gsc = toGSC(copper);
+	list out;
+	if( l2i(gsc, 0) )
+		out+= l2s(gsc, 0)+" Gold";
+	if( l2i(gsc, 1) )
+		out+= l2s(gsc, 1)+" Silver";
+	if( l2i(gsc, 2) )
+		out+= l2s(gsc, 2)+" Copper";
+	
+	return implode(", ", out);
+	
+}
+
+
 // Parses a description into resources, status, fx, sex, team - Currently only supports resources for NPCs
 // The if statement checks if this is a HUD which has a slightly different syntax
 // _data[0] is the attached point, if attached, the syntax is a bit different

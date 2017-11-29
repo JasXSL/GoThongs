@@ -92,6 +92,14 @@
 #define _attackableV(status_flags, fxflags) (!(status_flags&StatusFlags$NON_VIABLE)&&!(fxflags&fx$UNVIABLE))
 #define _attackableVQuickrape(status_flags) (!(status_flags&StatusFlags$NON_VIABLE))
 
+#define runOnAttackable(huds, targ, run) { integer _i; for(_i=0; _i<count(huds); ++_i){  \
+	key targ = l2k(huds, _i); \
+	parseDesc(targ, resources, status, fx, sex, team, monsterflags) \
+	if(_attackableV(status, fx)){ \
+		run \
+	} \
+}} 
+
 
 #define StatusConst$COMBAT_DURATION 6
 

@@ -47,7 +47,9 @@ checkPos(){
 
 
 onEvt(string script, integer evt, list data){
+
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
+	
         list dta = llJson2List(llList2String(data, 1)); // Browser conf
         if(llList2Float(dta, 1)>0){
             b_scale = llList2Float(dta, 1);
@@ -63,6 +65,7 @@ onEvt(string script, integer evt, list data){
             llSetLinkPrimitiveParamsFast(P_BROWSER, [PRIM_SIZE, b_size, PRIM_POSITION, b_pos]);
         
     }
+	
 }
 
 
@@ -133,9 +136,12 @@ default
     
     
     if(method$internal){
+	
         if(METHOD == SharedMediaMethod$toggleBrowser){
+		
 			string a = method_arg(0);
             if(a == "" || a == "1" || a =="0"){
+			
                 // Toggle
                 list out;
                 if(BFL&BFL_BROWSER_SHOWN && a != "0"){
@@ -161,7 +167,9 @@ default
                     ];
                 }
                 llSetLinkPrimitiveParamsFast(P_BROWSER, out);
-            }else{
+				
+            }
+			else{
 			
 				llOwnerSay("Note: Firestorm 5.0.7 prim media some times breaks. You can use ["+SITE_URL+"?token="+a+" this link] to run the GoT HUD in an external browser.");
                 // Update the URL
@@ -176,14 +184,19 @@ default
 					PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_OWNER,
 					PRIM_MEDIA_PERMS_INTERACT, PRIM_MEDIA_PERM_OWNER
                 ]);
+				
             }
+			
         }
         
     }
     
     if(method$byOwner){
+	
         if(METHOD == SharedMediaMethod$setBook){
+		
             list out;
+			// Hide
             if(!isset(method_arg(0))){
                 out = [
                     PRIM_LINK_TARGET, P_BOOK_BG,
@@ -195,21 +208,27 @@ default
                     PRIM_POSITION, ZERO_VECTOR,
                     PRIM_SIZE, ZERO_VECTOR
                 ];
-            }else{
-                vector bg = BG_POS;
-                bg.x = .13;
+            }
+			
+			else{
+			
+                vector front = BG_POS;
+                front.x = -.04;
                 out = [
                     PRIM_LINK_TARGET, P_BOOK_BG,
-                    PRIM_POSITION, bg,
+                    PRIM_POSITION, PAPER_POS,
                     PRIM_SIZE, <2.5, 2.5, 0>,
                     PRIM_COLOR, 0, ZERO_VECTOR, .5,
                     
                     PRIM_LINK_TARGET, P_PAPER,
-                    PRIM_POSITION, PAPER_POS,
+                    PRIM_POSITION, front,
                     PRIM_SIZE, PAPER_SIZE
                 ];
+				
             }
+			
             llSetLinkPrimitiveParamsFast(0, out);
+			
         }
 		
 		else if(METHOD == SharedMediaMethod$bookBrowser){

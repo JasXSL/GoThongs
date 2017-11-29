@@ -42,6 +42,7 @@
 	#define FXCUpd$CONVERSION 28		// (arr)conversions - Converts damage types into another. See below
 	#define FXCUpd$SPRINT_FADE_MULTI 29	// (float)multiplier - Lower = longer sprint
 	#define FXCUpd$BACKSTAB_MULTI 30	// (float)multiplier - Increases or lowers damage from behind
+	#define FXCUpd$SWIM_SPEED_MULTI 31	// (float)multiplier - Default 1
 	
 // Settings that are are not multiplicative
 #define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$DODGE, FXCUpd$CRIT, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD, FXCUpd$TEAM]

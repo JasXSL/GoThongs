@@ -56,7 +56,8 @@ list compiled_actives = [
 	1,	// 27 Befuddle
 	"[]",  // 28 (arr)Conversion
 	1,	// 29 Sprint fade multiplier
-	1	// 30 Backstab multiplier
+	1,	// 30 Backstab multiplier
+	1	// 31 FXCUpd$SWIM_SPEED_MULTI
 ];      // Compiled actives defaults
 
 /*
@@ -147,6 +148,7 @@ integer removePassiveByName(string name){
 }
 
 compilePassives(){
+
 	// Values that should be added instead of multiplied
     list non_multi = FXCUpd$non_multi;
 	list arrays = FXCUpd$arrays;
@@ -157,6 +159,7 @@ compilePassives(){
 	
 	@continueCompilePassives;
     while(i<llGetListLength(PASSIVES)){
+	
         // Get the effects
 		integer n = l2i(PASSIVES, i+2);
         list block = subarr(PASSIVES, i+PASSIVES_PRESTRIDE, n);
@@ -164,7 +167,6 @@ compilePassives(){
         
 		if(!n)
 			jump continueCompilePassives;
-		
 		
         integer x;
         for(x = 0; x<llGetListLength(block); x+=2){
@@ -177,6 +179,7 @@ compilePassives(){
             integer pos = llListFindList(keys, [id]);
             // The key already exists, add!
             if(~pos){
+			
 				float n = llList2Float(vals, pos);
 				if(array){
 					vals = llListReplaceList(vals, [mkarr(
@@ -184,12 +187,15 @@ compilePassives(){
 					)], pos, pos);
 				}
 				else{
-					if(add)n+= val;
-					else{
+				
+					if(add)
+						n+= val;
+					else
 						n*= (1+val);
-					}
+					
 					vals = llListReplaceList(vals, [n], pos, pos);
 				}
+				
 			}
             else{
 				keys += id;
@@ -253,15 +259,17 @@ output(){
             set_flags = set_flags|llList2Integer(compiled_passives,i+1);
         else if(type == FXCUpd$UNSET_FLAGS)
             unset_flags = unset_flags|llList2Integer(compiled_passives,i+1);
-        else if(~llListFindList(arrays, [type])){
+        else if(~llListFindList(arrays, [type]))
 			output = llListReplaceList(output, [mkarr(llJson2List(l2s(compiled_passives, i+1))+llJson2List(l2s(output,type)))], type, type);
-		}
 		else{
+		
 			float val = llList2Float(compiled_passives, i+1)*llList2Float(output,type);
 			if(~llListFindList(non_multi, [type]))
 				val = llList2Float(compiled_passives, i+1)+llList2Float(output,type);
             output = llListReplaceList(output, [val], type, type);
+			
         }
+		
     }
 	
 	// Shorten
@@ -599,7 +607,8 @@ default
 			i2f(l2f(set,27)),		\
 			l2s(set,28),				\
 			i2f(l2i(set,FXCUpd$SPRINT_FADE_MULTI)),		\
-			i2f(l2i(set,FXCUpd$BACKSTAB_MULTI)) \
+			i2f(l2i(set,FXCUpd$BACKSTAB_MULTI)), \
+			i2f(l2i(set,FXCUpd$SWIM_SPEED_MULTI)) \
 		]; \
         output(); \
 	}
@@ -637,7 +646,8 @@ default
 			27						// Befuddle = 1
 			28,						// Conversions = []
 			29,						// Sprint fade = 1
-			30						// Backstab multi = 1
+			30,						// Backstab multi = 1
+			31,						// Swim speed multi = 1
 		]; \
 	*/
 	

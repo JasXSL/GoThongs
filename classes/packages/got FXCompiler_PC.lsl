@@ -368,11 +368,15 @@ updateGame(){
     // Compile lists of spell specific modifiers
     list spdmtm; // SPELL_DMG_TAKEN_MOD - [(str)spellName, (float)dmgmod]
     for(i=0; i<llGetListLength(SPELL_DMG_TAKEN_MOD); i+=3){
+	
 		integer stacks = getStacks(llList2Integer(SPELL_DMG_TAKEN_MOD, i), FALSE);
         string n = llList2String(SPELL_DMG_TAKEN_MOD, i+1);
         integer pos = llListFindList(spdmtm, [n]);
-        if(~pos)spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+1)+llList2Float(SPELL_DMG_TAKEN_MOD, i+2)*stacks], pos+1, pos+1);
-        else spdmtm+=[n, 1+llList2Float(SPELL_DMG_TAKEN_MOD, i+2)*stacks];
+        if(~pos)
+			spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+1)+llList2Float(SPELL_DMG_TAKEN_MOD, i+2)*stacks], pos+1, pos+1);
+        else 
+			spdmtm+=[n, 1+llList2Float(SPELL_DMG_TAKEN_MOD, i+2)*stacks];
+			
     }
 	
     list spdmdm = spellModCompile(SPELL_DMG_DONE_MOD); 		// SPELL_DMG_DONE_MOD - [(float)rest, (float)abil1...]
@@ -440,7 +444,8 @@ updateGame(){
 		f2i(befuddle),		// 27 Befuddle
 		mkarr(conv),		// 28 Conversions
 		f2i(1.0),			// 29 Sprint fade
-		f2i(1.0)			// 30 Backstab mul
+		f2i(1.0),			// 30 Backstab mul
+		f2i(1.0)			// 31 Swim speed
 	])); 
 }
 #include "got/classes/packages/got FXCompiler.lsl"

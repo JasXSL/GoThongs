@@ -231,8 +231,9 @@ updateGame(){
 		team,
 		0,					// (unsupported)befuddle,
 		0,					// (unsupported)conversion
-		0					// (unsupported)sprint
-		
+		0,					// (unsupported)sprint
+		0,					// (unsupported)backstab
+		0					// (unsupported)swimspeed
 	])), "");
 }
 
