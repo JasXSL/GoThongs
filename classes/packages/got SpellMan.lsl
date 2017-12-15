@@ -115,7 +115,9 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
 
 // Default event handler
 onEvt(string script, integer evt, list data){
+
     if(script == "#ROOT"){
+	
         if(evt == evt$BUTTON_PRESS){
 			integer pressed = llList2Integer(data,0);
 			
@@ -133,6 +135,7 @@ onEvt(string script, integer evt, list data){
 			if(release&CONTROL_DOWN)
 				BFL = BFL&~BFL_CROUCH_HELD;    
 		}
+		
 		else if(evt == RootEvt$focus)
 			PLAYER_FOCUS = l2i(data, 0);
 		

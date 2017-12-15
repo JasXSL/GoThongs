@@ -34,7 +34,7 @@
 #define StatusMethod$setTeam 19					// (int)team - PC/NPC
 
 #define StatusMethod$debug 20			// void - Outputs your resources in human readable format
-#define StatusMethod$kill 21			// Kills the player or npc immediately
+#define StatusMethod$kill 21			// (str)customRapeName - Kills the player or npc immediately. If customRapeName is supplied, that will be used for rape
 	
 
 // Monster only

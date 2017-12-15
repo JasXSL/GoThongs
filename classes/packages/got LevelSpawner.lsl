@@ -35,7 +35,7 @@ default
 		string level = method_arg(0);
 		
 		if(llGetInventoryType(level) != INVENTORY_OBJECT){
-			qd(level+" not found in HUD. This is usually caused by trying to start a quest being pre-tested by patrons or forgetting to install mod files. Consider becoming a patron if you want to test things ahead of time")+": https://www.patreon.com/jasx_games");
+			qd(level+" not found in the HUD. You may be missing a mod install. Remember that you have to install mods each time you update your HUD!");
 			quit();
             return;
         }

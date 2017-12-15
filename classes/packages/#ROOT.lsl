@@ -46,11 +46,13 @@ timerEvent(string id, string data){
         setTarget("", "", TRUE, 0);
 	
 	// Run module initialization here
-	else if(id == "INI"){
+	else if( id == "INI" ){
+	
 		raiseEvent(evt$SCRIPT_INIT, "");
 		setTarget("", "", TRUE, 0);
 		RLV$clearCamera((string)LINK_THIS);
 		Level$bind(llGetOwner());
+		
 	}
 }
 
@@ -303,7 +305,7 @@ default
         }
         
         if(~level&edge){
-            raiseEvent(evt$BUTTON_RELEASE, (string)(~level&edge)+","+(string)(llGetTime()-pressStart));
+            raiseEvent(evt$BUTTON_RELEASE, llList2Json(JSON_ARRAY, [(~level&edge),(llGetTime()-pressStart)]));
             integer i;
             for(i=0; i<32; i++){
                 integer pow = llCeil(llPow(2,i));
@@ -383,6 +385,7 @@ default
 				runOnPlayers(targ,
 					Level$bind(targ);
 				)
+				
             }
 			
 			else if(pre != mkarr(PLAYERS))

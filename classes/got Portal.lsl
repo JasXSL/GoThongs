@@ -10,11 +10,13 @@
 #define PortalMethod$removeBySpawner 7		// (key)spawner - Removes any portal object spawned by spawner
 #define PortalMethod$forceLiveInitiate 8	// Forces the portal to reinitialize as if it was live
 #define PortalMethod$persistence 9			// (bool)persistant - Ignores remove calls unless override is true
+#define PortalMethod$sendPlayers 10			// void - Forces a portal player and HUD event
 
 #define BIT_DEBUG 536870912			// This is the binary bit (30) that determines if it runs in debug mode or not
 #define BIT_GET_DESC 1073741824		// This is the binary bit (31) that determines if it needs to get custom data from the spawner or not
 #define BIT_TEMP 2147483648			// Binary bit (32) that determines if the object should be temp or not
 
+// got LevelData should NOT be in this. It's auto fetched along with got LevelLite
 #define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim","jas MaskAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "got LevelLite", "got LevelAux", "got LevelLoader", "got Spawner", "got BuffSpawn"]
 #define PORTAL_SEARCH_OBJECTS ["Trigger"]
 
@@ -27,7 +29,7 @@
 #define Portal$removeSpawnedByThis() runOmniMethod("got Portal", PortalMethod$removeBySpawner, [llGetKey()], TNN)
 #define Portal$kill(targ) runMethod((str)targ, "got Portal", PortalMethod$remove, [], TNN)
 #define Portal$persistence(on) runMethod((str)LINK_THIS, "got Portal", PortalMethod$persistence, [on], TNN)
-
+#define Portal$sendPlayers() runMethod((str)LINK_THIS, "got Portal", PortalMethod$sendPlayers, [], TNN)
 
 #define portalLive() (!(int)j(llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0),1) && llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0)!="")
 // Get spawn desc config

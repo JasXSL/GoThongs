@@ -359,7 +359,7 @@ default
 		return raiseEvent(LevelEvt$fetchObjectives, mkarr([llGetOwnerKey(id)]));
 	
 	if( METHOD == LevelMethod$bindToLevel )
-		return Root$setLevelOn(id);
+		return Root$setLevelOn(llGetOwnerKey(id));
 	
 	if( METHOD == LevelMethod$spawn )
 		return runMethod((str)LINK_THIS, "got LevelAux", LevelAuxMethod$spawn, PARAMS, TNN);

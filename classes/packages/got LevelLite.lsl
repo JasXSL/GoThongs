@@ -110,6 +110,7 @@ default
 		LevelLoader$load(debug, group);
         return;
     }
+	/*
 	if(METHOD == LevelMethod$getScripts && method$byOwner){
         integer pin = (integer)method_arg(0);
         list scripts = llJson2List(method_arg(1));
@@ -127,6 +128,11 @@ default
         )
         
     }
+	if(METHOD == LevelMethod$died){
+		raiseEvent(LevelLiteEvt$playerDied, (str)id);
+		return;
+	}
+	*/
 	
 	if(METHOD == LevelMethod$interact){
         return raiseEvent(LevelLiteEvt$interact, mkarr(([llGetOwnerKey(id), method_arg(0), method_arg(1)]))); 
@@ -139,10 +145,7 @@ default
         integer evt = (integer)method_arg(0);
         return raiseEvent(evt, mkarr(out));
     }
-	if(METHOD == LevelMethod$died){
-		raiseEvent(LevelLiteEvt$playerDied, (str)id);
-		return;
-	}
+	
     
 
     #define LM_BOTTOM  

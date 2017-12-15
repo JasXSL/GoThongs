@@ -29,18 +29,26 @@ string INI_DATA = "";
 string SPAWNROUND;
 integer REZ_PARAM;
 
-onEvt(string script, integer evt, list data){
-    if(evt == evt$SCRIPT_INIT && required != []){
+onEvt( string script, integer evt, list data ){
+
+    if( evt == evt$SCRIPT_INIT && required != [] ){
+	
         integer pos = llListFindList(required, [script]);
-        if(~pos)required = llDeleteSubList(required, pos-1, pos);
+        if( ~pos )
+			required = llDeleteSubList(required, pos-1, pos);
+		
 		debugUncommon("Waiting for "+mkarr(required));
-        if(required == []){
+        if( required == [] ){
+		
 			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
 			//qd(BFL);
 			BFL = BFL|BFL_SCRIPTS_INITIALIZED;
 			checkIni() 
+			
         }
+		
     }
+	
 }
 
 /*
@@ -54,20 +62,28 @@ onEvt(string script, integer evt, list data){
 
 integer pin;
 
-timerEvent(string id, string data){
-	if(id == "INI")Root$getPlayers("INI");
-	else if(id == "POSTQUERY"){
-		if(~BFL&BFL_INITIALIZED){
+timerEvent( string id, string data ){
+
+	if( id == "INI" )
+		Root$getPlayers("INI");
+		
+	else if( id == "POSTQUERY" ){
+	
+		if( ~BFL&BFL_INITIALIZED ){
+		
 			// We have failed
 			checkIni();
 			
 			qd("Portal failed to initialize. BFL was: "+(string)BFL+" & non-initialized was "+mkarr(required));
 			// Description is gone for good because simulator fuckery
-			if(~BFL&BFL_HAS_DESC)return qd("Fatal error: Description has gone missing in the vast abyss of the simulator.");
+			if( ~BFL&BFL_HAS_DESC )
+				return qd("Fatal error: Description has gone missing in the vast abyss of the simulator.");
 			// Players can be refetched
-			if(~BFL&BFL_GOT_PLAYERS)Root$getPlayers("INI");
+			if( ~BFL&BFL_GOT_PLAYERS )
+				Root$getPlayers("INI");
 			// Scripts can be refetched
-			if(~BFL&BFL_SCRIPTS_INITIALIZED){
+			if( ~BFL&BFL_SCRIPTS_INITIALIZED ){
+				
 				integer i; list fromHUD; list fromLevel;
 				for(i=0; i<llGetListLength(required); i+=2){
 					if(llList2Integer(required, i))fromHUD+= llList2String(required, i+1);
@@ -81,11 +97,14 @@ timerEvent(string id, string data){
 				}
 			}
 			multiTimer([id, "", 60, FALSE]);
+			
 		}
+		
 	}
-	else if(id == "A"){
+	
+	else if( id == "A" )
 		fetchDesc();
-	}
+	
 }
 
 // Removes this and anything spawned by this if this was a sub level
@@ -125,7 +144,8 @@ default
         if(!llGetStartParameter())return;
 		
 		
-        if(llGetStartParameter() == 2){
+        if( llGetStartParameter() == 2 ){
+		
 			list refresh = PORTAL_SEARCH_OBJECTS;
 			list get_objects;
 			while(llGetListLength(refresh)){
@@ -140,10 +160,15 @@ default
             // Request
             list check = PORTAL_SEARCH_SCRIPTS;
             list_shift_each(check, val,
-                if(llGetInventoryType(val) == INVENTORY_SCRIPT){
+			
+                if(llGetInventoryType(val) == INVENTORY_SCRIPT)
                     required+=([1, val]);
-                }
+                
             )
+			
+			// Required together
+			if( llGetInventoryType("got LevelLite") == INVENTORY_SCRIPT )
+				required+= [1, "got LevelData"];
 			
 			check = PORTAL_SEARCH_OBJECTS;
 			list_shift_each(check, val,
@@ -153,10 +178,6 @@ default
 			)
 			
 			Remoteloader$load(mkarr(llList2ListStrided(llDeleteSubList(required, 0, 0), 0, -1, 2)), pin, 2);
-			
-			
-			
-			
 			debugUncommon("Waiting for "+mkarr(required));
 			
 			
@@ -169,18 +190,20 @@ default
 			
 			
 			// I can't remember what 1 is for but if it's 0 then it's not a region position
-			if(mew > 1)pos = p-vecFloor(p)+int2vec(mew);
+			if(mew > 1)
+				pos = p-vecFloor(p)+int2vec(mew);
 			// If no position is set then we regard it as debug (got LevelLite relies on this behavior)
-			else mew = mew|BIT_DEBUG;
+			else 
+				mew = mew|BIT_DEBUG;
 			
 			// Checks if pos is actually received
-			if(mew&(BIT_DEBUG-1))llSetRegionPos(pos);
+			if( mew&(BIT_DEBUG-1) )
+				llSetRegionPos(pos);
 			
 			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
 			
-			if(mew&BIT_DEBUG){
+			if( mew&BIT_DEBUG )
 				BFL = BFL|BFL_IS_DEBUG;
-			}
 			else
 				multiTimer(["POSTQUERY", "", 30, FALSE]);
 				
@@ -258,16 +281,28 @@ default
     }
     
     if(method$byOwner){
-        if(METHOD == PortalMethod$reinit){
+	
+	
+        if( METHOD == PortalMethod$reinit ){
+		
             qd("Reinitializing");
 			
             integer p = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(p);
             integer nr = 2;
-			if((integer)method_arg(0))nr = 3;	// Use a positive int to just update without initializing
+			if( (integer)method_arg(0) )
+				nr = 3;	// Use a positive int to just update without initializing
 			
 			Remoteloader$load(cls$name, p, nr);
-        }else if(METHOD == PortalMethod$remove && 
+			
+        }
+		else if( METHOD == PortalMethod$sendPlayers ){
+			
+			raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
+			raiseEvent(PortalEvt$players, mkarr(PLAYERS));
+			
+		}
+		else if(METHOD == PortalMethod$remove && 
 			(
 				(	
 					(
@@ -306,8 +341,7 @@ default
 				PLAYERS += (str)llGetOwnerKey(targ);
 			)
 			
-			raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
-			raiseEvent(PortalEvt$players, mkarr(PLAYERS));
+			Portal$sendPlayers();
 			
 		}
 		
@@ -345,7 +379,7 @@ default
 					for(i=0; i<llGetListLength(ini) && ini != []; i++){
 						list v = llJson2List(llList2String(ini, i));
 						string task = llList2String(v, 0);
-						if(task == "SC" || task == "PR" || task == "HSC"){
+						if( task == "SC" || task == "PR" || task == "HSC" ){
 							v = llDeleteSubList(v, 0, 0);
 							// Make sure there's actually an asset
 							if(v != []){

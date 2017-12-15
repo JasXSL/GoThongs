@@ -28,6 +28,6 @@
 // SAYs
 #define LevelAux$spawn(prim, pos, rot, debug, description, group) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [prim, pos, rot, debug, description, group], TNN)
 // Custom target
-#define LevelAux$spawnTarg(targ, prim, pos, rot, debug, description) runMethod((str)targ, "got LevelAux", LevelAuxMethod$spawn, [prim, pos, rot, debug, description], TNN)
+#define LevelAux$spawnTarg(targ, prim, pos, rot, debug, description, group) runMethod((str)targ, "got LevelAux", LevelAuxMethod$spawn, [prim, pos, rot, debug, description, group], TNN)
 
 

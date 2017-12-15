@@ -196,7 +196,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 				raiseEvent(StatusEvt$death_hit, "");
 		}
 		else
-			onDeath();
+			onDeath( "" );
 			
 		
     }else{
@@ -314,10 +314,12 @@ float spdmtm(string spellName){
 }
 
 
-onDeath(){
+onDeath( string customAnim ){
 
-	// Player died
-	if(STATUS_FLAGS&StatusFlag$dead)return;
+	// Player dead already
+	if(STATUS_FLAGS&StatusFlag$dead)
+		return;
+	
 	// DEATH HANDLED HERE
 	SpellMan$interrupt(TRUE);
 	STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
@@ -332,19 +334,30 @@ onDeath(){
 	toggleClothes();
 	
 	float dur = 20;
-	if(isChallenge()){
+	if( isChallenge() ){
+	
 		dur = 90;
 		if(STATUS_FLAGS & StatusFlag$boss_fight)
 			dur = 0;
 		else
 			multiTimer([TIMER_COOP_BREAKFREE, "", 20, FALSE]);
+			
 	}
 	if(dur){
+	
 		multiTimer([TIMER_BREAKFREE, "", dur, FALSE]);
 		GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, dur);
+		
 	}
+	
+	// If customAnim is set, use that
+	if( customAnim )
+		return Bridge$fetchRape((str)LINK_ROOT, customAnim);
+	
+	// Otherwise fetch one
 	Status$monster_rapeMe();
 	Rape$activateTemplate();
+	
 
 }
 
@@ -720,8 +733,10 @@ default
 	}
 	
 	if(METHOD == StatusMethod$kill){
+	
 		DURABILITY = 0;
-		onDeath();
+		onDeath( method_arg(0) );
+		
 	}
 	
 	if(METHOD == StatusMethod$batchUpdateResources){

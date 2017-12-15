@@ -151,8 +151,10 @@ default
 		}
 		
 		else if(METHOD == RapeMethod$activateTemplate){
+		
 			if(llGetListLength(TEMPLATES))
 				Bridge$fetchRape((str)LINK_ROOT, randElem(TEMPLATES));
+				
 		}
     }
     
