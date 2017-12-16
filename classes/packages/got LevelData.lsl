@@ -114,7 +114,7 @@ default
 				++viable;
 		)
 		
-		if(BFL&BFL_WIPE_TRACKER && DEATHS >= viable && viable){
+		if( BFL&BFL_WIPE_TRACKER && DEATHS >= viable && viable ){
 		
 			BFL = BFL|BFL_WIPED;
 			

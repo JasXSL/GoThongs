@@ -111,6 +111,7 @@ default
         return;
     }
 	/*
+	// MOVED TO LEVELDATA
 	if(METHOD == LevelMethod$getScripts && method$byOwner){
         integer pin = (integer)method_arg(0);
         list scripts = llJson2List(method_arg(1));
@@ -134,20 +135,23 @@ default
 	}
 	*/
 	
-	if(METHOD == LevelMethod$interact){
-        return raiseEvent(LevelLiteEvt$interact, mkarr(([llGetOwnerKey(id), method_arg(0), method_arg(1)]))); 
-    }
-    if(METHOD == LevelMethod$trigger){
-        return raiseEvent(LevelLiteEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
-    }
-    if(METHOD == LevelMethod$idEvent){
-        list out = [id, method_arg(1), method_arg(2), method_arg(3)];
+	if( METHOD == LevelMethod$interact )
+        raiseEvent(LevelLiteEvt$interact, mkarr(([llGetOwnerKey(id), method_arg(0), method_arg(1)]))); 
+    
+    else if( METHOD == LevelMethod$trigger )
+        raiseEvent(LevelLiteEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
+    
+    else if( METHOD == LevelMethod$idEvent ){
+        
+		list out = [id, method_arg(1), method_arg(2), method_arg(3)];
         integer evt = (integer)method_arg(0);
         return raiseEvent(evt, mkarr(out));
+		
     }
 	
-    
-
+	if( method$internal && METHOD == LevelMethod$raiseEvent )
+		raiseEvent(l2i(PARAMS, 0), mkarr(llDeleteSubList(PARAMS, 0, 0)));
+		
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl" 
     
