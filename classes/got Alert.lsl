@@ -12,7 +12,7 @@
 
 // Sound can also be 2 for important alert
 // Text can be an XLS text
-#define Alert$freetext(targ, text, ownersay, sound) runMethod((str)targ, "got Alert", AlertMethod$freetext, [xparse(llGetOwnerKey((str)targ), text), ownersay, sound], TNN)
+#define Alert$freetext(targ, text, ownersay, sound) runMethod((str)targ, "got Alert", AlertMethod$freetext, [text, ownersay, sound], TNN)
 
 
 
