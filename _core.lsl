@@ -99,6 +99,7 @@
 #include "./classes/got BuffSpawn.lsl"
 #include "./classes/got SpellVis.lsl"
 #include "./classes/got LevelData.lsl"
+#include "./classes/got Attached.lsl"
 
 
 

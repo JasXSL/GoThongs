@@ -46,6 +46,7 @@
 // input commands
 #define GotAPI$cmdBind 1			// (key)id OR empty | Binds a key to receive events from the HUD
 #define GotAPI$cmdUnbind 2			// (key)id OR emtpy | Unbinds a key from receiving events from the HUD
+#define GotAPI$cmdEmulateEvent 3	// (str)script, (int)evt, (arr)data | Owner only, emulates an event
 
 #define GotAPI$chan(owner) (playerChan(owner)+4000)
 
@@ -61,4 +62,4 @@
 #define GotAPI$bindThis(targ) GotAPI$bind(targ, "")
 #define GotAPI$unbind(targ, recipient) GotAPI$sendCommand(targ, GotAPI$cmdUnbind, [recipient])
 #define GotAPI$unbindThis(targ) GotAPI$unbind(targ, "")
-
+#define GotAPI$emulateEvent(targ, script, evt, data) GotAPI$sendCommand(targ, GotAPI$cmdEmulateEvent, ([script, evt, mkarr(data)]))
