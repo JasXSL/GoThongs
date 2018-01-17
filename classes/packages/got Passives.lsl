@@ -661,11 +661,13 @@ default
         Adds a passive
     */
     if(METHOD == PassivesMethod$set){
+	
         string name = method_arg(0);
 		integer flags = l2i(PARAMS, 2);
 		
         list effects = llJson2List(method_arg(1));
-        if(effects == [])return Passives$rem(LINK_THIS, name);
+        if( effects == [] )
+			return Passives$rem(LINK_THIS, name);
         // Find if passive exists and remove it
         removePassiveByName(name);
         

@@ -19,8 +19,10 @@ onEvt(string script, integer evt, list data){
 			llRegionSayTo(llList2Key(bindings, i), llList2Integer(bindings, i+1), msg);
 	}
 	
-	if( evt == RootEvt$players )
+	if( script == "#ROOT" && evt == RootEvt$players )
 		PLAYERS = data;
+		
+	
 	
 }
 
