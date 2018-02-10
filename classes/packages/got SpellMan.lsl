@@ -471,8 +471,10 @@ spellComplete(){
 
 // Run from both complete and interrupt
 spellEnd(){
+
     list data;
-    if(~SPELL_CASTED)data = nrToData(SPELL_CASTED);
+    if( ~SPELL_CASTED )
+		data = nrToData(SPELL_CASTED);
     
     BFL = BFL&~BFL_CASTING;
     BFL = BFL&~BFL_START_CAST;
@@ -481,9 +483,9 @@ spellEnd(){
     
     //SpellAux$spellEnd();
     
-    if(spellCasttime(data, SPELL_CASTED) > 0){
-        ThongMan$particles(0, 1, "[]");
-    }
+    if(spellCasttime(data, SPELL_CASTED) > 0)
+		ThongMan$particles(0, 1, "[]");
+    
 	
 	// Cast queued spell if possible
 	checkQueueCast();

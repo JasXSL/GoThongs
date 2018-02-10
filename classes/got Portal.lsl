@@ -17,7 +17,7 @@
 #define BIT_TEMP 2147483648			// Binary bit (32) that determines if the object should be temp or not
 
 // got LevelData should NOT be in this. It's auto fetched along with got LevelLite
-#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim","jas MaskAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "got LevelLite", "got LevelAux", "got LevelLoader", "got Spawner", "got BuffSpawn"]
+#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim","jas MaskAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "got LevelLite", "got LevelAux", "got LevelLoader", "got Spawner", "got BuffSpawn", "got ClassAtt"]
 #define PORTAL_SEARCH_OBJECTS ["Trigger"]
 
 #define Portal$save() runOmniMethod("got Portal", PortalMethod$save, [], "SV")

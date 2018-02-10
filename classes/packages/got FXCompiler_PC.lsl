@@ -21,7 +21,6 @@ list BEFUDDLE; 				// [id, (float)chanceMulti]
 list CONVERSIONS;			// [id, (arr)conversions]
 list HP_ADD;				// [id, (float)add]
 list GRAVITY;				// [id, (float)set]
-
 integer current_visual;
 
 runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster){
@@ -54,6 +53,9 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
         else if(t == fx$MANA)
 			resource_updates += SMBUR$buildMana(l2f(fx,1)*stacks, pname, l2i(fx,2));
 		
+		else if( t == fx$CLASS_VIS )
+			gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2));
+		
 		else if(t == fx$SPAWN_MONSTER){
 			
 			vector rot = llRot2Euler(llGetRot());
@@ -75,23 +77,29 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			llApplyImpulse(apply, FALSE);
 		}
 		
-		else if(t == fx$HITFX){
+		else if( t == fx$HITFX ){
+		
             ThongMan$hit(l2s(fx,1));
             // Also flags and stuff here
             integer flags = llList2Integer(fx,2);
-            if(~flags&fxhfFlag$NOSOUND){
+            if( ~flags&fxhfFlag$NOSOUND ){
+			
 				list sounds = (["71224087-bce9-d63f-f582-ccba8bb21e85", "b78573df-e593-b717-301c-ed55e8ad4916", "1d724698-4223-d381-f38c-d9c86986684d"]);
                 llTriggerSound(randElem(sounds), .5+llFrand(.5));
+				
             }
-            if(~flags&fxhfFlag$NOANIM)
-                AnimHandler$anim(mkarr((["got_takehit_highpri", "got_takehit"])), TRUE, 0, 0);
-			raiseEvent(FXCEvt$hitFX, mkarr(llDeleteSubList(fx,0,0)));
+			
+            if( ~flags&fxhfFlag$NOANIM )
+                AnimHandler$anim(mkarr((["got_takehit_highpri", "got_takehit"])), TRUE, 0, 0, 0);
+			
+			raiseEvent(FXCEvt$hitFX, mkarr(([l2s(fx, 1), l2i(fx, 2), caster])));
+			
         }
         else if(t == fx$HUD_TEXT)
             runMethod((str)LINK_ROOT, "got Alert", AlertMethod$freetext, llList2List(fx, 1, -1), TNN);
         
         else if(t == fx$ANIM && !l2i(fx, 3))
-			AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, 0);
+			AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, 0, l2i(fx, 3));
  
         else if(t == fx$INTERRUPT)
             SpellMan$interrupt(l2i(fx, 1));
@@ -157,7 +165,7 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
             THONG_VISUALS = manageList(FALSE, THONG_VISUALS, [pid, mkarr(llList2List(fx, 1, -1))]);
 
 		else if(t == fx$ANIM){
-			AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, 0);
+			AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, 0, l2i(fx,3));
         }
         else if(t == fx$MANA_REGEN_MULTI)
             MANA_REGEN_MULTI = manageList(FALSE, MANA_REGEN_MULTI, [pid,llList2Float(fx, 1)]);
@@ -173,8 +181,9 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
         
 		else if(t == fx$GRAVITY)
             GRAVITY = manageList(FALSE, GRAVITY, [pid,llList2Float(fx, 1)]);
-        
-		
+			
+        else if( t == fx$CLASS_VIS )
+            gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2));
 		
 		else if(t == fx$SPELL_DMG_DONE_MOD){
 			SPELL_DMG_DONE_MOD = manageList(FALSE, SPELL_DMG_DONE_MOD, [pid,llList2Integer(fx,1), llList2Float(fx, 2)]);
@@ -229,9 +238,8 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
         integer t = llList2Integer(fx, 0);
         
 		// These are things that should not be run if the FX was overwritten, only if it was removed
-		if(!overwrite){
-			if(t == fx$ANIM)AnimHandler$anim(llList2String(fx, 1), !llList2Integer(fx,2), 0, 0);
-		}
+		if( !overwrite && t == fx$ANIM)
+			AnimHandler$anim(llList2String(fx, 1), !llList2Integer(fx,2), 0, 0, 0);
 		
 		
 		// Shared
@@ -249,6 +257,8 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
             PAIN_MULTI = manageList(TRUE, PAIN_MULTI, [pid, 0]);
         else if(t == fx$SPELL_DMG_DONE_MOD)
 			SPELL_DMG_DONE_MOD = manageList(TRUE, SPELL_DMG_DONE_MOD, [pid, 0, 0]);
+		else if( t == fx$CLASS_VIS )
+			gotClassAtt$spellEnd(l2s(fx,1), -1);
 		
         else if(t == fx$FORCE_SIT)llOwnerSay("@unsit=y,unsit=force");
 		else if(t == fx$PULL){

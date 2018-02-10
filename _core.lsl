@@ -52,7 +52,6 @@
 #include "xobj_core/classes/jas MaskAnim.lsl"
 #include "xobj_core/classes/jas Soundspace.lsl"
 
-
 #include "xobj_toonie/classes/ton MeshAnim.lsl"
 
 
@@ -100,6 +99,8 @@
 #include "./classes/got SpellVis.lsl"
 #include "./classes/got LevelData.lsl"
 #include "./classes/got Attached.lsl"
+#include "./classes/got ClassAtt.lsl"
+
 
 
 
@@ -132,6 +133,8 @@
 #define TEXTURE_PC "9505afb9-134d-61cf-b1de-4645ba9ffde2"
 #define TEXTURE_COOP "41d10278-ce32-825f-d93c-4092e3064e1a"
 
+#define MELEE_RANGE 3
+#define MAX_RANGE 10
 
 #define TEAM_NPC 0
 #define TEAM_PC 1

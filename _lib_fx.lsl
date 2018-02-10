@@ -23,6 +23,13 @@
 		#define fxhfFlag$AROUSAL_HEAVY 0x10			// Could be used for RP purposes
 		#define fxhfFlag$IGNORE_TYPE 0x20			// Prevents RP grunts
 		
+		// New flags for slot specific
+		#define fxhfFlag$SLOT_GROIN 0x40
+		#define fxhfFlag$SLOT_BUTT 0x80
+		#define fxhfFlag$SLOT_BREASTS 0x100
+		#define fxhfFlag$SLOT_STOMACH 0x200
+		
+		
 		#define fxhfColor$phys "<1,.5,.5>"
 		#define fxhfColor$arouse "<1,.5,1>"
 		#define fxhfColor$toxic "<.8,1,.7>"
@@ -30,7 +37,7 @@
 		#define fxhfColor$cold "<.5,.8,1>"
 		
 		
-	#define fx$ANIM 7							// [(str)anim(or array), (int)start, (bool)ignore_immediate] | If ignore immediate is set, it will not be run on instant effects or ticks.
+	#define fx$ANIM 7							// [(str)anim(or array), (int)start, (bool)ignore_immediate, (int)flags] | If ignore immediate is set, it will not be run on instant effects or ticks.
 	#define fx$DODGE 8							// (float)chance_to_add - Adds a chance to dodge bad spells unless undodgable
 	//#define fx$DEBUG 9							// [(str)message]
 	#define fx$REM_BY_NAME 10					// [(str)name, (int)raise_event]
@@ -112,6 +119,7 @@
 	#define fx$HP_ADD 60						// (float)amount - PC only - Increases max HP by amount nr of points.
 	#define fx$GRAVITY 61						// (float)n - PC only - Overrides gravity, the last call is the active one
 	#define fx$PUSH 62							// (vec)dir - PC only - Applies an impulse
+	#define fx$CLASS_VIS 63						// (var)data[, (float)timeout=1] - PC only. Sends class vis data to got ClassAtt. Start is sent on add/instant and end is sent on fade with -1
 	
 // conditions
 	// Built in

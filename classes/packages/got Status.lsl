@@ -173,9 +173,14 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 		amount*=maxDurability();
 	
     else if(amount<0){
-        if(STATUS_FLAGS&StatusFlag$pained)amount*=1.1;
-        amount*=fxModDmgTaken;
-		amount*=difMod();
+	
+		amount*= 
+			(1+((STATUS_FLAGS&StatusFlag$pained)/StatusFlag$pained)*.1)*
+			(1+((STATUS_FLAGS&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
+			fxModDmgTaken*
+			difMod()
+		;
+		
 		raiseEvent(StatusEvt$hurt, llRound(amount));
 		updateCombatTimer();
     }
@@ -212,7 +217,7 @@ integer addDurability(float amount, string spellName, integer flags, integer isR
 			
             raiseEvent(StatusEvt$dead, 0);
             Rape$end();
-            AnimHandler$anim("got_loss", FALSE, 0, 0);
+            AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
             toggleClothes();
 			
 			
@@ -329,7 +334,7 @@ onDeath( string customAnim ){
 	
 	outputStats();
 	raiseEvent(StatusEvt$dead, 1);
-	AnimHandler$anim("got_loss", TRUE, 0, 0);
+	AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
 	
 	toggleClothes();
 	
@@ -417,7 +422,7 @@ onEvt(string script, integer evt, list data){
                 STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$raped; 
 				Status$fullregen();
             }
-            AnimHandler$anim("got_loss", FALSE, 0, 0);
+            AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
         }
     }
 	
@@ -604,8 +609,10 @@ timerEvent(string id, string data){
 		outputStats();
 	}
 	else if(id == TIMER_COMBAT){
+	
 		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$combat;
 		saveFlags();
+		
 	}
 	else if(id == TIMER_COOP_BREAKFREE){
 		llRezAtRoot("BreakFree", llGetPos(), ZERO_VECTOR, ZERO_ROTATION, 1);
@@ -703,17 +710,15 @@ default
 			
 			if(DIFFICULTY != pre){
 				list names = [
-					xme(XLS(([XLS_EN, "Casual"]))), 
-					xme(XLS(([XLS_EN, "Normal"]))), 
-					xme(XLS(([XLS_EN, "Hard"]))), 
-					xme(XLS(([XLS_EN, "Very Hard"]))), 
-					xme(XLS(([XLS_EN, "Brutal"]))), 
-					xme(XLS(([XLS_EN, "Bukakke"])))
+					"Casual", 
+					"Normal", 
+					"Hard", 
+					"Very Hard", 
+					"Brutal", 
+					"Bukakke"
 				];
 				
-				Alert$freetext(LINK_THIS, XLS(([
-					XLS_EN, "Difficulty set to "+llList2String(names, DIFFICULTY)
-				])), TRUE, TRUE);
+				Alert$freetext(LINK_THIS, "Difficulty set to "+llList2String(names, DIFFICULTY), TRUE, TRUE);
 			}
 		
 		}
@@ -813,7 +818,7 @@ default
 		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$coopBreakfree;
         raiseEvent(StatusEvt$dead, 0);
         
-        AnimHandler$anim("got_loss", FALSE, 0, 0);
+        AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
         outputStats();
         toggleClothes();
 		
@@ -848,12 +853,17 @@ default
 	else if(METHOD == StatusMethod$debugOut){
 		llOwnerSay(mkarr(([maxDurability(), maxMana(), maxArousal(), maxPain()])));
 	}
-	else if(METHOD == StatusMethod$toggleBossFight){
+	else if( METHOD == StatusMethod$toggleBossFight ){
+		
 		integer on = (int)method_arg(0);
-		if((on && STATUS_FLAGS&StatusFlag$boss_fight) || (!on&&~STATUS_FLAGS&StatusFlag$boss_fight))return;
-		if(on){
+		if( 
+			(on && STATUS_FLAGS&StatusFlag$boss_fight) || 
+			(!on&&~STATUS_FLAGS&StatusFlag$boss_fight) 
+		)return;
+		
+		if( on )
 			STATUS_FLAGS = STATUS_FLAGS | StatusFlag$boss_fight;
-		}
+		
 		else{
 			STATUS_FLAGS = STATUS_FLAGS &~ StatusFlag$boss_fight;
 			/*

@@ -101,7 +101,7 @@
 }} 
 
 
-#define StatusConst$COMBAT_DURATION 6
+#define StatusConst$COMBAT_DURATION 10
 
 // GoThongs supports max 16 flags
 #define StatusFlag$dead 0x1			// Checked for automatically by fx

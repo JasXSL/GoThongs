@@ -34,6 +34,7 @@ string rapeName;        // Usually prim name
 string drops;			// JSON array of sub arrays of [(str)asset, (float)drop_chance]
 integer range_add;		// Hitbox range add for players to hit ME
 integer height_add;		// LOS check height offset from the default 0.5m above root prim
+integer melee_height;	// Used for RP
 #define hAdd() ((float)height_add/10)
 
 // (float)aggro, (key)id, (int)flags
@@ -91,38 +92,31 @@ list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 // Description is $M$(int)team$(int)HP_BITWISE$(int)range_add(decimeters)$(int)height_add$(int)status_flags$(int)monster_flags$(int)fx_flags
 #define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)range_add+"$"+(str)height_add+"$"+(str)STATUS_FLAGS+"$"+(str)RUNTIME_FLAGS+"$"+(str)FXFLAGS);}
 
-
-dropAggro(key player, integer complete){
-    integer pos = llListFindList(AGGRO, [player]);
-    if(~pos){
-		if(complete == 3)AGGRO = llListRandomize(AGGRO, AGGRO_STRIDE);
-		else if(complete == 2)AGGRO = llListReplaceList(AGGRO, [llFrand(10)], pos-1, pos-1);
-        else if(complete)AGGRO = llDeleteSubList(AGGRO, pos-1, pos+AGGRO_STRIDE-2);
-        else AGGRO = llListReplaceList(AGGRO, [llList2Integer(AGGRO, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
-    }
-    aggro("",0);
-}
+#define dropAggro( player, type ) \
+	runMethod((str)LINK_THIS, cls$name, StatusMethod$monster_dropAggro, [player, type], TNN)
 
 
 outputTextures(){
+
 	integer i; list out;
 	for(i=0; i<llGetListLength(SPELL_ICONS); i+=SPSTRIDE){
 		out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
 	}
+	
 	string s = llDumpList2String(out,",");
 	list opstat = OUTPUT_STATUS_TO;
-	if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){ 
+	if(RUNTIME_FLAGS&Monster$RF_IS_BOSS)
 		opstat = PLAYERS;
-	}
+	
     list_shift_each(opstat, val,
         GUI$setSpellTextures(val, s);
 	)
+	
 }
 
 
 #define aggroCheck(k) \
-    if(RUNTIME_FLAGS&Monster$RF_NOAGGRO)return; \
-    if(BFL&BFL_NOAGGRO)return; \
+    if(RUNTIME_FLAGS&Monster$RF_NOAGGRO || BFL&BFL_NOAGGRO)return; \
     vector ppos = prPos(k); \
     float dist =llVecDist(ppos, llGetPos());  \
     if(dist>100)return; \
@@ -141,20 +135,25 @@ outputTextures(){
 
 
 
-aggro(key player, float ag){
-    if(BFL&BFL_NOAGGRO || RUNTIME_FLAGS&(Monster$RF_FREEZE_AGGRO|Monster$RF_NOAGGRO))return;
+aggro( key player, float ag ){
+
+    if( BFL&BFL_NOAGGRO || RUNTIME_FLAGS&(Monster$RF_FREEZE_AGGRO|Monster$RF_NOAGGRO) )
+		return;
     
 	list pre = AGGRO;
 	
 	
-    if(player){
+    if( player ){
+	
         integer pre = llGetListLength(AGGRO);
         integer pos = llListFindList(AGGRO, [player]);
         key top; integer i;
-        if(~pos){
+        if( ~pos ){
+		
             float nr = llList2Float(AGGRO, pos-1);
             nr+=ag;
-            if(nr<=0)dropAggro(player, TRUE);
+            if(nr<=0)
+				dropAggro(player, TRUE);
             else{
                 // Newly aggroed
                 integer flag = llList2Integer(AGGRO, pos+1);
@@ -163,123 +162,155 @@ aggro(key player, float ag){
                 
                 AGGRO = llListReplaceList(AGGRO, [nr], pos-1, pos-1);
             }
-        }else if(ag>0){
+			
+        }
+		else if( ag>0 ){
+		
 			AGGRO += [ag, player, 0];
 			memDebug("AGGRO", AGGRO);
+			
 		}
         
 		// First time aggoed
-        if(AGGRO != [] && !pre){
-            if(aggrosound){
-				llTriggerSound(aggrosound, 1);
-				Status$monster_aggroed(player, 10, TEAM);
-			}
+        if(AGGRO != [] && !pre && aggrosound != "" ){
+		
+			llTriggerSound(aggrosound, 1);
+			Status$monster_aggroed(player, 10, TEAM);
+			
 		}
+		
     }
+	
     AGGRO = llListSort(AGGRO, AGGRO_STRIDE, FALSE);
     
     
     key at = "";
     integer i;
-    for(i=0; i<llGetListLength(AGGRO) && AGGRO != []; i+=AGGRO_STRIDE){
+    for( i=0; i<llGetListLength(AGGRO) && AGGRO != []; i+=AGGRO_STRIDE ){
+	
 		// Aggro target has left
 		key t = l2k(AGGRO, i+1);
         if(llKey2Name(t) == "" || llVecDist(llGetPos(), prPos(t)) > 20){
+		
 			AGGRO = llDeleteSubList(AGGRO, i, i+AGGRO_STRIDE-1);
 			i-= AGGRO_STRIDE;
+			
 		}
 		else if(~llList2Integer(AGGRO, i+2)&AGFLAG_NOT_AGGROD){
+		
             at = llList2Key(AGGRO, i+1);
             i = llGetListLength(AGGRO);
+			
         }
+		
     }
     
     if(at != aggroTarg){ 
+	
         aggroTarg = at;
-        if(at == ""){
-            if(dropaggrosound)
-                llTriggerSound(dropaggrosound, 1);
-        }else{
-			if(~RUNTIME_FLAGS&Monster$RF_NO_TARGET) Root$targetMe(at, icon, FALSE, TEAM);
-			if(RUNTIME_FLAGS&Monster$RF_IS_BOSS && ~BFL&BFL_AGGROED_ONCE){
+        if( at == "" && dropaggrosound != "" ){
+            llTriggerSound(dropaggrosound, 1);
+        }else if( at != "" ){
+		
+			if( ~RUNTIME_FLAGS&Monster$RF_NO_TARGET ) 
+				Root$targetMe(at, icon, FALSE, TEAM);
+				
+			if( RUNTIME_FLAGS&Monster$RF_IS_BOSS && ~BFL&BFL_AGGROED_ONCE ){
+			
 				runOnPlayers(targ,
 					GUI$toggleBoss(targ, icon, FALSE);
 				)
 				BFL = BFL|BFL_AGGROED_ONCE;
+				
 			}
+			
 		}
+		
         raiseEvent(StatusEvt$monster_gotTarget, mkarr([aggroTarg]));
+		
     }
 	
-	if(AGGRO != pre){
+	if(AGGRO != pre)
 		raiseEvent(StatusEvt$monster_aggro, mkarr(llList2ListStrided(llDeleteSubList(AGGRO, 0, 0), 0, -1, AGGRO_STRIDE)));
-	}
+	
 }
 
 
-outputStats(integer force, integer line){
+outputStats( integer force, integer line ){
 
 	
 	// NPC has been ressurected
-	if(HP>0 && STATUS_FLAGS&StatusFlag$dead){
+	if( HP>0 && STATUS_FLAGS&StatusFlag$dead ){
+	
 		raiseEvent(StatusEvt$dead, "0");
 		STATUS_FLAGS = STATUS_FLAGS&~StatusFlag$dead;
 		MaskAnim$restartOverride("idle");
 		AGGRO = [];
 		aggroTarg = "";
+		
 	}
 	
 	// Check team
 	integer t = fxTeam;
 	if(t == -1)
 		t = TEAM_DEFAULT;
+		
 	integer pre = TEAM;
 	
 	// Needed for TEAM to be in the description
 	TEAM = t;
 	updateDesc();
 
-	if(BFL&BFL_STATUS_SENT && !force && TEAM == pre){
+	if( BFL&BFL_STATUS_SENT && !force && TEAM == pre ){
+		
 		BFL = BFL|BFL_STATUS_QUEUE;
 		return;
+		
 	}
 	
 	
 	
-	if(STATUS_FLAGS_PRE != STATUS_FLAGS){
+	if( STATUS_FLAGS_PRE != STATUS_FLAGS ){
+	
 		raiseEvent(StatusEvt$flags, llList2Json(JSON_ARRAY,[STATUS_FLAGS, STATUS_FLAGS_PRE]));
 		STATUS_FLAGS_PRE = STATUS_FLAGS;
+		
 	}
 	
 	// Team change goes after because we need to update description first
-	if(pre != t){
+	if( pre != t ){
+	
 		raiseEvent(StatusEvt$team, (str)TEAM);
 		runOnPlayers(targ,
 			Root$forceRefresh(targ, llGetKey());
 		)
+		
 	}
 	
 	float perc = HP/maxHP;
-	if(perc != preHP && maxHP > 0){
+	if( perc != preHP && maxHP > 0 ){
+	
 		preHP = perc;
 		raiseEvent(StatusEvt$monster_hp_perc, (string)perc);
+		
 	}
+	
 	BFL = BFL|BFL_STATUS_SENT;
 	multiTimer(["_", .5, FALSE]);
+	
 }
 
 
 #define timerEvent(id) \
-	if(id == "_"){ \
+	if( id == "_" ){ \
 		BFL = BFL&~BFL_STATUS_SENT; \
-		if(BFL&BFL_STATUS_QUEUE){ \
+		if( BFL&BFL_STATUS_QUEUE ){ \
 			BFL = BFL&~BFL_STATUS_QUEUE; \
 			outputStats(FALSE, __LINE__); \
 		} \
 	} \
-    else if(id == "A"){ \
-        if(BFL&BFL_NOAGGRO)return; \
-        if(aggroTarg != ""){ \
+    else if( id == "A" && ~BFL&BFL_NOAGGRO ){ \
+        if( aggroTarg != "" ){ \
 			parseDesc(aggroTarg, resources, status, fx, sex, team, monsterFlags); \
 			if( \
 				status&StatusFlags$NON_VIABLE || \
@@ -322,20 +353,12 @@ multiTimer(list data){
     llSetTimerEvent(t);
 }
 
+#define startAnim( anim ) \
+	MeshAnim$startAnim(anim); MaskAnim$start(anim)
+	
+#define stopAnim( anim ) \
+	MeshAnim$stopAnim(anim); MaskAnim$stop(anim)
 
-anim(string anim, integer start){
-	integer meshAnim = (llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT);
-	if(start){
-		if(meshAnim)MeshAnim$startAnim(anim);
-		else if(anim=="die")MaskAnim$restartOverride(anim);
-		else{
-			MaskAnim$start(anim);
-		}
-	}else{
-		if(meshAnim)MeshAnim$stopAnim(anim);
-		else MaskAnim$stop(anim);
-	}
-}
 
 #define dtaInt l2i(dta,0)
 #define dtaFloat l2f(dta,0)
@@ -357,7 +380,6 @@ anim(string anim, integer start){
 	 \
 	float mhp = maxHP; \
 	integer team = TEAM; \
-	 \
 	while(settings){ \
 		integer idx = l2i(settings, 0); \
 		list dta = llList2List(settings, 1, 1); \
@@ -386,14 +408,14 @@ anim(string anim, integer start){
 			range_add = dtaInt; \
 		if(idx == MLC$height_add) \
 			height_add = dtaInt; \
-		if(idx == MLC$team && dtaStr != ""){ \
+		if(idx == MLC$team && dtaStr != "") \
 			team = dtaInt; \
-		} \
 		if(idx == MLC$rapePackage && isset(dtaStr)) \
 			rapeName = dtaStr; \
 		if(idx == MLC$drops) \
 			drops = dtaStr; \
-		if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]"; \
+		if( idx == MLC$melee_height ) \
+			melee_height = dtaInt; \
 	} \
 	if(mhp == -1 || HP>maxHP) \
 		HP = maxHP; \
@@ -401,6 +423,7 @@ anim(string anim, integer start){
 		multiTimer(["A", 2, TRUE]); \
 	}else \
 		multiTimer(["A"]); \
+	if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]"; \
 	setTeam(team); \
 	if(~BFL&BFL_INITIALIZED){ \
 		BFL = BFL|BFL_INITIALIZED; \
@@ -411,12 +434,12 @@ anim(string anim, integer start){
 
 
 #define onEvt(script, evt, data) \
-	if(script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players)){ \
+	if( script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players) ){ \
         PLAYERS = data; \
 		if(aggro_range)multiTimer(["A", 1, TRUE]); \
     } \
-	else if(script == "got Monster"){ \
-	    if(evt == MonsterEvt$runtimeFlagsChanged){ \
+	else if( script == "got Monster" ){ \
+	    if( evt == MonsterEvt$runtimeFlagsChanged ){ \
             integer pre = RUNTIME_FLAGS; \
 			RUNTIME_FLAGS = llList2Integer(data,0); \
 			list opstat = OUTPUT_STATUS_TO; \
@@ -431,21 +454,38 @@ anim(string anim, integer start){
 			} \
 			updateDesc(); \
         } \
-		else if(evt == MonsterEvt$attack){ \
-            key targ = llList2Key(data, 0); \
+		else if( evt == MonsterEvt$attack ){ \
+			key targ = llList2Key(data, 0); \
             float crit = 1; \
-			if(llFrand(1)<fxModCrit)crit = 2; \
+			if( llFrand(1) < fxModCrit ) \
+				crit = 2; \
 			integer dmg = llRound(dmg*fxModDmgDone*crit*10); \
 			integer pain = llRound(dmg*.2); \
-            FX$send(targ, llGetKey(), "[1,0,0,0,[0,1,\"\",[[1,"+llInsertString((str)dmg,llStringLength((str)dmg)-1,".")+"],[3,"+llInsertString((str)pain, llStringLength((str)pain)-1, ".")+"],[6,\"<1,.5,.5>\"]],[],[],[],0,0,0]]", TEAM); \
+			list h = [6,"<-1,-1,-1>"];\
+			myAngX(targ, ang) \
+			if( llFabs(ang) < PI_BY_TWO ){ \
+				if( melee_height == 0 ) \
+					h+= fxhfFlag$SLOT_GROIN; \
+				else if(melee_height == 1) \
+					h+= fxhfFlag$SLOT_BREASTS; \
+			} \
+			else if( melee_height == 0 ) \
+				h+= fxhfFlag$SLOT_BUTT; \
+			string hitfx = mkarr(h); \
+            FX$send( \
+				targ, \
+				llGetKey(), \
+				"[1,0,0,0,[0,1,\"\",[[1,"+ \
+					llInsertString((str)dmg,llStringLength((str)dmg)-1,".")+ \
+				"],[3,"+ \
+					llInsertString((str)pain, llStringLength((str)pain)-1, ".")+ \
+				"],"+hitfx+"],[],[],[],0,0,0]]", TEAM); \
         } \
-		else if(evt == MonsterEvt$attackStart){ \
-            if(attacksound) \
-                llTriggerSound(attacksound, 1); \
+		else if( evt == MonsterEvt$attackStart && attacksound != "" ){ \
+            llTriggerSound(attacksound, 1); \
         } \
     } \
-	else if(evt == evt$TOUCH_START){ \
-		if(!initialized() || RUNTIME_FLAGS&Monster$RF_NO_TARGET)return; \
+	else if( evt == evt$TOUCH_START && initialized() && ~RUNTIME_FLAGS&Monster$RF_NO_TARGET ){ \
         Root$targetMe(l2s(data, 1), icon, TRUE, TEAM); \
 	} \
 
@@ -454,16 +494,12 @@ anim(string anim, integer start){
 default 
 {
     state_entry(){
-        if(llGetStartParameter()){
-            raiseEvent(evt$SCRIPT_INIT, "");
-        }
+        raiseEvent(evt$SCRIPT_INIT, "");
 		setTeam(TEAM_DEFAULT);
     }
 	
 	sensor(integer total){
 		integer ffa = isFFA();
-		
-
 		while(total--){
             key k = llDetectedKey(total);
 			integer type = llDetectedType(total);
@@ -621,43 +657,48 @@ default
 		return;
 	}
     if(method$isCallback){
-        if(METHOD == StatusMethod$get && id!="" && SENDER_SCRIPT == "got Status"){
-            if(CB == "aggro"){
-                
-                // agc checks if it should rape or not
-                integer flags = (integer)method_arg(0);
-                if(!_attackable(PARAMS) || llList2Integer(PARAMS,7) == TEAM){
-                    dropAggro(id, TRUE);
-                    return;
-                }                
-                aggro(id, 10);
-            } 
-        }  
+        if( METHOD == StatusMethod$get && id!="" && SENDER_SCRIPT == "got Status" && CB == "aggro" ){
+
+			// agc checks if it should rape or not
+			integer flags = (integer)method_arg(0);
+			if(!_attackable(PARAMS) || llList2Integer(PARAMS,7) == TEAM){
+				dropAggro(id, TRUE);
+				return;
+			}                
+			aggro(id, 10);
+		} 
         return;
     }
 	
 	
 	
     if(id == ""){
+	
 		if(METHOD == StatusMethod$addTextureDesc){
+		
             SPELL_ICONS += [(integer)method_arg(0), (key)method_arg(1), (str)method_arg(2), (int)method_arg(3), (int)method_arg(4), (int)method_arg(5)];
 			multiTimer(["OT", .1, FALSE]);
+			
         }
         else if(METHOD == StatusMethod$remTextureDesc){
+		
             integer pid = (integer)method_arg(0);
             integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
 			if(pos == -1)return;
 			
             SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
             multiTimer(["OT", .1, FALSE]);
+			
         }
 		else if(METHOD == StatusMethod$stacksChanged){
+		
 			integer pid = (integer)method_arg(0);
             integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
 			if(pos == -1)return;
 			
 			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
 			multiTimer(["OT", .1, FALSE]);
+			
 		}
     }
     
@@ -678,11 +719,11 @@ default
 		//qd("Targeting received from "+llKey2Name(id));
         integer on = (integer)method_arg(0);
         integer pos = llListFindList(OUTPUT_STATUS_TO, [(str)id]);
-        if(!on){
-            if(pos == -1)return;
+        if( !on && pos != -1 ){
             OUTPUT_STATUS_TO = llDeleteSubList(OUTPUT_STATUS_TO, pos, pos);
-        }else{
-            if(pos == -1)OUTPUT_STATUS_TO += (str)id;
+        }else if( on ){
+            if(pos == -1)
+				OUTPUT_STATUS_TO += (str)id;
             outputStats(TRUE,__LINE__);
             outputTextures();
         }
@@ -702,12 +743,12 @@ default
 		
 		STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;
 		raiseEvent(StatusEvt$dead, "1");
-		anim("die", TRUE);
+		startAnim("die");
 		
 		llSleep(.1);
-		anim("idle", FALSE);
-		anim("walk", FALSE);
-		anim("attack", FALSE);
+		stopAnim("idle");
+		stopAnim("walk");
+		stopAnim("attack");
 		BFL = BFL&~BFL_INITIALIZED; 	// Prevent further interaction
 		llSetObjectDesc("");			// Prevent targeting
 
@@ -759,7 +800,7 @@ default
     }
 	// Take hit animation
     else if(METHOD == StatusMethod$monster_takehit){
-		anim("hit", TRUE);
+		startAnim("hit");
         if(takehitsound)llTriggerSound(takehitsound, 1);
     }
 	// Whenever spell modifiers have changed
@@ -776,9 +817,23 @@ default
 		
 		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
     }
+	
 	// Drop aggro from this
-    else if(METHOD == StatusMethod$monster_dropAggro)
-        dropAggro(method_arg(0), (integer)method_arg(1));
+    else if(METHOD == StatusMethod$monster_dropAggro){
+	
+		key player = method_arg(0);
+		integer complete = l2i(PARAMS, 0);
+		integer pos = llListFindList(AGGRO, [player]);
+		if(~pos){
+			if(complete == 3)AGGRO = llListRandomize(AGGRO, AGGRO_STRIDE);
+			else if(complete == 2)AGGRO = llListReplaceList(AGGRO, [llFrand(10)], pos-1, pos-1);
+			else if(complete)AGGRO = llDeleteSubList(AGGRO, pos-1, pos+AGGRO_STRIDE-2);
+			else AGGRO = llListReplaceList(AGGRO, [llList2Integer(AGGRO, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
+		}
+		aggro("",0);
+		
+	}
+	
     // This person wants to target me
 	else if(METHOD == StatusMethod$monster_attemptTarget && ~RUNTIME_FLAGS&Monster$RF_NO_TARGET)
         Root$targetMe(id, icon, (integer)method_arg(0), TEAM);
@@ -800,17 +855,16 @@ default
 	}   
 	
 	//Nearby monster has found aggro
-	else if(METHOD == StatusMethod$monster_aggroed && ~RUNTIME_FLAGS&Monster$RF_NOAGGRO){
-		if(l2i(PARAMS, 2) != TEAM)return;
+	else if(METHOD == StatusMethod$monster_aggroed && ~RUNTIME_FLAGS&Monster$RF_NOAGGRO && l2i(PARAMS, 2) == TEAM ){
 		
 		key p = method_arg(0);
 		vector pp = prPos(p);
 		float r = (float)method_arg(1);
 		if(llVecDist(llGetPos(), pp) > r)return;
 		list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
-		if(llList2Integer(ray, -1) == 0){
+		if(llList2Integer(ray, -1) == 0)
 			aggro(p,10);
-		}
+		
 	}
 	
 	

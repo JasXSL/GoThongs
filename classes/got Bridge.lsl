@@ -92,7 +92,7 @@
 	#define BSUD$WDATA 10				// arr Weapondata
 	#define BSUD$ENCHANTS 11			// arr Passives
 	#define BSUD$IGNORE_TOKEN 12		// bool ignore - Don't reload the website
-	
+	#define BSUD$DEFAULT_STANCE 13		// Default stance of thong, overrides all weapon stances
 	
 #define Bridge$userData() db3$get("got Bridge", [BridgeShared$userData])
 

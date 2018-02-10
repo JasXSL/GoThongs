@@ -49,7 +49,7 @@
 // Settings that are arrays that should be appended
 #define FXCUpd$arrays [FXCUpd$CONVERSION]
 
-#define FXCEvt$hitFX 1					// (vec)color, (int)flags
+#define FXCEvt$hitFX 1					// (vec)color, (int)flags, (key)attacker
 #define FXCEvt$pullStart 2				// void - Pull has started
 #define FXCEvt$pullEnd 3				// void - A pull effect has ended
 #define FXCEvt$spellMultipliers 4		// (arr)spell_dmg_done_multi, (arr)SPELL_MANACOST_MULTI, (arr)SPELL_CASTTIME_MULTI, (arr)SPELL_COOLDOWN_MULTI - PC only - Contains 3 indexed arrays of floats indexed 0-4 for the spells.

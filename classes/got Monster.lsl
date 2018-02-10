@@ -68,7 +68,7 @@
 // LocalConf INI data:
 // [(int)RUNTIME_FLAGS, (float)speed, (float)hitbox, (float)atkspeed, (float)dmg, (float)wander, (int)maxhp, (float)aggro_range, (key)aggrosound, (key)dropaggrosound, (key)takehitsound, (key)attacksound, (key)deathsound, (key)icon]
 
-#define MLC$RF 0
+#define MLC$RF 0					// Monster runtime flags?
 #define MLC$speed 1
 #define MLC$hitbox 2
 #define MLC$atkspeed 3
@@ -87,4 +87,5 @@
 #define MLC$team 16
 #define MLC$range_add 17			// (int)decimeters - Range increase in decimeters players players can hit this monster 
 #define MLC$height_add 18			// (int)decimeters - Offset the Z center used for LOS calculations
+#define MLC$melee_height 19			// Int signifying the point of the avatar to hit. 0 = groin/butt, 1 = chest, -1 = none
 

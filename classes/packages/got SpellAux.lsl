@@ -48,7 +48,6 @@ float befuddle = 1;		// Chance to cast at a random target
 float backstabMulti = 1;	// Additional damage when attacking from behind
 integer fxFlags = 0;
 
-#define aroused (1-(float)(STATUS_FLAGS&StatusFlag$aroused)/StatusFlag$aroused*.1)
 #define pmod (1./count(PLAYERS))
 
 string runMath(string FX, integer index, key targ){
@@ -63,14 +62,20 @@ string runMath(string FX, integer index, key targ){
 		bsMul = backstabMulti;
 	}
 	float spdmdm = llList2Float(SPELL_DMG_DONE_MOD, index);
-	if(spdmdm == -1)spdmdm = 1;
-	else if(spdmdm<0)spdmdm = 0;
+	if(spdmdm == -1)
+		spdmdm = 1;
+	else if(spdmdm<0)
+		spdmdm = 0;
 
+	int melee_range;
+	if( llVecDist(llGetPos(), prPos(targ)) < MELEE_RANGE )
+		melee_range = TRUE;
+		
 	string consts = llList2Json(JSON_OBJECT, [
 		// Damage done multiplier
-        "D", (dmdmod*pmod*aroused*CACHE_CRIT*spdmdm*difDmgMod()*bsMul),
+        "D", (dmdmod*pmod*CACHE_CRIT*spdmdm*difDmgMod()*bsMul),
 		// Raw multiplier not affected by team or difficulty
-		"R", (dmdmod*aroused*CACHE_CRIT*spdmdm*bsMul),
+		"R", (dmdmod*CACHE_CRIT*spdmdm*bsMul),
 		// Critical hit
 		"C", CACHE_CRIT,
 		// Points of arousal
@@ -87,7 +92,8 @@ string runMath(string FX, integer index, key targ){
 		"h", hdmod,
 		"T", TEAM,
 		// Max HP
-		"mhp", CACHE_MAX_HP
+		"mhp", CACHE_MAX_HP,
+		"m", melee_range
     ]);
 
     integer i;

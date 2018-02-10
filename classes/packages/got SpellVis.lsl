@@ -55,6 +55,8 @@ float manamod = 1;        // Global mana cost mod
 float cdmod = 1;        // Global cooldown mod
 list manacostMulti = [1,1,1,1,1];
 
+integer WEAPON_SHEATHED = TRUE;
+
 // Removes all cast and cooldown bars
 #define stopCast(abil) llSetLinkPrimitiveParamsFast(llList2Integer(ABILS, abil), [PRIM_COLOR, 2, <1,1,1>, 0, PRIM_COLOR,0]+getBorderColorAndAlpha(abil, ABIL_BORDER_COLOR, ABIL_BORDER_ALPHA));
 #define setCooldown(index, currentTime, start, duration) \
@@ -107,6 +109,7 @@ onEvt(string script, integer evt, list data){
         manacostMulti = llJson2List(llList2String(data,1));
     }
     else if(script == "got SpellMan" && evt == SpellManEvt$recache){
+	
         FX_CACHE = [];
         PARTICLE_CACHE = [];
         CACHE_MANA_COST = [];
@@ -123,11 +126,13 @@ onEvt(string script, integer evt, list data){
                 d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
 
             string visuals = llList2String(d, 8); // Visuals
-            string p = j(visuals, 3);
-            PARTICLE_CACHE += (float)j(p, 0);
-            PARTICLE_CACHE += (integer)j(p, 1);
-            PARTICLE_CACHE += j(p, 2);
-            
+            list p = llJson2List(j(visuals, 3));
+			while( count(p) < 2 )
+				p+= 0;
+            PARTICLE_CACHE += l2f(p, 0);
+            PARTICLE_CACHE += llList2List(p, 1, 1);
+            PARTICLE_CACHE += l2s(p, 2);
+			            
             set += [
                 PRIM_LINK_TARGET, llList2Integer(ABILS, i),
                 PRIM_TEXTURE, 1, llList2String(d, BSSAA$texture), <1,1,0>, <0,0,0>,0,
@@ -146,18 +151,22 @@ onEvt(string script, integer evt, list data){
             CACHE_MANA_COST += llList2Float(d, 3);
         }
         
-        if(FX_CACHE){
+        if( FX_CACHE ){
+		
             BFL = BFL|BFL_INI;
             llSetLinkPrimitiveParamsFast(0, set);
             SpellVis$toggle(TRUE);
             GUI$toggle(TRUE);
+			
         }
+		
     }
     
     // Spell handlers
     
     // CAST START
     else if(script == "got SpellMan" && evt == SpellManEvt$cast){
+	
         BFL = BFL|BFL_CASTING;
         
         // SpellMan handles all the conversions from -1 to 0-5, so this is the true index
@@ -166,17 +175,24 @@ onEvt(string script, integer evt, list data){
         SPELL_CASTED = l2i(data, 2);
 
 		multiTimer(["CD_"+(str)SPELL_CASTED]);
-        if(ct>0){
+		
+        if( ct>0 )
             setAbilitySpinner(SPELL_CASTED, 0, ct, FALSE);                // Not an instant spell, show cast bar
-        }
+        
 	
         list visual = llList2List(FX_CACHE, SPELL_CASTED*FXSTRIDE, SPELL_CASTED*FXSTRIDE+FXSTRIDE-1);
         
         // particles
         list p = llList2List(PARTICLE_CACHE, SPELL_CASTED*PSTRIDE, SPELL_CASTED*PSTRIDE+PSTRIDE-1);
-        if(llList2String(p,2) != "")
-            ThongMan$particles(llList2Float(p, fxp$timeout), llList2Integer(p, fxp$prim), llList2String(p, fxp$particles));
-        
+		
+		
+		// Send to class specific visuals
+		if( l2i(p, 0) == -2 )
+			gotClassAtt$spellStart(l2s(p, 1), ct+1);
+		// Send to global thongmanager
+		else if( llList2String(p, fxp$particles) != "" )
+			ThongMan$particles(ct+1, l2i(p, fxp$prim), l2s(p, fxp$particles));
+		
         list anims = [llList2String(visual, fxc$castAnim)];
         if(llJsonValueType((string)anims, []) == JSON_ARRAY)
             anims = llJson2List((string)anims);
@@ -186,10 +202,13 @@ onEvt(string script, integer evt, list data){
             sounds = llJson2List((string)sounds);
         
         list_shift_each(anims, v,
-            if(isset(v)){
-                AnimHandler$anim(v, TRUE, 0,0);
+		
+            if( isset(v) ){
+			
+                AnimHandler$anim(v, TRUE, 0,0,0);
                 SPELL_ANIMS+=v;
             }
+			
         )
         
         integer loop = TRUE;
@@ -226,6 +245,16 @@ onEvt(string script, integer evt, list data){
         if(llJsonValueType((string)sounds, []) == JSON_ARRAY)
             sounds = llJson2List((string)sounds);
         
+		
+		list p = llList2List(PARTICLE_CACHE, SPELL_CASTED*PSTRIDE, SPELL_CASTED*PSTRIDE+PSTRIDE-1);
+		if( l2i(p, 0) == -2 ){
+
+			if( l2s(p, 1) )
+				gotClassAtt$spellEnd(l2s(p, 1), 1);
+			if( l2s(p, 2) != "" && !WEAPON_SHEATHED )
+				Weapon$trail(l2s(p,2));
+			
+		}
         
         if(l2s(anims, 0) == "_WEAPON_"){
             WeaponLoader$anim();
@@ -233,7 +262,7 @@ onEvt(string script, integer evt, list data){
         }
         list_shift_each(anims, v, 
             if(isset(v))
-                AnimHandler$anim(v, TRUE, 0, 0);
+                AnimHandler$anim(v, TRUE, 0, 0, 0);
         )
         
             
@@ -279,9 +308,17 @@ onEvt(string script, integer evt, list data){
         onSpellEnd(SPELL_CASTED, i2f(l2f(data, 5)));
     }
     else if(script == "got SpellMan" && evt == SpellManEvt$interrupted){
+	
+		list p = llList2List(PARTICLE_CACHE, SPELL_CASTED*PSTRIDE, SPELL_CASTED*PSTRIDE+PSTRIDE-1);
+		if( l2i(p, 0) == -2 )
+			gotClassAtt$spellEnd(l2s(p, 1), 0);
         onSpellEnd(l2i(data,0), i2f(l2i(data, 1)));
+		
     }
     
+	else if( script == "got WeaponLoader" && evt == WeaponLoaderEvt$sheathed )
+		WEAPON_SHEATHED = l2i(data, 0);
+	
 }
 
 onSpellEnd(integer index, float casttime){
@@ -302,7 +339,7 @@ onSpellEnd(integer index, float casttime){
     // Stops casting animations
     list_shift_each(SPELL_ANIMS, v, 
         if(isset(v))
-            AnimHandler$anim(v, FALSE, 0, 0);
+            AnimHandler$anim(v, FALSE, 0, 0, 0);
     )
 }
 
@@ -387,7 +424,7 @@ default
         
         
         // Debug
-        //onEvt("got SpellMan", SpellManEvt$recache, []);
+        onEvt("got SpellMan", SpellManEvt$recache, []);
     }
     
     timer(){multiTimer([]);}
@@ -442,7 +479,8 @@ default
         
         
     
-    if(METHOD == SpellVisMethod$setCooldowns){
+    if( METHOD == SpellVisMethod$setCooldowns ){
+	
         float currentTime = i2f(l2i(PARAMS, -1));
         PARAMS = llDeleteSubList(PARAMS, -1, -1);
         

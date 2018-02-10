@@ -210,10 +210,12 @@ default
 				Potions$use((string)LINK_ROOT); 
 			} 
 			
-			else if(message == "sheathe" && ~BFL&BFL_TIMER_SHEATHED){
+			else if( message == "sheathe" && ~BFL&BFL_TIMER_SHEATHED ){
+			
 				BFL = BFL|BFL_TIMER_SHEATHED;
 				WeaponLoader$toggleSheathe(LINK_SET, -1);
 				multiTimer(["D", "", 3, FALSE]);
+				
 			}
 			
 			else  

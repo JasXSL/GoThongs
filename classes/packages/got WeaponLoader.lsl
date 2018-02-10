@@ -42,7 +42,9 @@ rotation W_OFFHAND_ROT;
 rotation W_BACK_MAINHAND_ROT;
 rotation W_BACK_OFFHAND_ROT;
 
-integer ANIM_SET;
+string CLASS_STANCE;
+string STANCE;
+list ANIM_SET;
 
 rotation BACK_DEFAULT_ROT = <0.00000, 0.00000, 0.53730, 0.84339>;
 vector BACK_DEFAULT_POS = <-0.11448, -0.37465, -0.04116>;
@@ -58,26 +60,32 @@ onEvt(string script, integer evt, list data){
 		TFLAGS = l2i(data, 3);
 		reloadWeapon();
 	}
-		
 	
+	if( script == "got SpellMan" && evt == SpellManEvt$complete && BFL&BFL_SHEATHED )
+        WeaponLoader$toggleSheathe(LINK_THIS, 0);
+
     if(script == "got Status" && evt == StatusEvt$flags){
+	
         integer pre = STATUS;
         STATUS = l2i(data, 0);
         
-        if(pre&StatusFlag$dead && ~STATUS&StatusFlag$dead){
-            // Rape ended
+		// Rape ended
+        if( pre&StatusFlag$dead && ~STATUS&StatusFlag$dead )
             spawnWeapons();
-        }
-        else if(~pre&StatusFlag$dead && STATUS&StatusFlag$dead){
-            // Remove weapons
+        // Remove weapons
+		else if( ~pre&StatusFlag$dead && STATUS&StatusFlag$dead )
             Weapon$removeAll();
-        }
+        // Auto sheathe
+		else if( pre&StatusFlag$combat && ~STATUS&StatusFlag$combat )
+			WeaponLoader$toggleSheathe(LINK_THIS, 1);
+		
     }
 	
     
 }
 
-loadWeapon(list data){
+loadWeapon( list data ){
+
     W_SCALE = l2f(data, BSUD$W_SCALE);
     
     // Avatar settings
@@ -85,13 +93,13 @@ loadWeapon(list data){
     vector mainhand_back_offset = (vector)l2s(data, BSUD$W_BACK_MH_OFFSET);
     vector offhand_offset = (vector)l2s(data, BSUD$W_OH_OFFSET);
     vector offhand_back_offset = (vector)l2s(data, BSUD$W_BACK_OH_OFFSET);
+	
+	CLASS_STANCE = l2s(data, BSUD$DEFAULT_STANCE);
     
     list wdata = llJson2List(l2s(data, BSUD$WDATA));
     string rhand = l2s(wdata, 0);
     string lhand = l2s(wdata, 1);
     WFLAGS = l2i(wdata, 4);
-    
-    ANIM_SET = l2i(wdata, 3);
     
     W_MAINHAND_SLOT = l2i(wdata, 6);
     W_OFFHAND_SLOT = l2i(wdata, 7);
@@ -107,7 +115,10 @@ loadWeapon(list data){
     // Main hand offsets default to ZERO_VECTOR/ZERO_ROTATION, so we can just use the stuff from the avatar
     W_MAINHAND_POS = mainhand_offset;
     W_OFFHAND_POS = offhand_offset;
-    
+	
+	STANCE = j(l2s(wdata, 13), 0);
+	ANIM_SET = llJson2List(j(l2s(wdata, 13), 1));
+	    
     // Calculate back positions. Back position use OFFSETS
     vector add = BACK_DEFAULT_POS;
     if((vector)l2s(wdata, 10))
@@ -115,9 +126,9 @@ loadWeapon(list data){
     W_BACK_MAINHAND_POS = mainhand_offset+add;
     
     add = BACK_OH_DEFAULT_POS;
-    if((vector)l2s(wdata, 11)){
+    if( (vector)l2s(wdata, 11) )
         add = (vector)l2s(wdata, 11);
-    }
+    
     W_BACK_OFFHAND_POS = offhand_offset+add;
     
     
@@ -127,12 +138,11 @@ loadWeapon(list data){
     W_BACK_OFFHAND_ROT = BACK_OH_DEFAULT_ROT;
     
     // Check if custom exists for this particular weapon
-    if((rotation)l2s(wdata, 8)){
+    if( (rotation)l2s(wdata, 8) )
         W_BACK_MAINHAND_ROT = (rotation)l2s(wdata, 8);
-    }
-    if((rotation)l2s(wdata, 9)){
+    if( (rotation)l2s(wdata, 9) )
         W_BACK_OFFHAND_ROT = (rotation)l2s(wdata, 9);
-    }
+    
 	
 	// At least 1 weapon prim has changed so we need to re-spawn
 	if(rhand != RHAND || lhand != LHAND){
@@ -320,43 +330,21 @@ default
     
     if(method$internal){
         
-		if(METHOD == WeaponLoaderMethod$anim){
+		if( METHOD == WeaponLoaderMethod$anim ){
             
 			raiseEvent(WeaponLoaderEvt$attackAnim, "");
-			
-			integer set = ANIM_SET;
-			if(unsheatable)
-				set = 0;
-			
+
             list kit = ["attack_fists_1", "attack_fists_2", "attack_fists_3"];
-            // 2handed
-            if(set == 1){
-                kit = ["stance_2h_1", "stance_2h_2", "stance_2h_3"];
-            }
-            // Piercing
-            if(set == 4){
-                kit = ["stance_1hpierce_1","stance_1hpierce_2","stance_1hpierce_3","stance_1hpierceoh_1","stance_1hpierceoh_2"];
-            }
-            
-            // One handed default
-            if(set == 2 || set == 3){
-                kit = ["stance_1h_1", "stance_1h_2", "stance_1h_3"];
-            }
-            // Dual wield slash
-            if(set == 3){
-                kit+= ["stance_1hoh_1", "stance_1hoh_2"];
-            }
-            
+			if( ANIM_SET != [] && !unsheatable )
+				kit = ANIM_SET;
+           
             string anim = randElem(kit);
             list out = [anim, anim+"_ub"];
-            AnimHandler$anim(mkarr(out), TRUE, 0, 0);
-            
-            if(BFL&BFL_SHEATHED){
-                WeaponLoader$toggleSheathe(LINK_THIS, 0);
-            }
-			
-			if(W_SOUNDS)
+            AnimHandler$anim(mkarr(out), TRUE, 0, 0, 0);
+
+			if( W_SOUNDS )
 				multiTimer(["SND", randElem(W_SOUNDS), 0.25, FALSE]);
+				
         }
 		
 		else if(METHOD == WeaponLoaderMethod$remInventory){
@@ -374,53 +362,59 @@ default
     }
     
     if(method$byOwner){
-        if(METHOD == WeaponLoaderMethod$toggleSheathe && ~STATUS&StatusFlag$dead){
+	
+        if( METHOD == WeaponLoaderMethod$toggleSheathe && ~STATUS&StatusFlag$dead ){
+		
             integer n = l2i(PARAMS, 0);
             
             // True if we should sheathe
             integer sheathe = (n == -1 && ~BFL&BFL_SHEATHED) || n == 1;
-            
-			integer set = ANIM_SET;
-			if(unsheatable)
-				set = 0;
 			
+			string anim = "stance_fists";
+			if( STANCE != "" && !unsheatable )
+				anim = STANCE;
+			if( CLASS_STANCE != "" && !unsheatable )
+				anim = CLASS_STANCE;
+            
             // Limit updates to change
             if(
                 (!sheathe && BFL&BFL_SHEATHED) ||
                 (sheathe && ~BFL&BFL_SHEATHED)
             ){
-                if(!set){
+                if( anim == "stance_fists" )
                     llTriggerSound("1c7916eb-8ceb-1e39-c88d-94d1eaa2deb5", .1);
-                }else{
+                else{
+				
                     list anims = ["unsheathe", "unsheathe_ub"];
-                    AnimHandler$anim(mkarr(anims), TRUE, 0, 0);
+                    AnimHandler$anim(mkarr(anims), TRUE, 0, 0, 0);
                     llTriggerSound("d381de30-9ee8-e32f-8b5a-9f6f77e2c007", .5);
+					
                 }
+				
                 BFL = BFL&~BFL_SHEATHED;
-                if(sheathe){
+                if( sheathe )
                     BFL = BFL|BFL_SHEATHED;
-                }
+                
                 // Update the weapons
-                if(!unsheatable)
+                if( !unsheatable )
                     spawnWeapons();
 					
 				raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
+				
             }
             
             // Animations
             integer p = llGetPermissions()&PERMISSION_OVERRIDE_ANIMATIONS;
-            list anim = ["stance_fists", "stance_2h", "stance_1h", "stance_1h", "stance_1h", "stance_1h"];
+			if( !p )
+				return;
+			
             
-            if(!p)return;
-            if(!sheathe){
-                llSetAnimationOverride( "Standing", l2s(anim, set) );
-            }
-            else{
+            
+            if( !sheathe )
+                llSetAnimationOverride( "Standing", anim );
+            else
                 llResetAnimationOverride("Standing");
-            }
 
-            
-            
         }
 		
 		// Calculate position offset and send to server. Also re-cache defaults
