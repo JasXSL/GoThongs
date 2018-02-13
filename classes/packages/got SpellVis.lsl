@@ -201,15 +201,16 @@ onEvt(string script, integer evt, list data){
         if(llJsonValueType((string)sounds, []) == JSON_ARRAY)
             sounds = llJson2List((string)sounds);
         
+		SPELL_ANIMS = [];
         list_shift_each(anims, v,
 		
-            if( isset(v) ){
-			
-                AnimHandler$anim(v, TRUE, 0,0,0);
+            if( isset(v) )
                 SPELL_ANIMS+=v;
-            }
 			
         )
+		
+		if( SPELL_ANIMS )
+			AnimHandler$anim(mkarr(SPELL_ANIMS), TRUE, 0,0,0);
         
         integer loop = TRUE;
         if(llGetListEntryType(sounds, 0) == TYPE_INTEGER && !llList2Integer(sounds, 0)){
@@ -337,10 +338,8 @@ onSpellEnd(integer index, float casttime){
 	}
 	
     // Stops casting animations
-    list_shift_each(SPELL_ANIMS, v, 
-        if(isset(v))
-            AnimHandler$anim(v, FALSE, 0, 0, 0);
-    )
+	if( SPELL_ANIMS )
+        AnimHandler$anim(mkarr(SPELL_ANIMS), FALSE, 0, 0, 0);
 }
 
 setAbilitySpinner(integer abil, float startPercent, float duration, integer reverse){

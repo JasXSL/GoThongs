@@ -103,10 +103,13 @@ onEvt(string script, integer evt, list data){
 			qteButtonTouched(pos);
 		}
 	}
-	else if(evt == StatusEvt$targeted_by && script == "got Status"){
+	else if( evt == StatusEvt$targeted_by && script == "got Status" ){
+		
 		TARGETED_BY = data;
 		multiTimer(["OP", "", .2, FALSE]);
+		
 	}
+	
 }
 
 list QTE_SENDER_DATA;			// (key)id||(int)link, (str)scriptName, (str)custom
@@ -190,16 +193,21 @@ timerEvent(string id, string data){
 	else if(id == "QTE")
 		toggleQTE(QTE_STAGES);
 	else if(id == "OP"){
+	
 		integer i; list out;
-		for(i=0; i<llGetListLength(SPELL_ICONS) && i/SPSTRIDE < 8; i+=SPSTRIDE){
+		for( i=0; i<llGetListLength(SPELL_ICONS) && i/SPSTRIDE < 8; i+=SPSTRIDE )
 			out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
-		}
+		
 		string s = llDumpList2String(out,",");
 		GUI$setMySpellTextures(out);
-		list p = TARGETED_BY;
-		list_shift_each(p, val, 
-			GUI$setSpellTextures(val, s);
-		)
+		for( i=0; i<count(TARGETED_BY); i+= 2 ){
+			
+			integer n = l2i(TARGETED_BY, i+1);
+			if( n&StatusTargetFlag$targeting )
+				GUI$setSpellTextures(l2s(TARGETED_BY, i), s);
+		
+		}
+		
     }
 	
 }
@@ -374,13 +382,20 @@ default
 	}
 	
 	else if(METHOD == EvtsMethod$getTextureDesc){
-        if(id == "")id = llGetOwner();
+        
+		
+		key t = method_arg(1);
+		if( t == "" )
+			t = llGetOwner();
 		
 		integer pid = (integer)method_arg(0);
         integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-        if(pos == -1)return;
+
+        if( pos == -1 )
+			return;
 		
-		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
+		llRegionSayTo(t, 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
+		
     }
 
     // Public code can be put here

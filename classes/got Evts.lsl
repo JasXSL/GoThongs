@@ -20,5 +20,5 @@
 
 #define Evts$addTextureDesc(pid, texture, desc, added, duration, stacks) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks], TNN)
 #define Evts$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
-#define Evts$getTextureDesc(pid) runMethod((str)LINK_ROOT, "got Evts", EvtsMethod$getTextureDesc, [pid], TNN)
+#define Evts$getTextureDesc(pid, player) runMethod((str)LINK_ROOT, "got Evts", EvtsMethod$getTextureDesc, [pid, player], TNN)
 #define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)

@@ -77,11 +77,10 @@ integer fxTeam = -1;
 list SPELL_DMG_TAKEN_MOD;
 
 
-#define SPSTRIDE 6
-list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
+#define SPSTRIDE 3
+list SPELL_ICONS;   // [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc]
 
-
-list OUTPUT_STATUS_TO; 
+list OUTPUT_STATUS_TO; // (key)id, (int)flags
 
 list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 
@@ -95,22 +94,23 @@ list CUSTOM_ID;		// (str)id, (var)mixed - Used for got Level integration
 #define dropAggro( player, type ) \
 	runMethod((str)LINK_THIS, cls$name, StatusMethod$monster_dropAggro, [player, type], TNN)
 
-
+// this can be truncated a bit to preserve memory
 outputTextures(){
 
-	integer i; list out;
-	for(i=0; i<llGetListLength(SPELL_ICONS); i+=SPSTRIDE){
-		out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
-	}
+	integer i; string out;
+	for( i=0; i<llGetListLength(SPELL_ICONS); i+=SPSTRIDE )
+		out+= l2s(SPELL_ICONS, i)+","+l2s(SPELL_ICONS,i+1)+",";
 	
-	string s = llDumpList2String(out,",");
+	
 	list opstat = OUTPUT_STATUS_TO;
-	if(RUNTIME_FLAGS&Monster$RF_IS_BOSS)
+	if( RUNTIME_FLAGS&Monster$RF_IS_BOSS )
 		opstat = PLAYERS;
+		
+	out = llDeleteSubString(out, -1, -1);
 	
-    list_shift_each(opstat, val,
-        GUI$setSpellTextures(val, s);
-	)
+    for( i = 0; i<count(opstat); i+= 2)
+		GUI$setSpellTextures(l2s(opstat, i), out);
+	
 	
 }
 
@@ -443,14 +443,15 @@ multiTimer(list data){
             integer pre = RUNTIME_FLAGS; \
 			RUNTIME_FLAGS = llList2Integer(data,0); \
 			list opstat = OUTPUT_STATUS_TO; \
-			if(RUNTIME_FLAGS&Monster$RF_IS_BOSS){ \
+			if(RUNTIME_FLAGS&Monster$RF_IS_BOSS) \
 				opstat = PLAYERS; \
-			} \
 			if( \
 				(pre&Monster$RF_NO_TARGET) != (RUNTIME_FLAGS&Monster$RF_NO_TARGET) &&  \
 				RUNTIME_FLAGS&Monster$RF_NO_TARGET \
 			){ \
-				list_shift_each(opstat, val, Root$clearTargetOn(val);) \
+				integer i; \
+				for( i = 0; i < count(opstat); i+= 2) \
+					Root$clearTargetOn(l2s(opstat, i)); \
 			} \
 			updateDesc(); \
         } \
@@ -676,28 +677,36 @@ default
 	
 		if(METHOD == StatusMethod$addTextureDesc){
 		
-            SPELL_ICONS += [(integer)method_arg(0), (key)method_arg(1), (str)method_arg(2), (int)method_arg(3), (int)method_arg(4), (int)method_arg(5)];
-			multiTimer(["OT", .1, FALSE]);
+            SPELL_ICONS += [
+				(integer)method_arg(0), 
+				method_arg(1)+","+method_arg(3)+","+method_arg(4)+","+method_arg(5), 
+				(str)method_arg(2)
+			];
+			multiTimer(["OT", .05, FALSE]);
 			
         }
         else if(METHOD == StatusMethod$remTextureDesc){
 		
             integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if(pos == -1)return;
+            integer pos = llListFindList(SPELL_ICONS, [pid]);
+			if( pos == -1 )
+				return;
 			
-            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
-            multiTimer(["OT", .1, FALSE]);
+            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos, pos+SPSTRIDE-1);
+            multiTimer(["OT", .3, FALSE]);
 			
         }
 		else if(METHOD == StatusMethod$stacksChanged){
 		
 			integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if(pos == -1)return;
+            integer pos = llListFindList(SPELL_ICONS, [pid]);
+			if( pos == -1 )
+				return;
 			
-			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
-			multiTimer(["OT", .1, FALSE]);
+			list spl = llCSV2List(l2s(SPELL_ICONS, pos+1));
+			spl = llListReplaceList(spl, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], 1, -1);
+			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [implode(",", spl)], pos+1,pos+1);
+			multiTimer(["OT", .2, FALSE]);
 			
 		}
     }
@@ -716,18 +725,53 @@ default
     
 	// This person has toggled targeting on you
     if(METHOD == StatusMethod$setTargeting){
-		//qd("Targeting received from "+llKey2Name(id));
-        integer on = (integer)method_arg(0);
+	
+		integer flags = (integer)method_arg(0);
         integer pos = llListFindList(OUTPUT_STATUS_TO, [(str)id]);
-        if( !on && pos != -1 ){
-            OUTPUT_STATUS_TO = llDeleteSubList(OUTPUT_STATUS_TO, pos, pos);
-        }else if( on ){
-            if(pos == -1)
-				OUTPUT_STATUS_TO += (str)id;
+		
+		integer remove;
+		if( flags < 0 ){
+			
+			flags = llAbs(flags);
+			remove = TRUE;
+			
+		}
+		
+		integer cur = l2i(OUTPUT_STATUS_TO, pos+1);
+		
+		// Remove from existing
+		if( ~pos && remove )
+			cur = cur&~flags;
+		// Add either new or existing
+		else if( 
+			(~pos && !remove && (cur|flags) != flags ) ||
+			( pos == -1 && !remove )
+		)cur = cur|flags;
+		// Cannot remove what does not exist
+		else
+			return;
+		
+		// Exists, update
+		if( ~pos && cur )
+			OUTPUT_STATUS_TO = llListReplaceList(OUTPUT_STATUS_TO, [cur], pos+1, pos+1);
+		// Exists, delete
+		else if( ~pos && !cur )
+			OUTPUT_STATUS_TO = llDeleteSubList(OUTPUT_STATUS_TO, pos, pos+1);
+		// Insert new
+		else
+			OUTPUT_STATUS_TO += [(str)id, cur];
+
+
+		if( cur ){
+		
             outputStats(TRUE,__LINE__);
             outputTextures();
+			
         }
+		
+		//raiseEvent(StatusEvt$targeted_by, mkarr(OUTPUT_STATUS_TO));
 		NPCSpells$setOutputStatusTo(OUTPUT_STATUS_TO);
+		
     }
 	
 	else if(METHOD == StatusMethod$kill){
@@ -808,14 +852,18 @@ default
         SPELL_DMG_TAKEN_MOD = llJson2List(method_arg(0));
     }
 	// Get the description of an effect affecting me
-    else if(METHOD == StatusMethod$getTextureDesc){
-        if(id == "")id = llGetOwner();
+    else if( METHOD == StatusMethod$getTextureDesc ){
+	
+        if( id == "" )
+			id = llGetOwner();
 		
 		integer pid = (integer)method_arg(0);
-        integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-        if(pos == -1)return;
+        integer pos = llListFindList(SPELL_ICONS, [pid]);
+        if( pos == -1 )
+			return;
 		
-		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
+		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPELL_ICONS, pos+2));
+		
     }
 	
 	// Drop aggro from this

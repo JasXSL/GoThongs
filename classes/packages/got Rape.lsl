@@ -17,7 +17,7 @@ list FX_ATTACHMENTS;		// [(str)name, (key)id, (int)nr_attachments]
 updateFxAttachments(){
 	integer i;
 	for(i=0; i<count(FX_ATTACHMENTS); i+=3){
-		if(llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == ""){
+		if(llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == "" && llGetInventoryType(l2s(FX_ATTACHMENTS, i)) == INVENTORY_OBJECT ){
 			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
 			//llRezAtRoot(llList2String(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_VECTOR, ZERO_ROTATION, 1);
 		}
@@ -85,7 +85,7 @@ default
                 llRezAtRoot(llList2String(RAPE_ATTACHMENTS, i), llGetPos()-<0,0,2>, ZERO_VECTOR, ZERO_ROTATION, 1);
             }
             for(i=0; i<llGetListLength(RAPE_ANIMS); i++)
-                AnimHandler$anim(llList2String(RAPE_ANIMS, i), TRUE, 0, 0);
+                AnimHandler$anim(llList2String(RAPE_ANIMS, i), TRUE, 0, 0, 0);
             
             vector pos = llGetPos();
             vector ascale = llGetAgentSize(llGetOwner());
@@ -174,7 +174,7 @@ default
             Attached$remove(val);
 		}
         list_shift_each(RAPE_ANIMS, val,
-            AnimHandler$anim(val, FALSE, 0, 0);
+            AnimHandler$anim(val, FALSE, 0, 0, 0);
         )
         
         raiseEvent(RapeEvt$onEnd, "");

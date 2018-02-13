@@ -87,7 +87,7 @@ float PAIN = 0;
 
 list OUTPUT_STATUS_TO; 
 list PLAYERS;
-list TARGETING;
+list TARGETING; 		// (key)id, (int)flags
 
 integer DIFFICULTY = 1;	// 
 #define difMod() ((1.+(llPow(2, (float)DIFFICULTY*.7)+DIFFICULTY*3)*0.1)-0.4)
@@ -387,7 +387,9 @@ onEvt(string script, integer evt, list data){
 			Status$fullregen();
 		}
         // Force update on targeting self, otherwise it requests
-        else if(evt == RootEvt$targ && llList2Key(data, 0) == llGetOwner())outputStats();
+        else if( evt == RootEvt$targ && llList2Key(data, 0) == llGetOwner() )
+			outputStats();
+			
     }
 	
 	else if(script == "got SpellMan"){
@@ -768,30 +770,46 @@ default
 		outputStats();
 	}
 	
-    else if(METHOD == StatusMethod$setTargeting){
-	
-		integer on = llList2Integer(PARAMS, 0); 				// Target or untarget
-		integer pos = llListFindList(TARGETING, [(str)id]);		// See if already targeting
+    else if( METHOD == StatusMethod$setTargeting ){
 		
-		// Not targeting already, add
-		if(on && pos == -1 && llListFindList(PLAYERS, [(str)id]) == -1){
-			TARGETING += (str)id;
+		integer flags = llList2Integer(PARAMS, 0); 				// Target or untarget
+		integer pos = llListFindList(TARGETING, [(str)id]);		// See if already targeting
+		integer remove;
+		if( flags < 0 ){
+			
+			flags = llAbs(flags);
+			remove = TRUE;
+			
 		}
-		// Targeting, remove
-		else if(!on && ~pos){
-			TARGETING = llDeleteSubList(TARGETING, pos, pos);
-		}
-		// Trim out owner
-		integer i;
-		for(i=0; i<llGetListLength(TARGETING) && TARGETING != []; i++){
-			if(llKey2Name(llList2String(TARGETING, i)) == ""){
-				TARGETING = llDeleteSubList(TARGETING, i, i);
-				i--;
-			}
-		}
+		
+		integer cur = l2i(TARGETING, pos+1);
+		
+		// Remove from existing
+		if( ~pos && remove )
+			cur = cur&~flags;
+		// Add either new or existing
+		else if( 
+			(~pos && !remove && (cur|flags) != flags ) ||
+			( pos == -1 && !remove )
+		)cur = cur|flags;
+		// Cannot remove what does not exist
+		else
+			return;
+		
+		// Exists, update
+		if( ~pos && cur )
+			TARGETING = llListReplaceList(TARGETING, [cur], pos+1, pos+1);
+		// Exists, delete
+		else if( ~pos && !cur )
+			TARGETING = llDeleteSubList(TARGETING, pos, pos+1);
+		// Insert new
+		else
+			TARGETING += [(str)id, cur];
+
 		// Immediately send stats
 		outputStats();
 		raiseEvent(StatusEvt$targeted_by, mkarr(TARGETING));
+		
 	}
     
     else if(
@@ -878,9 +896,9 @@ default
 		outputStats();
 	} 
 	
-	else if(METHOD == StatusMethod$getTextureDesc){
-		Evts$getTextureDesc((int)method_arg(0));
-    }
+	else if( METHOD == StatusMethod$getTextureDesc )
+		Evts$getTextureDesc(method_arg(0), id);
+    
 	
 	if(METHOD == StatusMethod$coopInteract)
 		raiseEvent(StatusEvt$interacted, (str)id);

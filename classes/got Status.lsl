@@ -17,7 +17,9 @@
 	#define SMBUR$buildPain(pain, spellName, flags) [SMBUR$pain, 3, f2i(pain), spellName, flags]
 	
 #define StatusMethod$fullregen 5		// NULL
-#define StatusMethod$setTargeting 6		// (Bool)targeting - This sender is now targeting you. Send status updates to them
+#define StatusMethod$setTargeting 6		// (int)target_flags - This sender is now targeting you. Send status updates to them. Use negative values to untarget
+	#define StatusTargetFlag$targeting 0x1			// simple targeting
+	#define StatusTargetFlag$focusing 0x2			// focusing as well
 #define StatusMethod$get 7				// returns [STATUS_FLAGS, FXFLAGS, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), (int)sex_flags, (int)team]
 #define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, ]
 										// See got FXCompiler for more info
@@ -71,7 +73,7 @@
 #define StatusEvt$monster_aggro 13			// [player1, player2...] - Players who have aggroed the monster in order of max aggro
 #define StatusEvt$team 14					// (int)team - Team has been updated
 #define StatusEvt$interacted 15				// (key)id - Another player has interacted with you
-#define StatusEvt$targeted_by 16			// (arr)ids - List of players targeting me. PC only
+#define StatusEvt$targeted_by 16			// (key)id, (int)flags - List of players targeting me. PC only
  
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC

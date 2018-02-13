@@ -21,7 +21,7 @@ integer TEAM = TEAM_PC;
 
 key TARG;
 list PLAYER_HUDS;
-integer PLAYER_FOCUS;
+key TARG_FOCUS;
 #define FOCUS_BORDER <0.820, 0.820, 0.820>
 
 #define default_tx "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e"
@@ -134,12 +134,12 @@ key boss;				// ID of boss (used if boss is a monster)
 			PLAYER_HUDS = llListReplaceList(data, [llGetKey()], 0,0); \
 			toggle(TRUE); \
 		} \
-		else if(evt == RootEvt$focus){ \
-			PLAYER_FOCUS = l2i(data, 0); \
+		else if( evt == RootEvt$focus ){ \
+			TARG_FOCUS = l2s(data, 0); \
 			list out = []; integer i; \
-			for(i=0; i<count(PLAYER_HUDS); ++i){ \
+			for( i=0; i<count(PLAYER_HUDS); ++i ){ \
 				vector color = <0,0,0>; \
-				if(i == PLAYER_FOCUS) \
+				if( l2k(PLAYER_HUDS, i) == TARG_FOCUS ) \
 					color = FOCUS_BORDER; \
 				out+= [ \
 					PRIM_LINK_TARGET, l2i(BARS, BAR_STRIDE*(i+1)), \
@@ -586,7 +586,7 @@ default
 					barscale.y = 0.08394;
 					colors = [1,2,3,4];
 				}
-				if(i == PLAYER_FOCUS)
+				if( l2k(PLAYER_HUDS, i) == TARG_FOCUS )
 					border = FOCUS_BORDER;
 				
 				float bgAlpha = 1;

@@ -21,8 +21,6 @@ list PACKAGES;     // OLD: (int)pid, (key)id, (arr)package, (int)stacks, (int)ti
 
 #define pMaxStacks(slice) llList2Integer(slice, 10)
 
-
-
 list EVT_INDEX;     // [scriptname_evt, (int)numPids, pid, pid]...
 // Takes an index of scriptname_evt (ex: 0) and uses the length int to get the PIDs
 #define getEvtIdsByIndex(index) llList2List(EVT_INDEX, index+2, index+2+llList2Integer(EVT_INDEX, index+1)-1)
@@ -197,6 +195,8 @@ onEvt(string script, integer evt, list data){
 				
 				// JSON array of parameters set in the package
 				list against = llJson2List(llList2String(evdata, 5));
+				
+				//qd("Matching "+mkarr(data)+" against "+mkarr(against));
 				
 				// Iterate over parameters and make sure they validate with the event params we received
 				integer i;
@@ -384,19 +384,21 @@ timerEvent(string id, string data){
         }
     }
 } 
-default
-{
+default{
+
 	state_entry(){
+	
 		PLAYERS = [(str)llGetOwner()];
-		if(llGetStartParameter())
+		if( llGetStartParameter() )
 			raiseEvent(evt$SCRIPT_INIT, "");
+			
 	}
     
-    timer(){multiTimer([]);}
+    timer(){ multiTimer([]); }
     
 	
 	#define LM_PRE \
-	if(nr == TASK_FX){ \
+	if( nr == TASK_FX ){ \
 		list data = llJson2List(s); \
 		FX_FLAGS = l2i(data, FXCUpd$FLAGS); \
 		dodge_chance = i2f(l2i(data, FXCUpd$DODGE)); \
@@ -412,20 +414,22 @@ default
         */
 		
 		// Prevent callbacks from being received
-        if(method$isCallback)return;
+        if( method$isCallback )
+			return;
 	
 		// This is the main input for adding an effect
-        if(METHOD == FXMethod$run){
+        if( METHOD == FXMethod$run ){
 			
 			string sender = method_arg(0);						// UUID of FX sender
 			// Convert sender to "s" if self
-			if(sender == (str)llGetOwner() || sender == "")sender = "s";
+			if( sender == (str)llGetOwner() || sender == "" )
+				sender = "s";
 						
             list packages = llJson2List(method_arg(1));			// Open up the wrapper
 			float range = llList2Float(PARAMS, 2);				// Max range for FX (if >0)
 			integer team = llList2Integer(PARAMS, 3);			// Team defaults to NPC unless set
 			// Internal commands are always same team
-			if(method$internal)
+			if( method$internal )
 				team = TEAM;
 			
 			integer flags = llList2Integer(packages, 0);		// Wrapper flags
@@ -457,64 +461,67 @@ default
 				#ifdef IS_NPC
 				|| !RC
 				#endif
-			){
-				CB_DATA = [FALSE];
-			}	
+			)CB_DATA = [FALSE];
+			
 			// If a user defined invul function is defined
 			#ifdef IS_INVUL_CHECK
-			else if(flags&WF_DETRIMENTAL && IS_INVUL_CHECK()){
+			else if( flags&WF_DETRIMENTAL && IS_INVUL_CHECK() )
 				CB_DATA = [FALSE];
-			}
 			#endif
 			// Check dodge
-			else if(~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != llGetOwner() && llFrand(1)<(dodge_chance+dodge_add)){
+			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != llGetOwner() && llFrand(1)<(dodge_chance+dodge_add) ){
+				
 				// If not NPC we should animate when we dodge
 				#ifndef IS_NPC
-				AnimHandler$anim(mkarr((["got_dodge_active", "got_dodge_active_ub"])), TRUE, 0, 0);
+				AnimHandler$anim(mkarr((["got_dodge_active", "got_dodge_active_ub"])), TRUE, 0, 0, 0);
 				#endif
 				llTriggerSound("2cd691be-46dc-ba05-9a08-ed4a8f48a976", .5);
 				onEvt("", INTEVENT_DODGE, []);
 				CB_DATA = [FALSE];
+				
 			}
 			else{
+			
 				// The wrapper was accepted, so now we need to scan the packages
-				
 				list successful;	// [(int)nrStacks, (int)package_length]+packageData
 				integer nSuc = 0;	// nr successful
 				
 				// Cycle through
 				integer i;
-				for(i=0; i<llGetListLength(packages); i+=2){
+				for( i=0; i<llGetListLength(packages); i+=2 ){
+				
 					list p = llJson2List(llList2String(packages, i+1));			// Convert package to list, since preCheck would have to do that anyways
 					// Run user defined function on it
-					if(preCheck(sender, p, team)){
+					if( preCheck(sender, p, team) ){
+					
 						successful+=[llList2Integer(packages, i), count(p)]+p;
 						nSuc++;
+						
 					}
 					// If we have enough successful packages, stop
-					if(nSuc>=max_objs && max_objs != 0){
+					if( nSuc>=max_objs && max_objs != 0 )
 						i = llGetListLength(packages);
-					}
+					
 				}
 				
 				// We don't have enough successful packages
-				if(nSuc<min_objs || !nSuc){
+				if( nSuc<min_objs || !nSuc )
 					CB_DATA = [FALSE];
-				}
+				// We have enough successful packages. Let's open them
 				else{
 				
-					// We have enough successful packages. Let's open them
 					CB_DATA = [nSuc];		// Set a return value of nr accepted packages
 					
 					// If we received a detrimental effect, refresh combat
 					#ifndef IS_NPC
-					if(flags&WF_DETRIMENTAL){
+					if( flags&WF_DETRIMENTAL ){
+					
 						// Update combat since we received a detrimental effect
 						Status$refreshCombat();
-						if(_NPC_TARG == "" && llGetAgentSize(sender) == ZERO_VECTOR){
-							// Attempt to target monster unless we already have a monster
+						// Attempt to target monster unless we already have a monster
+						if( _NPC_TARG == "" && llGetAgentSize(sender) == ZERO_VECTOR )
 							Status$monster_attemptTarget(sender, false);
-						}
+
 					}
 					#endif
 					
@@ -531,21 +538,21 @@ default
 					
 					@reloop;	// Jump is not graceful but LSL doesn't fucking have continue;
 					while(successful){
+						
 						integer stacks = llList2Integer(successful, 0);
 						// Min stacks is 1
-						if(stacks==0)stacks = 1;
+						if( stacks == 0 )
+							stacks = 1;
 						
 						list package = llList2List(successful, 2, 2+llList2Integer(successful,1)-1);
 						successful = llDeleteSubList(successful, 0, 2+count(package)-1);
-						
-						
-						
 						
 						float dur = llList2Float(package, PACKAGE_DUR);
 						integer flags = llList2Integer(package, PACKAGE_FLAGS);
 						string name = llList2String(package, PACKAGE_NAME);
 						integer mstacks = llList2Integer(package, PACKAGE_MAX_STACKS); 
-						if(mstacks == 0)mstacks = 1;
+						if( mstacks == 0 )
+							mstacks = 1;
 						integer ts = timeSnap();
 						
 						// Here we convert the package into a slice, we can later build upon this
@@ -567,10 +574,12 @@ default
 
 						
 						// Run and continue if duration is 0
-						if(dur <= 0){
+						if( dur <= 0 ){
+						
 							send += getRunPackage(slice);
 							onEvt("", INTEVENT_PACKAGE_RAN, [pName(slice)]);
 							jump reloop;
+							
 						}
 						
 						// Ticking effect
@@ -579,21 +588,40 @@ default
 						// See if package exists already
 						list s = [sender];
 						// If full unique, it can add stacks regardless of sender
-						if(flags&PF_FULL_UNIQUE)
+						if( flags&PF_FULL_UNIQUE )
 							s = [];
 						
 						list exists = find([name], s, [], [], [], FALSE);
-						if(exists){
+						if( exists ){
+							// Remove the previous one and add its stacks
+							
 							// It exists, schedule an add stack
 							// Manage stacks
-							FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE);
-							
-							// If trigger immediate, we still need to run it
-							if(flags&PF_TRIGGER_IMMEDIATE){
-								send += getRunPackage(slice);
-								onEvt("", INTEVENT_PACKAGE_RAN, [pName(slice)]);
+							if( flags & PF_CANNIBALIZE ){
+								
+								stacks += l2i(PACKAGES, l2i(exists, 0)+2);
+								if( stacks > mstacks )
+									stacks = mstacks;
+								slice = llListReplaceList(slice, [stacks], 2, 2);
+								//raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel
+								FX$rem(FALSE, "", "", "", l2i(PACKAGES, l2i(exists, 0)), FALSE, 0, 0, FALSE);
+								
 							}
-							jump reloop;
+							else{
+								FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE);
+							
+								// If trigger immediate, we still need to run it
+								if(flags&PF_TRIGGER_IMMEDIATE){
+								
+									send += getRunPackage(slice);
+									onEvt("", INTEVENT_PACKAGE_RAN, [pName(slice)]);
+									
+								}
+								jump reloop;
+							
+							}
+							
+							
 						}
 
 						// After this point we have to add, so increase the value of PID
@@ -660,6 +688,7 @@ default
 						send+= [actions, pID(slice), pStacks(slice), pFlags(slice), pName(slice), pFxobjs(slice), pTimesnap(slice), f2i(pDur(slice))];
 						onEvt("", INTEVENT_ONADD, [PID]);
 						onEvt("", INTEVENT_SPELL_ADDED, [name]); 
+						
 					}
 					
 					
@@ -681,7 +710,8 @@ default
 			integer overwrite = l2i(PARAMS, 5); 		// If this is FALSE it's an overwrite and should not send the rem event
             list flags = llJson2List(l2s(PARAMS, 6));				// 
 			integer amount = l2i(PARAMS, 7);			// Max nr to remove
-			if(amount<1)amount = -1;					// Set to -1 for all
+			if( amount<1 )
+				amount = -1;					// Set to -1 for all
 			integer is_dispel = l2i(PARAMS, 8);			// Dispel event will be raised
 
 			// Owner is always S
@@ -693,7 +723,7 @@ default
 			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
 			list find = llListSort(find(names, senders, tags, pids, flags, TRUE), 1, FALSE);	
-
+			
 			// Jump since we can't have continues
 			@delContinue;
 			while(find != [] && amount!=0){

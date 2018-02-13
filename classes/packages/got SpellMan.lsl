@@ -68,7 +68,7 @@ integer QUEUE_SPELL = -1;		// Spell to cast after finishing the current cast
 float CACHE_MANA;
 float RANGE_ADD;
 float HEIGHT_ADD;
-integer PLAYER_FOCUS;
+key TARG_FOCUS;
 
 list PLAYERS;					// Me and coop player
 
@@ -112,7 +112,6 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
 */
 
 #define recacheTarget() CACHE_ROOT_TARGET = l2k(data,0); CACHE_ROOT_TARGET_TEAM = l2i(data,2)
-
 // Default event handler
 onEvt(string script, integer evt, list data){
 
@@ -136,8 +135,9 @@ onEvt(string script, integer evt, list data){
 				BFL = BFL&~BFL_CROUCH_HELD;    
 		}
 		
-		else if(evt == RootEvt$focus)
-			PLAYER_FOCUS = l2i(data, 0);
+		else if( evt == RootEvt$focus )
+			TARG_FOCUS = l2s(data, 0);
+		
 		
 		// This is how spells are cast.
 		else if(evt == evt$TOUCH_START){
@@ -156,6 +156,7 @@ onEvt(string script, integer evt, list data){
 			
 		// Update target cache
 		else if(evt == RootEvt$targ){
+			
 			recacheTarget();
 			if(SPELL_ON_TARG != -1){
 				startSpell(SPELL_ON_TARG);
@@ -232,11 +233,11 @@ else{ \
     } \
     else if( \
 		BFL&(BFL_QUEUE_SELF_CAST|BFL_CROUCH_HELD) && \
-		count(PLAYERS) > 1 && \
+		TARG_FOCUS != "" && \
 		targets&TARG_PC && \
 		(CACHE_ROOT_TARGET_TEAM != TEAM || noTarg) \
 	){ \
-		var = [l2k(PLAYERS, PLAYER_FOCUS)];\
+		var = [TARG_FOCUS];\
 	} \
 	\
 	if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \

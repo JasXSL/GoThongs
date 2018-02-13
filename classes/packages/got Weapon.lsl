@@ -107,7 +107,6 @@ drawWeaponEffect( string val ){
 	if( isset(j(val, 6)) )  
 		duration = (float)j(val,6)/100;
 	
-	
 	llLinkParticleSystem(l2i(BOXES, prim), ([  
 		PSYS_PART_FLAGS,
 			PSYS_PART_EMISSIVE_MASK|
@@ -133,9 +132,9 @@ drawWeaponEffect( string val ){
 		PSYS_SRC_OMEGA, <0,0,0>,
 		PSYS_SRC_MAX_AGE, duration, 
 		PSYS_SRC_TEXTURE, "f2d25672-2387-5acb-bd16-fe0b13e37f98",
-		PSYS_PART_START_ALPHA, 1,
+		PSYS_PART_START_ALPHA, alpha,
 		PSYS_PART_END_ALPHA, 0,
-		PSYS_PART_START_GLOW, 0.2,
+		PSYS_PART_START_GLOW, glow,
 		PSYS_PART_END_GLOW, 0
 		
 	]));

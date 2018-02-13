@@ -17,7 +17,7 @@ key TARG;
 key TARG_ICON;
 integer TARG_TEAM;
 integer TEAM = TEAM_PC;
-integer PLAYER_FOCUS;			// Player focus target
+key TARG_FOCUS;			// Player focus target
 
 key ROOT_LEVEL;			// Current level being played
 
@@ -42,8 +42,19 @@ timerEvent(string id, string data){
         raiseEvent(evt$BUTTON_HELD_SEC, mkarr(([(integer)llGetSubString(id, 2, -1), d])));
         multiTimer([id, d, 1, FALSE]);
     }
-    else if(id == "T" && llKey2Name(TARG) == "" && TARG != "")
-        setTarget("", "", TRUE, 0);
+    else if(id == "T"){
+	
+		if( llKey2Name(TARG) == "" && TARG != "" )
+			setTarget("", "", TRUE, 0);
+
+		if( llKey2Name(TARG_FOCUS) == "" ){
+			
+			TARG_FOCUS = llGetKey();
+			raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
+			
+		}
+		
+	}
 	
 	// Run module initialization here
 	else if( id == "INI" ){
@@ -67,55 +78,53 @@ timerEvent(string id, string data){
 
 
 integer setTarget(key t, key icon, integer force, integer team){
+	
 	// We are already targeting this and it's not a force
-    if(TARG == t && !force)return FALSE;
+    if( TARG == t && !force )
+		return FALSE;
 	
     // Target is currently set but if last npc targ is not, then set it
-    if(TARG != "" && t != "" && !force){
+    if( TARG != "" && t != "" && !force )
         return FALSE;
-    }
-	
+    
     // ID not found and not empty
-    if(llKey2Name(t) == "" && t != "")
+    if( llKey2Name(t) == "" && t != "" )
         return FALSE;
     
 
-    // Clear previous updates
-    //if(llListFindList(getPlayers(), [(str)TARG]) == -1)
-    
-	// Clear current target if it has changed
-	if(TARG != t){
-		Status$setTargeting(TARG, FALSE);
-		// You get status updates from yourself and coop partner automatically
-		llPlaySound("0b81cd3f-c816-1062-332c-bca149ef1c82", .2);
-	}
-    
-	TARG_ICON = icon;
-	
-	integer preFocus = PLAYER_FOCUS;
-	// Make sure we target a HUD if we target a player
-	if(t == llGetOwner()){
-		t = llGetKey();
-		PLAYER_FOCUS = 0;
-	}
-	else{
-		integer pos = llListFindList(getPlayers(), [(str)t]);
-		if(~pos){
-			t = l2k(COOP_HUDS, pos);
-			PLAYER_FOCUS = pos;
-		}
-	}
 	// Try to fetch from description
-	if(team == -1){
+	if( team == -1 ){
+	
 		parseDesc(t, resources, status, fx, sex, te, junk);
 		team = te;
+		
 	}
+	
+	Status$setTargeting(TARG, -StatusTargetFlag$targeting);
+	
+	TARG_ICON = icon;
+	TARG = t;
+	
+	
+	// Clear current target if it has changed
+	
+	integer tflags = StatusTargetFlag$targeting;
+	
+	// You get status updates from yourself and coop partner automatically, but not spell icons
+	llPlaySound("0b81cd3f-c816-1062-332c-bca149ef1c82", .2);
+	// Don't focus coop target
+	if( team == TEAM && t != TARG_FOCUS && t != "" && llListFindList(COOP_HUDS, [(str)t]) == -1 ){
+	
+		Status$setTargeting(TARG_FOCUS, -StatusTargetFlag$focusing);
+		TARG_FOCUS = t;
+		raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
+		tflags = tflags|StatusTargetFlag$focusing;
+		
+	}
+	
+	
     
-    TARG = t;
-    
-    raiseEvent(RootEvt$targ, mkarr(([t, icon, team])));
-    if(PLAYER_FOCUS != preFocus)
-		raiseEvent(RootEvt$focus, (str)PLAYER_FOCUS);
+    raiseEvent(RootEvt$targ, mkarr(([t, icon, team])));		
 	
 	// Check if target still exists
 	if(t)
@@ -125,7 +134,7 @@ integer setTarget(key t, key icon, integer force, integer team){
 	string ta = TARG;
 	if(ta == llGetKey())
 		ta = (string)LINK_THIS;
-    Status$setTargeting(ta, TRUE);
+    Status$setTargeting(ta, tflags);
     
 	
     return TRUE;
@@ -229,7 +238,7 @@ default
 			if( n >= count(PLAYERS) )
 				return;
 			
-			setTarget(l2s(PLAYERS, n), l2s(PLAYER_TEXTURES, n), TRUE, -1);    // Add player default texture
+			setTarget(l2s(COOP_HUDS, n), l2s(PLAYER_TEXTURES, n), TRUE, -1);    // Add player default texture
 			
 		}
 		
@@ -251,7 +260,7 @@ default
 				pos = llListFindList(COOP_HUDS, [(key)boss]);
 
 			if( ~pos )
-				setTarget(l2s(PLAYERS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
+				setTarget(l2s(COOP_HUDS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
 			else
 				Status$monster_attemptTarget(boss, TRUE);
 				
@@ -268,22 +277,19 @@ default
 		
 			// The description contains the spell PID
 			int desc = llList2Integer(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_DESC]), 0);
-            if(desc == -1)return;
+            if( desc == -1 )
+				return;
 			
 			// The icons are split into blocks of 8
 			string targ = (string)LINK_ROOT;
-			if(floor((float)button/8) == 1 && TARG != llGetOwner())targ = TARG;
+			if( floor((float)button/8) == 1 && TARG != llGetKey() )
+				targ = TARG;
 
             Status$getTextureDesc(targ, desc);
         }
         raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0), llDetectedTouchFace(0)]));
     }
-    /*
-    touch_end(integer total){ 
-        if(llDetectedKey(0) != llGetOwner())return;
-        raiseEvent(evt$TOUCH_END, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0)]));
-    }
-    */
+
     
     control(key id, integer level, integer edge){
         if(level&edge){ // Pressed
@@ -348,14 +354,18 @@ default
 		}
 		
 		if(CB == "ATTACHED"){
+		
 			integer pos = llListFindList(PLAYERS, [(str)llGetOwnerKey(id)]);
-			if(~pos){
+			if( ~pos ){
+			
 				//qd("Got HUD from CALLBACK "+llGetDisplayName(llGetOwnerKey(id)));
 				COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
 				raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
 				//qd("Setting HUDs: "+mkarr(COOP_HUDS));
 				sendHUDs();
+				
 			}
+			
 		}
 		
         return;
@@ -372,11 +382,12 @@ default
 			string pre = mkarr(PLAYERS);
 			
             PLAYERS = [(string)llGetOwner()];
-			COOP_HUDS = []; 
+			COOP_HUDS = [llGetKey()]; 
 			
 			
 			
             if(count(PARAMS)){
+			
 				PLAYERS+=PARAMS;
 			
 				if(mkarr(PLAYERS) != pre)
@@ -391,16 +402,18 @@ default
 			else if(pre != mkarr(PLAYERS))
                 AMS$(ARoot$coopDisband);
             
-			if(PLAYER_FOCUS >= count(PLAYERS)){
-				PLAYER_FOCUS = 0;
-				raiseEvent(RootEvt$focus, (str)PLAYER_FOCUS);
+			if( llListFindList(COOP_HUDS, [(str)TARG_FOCUS]) == -1 ){
+			
+				TARG_FOCUS = llGetKey();
+				raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
+				
 			}
 			
 			integer i;
-			for(i=0; i<count(PLAYERS); ++i)
+			for(i=0; i<count(PLAYERS)-1; ++i)
 				COOP_HUDS += "";
 			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
-			
+						
 			sendHUDs();
 			//qd("Setting HUDs: "+mkarr(COOP_HUDS));
 			
@@ -498,9 +511,7 @@ default
 			
 		if(pre != ROOT_LEVEL && !method$byOwner){
 		
-			qd(xme(XLS(([
-				XLS_EN, "You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!"
-			]))));
+			llOwnerSay("You have joined secondlife:///app/agent/"+(string)llGetOwnerKey(id)+"/about 's level!");
 			return;
 			
 		}

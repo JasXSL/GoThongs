@@ -51,6 +51,9 @@ vector BACK_DEFAULT_POS = <-0.11448, -0.37465, -0.04116>;
 rotation BACK_OH_DEFAULT_ROT = <0.00000, 0.00000, 0.84339, 0.53730>;
 vector BACK_OH_DEFAULT_POS = <0.11448, -0.37465, -0.04116>;
 
+vector CUSTOM_BACK_DEFAULT_POS;
+vector CUSTOM_BACK_OH_DEFAULT_POS;
+
 onEvt(string script, integer evt, list data){
     
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged)
@@ -93,7 +96,7 @@ loadWeapon( list data ){
     vector mainhand_back_offset = (vector)l2s(data, BSUD$W_BACK_MH_OFFSET);
     vector offhand_offset = (vector)l2s(data, BSUD$W_OH_OFFSET);
     vector offhand_back_offset = (vector)l2s(data, BSUD$W_BACK_OH_OFFSET);
-	
+
 	CLASS_STANCE = l2s(data, BSUD$DEFAULT_STANCE);
     
     list wdata = llJson2List(l2s(data, BSUD$WDATA));
@@ -106,32 +109,26 @@ loadWeapon( list data ){
 	
 	W_SOUNDS = llJson2List(l2s(wdata, 12));
     
-    /*
-        Not yet supported
-        W_OFFHAND_ROT;
-        W_MAINHAND_ROT = ;
-    */
-    
     // Main hand offsets default to ZERO_VECTOR/ZERO_ROTATION, so we can just use the stuff from the avatar
     W_MAINHAND_POS = mainhand_offset;
     W_OFFHAND_POS = offhand_offset;
 	
+	
+	
 	STANCE = j(l2s(wdata, 13), 0);
 	ANIM_SET = llJson2List(j(l2s(wdata, 13), 1));
 	    
-    // Calculate back positions. Back position use OFFSETS
-    vector add = BACK_DEFAULT_POS;
-    if((vector)l2s(wdata, 10))
-        add = (vector)l2s(wdata, 10);
-    W_BACK_MAINHAND_POS = mainhand_offset+add;
-    
-    add = BACK_OH_DEFAULT_POS;
+	
+	CUSTOM_BACK_DEFAULT_POS = BACK_DEFAULT_POS;
+	CUSTOM_BACK_OH_DEFAULT_POS = BACK_OH_DEFAULT_POS;
+
+    if( (vector)l2s(wdata, 10) )
+        CUSTOM_BACK_DEFAULT_POS = (vector)l2s(wdata, 10);
     if( (vector)l2s(wdata, 11) )
-        add = (vector)l2s(wdata, 11);
-    
-    W_BACK_OFFHAND_POS = offhand_offset+add;
-    
-    
+        CUSTOM_BACK_OH_DEFAULT_POS = (vector)l2s(wdata, 11);
+		
+	W_BACK_MAINHAND_POS = mainhand_back_offset+CUSTOM_BACK_DEFAULT_POS;
+    W_BACK_OFFHAND_POS = offhand_back_offset+CUSTOM_BACK_OH_DEFAULT_POS;
     
     // Rotations are fixed, set to default
     W_BACK_MAINHAND_ROT = BACK_DEFAULT_ROT;
@@ -180,6 +177,7 @@ integer getAttachSlot(integer rhand){
 
 // Returns the position
 vector getAttachPos(integer rhand){
+
     if(BFL&BFL_SHEATHED || unsheatable){
         if(rhand)
             return W_BACK_MAINHAND_POS;
@@ -189,6 +187,7 @@ vector getAttachPos(integer rhand){
     if(rhand)
         return W_MAINHAND_POS;
     return W_OFFHAND_POS;
+	
 }
 
 // Returns rotation
@@ -280,15 +279,17 @@ default
             integer hand = (int)llGetSubString(message, 3, 3);
 
             // Right hand
-            if(hand == 0){
+            if( hand == 0 ){
 
                 // Remove if ID mismatch
-                if(id != RHAND_ATT)
+                if( id != RHAND_ATT )
                     Weapon$remove(RHAND_ATT, "*");
                 
-                RHAND_ATT = id;                
+                RHAND_ATT = id;
+				
                 // Send data
                 Weapon$ini(id, getAttachSlot(TRUE), getAttachPos(TRUE), getAttachRot(TRUE), W_SCALE);
+				
             }
             
             else if(hand == 1){
@@ -373,7 +374,7 @@ default
 			string anim = "stance_fists";
 			if( STANCE != "" && !unsheatable )
 				anim = STANCE;
-			if( CLASS_STANCE != "" && !unsheatable )
+			if( CLASS_STANCE != "" )
 				anim = CLASS_STANCE;
             
             // Limit updates to change
@@ -381,7 +382,8 @@ default
                 (!sheathe && BFL&BFL_SHEATHED) ||
                 (sheathe && ~BFL&BFL_SHEATHED)
             ){
-                if( anim == "stance_fists" )
+				if( anim == CLASS_STANCE ){}
+                else if( anim == "stance_fists" )
                     llTriggerSound("1c7916eb-8ceb-1e39-c88d-94d1eaa2deb5", .1);
                 else{
 				
@@ -402,6 +404,10 @@ default
 				raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
 				
             }
+			
+			if( BFL&BFL_SHEATHED )
+				anim = "";
+			gotClassAtt$stance(anim);
             
             // Animations
             integer p = llGetPermissions()&PERMISSION_OVERRIDE_ANIMATIONS;
@@ -429,29 +435,41 @@ default
 			vector p = (vector)method_arg(0);
 			rotation r = (rotation)method_arg(1);
 			if(BFL&BFL_SHEATHED){
+			
 				back = TRUE;
 				// Back needs custom offsets. Equipped does not as it should always be ZERO_VECTOR by default
-				if(offhand){
+				if( offhand ){
+				
 					W_BACK_OFFHAND_POS = p;
 					W_BACK_OFFHAND_ROT = r;
-					p -= BACK_OH_DEFAULT_POS;
+					p -= CUSTOM_BACK_OH_DEFAULT_POS;
+					
 				}
 				else{
+				
 					W_BACK_MAINHAND_POS = p;
 					W_BACK_MAINHAND_ROT = r;
-					p -= BACK_DEFAULT_POS;
+					p -= CUSTOM_BACK_DEFAULT_POS;
+					
 				}
+				
 			}
 			// In hands
 			else{
+			
 				if(offhand){
+				
 					W_OFFHAND_POS = p;
 					W_OFFHAND_ROT = r;
+					
 				}
 				else{
+				
 					W_MAINHAND_POS = p;
 					W_MAINHAND_ROT = r;
+					
 				}
+				
 			}
 			Bridge$savePos(offhand, back, p, r);
 		}

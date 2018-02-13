@@ -137,7 +137,7 @@ string FX_buildCondition(integer cond, list vars){
 // Packages are the effect objects bound to an FX wrapper. A wrapper can contain multiple packages, and a package can contain multiple fx objects
 // These are general package flags
 #define PF_DETRIMENTAL 0x1            	// Package is detrimental.
-//#define PF_OVERWRITE 0x2				// Overwrites if player is already affected by the same name package from the same caster
+#define PF_CANNIBALIZE 0x2				// Removes any matching existing spell and adds its stacks
 #define PF_EVENT_ON_OVERWRITE 0x4		// Raises the removal event even when overwritten. Only works together with PF_UNIQUE
 #define PF_ALLOW_WHEN_DEAD 0x8			// 
 #define PF_ALLOW_WHEN_QUICKRAPE 0x10	// 
@@ -145,6 +145,7 @@ string FX_buildCondition(integer cond, list vars){
 #define PF_FULL_UNIQUE 0x40				// Only allow one no matter the sender. Exclusive with PF_NOT_UNIQUE
 #define PF_TRIGGER_IMMEDIATE 0x80		// Runs as an instant effect once when it's added
 #define PF_NO_DISPEL 0x100
+
 
 // an integer PID gets added on the end when added to FX
 

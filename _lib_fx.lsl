@@ -29,7 +29,6 @@
 		#define fxhfFlag$SLOT_BREASTS 0x100
 		#define fxhfFlag$SLOT_STOMACH 0x200
 		
-		
 		#define fxhfColor$phys "<1,.5,.5>"
 		#define fxhfColor$arouse "<1,.5,1>"
 		#define fxhfColor$toxic "<.8,1,.7>"

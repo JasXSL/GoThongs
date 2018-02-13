@@ -58,6 +58,8 @@ default{
 		raiseEvent(gotClassAttEvt$spellEnd, mkarr(PARAMS));
 		
     }
+	else if( METHOD == gotClassAttMethod$stance )
+		raiseEvent(gotClassAttEvt$stance, mkarr(PARAMS));
 	
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"  

@@ -41,7 +41,7 @@ integer height_add;		// LOS check height offset from the default 0.5m above root
 #define hAdd() ((float)height_add/10)
 
 list cooldowns;
-list OUTPUT_STATUS_TO;
+list OUTPUT_STATUS_TO;			// (key)player, (int)types
 
 float CAST_START_TIME;
 float CAST_END_TIME;
@@ -51,10 +51,11 @@ integer P_TXT;
 string CACHE_TEXT;
 updateText(){
 	integer i;
-    integer p = llRound(hp*5);
+	integer perc = llRound(hp*100);
 		
 	list names = [];
-	for(i=0; i<llGetListLength(OUTPUT_STATUS_TO); i++){
+	for( i=0; i<llGetListLength(OUTPUT_STATUS_TO); i+=2 ){
+
 		string n = llGetSubString(
 			llList2String(
 				explode(" ", llGetDisplayName(llGetOwnerKey(llList2String(OUTPUT_STATUS_TO, i)))),
@@ -62,23 +63,32 @@ updateText(){
 			)
 			, 0, 15
 		);
-
+		
+		integer f = l2i(OUTPUT_STATUS_TO, i+1);
+		
 		if(n != ""){
-			names+= "["+n+"]\n";
+		
+			string o = "🡺 "+llToUpper(n)+"\n";
+			// Focus
+			if( ~f&StatusTargetFlag$targeting )
+				o = "👁️ "+llToLower(n)+"\n";
+			names+= o;
 		}
+		
 	}
+	
 	string text = (string)names;
-    string middle =  " 💓 ";
-    for(i=0; i<p; i++)
-        middle = "▶️"+middle+"◀️";
+    string middle =  "❤️ "+(str)perc+" ❤️";
     text+= middle;
 	
     vector color = <1, .8, .8>;
     
 	
 	
-	if(BFL&BFL_DEAD) text = "";
-    else if(BFL&BFL_CASTING && CAST_END_TIME != CAST_START_TIME){
+	if(BFL&BFL_DEAD)
+		text = "";
+		
+    else if( BFL&BFL_CASTING && CAST_END_TIME != CAST_START_TIME ){
 	
 		list d = llJson2List(llList2String(CACHE, spell_id));
 		if(spell_id == -1)
@@ -90,12 +100,12 @@ updateText(){
         string add = CACHE_NAME;
         for(i=0; i<5; i++){
             if(i<tBlocks)
-                add = "⇒"+add+"⇐";
+                add = "â‡’"+add+"â‡";
 			else
 				add = " "+add+" ";
         }
 		if(flags&NPCS$FLAG_NO_INTERRUPT){
-			add = "🔒"+add+"🔒";
+			add = "ðŸ”’"+add+"ðŸ”’";
 		}
         
         text += "\n"+add;
@@ -126,12 +136,16 @@ onEvt(string script, integer evt, list data){
             STATUS_FLAGS = llList2Integer(data,0);
         }else if(evt == StatusEvt$monster_gotTarget){
             aggro_target = llList2String(data, 0);
-        }else if(evt == StatusEvt$monster_hp_perc){
-			if(hp != llList2Float(data, 0)){
-				hp = llList2Float(data,0);
-				updateText();
-			}
-        }else if(evt == StatusEvt$dead){
+        }
+		
+		else if( evt == StatusEvt$monster_hp_perc && hp != llList2Float(data, 0) ){
+			
+			hp = llList2Float(data,0);
+			updateText();
+
+        }
+		
+		else if(evt == StatusEvt$dead){
             BFL = BFL|BFL_DEAD;
             if(BFL&BFL_CASTING)
 				endCast(FALSE, TRUE);
@@ -455,9 +469,11 @@ default
         else if(METHOD == NPCSpellsMethod$interrupt){
             endCast(FALSE, FALSE);
         }
-		else if(METHOD == NPCSpellsMethod$setOutputStatusTo){
+		else if( METHOD == NPCSpellsMethod$setOutputStatusTo ){
+		
 			OUTPUT_STATUS_TO = PARAMS;
 			updateText();
+			
 		}
 		else if(METHOD == NPCSpellsMethod$setConf){
 			spells_per_sec_limit = (float)method_arg(0);
