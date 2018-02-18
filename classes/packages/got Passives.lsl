@@ -100,7 +100,7 @@ integer removePassiveByName(string name){
 			
 			// Remove from storage
 			// The ID will only occur once in this array
-			for(i=0; i<count(EVT_LISTENERS); i+=EVTSTRIDE){
+			for( ; i<count(EVT_LISTENERS); i+=EVTSTRIDE){
 				if(l2i(EVT_LISTENERS, 0) == n){
 					EVT_LISTENERS = subarrDel(EVT_LISTENERS, i, EVTSTRIDE);
 				}
@@ -127,7 +127,7 @@ integer removePassiveByName(string name){
 		
 		// Remove attachments
 		integer i;
-		for(i=0; i<count(ATTACHMENTS) && ATTACHMENTS != []; i+= 2){
+		for(; i<count(ATTACHMENTS) && ATTACHMENTS != []; i+= 2){
 			if(l2s(ATTACHMENTS, i) == name){
 				ATTACHMENTS = llDeleteSubList(ATTACHMENTS, i, i+1);
 				i-= 2;
@@ -169,7 +169,7 @@ compilePassives(){
 			jump continueCompilePassives;
 		
         integer x;
-        for(x = 0; x<llGetListLength(block); x+=2){
+        for( ; x<llGetListLength(block); x+=2){
             integer id = llList2Integer(block, x);
             float val = llList2Float(block, x+1);
             
@@ -251,7 +251,7 @@ output(){
 	list arrays = FXCUpd$arrays;
 	
     integer i;
-    for(i=0; i<llGetListLength(compiled_passives); i+=COMPILATION_STRIDE){
+    for(; i<llGetListLength(compiled_passives); i+=COMPILATION_STRIDE){
         integer type = llList2Integer(compiled_passives, i);
     
         // Cache the flags first so unset_flags can properly override
@@ -320,26 +320,6 @@ output(){
 }
 
 
-// Evaluates a proc, acceptable are acceptable args, var is the var passed from the event
-integer evalProc(list acceptable, string var){
-	if(l2s(acceptable,0) == "")return true; 				// If the event condition at index is unset, it should always be accepted
-	if(~llListFindList(acceptable, [var]))return true;				// The exact value exists
-	
-	// Check math
-	list_shift_each(acceptable, v,
-		string s = llGetSubString(v, 0, 0);
-		float comp = (float)trim(llGetSubString(v, 1,-1));
-		float c = (float)var;
-		if(s == "<" && c < comp)
-			return TRUE;
-			
-		if(s == ">" && c > comp)
-			return TRUE;
-	)
-	
-	return FALSE;
-}
-
 onEvt(string script, integer evt, list data){
     
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
@@ -371,28 +351,24 @@ onEvt(string script, integer evt, list data){
     
 	// Procs here
 	integer i;
-	list ids;
-	// Get the evt listeners for this event
-	for(i=0; i<count(EVT_CACHE); i+=CACHESTRIDE){
-		// Found the index
-		if(llList2String(EVT_CACHE, i) == script && llList2Integer(EVT_CACHE, i+1) == evt){
-			ids = llJson2List(l2s(EVT_CACHE, i+2));		// IDs we need to scan
-			jump gotIDs;
-		}
-	}
-	@gotIDs;
 	
-	// no events found
-	if(ids == [])return;
+	integer pos = llListFindList(EVT_CACHE, [script]);	// works because it is the only non-json string, and script names can't contain [
+	if( pos == -1 )
+		return;
+
+	list ids = llJson2List(l2s(EVT_CACHE, pos+2));
 	
 	// Cycle events		
 	integer x;
-	for(x = 0; x<count(EVT_LISTENERS); x+= EVTSTRIDE){
+	for(; x<count(EVT_LISTENERS); x+= EVTSTRIDE){
+	
 		integer evtid = l2i(EVT_LISTENERS, x);
-		// This event is in the index, one of the targs should match
-		if(llListFindList(ids, [evtid]) == -1)
-			jump evtBreak; // Go to next event
-			
+		// This event is in the index, this should never happen
+		/*
+		if( llListFindList(ids, [evtid]) == -1 )
+			jump evtBreak; // Go to next event by jumping to the end of this for loop
+		*/
+		
 		list targs = llJson2List(l2s(EVT_LISTENERS, x+1));
 		integer max_targs = l2i(EVT_LISTENERS, x+2);
 		float proc_chance = l2f(EVT_LISTENERS, x+3);
@@ -402,68 +378,97 @@ onEvt(string script, integer evt, list data){
 		
 		
 		float proc = llFrand(1);
-		//qd("Proc: "+(str)proc+" < "+(str)proc_chance);
+
 		// Check prerequisites first
 		if(
-			flags&Passives$PF_ON_COOLDOWN || 
-			proc>proc_chance || 
-			(CACHE_FLAGS&fx$NO_PROCS && ~flags&Passives$PF_OVERRIDE_PROC_BLOCK)
-		)
-			jump evtBreak; // Go to next event
-			
-					
-		// jump
+			flags&Passives$PF_ON_COOLDOWN || 	// on cooldown
+			proc>proc_chance || 				// random chance fail
+			(CACHE_FLAGS&fx$NO_PROCS && ~flags&Passives$PF_OVERRIDE_PROC_BLOCK) // Procs are blocked right now
+		)jump evtBreak; // Go to next event
+
+		// Scan the next target
 		@targNext;
 		
-		//qd("Scanning");
 		// Scan for all valid targets
 		list_shift_each(targs, val,
+		
 			list t = llJson2List(val);						
 			integer y;	// Iterator
-			
-			// This target should be checked against this event
-			if(l2s(t, 1) == script && l2i(t, 2) == evt){
-				// JSON array of parameters set in the proc
-				list against = llJson2List(l2s(t,3));
-			
-				// Iterate over parameters and make sure they validate with the event params we received
-				for(y = 0; y<llGetListLength(against); ++y){
-					// Event data from package event
-					list eva = explode("||", llList2String(against, y));
-					// Event data from event
-					string cur = llList2String(data, y);
-					
-					if(!evalProc(eva, cur)){
-						//qd("Failed because "+l2s(eva,0)+" not in "+mkarr(eva));
-						jump targNext;						// Goes to the next target
-					}
-				}
-			}
 
-			// SUCCESS, send to this target!
+			// This target should be checked against this event
+			if( l2s(t, 1) != script || l2i(t, 2) != evt )
+				jump targNext;
+		
+			// JSON array of parameters set in the proc
+			list against = llJson2List(l2s(t,3));
+			
+			// Iterate over parameters and make sure they validate with the event params we received
+			for( y = 0; y<llGetListLength(against); ++y ){
+			
+				// Event data from package event
+				list acceptable = explode("||", llList2String(against, y));
+				// Event data from event
+				string var = llList2String(data, y);
 				
+				// EVAL the proc:
+				
+				// If the event condition at index is unset, or the var is literally the same, it is accepted
+				// We only need to do deep inspection if the values are set and different to the event's
+				if( l2s(acceptable,0) == "" || ~llListFindList(acceptable, [var]) )
+					jump matchSuccess;	// continue
+				
+				
+				// Check math
+				list_shift_each(acceptable, v,
+						
+					string s = llGetSubString(v, 0, 0);
+					float comp = (float)trim(llGetSubString(v, 1,-1));
+					float c = (float)var;
+					
+					if( 
+						(s == "<" && c < comp) ||			// Success if less than
+						(s == ">" && c > comp) ||			// Success if greater than
+						(s == "&" && (int)c&(int)comp) ||	// Success if bitwise is set
+						(s == "~" && ~(int)c&(int)comp)		// Success if bitwise is not set
+					)jump matchSuccess;						// Continue
+
+				)
+
+				// Nothing validated, the event is not applicable for this target
+				jump targNext;
+				
+				
+				@matchSuccess;
+				
+			}
+			
+			@acceptEvt;
+			// SUCCESS, send to this target!
+			
+			
 			// Set cooldown if needed
-			if(~flags&Passives$PF_ON_COOLDOWN && cooldown>0){
+			if( ~flags&Passives$PF_ON_COOLDOWN && cooldown>0 ){
+			
 				EVT_LISTENERS = llListReplaceList(EVT_LISTENERS, [flags|Passives$PF_ON_COOLDOWN], x+5, x+5);
 				flags = flags|Passives$PF_ON_COOLDOWN;
 				multiTimer(["CD_"+(str)evtid, "", cooldown, FALSE]);
+				
 			}
 					
 			// We have validated that this event should be accepted, let's extract the wrapper
 			string wrapper = llList2String(EVT_LISTENERS, x+6);
 				
 			// We can use <index> and <-index> tags to replace with data from the event
-			for(y=0; y<llGetListLength(data); ++y){
+			for( y=0; y<llGetListLength(data); ++y ){
+			
 				wrapper = implode((str)(-llList2Float(data, y)), explode("<-"+(str)y+">", wrapper));
 				wrapper = implode(llList2String(data, y), explode("<"+(str)y+">", wrapper));
+				
 			}
 					
 			// Find the target and send
 			integer targFlag = l2i(t, 0);
 			float range = l2f(t, 4);
-			
-			//qd("targFlag: "+(str)targFlag);
-			//qd("range: "+(string)range);
 			
 			if(targFlag < 0 && llAbs(targFlag) & llAbs(Passives$TARG_SELF)){
 				FX$run("", wrapper);
@@ -473,19 +478,20 @@ onEvt(string script, integer evt, list data){
 			}
 			
 			// Use target from event
-			if(targFlag > -1){
+			if( targFlag > -1 ){
 				
 				string t = l2s(data, targFlag);
 				// Target is a link, so it is us
-				if(strlen(t) != 36)
+				if( strlen(t) != 36 )
 					t = llGetKey();
 
-				if(llVecDist(llGetPos(), prPos(t))< range || range <= 0) {
-					if(t == llGetKey())
+				if( llVecDist(llGetPos(), prPos(t))< range || range <= 0 ){
+				
+					if( t == llGetKey() )
 						FX$run("", wrapper);
 					else
 						FX$send(l2s(data, targFlag), llGetKey(), wrapper, TEAM_PC);
-					//qd("Sent FX to "+llKey2Name(l2s(data, targFlag))+" ("+l2s(data, targFlag)+")");
+						
 				}
 			
 			}
@@ -510,54 +516,40 @@ onEvt(string script, integer evt, list data){
 
 
 // Add or remove a proc
-addProc(string script, integer evt, integer id){
-	
-	integer i;
-	for(i=0; i<count(EVT_CACHE) && EVT_CACHE != []; i+= CACHESTRIDE){
-		
-		if(l2s(EVT_CACHE, i) == script && l2i(EVT_CACHE, i+1) == evt){
-			// IDs currently bound to this
-			list t = llJson2List(l2s(EVT_CACHE, i+2));
-			// Check if this ID exists
-			integer pos = llListFindList(t, [id]);
 
-			// Add
-			if(pos == -1){
-				t+= id;
-				EVT_CACHE = llListReplaceList(EVT_CACHE, [mkarr(t)], i+2, i+2);
-			}
-			return;
-		}
-		
-	}
-	
-	
-	// We have looped through entirely. If we haven't yet found an exisiting event to add to, do so now
-	EVT_CACHE += [script, evt, mkarr([id])];
-	
-}
 
 
 timerEvent(string id, string data){
+
 	// Send queue
-	if(id == "Q"){
+	if( id == "Q" ){
+	
 		BFL = BFL&~BFL_SENT;
-		if(BFL&BFL_QUEUE_SEND){
+		if( BFL&BFL_QUEUE_SEND ){
+		
 			BFL = BFL&~BFL_QUEUE_SEND;
 			output();
+			
 		}
+		
 	}
 	
 	else if(llGetSubString(id, 0,2) == "CD_"){
+	
 		integer n = (int)llGetSubString(id, 3, -1);
 		// Take this one off CD
 		integer i;
-		for(i=0; i<llGetListLength(EVT_LISTENERS); i+=EVTSTRIDE){
-			if(l2i(EVT_LISTENERS, i) == n){
+		for( ; i<llGetListLength(EVT_LISTENERS); i+=EVTSTRIDE ){
+		
+			if( l2i(EVT_LISTENERS, i) == n ){
+			
 				EVT_LISTENERS = llListReplaceList(EVT_LISTENERS, [l2i(EVT_LISTENERS, i+5)&~Passives$PF_ON_COOLDOWN], i+5, i+5);
 				return;
+				
 			}
+			
 		}
+		
 	}
 	
 }
@@ -673,26 +665,61 @@ default
         
 		
         // Go through the index
-        if((llGetListLength(effects)%2) == 1)return qd("Error: Passives have an uneven index: "+name);
+        if( (llGetListLength(effects)%2) == 1 )
+			return llOwnerSay("Error: Passives have an uneven index: "+name);
         
 		// IDs of effects added
 		list added_effects;
 		
 		
 		integer i;
-		for(i=0; i<count(effects) && count(effects); i+=2){
+		for( ; i<count(effects) && count(effects); i+=2 ){
+		
 			integer t = l2i(effects, i);
-			if(t == FXCUpd$PROC){
+			if( t == FXCUpd$PROC ){
 			
 				list data = llJson2List(l2s(effects, i+1));
 				EVT_INDEX++;
 				added_effects+= EVT_INDEX;
-				// Add a proc
 				list triggers = llJson2List(l2s(data, 0));
-				list_shift_each(triggers, val,
+				
+				// Add a proc
+				@checkTriggers;
+				list_shift_each( triggers, val,
+				
 					list d = llJson2List(val);
-					addProc(l2s(d, 1), l2i(d,2), EVT_INDEX);
+					
+					string script = l2s(d, 1);
+					integer evt = l2i(d, 2);
+
+					integer z;
+					for( ; z<count(EVT_CACHE) && EVT_CACHE != []; z+= CACHESTRIDE ){
+		
+						if( l2s(EVT_CACHE, z) == script && l2i(EVT_CACHE, z+1) == evt ){
+		
+							// IDs currently bound to this
+							list t = llJson2List(l2s(EVT_CACHE, z+2));
+							// Check if this ID exists
+							integer pos = llListFindList(t, [id]);
+
+							// Add
+							if( pos == -1 ){
+							
+								t+= id;
+								EVT_CACHE = llListReplaceList(EVT_CACHE, [mkarr(t)], z+2, z+2);
+								
+							}
+							jump checkTriggers; // return
+			
+						}
+		
+					}
+	
+					// We have looped through entirely. If we haven't yet found an exisiting event to add to, do so now
+					EVT_CACHE += ([script, evt, mkarr([id])]);
+					
 				)
+
 				EVT_LISTENERS += [
 					EVT_INDEX,
 					l2s(data, 0),	// Triggers
@@ -710,6 +737,7 @@ default
 				
 				effects = llDeleteSubList(effects, i, i+1);
 				i-=2;
+				
 			}
 			else if(t == FXCUpd$ATTACH){
 				ATTACHMENTS += [name, l2s(effects, i+1)];
@@ -726,9 +754,11 @@ default
         Removes a passive
     */
     else if(METHOD == PassivesMethod$rem){
+	
         string name = method_arg(0);
         if(removePassiveByName(name))
 			compilePassives();
+			
     }
     
     /*

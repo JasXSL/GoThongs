@@ -50,9 +50,11 @@ integer fxFlags = 0;
 
 #define pmod (1./count(PLAYERS))
 
-string runMath(string FX, integer index, key targ){
+string runMath( string FX, integer index, key targ ){
+
     list split = llParseString2List(FX, ["$MATH$"], []);
-	parseFxFlags(targ, fxf)
+	parseDesc(aggroTarg, resources, status, fxf, sex, team, monsterflags)
+	int ehp = llRound((resources>>21&127) / 127.0 * 100);
 	
 	float bsMul = 1;
 	integer B = 0;
@@ -68,7 +70,7 @@ string runMath(string FX, integer index, key targ){
 		spdmdm = 0;
 
 	int melee_range;
-	if( llVecDist(llGetPos(), prPos(targ)) < MELEE_RANGE )
+	if( llVecDist(llGetPos(), prPos(targ)) < MELEE_RANGE || targ == "1" )
 		melee_range = TRUE;
 		
 	string consts = llList2Json(JSON_OBJECT, [
@@ -93,7 +95,8 @@ string runMath(string FX, integer index, key targ){
 		"T", TEAM,
 		// Max HP
 		"mhp", CACHE_MAX_HP,
-		"m", melee_range
+		"m", melee_range,
+		"ehp", ehp				// enemy HP from 0 to 100
     ]);
 
     integer i;
@@ -171,8 +174,11 @@ onEvt(string script, integer evt, list data){
 		
 		CACHE_CRIT = 1;
 		if(llFrand(1)<critmod && ~flags&SpellMan$NO_CRITS){
+		
 			CACHE_CRIT = 2;
 			llTriggerSound("e713ffed-c518-b1ed-fcde-166581c6ad17", .25);
+			raiseEvent(SpellAuxEvt$crit, (str)SPELL_CASTED);
+			
 		}
 		
 		// RunMath should be done against certain targets for backstab to work

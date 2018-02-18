@@ -91,21 +91,23 @@ updateText(){
     else if( BFL&BFL_CASTING && CAST_END_TIME != CAST_START_TIME ){
 	
 		list d = llJson2List(llList2String(CACHE, spell_id));
-		if(spell_id == -1)
+		if( spell_id == -1 )
 			d = CUSTOMCAST;
+			
 		integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
 	
         color = <.8,.6,1>;
         integer tBlocks = llRound((CAST_END_TIME-llGetTime())/(CAST_END_TIME-CAST_START_TIME)*5);
         string add = CACHE_NAME;
         for(i=0; i<5; i++){
-            if(i<tBlocks)
-                add = "â‡’"+add+"â‡";
+		
+            if( i < tBlocks )
+                add = "▶"+add+"◀";
 			else
 				add = " "+add+" ";
         }
 		if(flags&NPCS$FLAG_NO_INTERRUPT){
-			add = "ðŸ”’"+add+"ðŸ”’";
+			add = "🔒"+add+"🔒";
 		}
         
         text += "\n"+add;

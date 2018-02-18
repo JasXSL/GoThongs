@@ -24,7 +24,6 @@ timerEvent(string id, string data){
             multiTimer([id]);
         else{
             
-			llOwnerSay("@acceptpermission=add");
             llRequestPermissions(llGetOwner(), PERMISSION_ATTACH);
 			
         }
@@ -241,6 +240,7 @@ default{
 	
         if( perm & PERMISSION_ATTACH && !llGetAttached() )
             llAttachToAvatarTemp(SLOT);
+		
         
     }
     

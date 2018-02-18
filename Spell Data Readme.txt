@@ -18,7 +18,7 @@ In the spell builder visual section it's an array:
 				int age_100ths=50, 
 				vec color=<1,.5,.5>, 
 				int scale_100ths=30, 
-				int alpha_10ths=50, 
+				int alpha_10ths=5, 
 				int glow_10ths=3, 
 				int duration_100ths=70, 
 				int predelay_100ths=30

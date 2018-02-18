@@ -133,17 +133,15 @@ default
     
     if(!method$byOwner)return;
     if(method$isCallback){
+	
         if(CB == "SV"){
+		
             multiTimer(["SAVE", "", 5, FALSE]);
             
             
-            list data = llGetObjectDetails(id, [OBJECT_NAME, OBJECT_DESC, OBJECT_POS, OBJECT_ROT]);
-            /*
-            if(llVecDist(llList2Vector(data, 2), llGetPos())>150){
-                llOwnerSay("Warning! Out of bounds object: "+llList2String(data, 0)+" could not be added!");
-                return;
-            }
-            */
+            list data = llGetObjectDetails(id, [OBJECT_NAME, OBJECT_DESC, OBJECT_POS, OBJECT_ROT, OBJECT_ATTACHED_POINT]);
+			if( l2i(data, 4) )
+				return;
             
             string name = llList2String(data, 0);
             string pos = (string)trimVecRot([llList2Vector(data, 2)-llGetPos()], 2, TRUE);
@@ -151,8 +149,10 @@ default
             if((rotation)llList2String(data,3) != ZERO_ROTATION)rot = (string)trimVecRot([llList2Rot(data, 3)], 3, TRUE);
             list out = [name, pos, rot];
             string desc = llStringTrim(llList2String(data, 1), STRING_TRIM);
-            if(llGetSubString(desc, 0,0) != "$" || llGetSubString(desc, 0, 2) == "$M$")desc = "";
-            else desc = llGetSubString(desc, 1, -1);
+            if( llGetSubString(desc, 0,0) != "$" || llGetSubString(desc, 0, 2) == "$M$" )
+				desc = "";
+            else 
+				desc = llGetSubString(desc, 1, -1);
             out+=desc;
             out+=group;
 			
@@ -173,11 +173,14 @@ default
             }
             // This is probably in the HUD then
             else{
+			
                 // Spawn from HUD
                 list names = HUD_TABLES;
 				for(i=0; i<3 && db3$setOther(l2s(names, i), [-1], mkarr(out)) == "0"; ++i){}
                 assets_saved++;
+				
             }
+			
         }
         return;
     }

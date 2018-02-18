@@ -11,3 +11,5 @@
 //REPLACED BY FXCEvt$spellMultipliers #define SpellAuxMethod$spellModifiers 10	// (arr)modifiers - Modifiers are [(float)rest_mod, (float)abil1mod...]
 #define SpellAuxMethod$setQueue 10			// (int)index - Sets this spell as queued
 
+
+#define SpellAuxEvt$crit 1					// (int)index - A critical hit has been scored

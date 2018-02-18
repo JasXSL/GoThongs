@@ -25,7 +25,8 @@ default{
         
         PLAYERS = [(string)llGetOwner()];
         memLim(1.5);
-        
+        raiseEvent(evt$SCRIPT_INIT, "");
+		
     }
         
     timer(){multiTimer([]);}
@@ -46,8 +47,8 @@ default{
 		float timeout = l2f(PARAMS, 1);
 		if( timeout <= 0 )
 			timeout = 1;
-			
-		raiseEvent(gotClassAttEvt$spellStart, mkarr([method_arg(0)]));
+		
+		raiseEvent(gotClassAttEvt$spellStart, mkarr(PARAMS));
         multiTimer(["P_"+method_arg(0), "", timeout, FALSE]);
         
     }

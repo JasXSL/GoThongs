@@ -191,7 +191,7 @@ onEvt(string script, integer evt, list data){
 
 			
 			// Since each package might have multiple events, we have to find the events that match
-            if(script+"_"+(string)evt == llList2String(evdata, 1)+"_"+llList2String(evdata,0)){ 
+            if( script+"_"+(string)evt == llList2String(evdata, 1)+"_"+llList2String(evdata,0) ){ 
 				
 				// JSON array of parameters set in the package
 				list against = llJson2List(llList2String(evdata, 5));
@@ -200,21 +200,37 @@ onEvt(string script, integer evt, list data){
 				
 				// Iterate over parameters and make sure they validate with the event params we received
 				integer i;
-				for(i = 0; i<llGetListLength(against); ++i){
+				for( ; i<llGetListLength(against); ++i){
 					
 					// Event data from package event
 					list eva = explode("||", llList2String(against, i));
-										
-					// Event data from event
-					// string cur = llList2String(data, i);
+					// From event
+					string evtv = l2s(data, i);
+					
+					// Quick check
+					if( ~llListFindList(eva, [evtv]) || l2s(eva, 0) == "" )
+						jump vSuccess;
+					
+					
+					// Deep check
+					list_shift_each(eva, v,
+					
+						string f = llGetSubString(v, 0, 0);
+						float evtF = (float)evtv;
+						float packageF = (float)llGetSubString(v, 1, -1);
+						if( 
+							(f == ">" && evtF > packageF ) ||
+							(f == "<" && evtF < packageF ) ||
+							(f == "&" && (int)evtF&(int)packageF ) ||
+							(f == "~" && ~(int)evtF&(int)packageF )
+						)jump vSuccess;	// Continue
+							
+						
+					)
+					
 				
-					// Validate comparison here, currently a simple == check, could be expanded with num comparisons
-					if(
-						l2s(eva,0) != "" && 	// If the event condition at index is unset, it should always be accepted
-						llListFindList(eva, [llList2String(data, i)]) == -1				// But if it's not unset and not the same as the condition, then we fail
-					){
-						jump evtNext;			// Jumps are fiddly but saves memory
-					}
+					jump evtNext;			// Fail, go to the next event					
+					@vSuccess;				// Continue
 				}
 				
 				

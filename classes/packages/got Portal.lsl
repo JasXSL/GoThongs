@@ -190,17 +190,27 @@ default
 			
 			
 			// I can't remember what 1 is for but if it's 0 then it's not a region position
-			if(mew > 1)
+			if( mew > 1 )
 				pos = p-vecFloor(p)+int2vec(mew);
 			// If no position is set then we regard it as debug (got LevelLite relies on this behavior)
 			else 
 				mew = mew|BIT_DEBUG;
 			
-			// Checks if pos is actually received
-			if( mew&(BIT_DEBUG-1) )
-				llSetRegionPos(pos);
 			
 			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
+			
+
+			// Checks if pos is actually received
+			if( mew&(BIT_DEBUG-1) ){
+				
+				
+				int att = llSetRegionPos(pos);
+				if( !att )
+					llOwnerSay("!SIM ERROR! Unable to position asset. Check build and object entry at "+(str)pos);
+				
+			}
+			
+			
 			
 			if( mew&BIT_DEBUG )
 				BFL = BFL|BFL_IS_DEBUG;
@@ -316,23 +326,27 @@ default
 		){
 			remove();
         }
+		
 		else if(METHOD == PortalMethod$resetAll){
 			qd(xme(XLS(([
 				XLS_EN, "Resetting everything"
 			]))));
 			resetAll();
 		}
+		
 		else if(METHOD == PortalMethod$removeBySpawner){
 			if(method_arg(0) == requester){
 				llDie();
 			}
 		}
+		
 		else if(METHOD == PortalMethod$persistence){
 			if(l2i(PARAMS, 0))
 				BFL = BFL|BFL_PERSISTENT;
 			else
 				BFL = BFL&~BFL_PERSISTENT;
-		}			
+		}		
+		
 		else if(METHOD == gotMethod$setHuds){
 			
 			PLAYER_HUDS = PARAMS;
@@ -377,9 +391,11 @@ default
 					list ini = llJson2List(INI_DATA);
 					integer i;
 					for(i=0; i<llGetListLength(ini) && ini != []; i++){
+					
 						list v = llJson2List(llList2String(ini, i));
 						string task = llList2String(v, 0);
 						if( task == "SC" || task == "PR" || task == "HSC" ){
+						
 							v = llDeleteSubList(v, 0, 0);
 							// Make sure there's actually an asset
 							if(v != []){
@@ -406,10 +422,15 @@ default
 							// Remove this from data that is sent out, since we only need to send monster/status specific stuff
 							ini = llDeleteSubList(ini, i, i);
 							i--;
+							
 						}
+						
 					}
+					
 					INI_DATA = mkarr(ini);
+					
 				}
+				
 			}
 			BFL = BFL|BFL_HAS_DESC;
 			list get = llJson2List(getText());

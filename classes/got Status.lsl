@@ -111,8 +111,8 @@
 #define StatusFlag$casting 0x4		// 
 #define StatusFlag$raped 0x8		// Dead and raped.
 #define StatusFlag$inLevel 0x10		// If currently in a quest level. If not set it's just dicking around with the dev tools
-#define StatusFlag$pained 0x20		// Damage taken increased 50%
-#define StatusFlag$aroused 0x40		// Damage done reduced 50%
+#define StatusFlag$pained 0x20		// Damage taken increased 10%
+#define StatusFlag$aroused 0x40		// Damage taken increased 10%
 #define StatusFlag$swimming 0x80	// Swimming
 #define StatusFlag$climbing 0x100	// Climbing
 #define StatusFlag$loading 0x200	// Loading a level
