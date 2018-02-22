@@ -10,6 +10,7 @@
 
 // * = not implemented yet
 	// The flags in the top 2 are the SMAFlags defined in got Status
+	// Note: These MUST be positive! And can only range between 0 and 255
 	#define fx$DAMAGE_DURABILITY 1				// [(int)amount_to_rem[, (int)flags]]
 	#define fx$AROUSE 2							// [(int)amount_to_add[, (int)flags]]
 	#define fx$PAIN 3							// [(int)amount_to_add[, (int)flags]]
@@ -119,6 +120,7 @@
 	#define fx$GRAVITY 61						// (float)n - PC only - Overrides gravity, the last call is the active one
 	#define fx$PUSH 62							// (vec)dir - PC only - Applies an impulse
 	#define fx$CLASS_VIS 63						// (var)data[, (float)timeout=1] - PC only. Sends class vis data to got ClassAtt. Start is sent on add/instant and end is sent on fade with -1
+	#define fx$MANA_MULTI 64					// (float)amount - PC only, increases or decreases max mana
 	
 // conditions
 	// Built in

@@ -641,7 +641,9 @@ default{
 						}
 
 						// After this point we have to add, so increase the value of PID
-						++PID;
+						if( ++PID > 0xFFFF )
+							PID = 0;	// PID should be limited to 16 bits
+							
 						slice = llListReplaceList(slice, [PID], 0, 0);
 						
 						/*

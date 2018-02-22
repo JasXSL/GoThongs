@@ -87,15 +87,7 @@
 	
 	
 // LIBRARY
-recacheFlags(){
-	integer pre = CACHE_FLAGS;
-	integer i; CACHE_FLAGS = 0;
-    for(i=0; i<llGetListLength(SET_FLAGS); i+=2)CACHE_FLAGS = CACHE_FLAGS|llList2Integer(SET_FLAGS,i+1);
-    for(i=0; i<llGetListLength(UNSET_FLAGS); i+=2)CACHE_FLAGS = CACHE_FLAGS&~llList2Integer(UNSET_FLAGS,i+1);
-	#ifndef IS_NPC
-	if(~pre&fx$F_NO_PULL && CACHE_FLAGS&fx$F_NO_PULL)llStopMoveToTarget();
-	#endif
-}
+
 
 
 // These are INSTNAT tasks that are shared
@@ -152,10 +144,10 @@ recacheFlags(){
 	
 // Texture desc, npc/pc specific
 #ifdef IS_NPC
-	#define ATD Status$addTextureDesc(pid, llList2String(fx, 1), llList2String(fx, 2), timesnap, (int)(duration*10), getStacks(pid, TRUE));
+	#define ATD Status$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE));
 	#define RTD Status$remTextureDesc(pid);
 #else
-	#define ATD Evts$addTextureDesc(pid, llList2String(fx, 1), llList2String(fx, 2), timesnap, (int)(duration*10), getStacks(pid, TRUE));
+	#define ATD Evts$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE));
 	#define RTD Evts$remTextureDesc(pid);
 #endif
 
@@ -165,67 +157,29 @@ recacheFlags(){
 // These are ADD tasks that are shared
 #define dumpFxAddsShared() \
 	if(t == fx$SET_FLAG){ \
-        SET_FLAGS = manageList(FALSE, SET_FLAGS, [pid,llList2Integer(fx, 1)]); \
+		addDFX( pid, t, fx ); \
 		recacheFlags(); \
+		jump fxContinue; \
 	} \
     else if(t == fx$UNSET_FLAG){ \
-        UNSET_FLAGS = manageList(FALSE, UNSET_FLAGS, [pid,llList2Integer(fx, 1)]); \
+        addDFX( pid, t, fx ); \
 		recacheFlags(); \
+		jump fxContinue; \
 	} \
-	else if(t == fx$DAMAGE_TAKEN_MULTI) \
-        DAMAGE_TAKEN_MULTI = manageList(FALSE, DAMAGE_TAKEN_MULTI, [pid,llList2Float(fx, 1)]);   \
-    else if(t == fx$DAMAGE_DONE_MULTI) \
-        DAMAGE_DONE_MULTI = manageList(FALSE, DAMAGE_DONE_MULTI, [pid,llList2Float(fx, 1)]); \
-    else if(t == fx$SPELL_DMG_TAKEN_MOD) \
-        SPELL_DMG_TAKEN_MOD = manageList(FALSE, SPELL_DMG_TAKEN_MOD, [pid,llList2String(fx,1), llList2Float(fx, 2)]); \
 	else if(t == fx$ICON){ \
 		ATD \
-	}else if(t == fx$DODGE) \
-        DODGE_ADD = manageList(FALSE, DODGE_ADD, [pid,llList2Float(fx, 1)]); \
-	else if(t == fx$CASTTIME_MULTI){ \
-        CASTTIME_MULTI = manageList(FALSE, CASTTIME_MULTI, [pid,llList2Float(fx, 1)]); \
-	} \
-    else if(t == fx$COOLDOWN_MULTI) \
-        COOLDOWN_MULTI = manageList(FALSE, COOLDOWN_MULTI, [pid,llList2Float(fx, 1)]); \
-	else if(t == fx$CRIT_ADD)\
-		CRIT_ADD = manageList(FALSE, CRIT_ADD, [pid,llList2Float(fx, 1)]); \
-	else if(t == fx$HEALING_TAKEN_MULTI)\
-		HEAL_MOD = manageList(FALSE, HEAL_MOD, [pid,llList2Float(fx, 1)]); \
-	else if(t == fx$SET_TEAM)\
-		TEAM_MOD = manageList(FALSE, TEAM_MOD, [pid,l2i(fx, 1)]); \
-	
+		jump fxContinue; \
+	}
 	
 // These are REM tasks that are shared
 #define dumpFxRemsShared() \
-	if(t == fx$SET_FLAG){ \
-        SET_FLAGS = manageList(TRUE, SET_FLAGS, [pid, 0]); \
+	if(t == fx$SET_FLAG) \
 		recacheFlags(); \
-	}\
-    else if(t == fx$UNSET_FLAG){ \
-        UNSET_FLAGS = manageList(TRUE, UNSET_FLAGS, [pid, 0]); \
+    else if(t == fx$UNSET_FLAG) \
 		recacheFlags(); \
-	}\
-    else if(t == fx$DAMAGE_TAKEN_MULTI) \
-        DAMAGE_TAKEN_MULTI = manageList(TRUE, DAMAGE_TAKEN_MULTI, [pid, 0]); \
-    else if(t == fx$DAMAGE_DONE_MULTI) \
-        DAMAGE_DONE_MULTI = manageList(TRUE, DAMAGE_DONE_MULTI, [pid, 0]); \
-    else if(t == fx$SPELL_DMG_TAKEN_MOD) \
-        SPELL_DMG_TAKEN_MOD = manageList(TRUE, SPELL_DMG_TAKEN_MOD, [pid, 0, 0]); \
     else if(t == fx$ICON){ \
         RTD \
 	}\
-    else if(t == fx$DODGE) \
-        DODGE_ADD = manageList(TRUE, DODGE_ADD, [pid, 0]); \
-    else if(t == fx$CASTTIME_MULTI) \
-        CASTTIME_MULTI = manageList(TRUE, CASTTIME_MULTI, [pid, 0]); \
-    else if(t == fx$COOLDOWN_MULTI) \
-        COOLDOWN_MULTI = manageList(TRUE, COOLDOWN_MULTI, [pid, 0]); \
-	else if(t == fx$CRIT_ADD)\
-		CRIT_ADD = manageList(TRUE, CRIT_ADD, [pid,0]); \
-	else if(t == fx$HEALING_TAKEN_MULTI)\
-		HEAL_MOD = manageList(TRUE, HEAL_MOD, [pid,0]); \
-	else if(t == fx$SET_TEAM)\
-		TEAM_MOD = manageList(TRUE, TEAM_MOD, [pid,0]); \
 
 	
 	

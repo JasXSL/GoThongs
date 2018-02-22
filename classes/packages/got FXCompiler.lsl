@@ -16,67 +16,68 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
-list STACKS;                // [id, stacks, flags]
-#define STACKSTRIDE 3
-integer CACHE_FLAGS;		// 
-#define stacksIds() llList2ListStrided(STACKS, 0, -1, STACKSTRIDE)
+/*
+	STACKS:
+	[
+		(int):
+			0b0(1) no_stack_multiply
+			0b0000000000000000(16) pid,
+			0b00000000000000(14) stacks
+	]
 
+*/
+list STACKS;
+#define sGetStacks( n ) (n&0x3FFF);
+#define sGetPid( n ) ((n>>14)&0xFFFF)
+#define sGetIgnoreStacks( n ) ((n>>30)&1)
+#define addStacks( stacks, pid, no_stack_multiply ) \
+	STACKS += (stacks&0x3FFF|((pid&0xFFFF)<<14)|((no_stack_multiply>0)<<30));
 
-// Shared trackers
-list TEAM_MOD;				// [(int)id, (int)team]
-list SET_FLAGS;             // [id, (int)data]
-list UNSET_FLAGS;           // [id, (int)data]
-list DAMAGE_TAKEN_MULTI;    // [id, (int)multiplier]
-list DAMAGE_DONE_MULTI;     // [id, (int)multiplier]
-list SPELL_DMG_TAKEN_MOD;   // [id, (str)spell, (float)multiplier]
-list DODGE_ADD;           	// [id, (float)data]
-list CASTTIME_MULTI;   		// [id, (float)multiplier]
-list CRIT_ADD;				// [id, (float)multiplier]
-list HEAL_MOD;				// [id, (float)multi]
-list COOLDOWN_MULTI;   		// [id, (float)multiplier]
+#define removeStacks( pid ) \
+	integer _sr; \
+	for( ; _sr<count(STACKS) && count(STACKS); ++_sr ){ \
+		integer n = l2i(STACKS, _sr); \
+		if( sGetPid(n) == pid ){ \
+			STACKS = llDeleteSubList(STACKS, _sr, _sr); \
+			--_sr; \
+		} \
+	}
+	
+#define replaceStacks( pid, nr ) \
+	integer _sr; \
+	for( ; _sr<count(STACKS); ++_sr ){ \
+		integer n = l2i(STACKS, _sr); \
+		if( sGetPid(n) == pid ) \
+			STACKS = llListReplaceList(STACKS, (list)((n&~0x3FFF)|(nr&0x3FFF)), _sr, _sr); \
+	}
+	
+integer CACHE_FLAGS;		// Cache of FX flags, used for certain effects
 
 
 #define onStackUpdate() //qd(mkarr(STACKS))
 // updateGame is now run at the end of the package parser
 
-
-
 // If absolute it set, it will return nr stacks regardless of PF_NO_STACK_MULTIPLY, used for proper spell icon stack count
-integer getStacks(integer pid, integer absolute){
-	integer pos = llListFindList(stacksIds(), [pid]);
-    if(~pos && (~llList2Integer(STACKS, pos*STACKSTRIDE+2)&PF_NO_STACK_MULTIPLY || absolute)){
-		return llList2Integer(STACKS, pos*STACKSTRIDE+1);
+integer getStacks( integer pid, integer absolute ){
+
+	integer i;
+	for( ; i<count(STACKS); ++i ){
+		
+		integer n = l2i(STACKS, i);
+		if( 
+			sGetPid(n) == pid && 
+			( 
+				!sGetIgnoreStacks(n) || 
+				absolute
+			)
+		)return sGetStacks(n);
+	
 	}
+
 	return 1;
+	
 }
 
-// Compiles a standard list like [PID, value] and returns a sum of the values multiplying by stacks for PID
-float compileList(list input, integer pid_index, integer val_index, integer stride, integer multiply){
-    float out = multiply;
-
-    while(llGetListLength(input)){
-        float v = llList2Float(input, val_index)*getStacks(llList2Integer(input, pid_index), FALSE);
-		if(multiply)out*=v+1;
-		else out+= v;
-        input = llDeleteSubList(input, 0, stride-1);
-    }
-    return out;
-}
-
-// Adds or removes values from a standard list
-list manageList(integer rem, list input, list data){
-    integer PID = llList2Integer(data, 0);
-    integer stride = llGetListLength(data);
-
-    if(rem){
-		integer exists = llListFindList(llList2ListStrided(input, 0, -1, stride), [PID]);
-        input = llDeleteSubList(input, exists*stride, exists*stride+stride-1);
-	}
-    else
-        input+=data;
-    
-    return input;
-}
 
 default 
 {
@@ -94,23 +95,28 @@ default
 	}
 	#endif
 	
-	link_message(integer link, integer nr, string s, key id){
-		if(nr == RESET_ALL)llResetScript();
+	link_message( integer link, integer nr, string s, key id ){
+		
+		if( nr == RESET_ALL )
+			llResetScript();
 		
 		// Event handler
 		if(nr == EVT_RAISED){
+		
 			list dta = llJson2List(s);
-			if(l2s(dta,0) == "got Status" && (int)((str)id) == StatusEvt$team){
+			if( l2s(dta,0) == "got Status" && (int)((str)id) == StatusEvt$team )
 				TEAM = l2i(dta,1);
-			}
+			
 		}
 
-		if(nr != TASK_FXC_PARSE)return;
+		if( nr != TASK_FXC_PARSE )
+			return;
 				
 		
 		list input = llJson2List(s);
 		if(input == [])return;
 		while(input){
+		
 			integer action = l2i(input,0); 
 			integer PID = l2i(input,1); 
 			integer stacks = l2i(input, 2); 
@@ -121,67 +127,46 @@ default
 			string additional = l2s(input, 7); 
 			input = llDeleteSubList(input, 0, FXCPARSE$STRIDE-1); 
 			
-			if(action&FXCPARSE$ACTION_RUN) 
+			if( action&FXCPARSE$ACTION_RUN ) 
 				runEffect(PID, pflags, pname, fx_objs, timesnap, id); 
 			
-			if(action&FXCPARSE$ACTION_ADD){ 
+			if( action&FXCPARSE$ACTION_ADD ){ 
+			
 				integer s = stacks; 
-				if(stacks<1)stacks=1; 
-				STACKS += [PID, stacks, pflags]; 
+				if( stacks < 1 )
+					stacks=1;
+				
+				addStacks(stacks, PID, pflags&PF_NO_STACK_MULTIPLY);
 				addEffect(PID, pflags, pname, fx_objs, timesnap, i2f((int)additional)); 
 				onStackUpdate(); 
+				
 			} 
-			if(action&FXCPARSE$ACTION_REM){ 
+			if( action&FXCPARSE$ACTION_REM ){ 
+			
 				remEffect(PID, pflags, pname, fx_objs, timesnap, (int)additional); 
-				integer sp = llListFindList(stacksIds(), [PID]); 
-				if(~sp){ 
-					STACKS = llDeleteSubList(STACKS, sp*STACKSTRIDE, sp*STACKSTRIDE+STACKSTRIDE-1); 
-					onStackUpdate(); 
-				} 
+				removeStacks(PID);
+				
 			} 
-			if(action&FXCPARSE$ACTION_STACKS){ 
+			if( action&FXCPARSE$ACTION_STACKS ){ 
+			
 				integer s = stacks; 
-				if(s<1)s = 1; 
-				integer sp = llListFindList(stacksIds(), [PID]); 
-				if(~sp){ 
-					STACKS = llListReplaceList(STACKS, [s], sp*STACKSTRIDE+1, sp*STACKSTRIDE+1); 
-					#ifdef IS_NPC
-						Status$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
-					#else
-						Evts$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
-					#endif
-					onStackUpdate(); 
-				} 
+				if( s<1 )
+					s = 1; 
+				
+				replaceStacks(PID, s);
+
+				#ifdef IS_NPC
+					Status$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
+				#else
+					Evts$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
+				#endif
+				onStackUpdate(); 
+							
 			} 
 		}
 		
 		updateGame(); 
 	}
 	
-    // XOBJ default LMs should be able to be bypassed
-	/*
-    #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    
-	
-	
-	/*
-    // Here's where you receive callbacks from running methods
-    if(method$isCallback){
-        return;}
 
-    
-
-    // Public code can be put here
-
-    // End link message code
-    #define LM_BOTTOM  
-    #include "xobj_core/_LM.lsl"  
-	*/
 }

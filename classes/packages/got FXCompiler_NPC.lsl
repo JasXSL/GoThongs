@@ -1,9 +1,10 @@
 #define IS_NPC
 #include "got/_core.lsl"
+#include "../got FXCompiler_Shared.lsl"
 integer TEAM = TEAM_NPC;
 
-list SPEED_MULTI;			// [id, (float)multiplier]
 list CACHE_SFX;				// [(float)time, (arr)data]Spell FX to spawn when received
+
 
 // Spawn instant spell visuals that we have
 spawnEffects(){
@@ -67,7 +68,6 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		
 		// NPC Specific
         // Don't forget toMultiply by stacks
-        
 		else if(t == fx$DAMAGE_DURABILITY)
 			resource_updates += SMBUR$buildDurabilityNPC(-l2f(fx,1)*stacks, pname, l2i(fx,2), caster);
         
@@ -102,28 +102,40 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 }
 
 addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, float duration){
+
     list fxs = llJson2List(fxobjs);
 	integer stacks = getStacks(pid, FALSE);
 	
+	@fxContinue;
     while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
         fxs = llDeleteSubList(fxs,0,0);
         integer t = llList2Integer(fx, 0);
+		fx = llDeleteSubList(fx, 0, 0);
         
         // Don't forget to multiply by stacks
         dumpFxAddsShared()
         
         // These are NPC specific 
-        else if(t == fx$ANIM){
-            if(llList2Integer(fx,2))MeshAnim$startAnim(llList2String(fx, 1));
-            else MeshAnim$stopAnim(llList2String(fx, 1));
-        }
+        else if( t == fx$ANIM ){
 		
-		else if(t == fx$MOVE_SPEED){
-			SPEED_MULTI = manageList(FALSE, SPEED_MULTI, [pid,llList2Float(fx, 1)]);
-		}
-		else if(t == fx$LTB)
+            if( l2i(fx,1) )
+				MeshAnim$startAnim(l2s(fx, 0));
+            else 
+				MeshAnim$stopAnim(l2s(fx, 0));
+			jump fxContinue;
+		
+        }
+
+		else if( t == fx$LTB ){
+			
 			BuffVis$addToMe(pid, l2s(fx, 1), l2s(fx,2));
+			jump fxContinue;
+			
+		}
+		
+		// Default behavior
+		addDFX( pid, t, fx );
 		
     }
 	
@@ -132,6 +144,9 @@ addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, f
 }
 
 remEffect(integer pid, integer pflags, string pname, string fxobjs, integer timesnap, integer overwrite){
+
+	remDFX( pid );
+	
     list fxs = llJson2List(fxobjs);
     while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
@@ -139,18 +154,20 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
         integer t = llList2Integer(fx, 0);
         
         if(!overwrite){
+		
             if(t == fx$ANIM){
-                if(!llList2Integer(fx,2))MeshAnim$startAnim(llList2String(fx, 1));
-                else MeshAnim$stopAnim(llList2String(fx, 1));
+			
+                if(!llList2Integer(fx,2))
+					MeshAnim$startAnim(llList2String(fx, 1));
+                else 
+					MeshAnim$stopAnim(llList2String(fx, 1));
+					
             }
+			
         }
-        
-		if(t == fx$MOVE_SPEED){
-			SPEED_MULTI = manageList(TRUE, SPEED_MULTI, [pid,0]); 
-		}
 		else if(t == fx$LTB)
 			BuffVis$remFromMe(pid);
-		
+
         // Shared are defined in the got FXCompiler header file
         dumpFxRemsShared()
         
@@ -158,50 +175,29 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
 }
 
 updateGame(){
-    integer i;
-    
-    // Multiplicative
-    float ddm = compileList(DAMAGE_DONE_MULTI, 0, 1, 2, TRUE);
-    if(ddm<0)ddm = 0;
-    
-	// Multiplicative
-    float dtm = compileList(DAMAGE_TAKEN_MULTI, 0, 1, 2, TRUE);
-    if(dtm<0)dtm = 0;
-    
-	// ADDITIVE
-    float dodge = compileList(DODGE_ADD, 0, 1, 2, FALSE);
-    
-	// Multiplicative
-    float ctm = compileList(CASTTIME_MULTI, 0, 1, 2, TRUE);
-    if(ctm<0)ctm = 0;
-    
-	// Multiplicative
-    float cdm = compileList(COOLDOWN_MULTI, 0, 1, 2, TRUE);
-    if(cdm<.1)cdm = .1;
-	
-	// Additive
-	float cm = compileList(CRIT_ADD, 0, 1, 2, FALSE);
-    if(cm<0)cm = 0;
-	
-	// Multiplicative
-	float speed = compileList(SPEED_MULTI, 0, 1, 2, TRUE);
-	if(speed<0)speed = 0;
-    
-	// Healing taken mod, multi
-	float htm = compileList(HEAL_MOD, 0, 1, 2, TRUE);
-    if(htm<0)htm = 0;
-	
+
 	integer team = -1;
-	if(TEAM_MOD)
-		team = l2i(TEAM_MOD, -1);
+	list teamMod = getDFXSlice( fx$SET_TEAM, 1);
+	if( teamMod )
+		team = l2i(teamMod, -1);
+		
+	float cm = stat( fx$CRIT_ADD, FALSE);
+    if( cm < 0 )
+		cm = 0;
 		
     // Compile lists of spell specific modifiers
-    list spdmtm; // SPELL_DMG_TAKEN_MOD - [(str)spellName, (float)dmgmod]
-    for(i=0; i<llGetListLength(SPELL_DMG_TAKEN_MOD); i+=3){
-        string n = llList2String(SPELL_DMG_TAKEN_MOD, i+1);
+    list spdmtm; // [(int)id, (str)spellName, (float)dmgmod]
+	list data = getDFXSlice( fx$SPELL_DMG_TAKEN_MOD, 2 );
+	integer i;
+    for( ; i<count(data); i+=3 ){
+		integer stacks = getStacks(dPid(l2i(data, i)), FALSE);
+        string n = llList2String(data, i+1);
         integer pos = llListFindList(spdmtm, [n]);
-        if(~pos)spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+1)+llList2Float(SPELL_DMG_TAKEN_MOD, i+2)], pos+1, pos+1);
-        else spdmtm+=[n, 1+llList2Float(SPELL_DMG_TAKEN_MOD, i+2)];
+        if(~pos)
+			spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+1)+llList2Float(data, i+2)*stacks], pos+1, pos+1);
+        else 
+			spdmtm+=[n, 1+llList2Float(data, i+2)*stacks];
+			
     }
     
     Status$spellModifiers(spdmtm);     
@@ -209,11 +205,11 @@ updateGame(){
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(([
 		CACHE_FLAGS, 		// Flags
 		0, 					// Mana regen
-		f2i(ddm), 			// Damage done multiplier
-		f2i(dtm), 			// Damage taken multiplier
-		f2i(dodge), 		// Dodge add
-		f2i(ctm), 			// Casttime multiplier
-		f2i(cdm), 			// Cooldown multiplier
+		f2i(stat( fx$DAMAGE_DONE_MULTI, TRUE)), 			// Damage done multiplier
+		f2i(stat( fx$DAMAGE_TAKEN_MULTI, TRUE)), 			// Damage taken multiplier
+		f2i(stat( fx$DODGE, FALSE )), 		// Dodge add
+		f2i(stat( fx$CASTTIME_MULTI, TRUE )), 			// Casttime multiplier
+		f2i(stat( fx$COOLDOWN_MULTI, TRUE)), 			// Cooldown multiplier
 		0, 					// Mana cost multiplier
 		f2i(cm), 			// Crit add
 		0,					// Pain multi
@@ -225,8 +221,8 @@ updateGame(){
 		0,0,				// Pain add/multi
 		0,0,0,				// HP/Pain/Arousal regen
 		0,					// SPell highlights
-		f2i(htm),				// Healing received mod
-		f2i(speed),			// Movespeed multiplier
+		f2i(stat(fx$HEALING_TAKEN_MULTI, TRUE)),				// Healing received mod
+		f2i(stat(fx$MOVE_SPEED, TRUE)),			// Movespeed multiplier
 		1,					// (PC only)Healing done mod
 		team,
 		0,					// (unsupported)befuddle,
