@@ -1,11 +1,8 @@
-/*
-	
-	THIS SCRIPT IS SATURATED.
-	ADDITIONS WILL LEAD TO STACK HEAPS
-
-*/
+#define PMATH_CONSTS _C
 #define USE_EVENTS
 #include "got/_core.lsl"
+
+list _C;		// Math constants
 
 integer TEAM = TEAM_PC;
 
@@ -53,7 +50,7 @@ integer fxFlags = 0;
 string runMath( string FX, integer index, key targ ){
 
     list split = llParseString2List(FX, ["$MATH$"], []);
-	parseDesc(aggroTarg, resources, status, fxf, sex, team, monsterflags)
+	parseDesc(targ, resources, status, fxf, sex, team, monsterflags)
 	int ehp = llRound((resources>>21&127) / 127.0 * 100);
 	
 	float bsMul = 1;
@@ -73,7 +70,7 @@ string runMath( string FX, integer index, key targ ){
 	if( llVecDist(llGetPos(), prPos(targ)) < MELEE_RANGE || targ == "1" )
 		melee_range = TRUE;
 		
-	string consts = llList2Json(JSON_OBJECT, [
+	_C = [
 		// Damage done multiplier
         "D", (dmdmod*pmod*CACHE_CRIT*spdmdm*difDmgMod()*bsMul),
 		// Raw multiplier not affected by team or difficulty
@@ -97,18 +94,21 @@ string runMath( string FX, integer index, key targ ){
 		"mhp", CACHE_MAX_HP,
 		"m", melee_range,
 		"ehp", ehp				// enemy HP from 0 to 100
-    ]);
+    ];
 
     integer i;
-    for(i=1; i<llGetListLength(split); i++){
-        split = llListReplaceList(split, [llGetSubString(llList2String(split, i-1), 0, -2)], i-1, i-1);
+    for( i=1; i<llGetListLength(split); i++ ){
+        
+		split = llListReplaceList(split, [llGetSubString(llList2String(split, i-1), 0, -2)], i-1, i-1);
         string block = llList2String(split, i);
         integer q = llSubStringIndex(block, "\"");
         string math = implode("/", explode("\\/", llGetSubString(block, 0, q-1)));
-		float out = mathToFloat(math, 0, consts);
+		float out = pandaMath(math);
         block = llGetSubString(block, q+1, -1);
 		split = llListReplaceList(split, [(string)out+block], i, i);
+		
     }
+	_C = [];
     return llDumpList2String(split, "");
 }
 

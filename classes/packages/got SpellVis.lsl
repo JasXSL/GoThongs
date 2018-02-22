@@ -46,7 +46,7 @@ integer STATUS_FLAGS;
 integer QUEUED_SPELL;
 integer SPELL_CASTED;
 
-list SPELL_ANIMS;
+string SPELL_ANIMS;
 
 // Fx stuff
 integer fxFlags;
@@ -192,25 +192,17 @@ onEvt(string script, integer evt, list data){
 		// Send to global thongmanager
 		else if( llList2String(p, fxp$particles) != "" )
 			ThongMan$particles(ct+1, l2i(p, fxp$prim), l2s(p, fxp$particles));
-		
-        list anims = [llList2String(visual, fxc$castAnim)];
-        if(llJsonValueType((string)anims, []) == JSON_ARRAY)
-            anims = llJson2List((string)anims);
         
         list sounds = [llList2String(visual, fxc$castSound)];
         if(llJsonValueType((string)sounds, []) == JSON_ARRAY)
             sounds = llJson2List((string)sounds);
         
-		SPELL_ANIMS = [];
-        list_shift_each(anims, v,
-		
-            if( isset(v) )
-                SPELL_ANIMS+=v;
-			
-        )
-		
+		SPELL_ANIMS = "";
+		if( llList2String(visual, fxc$castAnim) )				
+			SPELL_ANIMS = llList2String(visual, fxc$castAnim);
+
 		if( SPELL_ANIMS )
-			AnimHandler$anim(mkarr(SPELL_ANIMS), TRUE, 0,0,0);
+			AnimHandler$anim(SPELL_ANIMS, TRUE, 0,0,0);
         
         integer loop = TRUE;
         if(llGetListEntryType(sounds, 0) == TYPE_INTEGER && !llList2Integer(sounds, 0)){
@@ -238,9 +230,6 @@ onEvt(string script, integer evt, list data){
         list visual = llList2List(FX_CACHE, SPELL_CASTED*FXSTRIDE, SPELL_CASTED*FXSTRIDE+FXSTRIDE-1);
 
         // ANimations and sounds
-        list anims = [llList2String(visual, fxc$finishAnim)];
-        if(llJsonValueType((string)anims, []) == JSON_ARRAY)
-            anims = llJson2List((string)anims);
                 
         list sounds = [llList2String(visual, fxc$finishSound)];
         if(llJsonValueType((string)sounds, []) == JSON_ARRAY)
@@ -257,14 +246,11 @@ onEvt(string script, integer evt, list data){
 			
 		}
         
-        if(l2s(anims, 0) == "_WEAPON_"){
+        if( llList2String(visual, fxc$finishAnim) == "_WEAPON_" )
             WeaponLoader$anim();
-            anims = [];
-        }
-        list_shift_each(anims, v, 
-            if(isset(v))
-                AnimHandler$anim(v, TRUE, 0, 0, 0);
-        )
+		else if( llList2String(visual, fxc$finishAnim) )
+			AnimHandler$anim(llList2String(visual, fxc$finishAnim), TRUE, 0, 0, 0);
+        
         
             
         list_shift_each(sounds, v,
@@ -339,7 +325,8 @@ onSpellEnd(integer index, float casttime){
 	
     // Stops casting animations
 	if( SPELL_ANIMS )
-        AnimHandler$anim(mkarr(SPELL_ANIMS), FALSE, 0, 0, 0);
+        AnimHandler$anim(SPELL_ANIMS, FALSE, 0, 0, 0);
+		
 }
 
 setAbilitySpinner(integer abil, float startPercent, float duration, integer reverse){
