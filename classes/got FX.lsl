@@ -85,7 +85,7 @@
 #define TARG_NPC 8
 #define TARG_DISPELLER 0x10
 #define TARG_REQUIRE_NO_FACING 0x20
-#define TARG_AOE 0x40			// Runs the effect as omni method at 10m max
+#define TARG_AOE 0x40			// Runs the effect as omni method at 10m max. When using this, maxtarg becomes range in meters
 
 // packages is strided [(int)stacks, (arr)package...]
 string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs, list packages){

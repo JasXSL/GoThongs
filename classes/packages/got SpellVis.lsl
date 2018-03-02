@@ -79,35 +79,47 @@ onEvt(string script, integer evt, list data){
     }
     
     else if(script == "got Status" && evt == StatusEvt$resources){
+	
         // [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
         float mana = l2f(data, 2);
         integer i;
-        
+
         list out;
-        for(i=0; i<count(CACHE_MANA_COST); i++){
-            integer nr = (integer)llPow(i, 2);
+        for( ; i<count(CACHE_MANA_COST); ++i ){
+		
+            integer nr = 1<<i;
             float cost = llList2Float(CACHE_MANA_COST, i)*manamod*llList2Float(manacostMulti, i);
-            if(~CACHE_LOW_MANA&nr && cost>mana){
+
+            if( ~CACHE_LOW_MANA&nr && cost > mana ){
+			
                 CACHE_LOW_MANA = CACHE_LOW_MANA|nr;
                 out+= [
                     PRIM_LINK_TARGET, llList2Integer(ABILS, i),
                     PRIM_COLOR, 1, <1,1,1>, .5
                 ];
-            }else if(CACHE_LOW_MANA&nr && cost <= mana){
+				
+            }
+			else if(CACHE_LOW_MANA&nr && cost <= mana){
+			
                 CACHE_LOW_MANA = CACHE_LOW_MANA&~nr;
                 out+= [
                     PRIM_LINK_TARGET, llList2Integer(ABILS, i),
                     PRIM_COLOR, 1, <1,1,1>, 1
                 ];
+				
             }
             
         }
         
         llSetLinkPrimitiveParamsFast(0, out);
+		
     }
-    else if(script == "got FXCompiler" && evt == FXCEvt$spellMultipliers){
+    else if( script == "got FXCompiler" && evt == FXCEvt$spellMultipliers ){
+
         manacostMulti = llJson2List(llList2String(data,1));
+		
     }
+	
     else if(script == "got SpellMan" && evt == SpellManEvt$recache){
 	
         FX_CACHE = [];

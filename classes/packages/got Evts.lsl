@@ -394,7 +394,26 @@ default
         if( pos == -1 )
 			return;
 		
-		llRegionSayTo(t, 0, llList2String(SPELL_ICONS, pos*SPSTRIDE+2));
+		list out = llParseString2List(llList2String(SPELL_ICONS, pos*SPSTRIDE+2), [], ["<|", "|>"]);
+		integer stacks = l2i(SPELL_ICONS, pos*SPSTRIDE+5);
+		
+		integer i;
+		for( ;i<count(out); ++i ){
+		
+			string s = l2s(out, i);
+			if( s == "<|" ){
+				
+				s = l2s(out, i+1);
+				if( startsWith(s, "s") )
+					s = (string)llRound((float)llGetSubString(s, 1, -1)*stacks);
+					
+				out = llListReplaceList(out, (list)s, i, i+2);
+			
+			}
+		
+		}
+		
+		llRegionSayTo(t, 0, implode("", out));
 		
     }
 

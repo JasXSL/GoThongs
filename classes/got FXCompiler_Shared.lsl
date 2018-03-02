@@ -69,7 +69,6 @@ list getDFXSlice( integer type, integer numElements ){
 		
 	while( _rdfx < count(DFX) ){
 	
-		list slice;
 		integer n = l2i(DFX, _rdfx);
 		integer len = dLen(n);
 		
@@ -90,8 +89,6 @@ list getDFXSlice( integer type, integer numElements ){
 			out+= slice;
 			
 		}
-
-		out+= slice;
 		
 		_rdfx += len+1;
 		
@@ -101,10 +98,12 @@ list getDFXSlice( integer type, integer numElements ){
 	
 }
 
+
 float stat( integer type, integer multiplication ){
 	
-	list check = getDFXSlice( type, 1 ); // The value we want to add should be the first value
+	// The value we want to add should be the first value
 	float out = multiplication;
+	list check = getDFXSlice( type, 1 );
 	
 	integer i;
 	for( ; i<count(check); i+=2 ){
@@ -120,4 +119,35 @@ float stat( integer type, integer multiplication ){
 	return out;
 
 }
+
+// Handler for a modifier that can also be limited to caster, such as damage and healing taken
+// Does similar to stat, except check is a 2-stride array: [int charID, float modifier] this also uses multiplication
+list cMod( int t ){
+
+	list out = [];
+	list check = getDFXSlice( t, 2 );
+	integer i;
+	for( ; i<count(check); i += 3 ){
+		
+		int stacks = getStacks(dPid(l2i(check, i)), FALSE);
+		int caster = l2i(check, i+2);
+
+		// Find the intUUID in out
+		int pos = llListFindList(llList2ListStrided(out, 0, -1, 2), (list)caster);
+		float v = 1;
+		if( ~pos )
+			v = l2f(check, pos*2+1);
+		v *= (1+l2f(check, i+1)*stacks);
+
+		if( ~pos )
+			out = llListReplaceList(out, (list)v, pos*2+1, pos*2+1);
+		else
+			out+= llList2List(check, i+2, i+2) + v;
+		
+	}	
+	
+	return out;
+
+}
+
 

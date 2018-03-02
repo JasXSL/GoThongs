@@ -137,16 +137,18 @@ default
 					stacks=1;
 				
 				addStacks(stacks, PID, pflags&PF_NO_STACK_MULTIPLY);
-				addEffect(PID, pflags, pname, fx_objs, timesnap, i2f((int)additional)); 
+				addEffect(PID, pflags, pname, fx_objs, timesnap, i2f((int)additional), id); 
 				onStackUpdate(); 
 				
 			} 
+			
 			if( action&FXCPARSE$ACTION_REM ){ 
 			
 				remEffect(PID, pflags, pname, fx_objs, timesnap, (int)additional); 
 				removeStacks(PID);
 				
 			} 
+			
 			if( action&FXCPARSE$ACTION_STACKS ){ 
 			
 				integer s = stacks; 

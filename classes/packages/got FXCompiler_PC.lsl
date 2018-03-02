@@ -4,7 +4,7 @@ integer TEAM = TEAM_PC;
 
 
 
-
+// ID tag is the first 8 characters of the UUID
 
 /*
 list THONG_VISUALS;         // [id, (arr)data]
@@ -144,14 +144,14 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			RLV$setSprintPercent(LINK_ROOT, 1);
 		
     }
-    
-    if(resource_updates){
-		// Send updated hp/mana and stuff
-		Status$batchUpdateResources(resource_updates);
-	}
+	
+    // Send updated hp/mana and stuff
+    if( resource_updates )
+		Status$batchUpdateResources(caster, resource_updates);
+	
 }
 
-addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, float duration ){
+addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, float duration, key caster ){
 
     integer stacks = getStacks(pid, FALSE);
     list fxs = llJson2List(fxobjs);
@@ -298,24 +298,31 @@ updateGame(){
 		grav = l2f(gMod, -1);
 	llSetBuoyancy(grav);
 	
-	
     // Compile lists of spell specific modifiers
-    list spdmtm; // [(int)id, (str)spellName, (float)dmgmod]
-	list data = getDFXSlice( fx$SPELL_DMG_TAKEN_MOD, 2 );
+    list spdmtm; // [(str)spellName, (int)playerID, (float)dmgmod]
+	list data = getDFXSlice( fx$SPELL_DMG_TAKEN_MOD, 3 );
 	integer i;
-    for( ; i<count(data); i+=3 ){
+    for( ; i<count(data); i+=4 ){
 	
-		integer stacks = getStacks(dPid(l2i(data, i)), FALSE);
+		// First value is a bitwise combination, see DFX at FXCompiler_Shared
+		int stacks = getStacks(dPid(l2i(data, i)), FALSE);
+		// #3 is an integerlized version of the caster
+		int caster = l2i(data, i+3);
+		// #1 is the name of the spell
         string n = llList2String(data, i+1);
-        integer pos = llListFindList(spdmtm, [n]);
+		// #2 is the float modifier
+		
+        integer pos = llListFindList(spdmtm, [n, caster]); // find spellName and caster, caster * is 0
         if(~pos)
-			spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+1)+llList2Float(data, i+2)*stacks], pos+1, pos+1);
+			spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+2)*(1+llList2Float(data, i+2))*stacks], pos+2, pos+2);
         else 
-			spdmtm+=[n, 1+llList2Float(data, i+2)*stacks];
+			spdmtm+=[n, caster, 1+llList2Float(data, i+2)*stacks];
 			
     }
-	Status$spellModifiers(spdmtm); 
+	Status$spellModifiers(spdmtm, cMod(fx$DAMAGE_TAKEN_MULTI), cMod(fx$HEALING_TAKEN_MULTI)); 
+	data = [];
 
+	// these work off of spell index
 	string out = llList2Json(JSON_ARRAY, [
 		mkarr(spellModCompile(getDFXSlice( fx$SPELL_DMG_DONE_MOD, 2 ))),
 		mkarr(spellModCompile(getDFXSlice( fx$SPELL_MANACOST_MULTI, 2 ))),
@@ -342,13 +349,15 @@ updateGame(){
 			hlt = hlt | (int)llPow(2,llList2Integer(data, i+1));
 	}
 	
+	
+	
 
 	// These are the FXCUpd$ values
 	Passives$setActive(([ 
 		CACHE_FLAGS, 		// 00 FLAGS
 		f2i(stat( fx$MANA_REGEN_MULTI, TRUE)), 		// 01 MANA_REGEN
 		f2i(stat( fx$DAMAGE_DONE_MULTI, TRUE)), 			// 02 DAMAGE_DONE
-		f2i(stat( fx$DAMAGE_TAKEN_MULTI, TRUE)), 			// 03 DAMAGE_TAKEN
+		100, 			// 03 DAMAGE_TAKEN
 		f2i(stat( fx$DODGE, FALSE )), 		// 04 DODGE
 		f2i(stat( fx$CASTTIME_MULTI, TRUE )), 			// 05 CASTTIME
 		f2i(stat( fx$COOLDOWN_MULTI, TRUE)), 			// 06 COOLDOWN
@@ -369,7 +378,7 @@ updateGame(){
 		1,					// 20 PAIN_REGEN
 		1,					// 21 AROUSAL_REGEN
 		hlt,				// 22 HIGHLIGHT_FLAGS
-		f2i(stat( fx$HEALING_TAKEN_MULTI, TRUE)),			// 23 Healing taken mod
+		100,			// 23 Healing taken mod
 		1,					// 24 Movespeed (NPC only)
 		f2i(stat( fx$HEALING_DONE_MULTI, TRUE)),			// 25 Healing done mod
 		team,				// 26 Team override

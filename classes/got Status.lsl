@@ -1,7 +1,7 @@
 #define StatusMethod$debugOut 0				// void - Outputs into chat: [(int)maxHP, (int)maxMana, (int)maxArousal, (int)maxPain]
 
 // debug got Status, 1, 0, 1, -2000 - damage self 20 HP
-#define StatusMethod$batchUpdateResources 1 	// (int)type, (int)numArgs, (var)arg1, arg2... - Strided list of resources to add or subtract. Number of args should match numArgs. Floats are auto converted to int with f2i. Use the SMBUR$build* functions to make sure the syntax matches
+#define StatusMethod$batchUpdateResources 1 	// (str)attacker, (int)type, (int)numArgs, (var)arg1, arg2... - Attacker is prepended and not strided. Strided list of resources to add or subtract. Number of args should match numArgs. Floats are auto converted to int with f2i. Use the SMBUR$build* functions to make sure the syntax matches
 	#define SMBUR$durability 0						// (float)durability, (str)spellName, (int)flags[, (key)attacker(NPC_ONLY)]
 	#define SMBUR$mana 1							// (float)mana, (str)spellName, (int)flags
 	#define SMBUR$arousal 2							// (float)arousal, (str)spellName, (int)flags
@@ -21,8 +21,8 @@
 	#define StatusTargetFlag$targeting 0x1			// simple targeting
 	#define StatusTargetFlag$focusing 0x2			// focusing as well
 #define StatusMethod$get 7				// returns [STATUS_FLAGS, FXFLAGS, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), (int)sex_flags, (int)team]
-#define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, ]
-										// See got FXCompiler for more info
+#define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, (arr)damage_taken_mod, (arr)healing_taken_mod]
+										// First argument is a strided array of [str package_name, int key2int(caster), float multiplier]
 #define StatusMethod$addTextureDesc 9	// NPC only. PC uses EvtMethod$addTextureDesc | pid, texture, desc, added, duration, stacks - Adds a spell icon
 #define StatusMethod$remTextureDesc 10	// NPC only. PC uses EvtMethod$remTextureDesc | (key)texture						
 #define StatusMethod$getTextureDesc 11	// (int)pos, (key)texture - Gets info about a spell by pos
@@ -137,14 +137,14 @@
 */
 
 
-#define Status$batchUpdateResources(SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, SMBUR, TNN)
+#define Status$batchUpdateResources(attacker, SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, (list)llGetSubString((str)attacker, 0, 7)+SMBUR, TNN)
 // NPC
-#define Status$addHP(amt, spellName, flags, attacker) Status$batchUpdateResources(SMBUR$buildDurabilityNPC(amt, spellName, flags, attacker))
+#define Status$addHP(amt, spellName, flags, attacker) Status$batchUpdateResources(0, SMBUR$buildDurabilityNPC(amt, spellName, flags, attacker))
 // PC
-#define Status$addDurability(amt, spellName, flags) Status$batchUpdateResources(SMBUR$buildDurability(amt, spellName, flags))
-#define Status$addMana(amt, spellName, flags) Status$batchUpdateResources(SMBUR$buildMana(amt, spellName, flags))
-#define Status$addArousal(amt, spellName, flags) Status$batchUpdateResources(SMBUR$buildArousal(amt, spellName, flags))
-#define Status$addPain(amt, spellName, flags) Status$batchUpdateResources(SMBUR$buildPain(amt, spellName, flags))
+#define Status$addDurability(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildDurability(amt, spellName, flags))
+#define Status$addMana(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildMana(amt, spellName, flags))
+#define Status$addArousal(attacker,amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildArousal(amt, spellName, flags))
+#define Status$addPain(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildPain(amt, spellName, flags))
 
 
 
@@ -152,7 +152,7 @@
 #define Status$fullregenTarget(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [], TNN)
 #define Status$fullregenTargetNoInvul(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [1], TNN)
 #define Status$get(targ, cb) runMethod(targ, "got Status", StatusMethod$get, [], cb)
-#define Status$spellModifiers(SPELL_DMG_TAKEN_MOD) runMethod((string)LINK_ROOT, "got Status", StatusMethod$spellModifiers, [mkarr(SPELL_DMG_TAKEN_MOD)], TNN)
+#define Status$spellModifiers(spell_dmg_taken_mod, dmg_taken_mod, healing_taken_mod) runMethod((string)LINK_ROOT, "got Status", StatusMethod$spellModifiers, [mkarr(spell_dmg_taken_mod), mkarr(dmg_taken_mod), mkarr(healing_taken_mod)], TNN)
 #define Status$addTextureDesc(pid, texture, desc, added, duration, stacks) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks], TNN)
 #define Status$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Status", StatusMethod$remTextureDesc, [pid], TNN)
 #define Status$getTextureDesc(targ, pid) runMethod(targ, "got Status", StatusMethod$getTextureDesc, [pid], TNN)

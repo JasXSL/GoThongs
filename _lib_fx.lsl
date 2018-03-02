@@ -68,11 +68,13 @@
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE)
 		
+		
+
 	#define fx$MANA_REGEN_MULTI 15				// (float)add
-	#define fx$DAMAGE_TAKEN_MULTI 16			// (float)add
+	#define fx$DAMAGE_TAKEN_MULTI 16			// (float)add, (bool)by_caster
 	#define fx$DAMAGE_DONE_MULTI 17				// (float)add
 	#define fx$CASTTIME_MULTI 18				// (float)add
-	#define fx$SPELL_DMG_TAKEN_MOD 19			// (str)spellName, (float)add - PC only SpellName is the FX package name :: Increases efficiency of dur/man/ars/pain sections of a spell, useful for heals too
+	#define fx$SPELL_DMG_TAKEN_MOD 19			// (str)spellName, (float)add, (bool)by_caster - PC only SpellName is the FX package name :: Increases efficiency of dur/man/ars/pain sections of a spell, useful for heals too
 	#define fx$ICON 20							// (key)icon, (str)description
 	#define fx$INTERRUPT 21						// (bool)force - Force will override fx$F_NO_INTERRUPT
 	#define fx$SPELL_DMG_DONE_MOD 22			// (int)index, (float)add - Index is the index of the spell, 0 is rest and then 1-4 for the others :: Increases efficiency of spells cast by you with this name
@@ -107,7 +109,7 @@
 		#define FXAF$AOE 0x4						// Apply FX on AOE
 	#define fx$ADD_STACKS 49					// (int)stacks, (str)name... - See FXMethod$addStacks -  Adds (resets timer) or removes stacks (does not affect timer)
 	#define fx$SPELL_HIGHLIGHT 50				// (int)index, (int)min_stacks - PC Only - Draws a yellow border around a spell. 0 is the bottom ability, then 1-4 for the upper row. If min_stacks is set, then you need a minimum of that amount of stacks for it to proc
-	#define fx$HEALING_TAKEN_MULTI 51			// (float)add - Increases or decreases healing received
+	#define fx$HEALING_TAKEN_MULTI 51			// (float)add, (bool)by_caster - Increases or decreases healing received
 	#define fx$HEALING_DONE_MULTI 52			// (float)add - Increases or decreases healing done
 	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc - (PC only) Spawns a monster from HUD
 	#define fx$SET_TEAM 54						// (int)team - (PC ONLY for now)Overrides the current team
@@ -122,6 +124,7 @@
 	#define fx$CLASS_VIS 63						// (var)data[, (float)timeout=1] - PC only. Sends class vis data to got ClassAtt. Start is sent on add/instant and end is sent on fade with -1
 	#define fx$MANA_MULTI 64					// (float)amount - PC only, increases or decreases max mana
 	
+
 // conditions
 	// Built in
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names
@@ -145,7 +148,8 @@
 	//#define fx$COND_CASTER_IS_BEHIND 11			// NULL - If the caster is behind the victim
 	
 	#define fx$COND_HAS_GENITALS 12				// (int)bitflags - See _core
-	
+	#define fx$COND_TEAM 14						// (int)team1, (int)team2... - Validates if the receiver is on any of these teams. If reverse it validates if the receiver is not on either of the teams
+	#define fx$COND_CASTER_ANGLE 15				// Minimum angle from caster fwd. Positive X for player casters, positive Z for NPC casters. Viable values are 0-PI
 	
 // Reserved names:
 	#define FXN$INFUSION "_I"					// Bloodlust

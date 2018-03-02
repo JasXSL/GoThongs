@@ -97,11 +97,11 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
     
     if(resource_updates){
 		// Send updated hp/mana and stuff
-		Status$batchUpdateResources(resource_updates);
+		Status$batchUpdateResources(caster, resource_updates);
 	}
 }
 
-addEffect(integer pid, integer pflags, str pname, string fxobjs, int timesnap, float duration){
+addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, float duration, key caster ){
 
     list fxs = llJson2List(fxobjs);
 	integer stacks = getStacks(pid, FALSE);
@@ -185,28 +185,36 @@ updateGame(){
     if( cm < 0 )
 		cm = 0;
 		
-    // Compile lists of spell specific modifiers
-    list spdmtm; // [(int)id, (str)spellName, (float)dmgmod]
-	list data = getDFXSlice( fx$SPELL_DMG_TAKEN_MOD, 2 );
+	// Compile lists of spell specific modifiers
+    list spdmtm; // [(str)spellName, (int)playerID, (float)dmgmod]
+	list data = getDFXSlice( fx$SPELL_DMG_TAKEN_MOD, 3 );
 	integer i;
-    for( ; i<count(data); i+=3 ){
-		integer stacks = getStacks(dPid(l2i(data, i)), FALSE);
+    for( ; i<count(data); i+=4 ){
+	
+		// First value is a bitwise combination, see DFX at FXCompiler_Shared
+		int stacks = getStacks(dPid(l2i(data, i)), FALSE);
+		// #3 is an integerlized version of the caster
+		int caster = l2i(data, i+3);
+		// #1 is the name of the spell
         string n = llList2String(data, i+1);
-        integer pos = llListFindList(spdmtm, [n]);
+		// #2 is the float modifier
+		
+        integer pos = llListFindList(spdmtm, [n, caster]); // find spellName and caster, caster * is 0
         if(~pos)
-			spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+1)+llList2Float(data, i+2)*stacks], pos+1, pos+1);
+			spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+2)*(1+llList2Float(data, i+2))*stacks], pos+2, pos+2);
         else 
-			spdmtm+=[n, 1+llList2Float(data, i+2)*stacks];
+			spdmtm+=[n, caster, 1+llList2Float(data, i+2)*stacks];
 			
     }
-    
-    Status$spellModifiers(spdmtm);     
+	Status$spellModifiers(spdmtm, cMod(fx$DAMAGE_TAKEN_MULTI), cMod(fx$HEALING_TAKEN_MULTI)); 
+     
+     
 	
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(([
 		CACHE_FLAGS, 		// Flags
 		0, 					// Mana regen
 		f2i(stat( fx$DAMAGE_DONE_MULTI, TRUE)), 			// Damage done multiplier
-		f2i(stat( fx$DAMAGE_TAKEN_MULTI, TRUE)), 			// Damage taken multiplier
+		100, 			// Damage taken multiplier (not used)
 		f2i(stat( fx$DODGE, FALSE )), 		// Dodge add
 		f2i(stat( fx$CASTTIME_MULTI, TRUE )), 			// Casttime multiplier
 		f2i(stat( fx$COOLDOWN_MULTI, TRUE)), 			// Cooldown multiplier
@@ -221,7 +229,7 @@ updateGame(){
 		0,0,				// Pain add/multi
 		0,0,0,				// HP/Pain/Arousal regen
 		0,					// SPell highlights
-		f2i(stat(fx$HEALING_TAKEN_MULTI, TRUE)),				// Healing received mod
+		100,				// Healing received mod (not used)
 		f2i(stat(fx$MOVE_SPEED, TRUE)),			// Movespeed multiplier
 		1,					// (PC only)Healing done mod
 		team,

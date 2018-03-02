@@ -64,6 +64,8 @@
 	// 0(12) (bool)dont_reduce - Do not reduce incoming damage, but still apply conversion
 	// 0(13) (bool)non_detrimental - Makes conversion trigger from gaining HP/Mana or losing pain/arousal
 	// 0(14) (bool)inverse - Makes conversion subtract instead of add
+	// 0(15-20) (int)multiplier - Multiplies percentage against this value minus 1. 0 = 1x, 1=2x. Max is 15 which is 16x
+	
 #define FXC$CONVERSION_HP 0
 #define FXC$CONVERSION_MANA 1
 #define FXC$CONVERSION_AROUSAL 2
@@ -74,8 +76,8 @@
 #define FXC$CF_INVERSE 0x4           // Makes conversion subtract instead of add
 
 // Builds conversion: FXC$buildConversion(20,FX$CONVERSION_HP,FX$CONVERSION_MANA, FX$CF_DONT_REDUCE)
-#define FXC$buildConversion(percent, from, to, flags) \
-    (percent|(from<<7)|(to<<9)|(flags<<11))
+#define FXC$buildConversion(percent, from, to, flags, multiplier) \
+    (percent|(from<<7)|(to<<9)|(flags<<11)|(multiplier<<14))
 
 #define FXC$conversionPerc(conversion) (conversion&127)
 #define FXC$conversionFrom(conversion) ((conversion>>7)&3)
@@ -83,7 +85,7 @@
 #define FXC$conversionDontReduce(conversion) ((conversion>>11)&FXC$CF_DONT_REDUCE)
 #define FXC$conversionNonDetrimental(conversion) ((conversion>>11)&FXC$CF_NON_DETRIMENTAL)
 #define FXC$conversionInverse(conversion) ((conversion>>11)&FXC$CF_INVERSE)
-
+#define FXC$conversionMultiplier(conversion) (((conversion>>14)&0xF)+1)
 	
 	
 // LIBRARY
@@ -169,7 +171,12 @@
 	else if(t == fx$ICON){ \
 		ATD \
 		jump fxContinue; \
-	}
+	} \
+	else if( t == fx$SPELL_DMG_TAKEN_MOD && l2i(fx, 2) ) \
+		fx = llListReplaceList(fx, (list)key2int(caster), 2, 2); \
+	else if( l2i(fx, 1) && (t == fx$DAMAGE_TAKEN_MULTI || t == fx$HEALING_TAKEN_MULTI) ) \
+		fx = llListReplaceList(fx, (list)key2int(caster), 1, 1);
+	
 	
 // These are REM tasks that are shared
 #define dumpFxRemsShared() \

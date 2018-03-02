@@ -17,32 +17,35 @@ list CACHE;
 
 #define nrToIndex(nr) nr*CSTRIDE
 //#define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
-#define difDmgMod() llPow(0.9, DIFFICULTY)
+#define difDmgMod() llPow(0.9, DIF)
 
-integer DIFFICULTY;
+integer DIF;	// difficulty
 
 // Calculates bonus damage for particular spells
-list SPELL_DMG_DONE_MOD = [-1,-1,-1,-1,-1];		// [rest, abil1, abil2...]
+list SPDM = [-1,-1,-1,-1,-1];		// [rest, abil1, abil2...]
 
-// Caching
-float CACHE_AROUSAL;
-float CACHE_PAIN;
-float CACHE_CRIT;
-float CACHE_MAX_HP = 100;
+// Caching modifiers
+float cHP = 100;
+float cMP = 50;
+float cAR;
+float cPP;
+float cCR;
+float cMHP = 100;
+
 
 list PLAYERS;
 
-integer STATUS_FLAGS;
+integer SF;			// Status flags
 
 // FX
-float dmdmod = 1;       // Damage done
-float critmod = 0;
+float dmod = 1;       // Damage done
+float cmod = 0;
 float cdmod = 1;		// Cooldown modifier
 float hdmod = 1;		// Healing done mod
-list manacostMulti = [1,1,1,1,1];
+list mcm = [1,1,1,1,1];
 
 float befuddle = 1;		// Chance to cast at a random target
-float backstabMulti = 1;	// Additional damage when attacking from behind
+float bsMul = 1;	// Additional damage when attacking from behind
 integer fxFlags = 0;
 
 #define pmod (1./count(PLAYERS))
@@ -58,9 +61,9 @@ string runMath( string FX, integer index, key targ ){
 	myAngZ(targ, ang)
 	if((llFabs(ang)>PI_BY_TWO || fxf & fx$F_ALWAYS_BACKSTABBED || fxFlags&fx$F_ALWAYS_BEHIND) && targ != ""){
 		B = 1;
-		bsMul = backstabMulti;
+		bsMul = bsMul;
 	}
-	float spdmdm = llList2Float(SPELL_DMG_DONE_MOD, index);
+	float spdmdm = llList2Float(SPDM, index);
 	if(spdmdm == -1)
 		spdmdm = 1;
 	else if(spdmdm<0)
@@ -72,15 +75,15 @@ string runMath( string FX, integer index, key targ ){
 		
 	_C = [
 		// Damage done multiplier
-        "D", (dmdmod*pmod*CACHE_CRIT*spdmdm*difDmgMod()*bsMul),
+        "D", (dmod*pmod*cCR*spdmdm*difDmgMod()*bsMul),
 		// Raw multiplier not affected by team or difficulty
-		"R", (dmdmod*CACHE_CRIT*spdmdm*bsMul),
+		"R", (dmod*cCR*spdmdm*bsMul),
 		// Critical hit
-		"C", CACHE_CRIT,
+		"C", cCR,
 		// Points of arousal
-		"A", CACHE_AROUSAL,
+		"A", cAR,
 		// Points of pain
-		"P", CACHE_PAIN,
+		"P", cPP,
 		// Backstab boolean
 		"B", B,
 		// Cooldown modifier
@@ -91,11 +94,13 @@ string runMath( string FX, integer index, key targ ){
 		"h", hdmod,
 		"T", TEAM,
 		// Max HP
-		"mhp", CACHE_MAX_HP,
+		"mhp", cMHP,
+		"mp", cMP,
+		"hp", cHP,
 		"m", melee_range,
 		"ehp", ehp				// enemy HP from 0 to 100
     ];
-
+	
     integer i;
     for( i=1; i<llGetListLength(split); i++ ){
         
@@ -108,6 +113,7 @@ string runMath( string FX, integer index, key targ ){
 		split = llListReplaceList(split, [(string)out+block], i, i);
 		
     }
+
 	_C = [];
     return llDumpList2String(split, "");
 }
@@ -118,24 +124,26 @@ onEvt(string script, integer evt, list data){
         PLAYERS = data;
 
 	else if(script == "got Status" && evt == StatusEvt$flags)
-        STATUS_FLAGS = llList2Integer(data,0);
+        SF = llList2Integer(data,0);
 	
 	else if(script == "got Status" && evt == StatusEvt$difficulty){
-		DIFFICULTY = l2i(data, 0);
+		DIF = l2i(data, 0);
 	}
 	
 	else if(script == "got Status" && evt == StatusEvt$resources){
 		// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
-		CACHE_AROUSAL = llList2Float(data, 4);
-		CACHE_PAIN = llList2Float(data, 6);
-		CACHE_MAX_HP = l2f(data, 1);
+		cAR = llList2Float(data, 4);
+		cPP = llList2Float(data, 6);
+		cMHP = l2f(data, 1);
+		cHP = l2f(data, 0);
+		cMP = l2f(data, 2);
 	}
 	else if(script == "got Status" && evt == StatusEvt$team)
 		TEAM = l2i(data,0);
 	
 	else if(script == "got FXCompiler" && evt == FXCEvt$spellMultipliers){
-		SPELL_DMG_DONE_MOD = llJson2List(llList2String(data,0));
-		manacostMulti = llJson2List(llList2String(data,1));
+		SPDM = llJson2List(llList2String(data,0));
+		mcm = llJson2List(llList2String(data,1));
 	}
 	
 	else if(script == "got SpellMan" && evt == SpellManEvt$recache){
@@ -172,10 +180,10 @@ onEvt(string script, integer evt, list data){
 		
 		integer flags = spellFlags(SPELL_CASTED);
 		
-		CACHE_CRIT = 1;
-		if(llFrand(1)<critmod && ~flags&SpellMan$NO_CRITS){
+		cCR = 1;
+		if(llFrand(1)<cmod && ~flags&SpellMan$NO_CRITS){
 		
-			CACHE_CRIT = 2;
+			cCR = 2;
 			llTriggerSound("e713ffed-c518-b1ed-fcde-166581c6ad17", .25);
 			raiseEvent(SpellAuxEvt$crit, (str)SPELL_CASTED);
 			
@@ -185,8 +193,10 @@ onEvt(string script, integer evt, list data){
 
 		// Handle AOE
 		if((string)SPELL_TARGS == "AOE"){
+		
 			FX$aoe(spellRange(SPELL_CASTED), llGetKey(), runMath(spellWrapper(SPELL_CASTED),SPELL_CASTED, ""), TEAM);  
 			SPELL_TARGS = [LINK_ROOT];
+			
 		}
 		
 		else if(llFrand(1) < befuddle-1){
@@ -200,18 +210,23 @@ onEvt(string script, integer evt, list data){
 		}
 		
 		// Send effects and rez visuals
-		list_shift_each(SPELL_TARGS, val, 
-			
-			if(val == llGetKey() || val == llGetOwner())
-				val = (str)LINK_ROOT;
-						
-			if((string)SPELL_TARGS != "AOE"){
-				FX$send(val, llGetKey(), runMath(spellWrapper(SPELL_CASTED),SPELL_CASTED, val), TEAM);
-			}
-		)
+		if( (string)SPELL_TARGS != "AOE" ){
 		
-		if(llStringLength(spellSelfcast(SPELL_CASTED)) > 2)
-			FX$run(llGetOwner(), runMath(spellSelfcast(SPELL_CASTED), SPELL_CASTED, ""));
+			integer i;
+			for( ; i<count(SPELL_TARGS); ++i ){ 
+				
+				string val = l2s(SPELL_TARGS, i);
+				if( val == llGetKey() || val == llGetOwner() )
+					val = (str)LINK_ROOT;
+
+				FX$send(val, llGetKey(), runMath(spellWrapper(SPELL_CASTED),SPELL_CASTED, val), TEAM);
+
+			}
+			
+		}
+		
+		if( llStringLength(spellSelfcast(SPELL_CASTED)) > 2 )
+			FX$run(llGetOwner(), runMath(spellSelfcast(SPELL_CASTED), SPELL_CASTED, l2s(SPELL_TARGS, 0)));
 		
     }
 	/*
@@ -234,13 +249,13 @@ default
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
 		list data = llJson2List(s); \
-		dmdmod = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
-		critmod = i2f(l2f(data, FXCUpd$CRIT)); \
+		dmod = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
+		cmod = i2f(l2f(data, FXCUpd$CRIT)); \
 		cdmod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		hdmod = i2f(l2f(data, FXCUpd$HEAL_DONE_MOD)); \
 		fxFlags = l2i(data, FXCUpd$FLAGS);\
 		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\
-		backstabMulti = i2f(l2f(data,FXCUpd$BACKSTAB_MULTI)); \
+		bsMul = i2f(l2f(data,FXCUpd$BACKSTAB_MULTI)); \
 	}
 	
 	

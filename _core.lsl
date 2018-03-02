@@ -54,7 +54,7 @@
 
 #include "xobj_toonie/classes/ton MeshAnim.lsl"
 
-
+#define key2int(k) ((int)("0x"+(str)k))
 
 // Include all the project files
 #include "./_lib_fx.lsl"

@@ -52,11 +52,7 @@ integer FX_FLAGS;
 // Searches packages and returns the index
 list find(list names, list senders, list tags, list pids, list flags, integer verb){
     list out; integer i = -PSTRIDE;
-	/*
-	if(verb){
-		qd("Finding N: "+mkarr(names)+" S: "+mkarr(senders)+" T: "+mkarr(tags)+" PID: "+mkarr(pids)+" F: "+mkarr(flags));
-	}
-	*/
+
 	@findContinue;
 	i+=PSTRIDE;
 	if(i>llGetListLength(PACKAGES)){
@@ -158,25 +154,26 @@ onEvt(string script, integer evt, list data){
 		
 		packages = find([], [], [], [llList2Integer(data,0)], [], FALSE);	// Returns ID
 		jump wasInternal;
+		
 	}
 	
 	// This was an external event
 	// This works because the only strings in evt_index are the labels
 	integer pos = llListFindList(EVT_INDEX, [script+"_"+(string)evt]);
-	if(~pos){
+	if(~pos)
 		packages = find([],[],[],getEvtIdsByIndex(pos), [], FALSE);
-	}
     @wasInternal;
 	
 	
-	
 	// Cycle through all packages that have this event, remember that the packages are just list of indexes from PACKAGES
-    while(llGetListLength(packages)){
+    while( count(packages) ){
+	
         list slice = pSlice(l2i(packages, 0));					// Get the package slice to work on
         packages = llDeleteSubList(packages, 0, 0);				// Iterate
 		
         string sender = pSender(slice);
-        if(sender == "s")sender = llGetOwner();
+        if(sender == "s")
+			sender = llGetOwner();
         
 		// Read the events from the package
         list evts = llJson2List(pEvts(slice));
@@ -189,14 +186,11 @@ onEvt(string script, integer evt, list data){
             list evdata = llJson2List(llList2String(evts, 0)); 	// Event array from package
             evts = llDeleteSubList(evts, 0, 0);					// Iterate
 
-			
 			// Since each package might have multiple events, we have to find the events that match
             if( script+"_"+(string)evt == llList2String(evdata, 1)+"_"+llList2String(evdata,0) ){ 
 				
 				// JSON array of parameters set in the package
 				list against = llJson2List(llList2String(evdata, 5));
-				
-				//qd("Matching "+mkarr(data)+" against "+mkarr(against));
 				
 				// Iterate over parameters and make sure they validate with the event params we received
 				integer i;
@@ -206,9 +200,9 @@ onEvt(string script, integer evt, list data){
 					list eva = explode("||", llList2String(against, i));
 					// From event
 					string evtv = l2s(data, i);
-					
+
 					// Quick check
-					if( ~llListFindList(eva, [evtv]) || l2s(eva, 0) == "" )
+					if( (~llListFindList(eva, [evtv]) && evtv != "") || l2s(eva, 0) == "" )
 						jump vSuccess;
 					
 					
@@ -236,8 +230,7 @@ onEvt(string script, integer evt, list data){
 				
 				// We have validated that this event should be accepted, let's extract the wrapper
 				string wrapper = llList2String(evdata, 4);
-				
-					
+
 				// We can use <index> and <-index> tags to replace with data from the event
 				for(i=0; i<llGetListLength(data); i++){
 					wrapper = implode((str)(-llList2Float(data, i)), explode("<-"+(str)i+">", wrapper));
@@ -344,21 +337,37 @@ integer preCheck(key sender, list package, integer team){
 			inverse = l2i(dta,0);
 			add = (TEAM == team);
 		}
+		else if( c == fx$COND_CASTER_ANGLE ){
+		
+			float ang;
+			myAngZ(sender, ang)
+			if( llGetAgentSize(sender) ){
+				myAngX(sender, ang)
+			}
+			
+			add = llFabs(ang) < l2f(dta, 0);
+		
+		}
+			
+		
+		else if( c == fx$COND_TEAM )
+			add = ~llListFindList(dta, (list)((float)TEAM));
+		
 		
 		else if(c == fx$COND_SELF)
 			add = (sender == "s");
 		
 		// User defined conditions
-        else{
+        else
 			add = checkCondition(sender, c, dta, flags, team);
-		}
+		
 		
 		// If we're inverse, then flip add
         if(inverse)
 			add = !add;
 		
 		// Store successes
-        successes+=add;
+        successes+=(add != FALSE);
 		
 		// We have reached the minimum
         if(successes>=min)return TRUE;
@@ -873,7 +882,6 @@ default{
 					// Delete from packages
 					PACKAGES = llDeleteSubList(PACKAGES, i, i+PSTRIDE-1);
 					
-					//qd("PACKAGE LEN "+(str)(count(PACKAGES)/PSTRIDE)+" EVT LEN: "+(str)count(EVT_INDEX));
 
 				}
 			}
