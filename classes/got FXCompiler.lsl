@@ -103,7 +103,10 @@
 		} \
     } \
 	else if(t == fx$REM_BY_NAME){ \
-        FX$rem(llList2Integer(fx,2), l2s(fx,1), "", "", 0, FALSE, 0,0,0); \
+		string s; \
+		if( l2i(fx, 3) ) \
+			s = caster; \
+        FX$rem(llList2Integer(fx,2), l2s(fx,1), "", s, 0, FALSE, 0,0,0); \
 	} \
 	else if(t == fx$TRIGGER_SOUND){ \
         list sounds = [l2s(fx,1)]; \

@@ -1,6 +1,6 @@
 #define StatusMethod$debugOut 0				// void - Outputs into chat: [(int)maxHP, (int)maxMana, (int)maxArousal, (int)maxPain]
 
-// debug got Status, 1, 0, 1, -2000 - damage self 20 HP
+// debug got Status, 1, 0, 0, 1, -2000 - damage self 20 HP
 #define StatusMethod$batchUpdateResources 1 	// (str)attacker, (int)type, (int)numArgs, (var)arg1, arg2... - Attacker is prepended and not strided. Strided list of resources to add or subtract. Number of args should match numArgs. Floats are auto converted to int with f2i. Use the SMBUR$build* functions to make sure the syntax matches
 	#define SMBUR$durability 0						// (float)durability, (str)spellName, (int)flags[, (key)attacker(NPC_ONLY)]
 	#define SMBUR$mana 1							// (float)mana, (str)spellName, (int)flags

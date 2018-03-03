@@ -249,21 +249,25 @@ output(){
     ];
     list non_multi = FXCUpd$non_multi; // Things that should be ADDed
 	list arrays = FXCUpd$arrays;
-	
+
     integer i;
-    for(; i<llGetListLength(compiled_passives); i+=COMPILATION_STRIDE){
+    for( ; i<count(compiled_passives); i+=COMPILATION_STRIDE ){
+	
         integer type = llList2Integer(compiled_passives, i);
-    
         // Cache the flags first so unset_flags can properly override
-        if(type == FXCUpd$FLAGS)
+        if( type == FXCUpd$FLAGS )
             set_flags = set_flags|llList2Integer(compiled_passives,i+1);
-        else if(type == FXCUpd$UNSET_FLAGS)
-            unset_flags = unset_flags|llList2Integer(compiled_passives,i+1);
-        else if(~llListFindList(arrays, [type]))
+		// Update the unset_flags
+        else if( type == FXCUpd$UNSET_FLAGS )
+            unset_flags = unset_flags|llList2Integer(compiled_passives,i+1);			
+		// Data in this is an array, we merge them
+        else if( ~llListFindList(arrays, [type]) )
 			output = llListReplaceList(output, [mkarr(llJson2List(l2s(compiled_passives, i+1))+llJson2List(l2s(output,type)))], type, type);
+		// do actual math
 		else{
 		
 			float val = llList2Float(compiled_passives, i+1)*llList2Float(output,type);
+			
 			if(~llListFindList(non_multi, [type]))
 				val = llList2Float(compiled_passives, i+1)+llList2Float(output,type);
             output = llListReplaceList(output, [val], type, type);
@@ -271,19 +275,23 @@ output(){
         }
 		
     }
-	
+
 	// Shorten
-	for(i=0; i<count(output); i++){
-		if(llGetListEntryType(output, i) != TYPE_STRING){
+	for( i=0; i<count(output); ++i ){
+	
+		if( llGetListEntryType(output, i) != TYPE_STRING ){
+		
 			float val = llList2Float(output, i);
 			list v = [(int)val];
-			if(llListFindList(INT_FIELDS, [i]) == -1){
-				v = [f2i(val)];
-			}
+			if( !(~llListFindList(INT_FIELDS, (list)i)) )
+				v = [f2i(val)];	
+			
 			output = llListReplaceList(output, v, i, i);
+			
 		}
+		
 	}
-    
+	
 	// Scan attachments
 	list att = []; 	// Contains all names
 	list add = [];	// New names

@@ -339,10 +339,10 @@ integer preCheck(key sender, list package, integer team){
 		}
 		else if( c == fx$COND_CASTER_ANGLE ){
 		
-			float ang;
 			myAngZ(sender, ang)
-			if( llGetAgentSize(sender) ){
-				myAngX(sender, ang)
+			if( llGetAgentSize(sender) != ZERO_VECTOR || l2i(llGetObjectDetails(sender, [OBJECT_ATTACHED_POINT]),0) ){
+				myAngX(sender, a)
+				ang = a;
 			}
 			
 			add = llFabs(ang) < l2f(dta, 0);

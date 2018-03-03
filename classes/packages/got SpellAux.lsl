@@ -31,7 +31,7 @@ float cAR;
 float cPP;
 float cCR;
 float cMHP = 100;
-
+float cMMP = 50;
 
 list PLAYERS;
 
@@ -95,7 +95,10 @@ string runMath( string FX, integer index, key targ ){
 		"T", TEAM,
 		// Max HP
 		"mhp", cMHP,
+		// Current MP
 		"mp", cMP,
+		"mmp", cMMP,
+		// Current HP
 		"hp", cHP,
 		"m", melee_range,
 		"ehp", ehp				// enemy HP from 0 to 100
@@ -137,6 +140,7 @@ onEvt(string script, integer evt, list data){
 		cMHP = l2f(data, 1);
 		cHP = l2f(data, 0);
 		cMP = l2f(data, 2);
+		cMMP = l2f(data, 3);
 	}
 	else if(script == "got Status" && evt == StatusEvt$team)
 		TEAM = l2i(data,0);

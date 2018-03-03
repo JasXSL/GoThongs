@@ -248,6 +248,7 @@ else{ \
 
 // This attempts to start casting a spell
 integer castSpell(integer nr){
+
 	if(SPELL_ON_TARG == -1 && nr != QUEUE_SPELL)llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", .5);
     SPELL_ON_TARG = -1;
 	// Play the click sound
@@ -324,7 +325,6 @@ integer castSpell(integer nr){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
-
 
 	// Run LOS check
     CODE$VISION_CHECK(FALSE)
@@ -409,7 +409,6 @@ integer castSpell(integer nr){
 	if(~spt&SpellMan$NO_GCD)
 		pushCooldowns();
 	
-    
     return TRUE;
 }
 
@@ -418,6 +417,7 @@ integer castSpell(integer nr){
 
 
 spellComplete(){
+
 	// Grab the data
 	list data = nrToData(SPELL_CASTED);
     float cooldown = spellCooldown(data, SPELL_CASTED);
@@ -444,7 +444,7 @@ spellComplete(){
     
     // Consume mana
     if(cost != 0)
-		Status$batchUpdateResources(SMBUR$buildMana(-cost, "", 0));
+		Status$batchUpdateResources("", SMBUR$buildMana(-cost, "", 0));
 	
     // Set cooldown
     if(cooldown){

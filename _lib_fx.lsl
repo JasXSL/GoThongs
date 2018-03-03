@@ -40,7 +40,7 @@
 	#define fx$ANIM 7							// [(str)anim(or array), (int)start, (bool)ignore_immediate, (int)flags] | If ignore immediate is set, it will not be run on instant effects or ticks.
 	#define fx$DODGE 8							// (float)chance_to_add - Adds a chance to dodge bad spells unless undodgable
 	//#define fx$DEBUG 9							// [(str)message]
-	#define fx$REM_BY_NAME 10					// [(str)name, (int)raise_event]
+	#define fx$REM_BY_NAME 10					// [(str)name, (int)raise_event, (bool)only_by_caster]
 	#define fx$REM_THIS 11						// [(int)raise_event] - Only works within a tick
 	#define fx$THONG_VISUAL 12					// see ThongManMethod$fxVisual
 	#define fx$SET_FLAG 13						// [(int)flags]
@@ -54,7 +54,7 @@
 		#define fx$F_BLINDED 0x40					// Makes screen black
 		#define fx$F_NOROT 0x80						// Unable to rotate
 		#define fx$F_BLURRED 0x100					// Blurry screen
-		#define fx$F_ALWAYS_BACKSTABBED 0x200		// Single target Attacks against affected target are always counted as behind
+		#define fx$F_NO_TARGET 0x200				// This player can not be targeted by NPCs
 		#define fx$F_NO_PULL 0x400					// Blocks fx$PULL (37)
 		#define fx$F_NO_DEATH 0x800					// PC - Prevents the player from going below 0 HP and instead raises StatusEvt$death_hit
 		#define fx$F_CAST_WHILE_MOVING 0x1000		// PC - Allows you to cast while moving
@@ -66,7 +66,7 @@
 		
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
-		#define fx$UNVIABLE (fx$F_QUICKRAPE)
+		#define fx$UNVIABLE (fx$F_QUICKRAPE|fx$F_NO_TARGET)
 		
 		
 
