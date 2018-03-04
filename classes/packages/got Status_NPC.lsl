@@ -68,7 +68,7 @@ integer RF;				// Runtime flags
 
 // FX
 integer FF = 0;			// FX Flags
-float fmDD = 1;			// Damage done
+list fmDD;				// Damage done modifiers
 float fmCR = 0;			// crit chance
 integer fxTeam = -1;
 // Damage taken modifiers
@@ -458,11 +458,19 @@ MT(list data){
 			updateDesc(); \
         } \
 		else if( evt == MonsterEvt$attack ){ \
+			\
 			key targ = llList2Key(data, 0); \
             float crit = 1; \
 			if( llFrand(1) < fmCR ) \
 				crit = 2; \
-			integer dmg = llRound(dmg*fmDD*crit*10); \
+			float dm = 1; \
+			integer pos = llListFindList(fmDD, (list)0); \
+			if( ~pos ) \
+				dm = dm*l2f(fmDD, pos+1); \
+			if( ~(pos = llListFindList(fmDD, (list)key2int(targ))) ) \
+				dm = dm*l2f(fmDD, pos+1); \
+			\
+			integer dmg = llRound(dmg*dm*crit*10); \
 			integer pain = llRound(dmg*.2); \
 			list h = [6,"<-1,-1,-1>"];\
 			myAngX(targ, ang) \
@@ -526,7 +534,6 @@ default
 	if(nr == TASK_FX){ \
 		list data = llJson2List(s); \
 		FF = l2i(data, FXCUpd$FLAGS); \
-        fmDD = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
 		fmCR = i2f(l2f(data, FXCUpd$CRIT)); \
 		fxTeam = l2i(data, FXCUpd$TEAM); \
         outputStats(FALSE); \
@@ -535,6 +542,9 @@ default
 		list data = llJson2List(s); \
 		onSettings(data); \
 	} \
+	else if( nr == TASK_OFFENSIVE_MODS )\
+		fmDD = llJson2List(j(s, 0));  \
+	
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -575,7 +585,8 @@ default
 	if(METHOD == StatusMethod$batchUpdateResources && ~SF&StatusFlag$dead){
 	
 		// First part is a tokenized attacker, we remove it because we need the full attacker in NPC
-		PARAMS = llDeleteSubList(PARAMS, 0, 0);
+		if( llGetListEntryType(PARAMS, 0) == TYPE_STRING )
+			PARAMS = llDeleteSubList(PARAMS, 0, 0);
 		
 		while(PARAMS){
 			integer type = l2i(PARAMS, 0);

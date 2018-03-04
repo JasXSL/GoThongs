@@ -206,14 +206,20 @@ updateGame(){
 			spdmtm+=[n, caster, 1+llList2Float(data, i+2)*stacks];
 			
     }
-	Status$spellModifiers(spdmtm, cMod(fx$DAMAGE_TAKEN_MULTI), cMod(fx$HEALING_TAKEN_MULTI)); 
+	Status$spellModifiers(
+		spdmtm, 
+		cMod(fx$DAMAGE_TAKEN_MULTI), 
+		cMod(fx$HEALING_TAKEN_MULTI)
+	); 
      
-     
+    llMessageLinked(LINK_THIS, TASK_OFFENSIVE_MODS, "["+implode(",", ([
+		mkarr(cMod(fx$DAMAGE_DONE_MULTI))
+	]))+"]", "");
 	
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(([
 		CACHE_FLAGS, 		// Flags
 		0, 					// Mana regen
-		f2i(stat( fx$DAMAGE_DONE_MULTI, TRUE)), 			// Damage done multiplier
+		100, 			// Damage done multiplier
 		100, 			// Damage taken multiplier (not used)
 		f2i(stat( fx$DODGE, FALSE )), 		// Dodge add
 		f2i(stat( fx$CASTTIME_MULTI, TRUE )), 			// Casttime multiplier

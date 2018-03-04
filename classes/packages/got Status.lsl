@@ -278,18 +278,17 @@ aMP( float am, string sn, integer flags, integer iCnv, key atkr ){
 		SF&StatusFlag$dead || 
 		(SF&StatusFlag$cutscene && am<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC) 
 	)return;
-		
+	
 	float in = am;
     float pre = MANA;
     am*=spdmtm(sn, atkr);
 	if( flags&SMAFlag$IS_PERCENTAGE )
 		am*=maxMana();
-    
 	// Run conversions
 	else if( !iCnv )
 		am*=rCnv(FXC$CONVERSION_MANA, am);
-		
-    MANA += am;
+
+	MANA += am;
     if( MANA<=0 )
 		MANA = 0;
     else if( MANA > maxMana() )

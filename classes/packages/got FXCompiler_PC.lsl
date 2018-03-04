@@ -5,25 +5,6 @@ integer TEAM = TEAM_PC;
 
 
 // ID tag is the first 8 characters of the UUID
-
-/*
-list THONG_VISUALS;         // [id, (arr)data]
-list MANA_REGEN_MULTI;      // [id, (float)multiplier]
-list MANA_COST_MULTI;  // [id, (float)multiplier]
-list AROUSAL_MULTI;	// [id, (float)multiplier]
-list PAIN_MULTI;		// [id, (float)multiplier]
-list SPELL_DMG_DONE_MOD;	// [id, (int)index, (float)multiplier]
-
-list SPELL_MANACOST_MULTI;	// [id, (int)index, (float)multiplier]
-list SPELL_CASTTIME_MULTI;	// [id, (int)index, (float)multiplier]
-list SPELL_COOLDOWN_MULTI;	// [id, (int)index, (float)multiplier]
-list SPELL_HIGHLIGHTS; 		// [id, (int)index, (int)minStacks]
-list HEAL_DONE_MOD;			// [id, (float)multi] - Healing done (need to mutliply by h in the spell)
-list BEFUDDLE; 				// [id, (float)chanceMulti]
-list CONVERSIONS;			// [id, (arr)conversions]
-list HP_ADD;				// [id, (float)add]
-list GRAVITY;				// [id, (float)set]
-*/
 integer current_visual;
 
 runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster){
@@ -319,9 +300,17 @@ updateGame(){
 			spdmtm+=[n, caster, 1+llList2Float(data, i+2)*stacks];
 			
     }
-	Status$spellModifiers(spdmtm, cMod(fx$DAMAGE_TAKEN_MULTI), cMod(fx$HEALING_TAKEN_MULTI)); 
+	Status$spellModifiers(
+		spdmtm, 
+		cMod(fx$DAMAGE_TAKEN_MULTI), 
+		cMod(fx$HEALING_TAKEN_MULTI)
+	); 
 	data = [];
 
+	llMessageLinked(LINK_THIS, TASK_OFFENSIVE_MODS, mkarr(([
+		mkarr(cMod(fx$DAMAGE_DONE_MULTI))
+	])), "");
+	
 	// these work off of spell index
 	string out = llList2Json(JSON_ARRAY, [
 		mkarr(spellModCompile(getDFXSlice( fx$SPELL_DMG_DONE_MOD, 2 ))),
@@ -356,7 +345,7 @@ updateGame(){
 	Passives$setActive(([ 
 		CACHE_FLAGS, 		// 00 FLAGS
 		f2i(stat( fx$MANA_REGEN_MULTI, TRUE)), 		// 01 MANA_REGEN
-		f2i(stat( fx$DAMAGE_DONE_MULTI, TRUE)), 			// 02 DAMAGE_DONE
+		100, 			// 02 DAMAGE_DONE
 		100, 			// 03 DAMAGE_TAKEN
 		f2i(stat( fx$DODGE, FALSE )), 		// 04 DODGE
 		f2i(stat( fx$CASTTIME_MULTI, TRUE )), 			// 05 CASTTIME

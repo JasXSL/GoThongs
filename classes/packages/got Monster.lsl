@@ -147,12 +147,18 @@ toggleMove(integer on){
 
 
 timerEvent(string id, string data){
+
     if(id == TIMER_FRAME){
-        if(BFL&BFL_STOPON || FXFLAGS&fx$F_STUNNED)return;
+	
+        if( BFL&BFL_STOPON || FXFLAGS&fx$F_STUNNED )
+			return;
         
         // Try to find a target
-        if(STATE == MONSTER_STATE_IDLE){
-            if(getRF()&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED)return;
+        if( STATE == MONSTER_STATE_IDLE ){
+		
+            if(
+				getRF()&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED
+			)return;
             
 			//llSetLinkPrimitiveParamsFast(2, [PRIM_TEXT, (str)wander+"\n"+portalConf$desc, <1,1,1>, 1]);
             // Find a random pos to go to maybe

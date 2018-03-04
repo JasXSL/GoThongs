@@ -177,7 +177,7 @@
 	} \
 	else if( t == fx$SPELL_DMG_TAKEN_MOD && l2i(fx, 2) ) \
 		fx = llListReplaceList(fx, (list)key2int(caster), 2, 2); \
-	else if( l2i(fx, 1) && (t == fx$DAMAGE_TAKEN_MULTI || t == fx$HEALING_TAKEN_MULTI) ) \
+	else if( l2i(fx, 1) && (t == fx$DAMAGE_TAKEN_MULTI || t == fx$HEALING_TAKEN_MULTI || t == fx$DAMAGE_DONE_MULTI ) ) \
 		fx = llListReplaceList(fx, (list)key2int(caster), 1, 1);
 	
 	

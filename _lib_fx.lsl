@@ -72,7 +72,7 @@
 
 	#define fx$MANA_REGEN_MULTI 15				// (float)add
 	#define fx$DAMAGE_TAKEN_MULTI 16			// (float)add, (bool)by_caster
-	#define fx$DAMAGE_DONE_MULTI 17				// (float)add
+	#define fx$DAMAGE_DONE_MULTI 17				// (float)add, (bool)to_caster (TODO)
 	#define fx$CASTTIME_MULTI 18				// (float)add
 	#define fx$SPELL_DMG_TAKEN_MOD 19			// (str)spellName, (float)add, (bool)by_caster - PC only SpellName is the FX package name :: Increases efficiency of dur/man/ars/pain sections of a spell, useful for heals too
 	#define fx$ICON 20							// (key)icon, (str)description

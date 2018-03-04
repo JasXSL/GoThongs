@@ -71,7 +71,7 @@ integer getStacks( integer pid, integer absolute ){
 				absolute
 			)
 		)return sGetStacks(n);
-	
+		
 	}
 
 	return 1;
@@ -136,7 +136,7 @@ default
 				if( stacks < 1 )
 					stacks=1;
 				
-				addStacks(stacks, PID, pflags&PF_NO_STACK_MULTIPLY);
+				addStacks(stacks, PID, (pflags&PF_NO_STACK_MULTIPLY));
 				addEffect(PID, pflags, pname, fx_objs, timesnap, i2f((int)additional), id); 
 				onStackUpdate(); 
 				

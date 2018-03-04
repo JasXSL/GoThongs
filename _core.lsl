@@ -32,7 +32,7 @@
 #define TASK_REFRESH_COMBAT -1002   		// void - Replaces StatusMethod$refreshCombat
 #define TASK_FX -1003						// Contains FXCEevt$ values. Replaces PassivesEvt$data - All float types are shortened by f2i
 #define TASK_MONSTER_SETTINGS -1004			// See got Monster Monster$updateSettings(settings)
-
+#define TASK_OFFENSIVE_MODS -1005			// [(arr)[int casterID, float dmg_done_to_caster_id_mod]] | Sent as a root macro because PC handles in SpellAux, NPC handles in monster
 
 // Include the XOBJ framework
 #include "xobj_core/_ROOT.lsl"

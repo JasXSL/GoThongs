@@ -38,10 +38,11 @@ list PLAYERS;
 integer SF;			// Status flags
 
 // FX
-float dmod = 1;       // Damage done
+float pdmod = 1;       // Damage done
 float cmod = 0;
 float cdmod = 1;		// Cooldown modifier
 float hdmod = 1;		// Healing done mod
+list dmod;				// int playerID, float amount
 list mcm = [1,1,1,1,1];
 
 float befuddle = 1;		// Chance to cast at a random target
@@ -59,7 +60,7 @@ string runMath( string FX, integer index, key targ ){
 	float bsMul = 1;
 	integer B = 0;
 	myAngZ(targ, ang)
-	if((llFabs(ang)>PI_BY_TWO || fxf & fx$F_ALWAYS_BACKSTABBED || fxFlags&fx$F_ALWAYS_BEHIND) && targ != ""){
+	if((llFabs(ang)>PI_BY_TWO || fxFlags&fx$F_ALWAYS_BEHIND) && targ != ""){
 		B = 1;
 		bsMul = bsMul;
 	}
@@ -73,11 +74,18 @@ string runMath( string FX, integer index, key targ ){
 	if( llVecDist(llGetPos(), prPos(targ)) < MELEE_RANGE || targ == "1" )
 		melee_range = TRUE;
 		
+	float dm = pdmod;
+	integer pos = llListFindList(dmod, (list)0);
+	if( ~pos )
+		dm = dm*l2f(dmod, pos+1);
+	if( ~(pos = llListFindList(dmod, (list)key2int(targ))) )
+		dm = dm*l2f(dmod, pos+1);
+
 	_C = [
 		// Damage done multiplier
-        "D", (dmod*pmod*cCR*spdmdm*difDmgMod()*bsMul),
+        "D", (dm*pmod*cCR*spdmdm*difDmgMod()*bsMul),
 		// Raw multiplier not affected by team or difficulty
-		"R", (dmod*cCR*spdmdm*bsMul),
+		"R", (dm*cCR*spdmdm*bsMul),
 		// Critical hit
 		"C", cCR,
 		// Points of arousal
@@ -97,6 +105,7 @@ string runMath( string FX, integer index, key targ ){
 		"mhp", cMHP,
 		// Current MP
 		"mp", cMP,
+		// Max MP
 		"mmp", cMMP,
 		// Current HP
 		"hp", cHP,
@@ -159,7 +168,6 @@ onEvt(string script, integer evt, list data){
 			list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
 			if(d == [])
 				d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
-			
 			
 			CACHE+= llList2String(d, 2); // Wrapper
 			CACHE+= llList2String(d, 9); // Selfcast
@@ -253,14 +261,19 @@ default
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
 		list data = llJson2List(s); \
-		dmod = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
+		pdmod = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
 		cmod = i2f(l2f(data, FXCUpd$CRIT)); \
 		cdmod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		hdmod = i2f(l2f(data, FXCUpd$HEAL_DONE_MOD)); \
 		fxFlags = l2i(data, FXCUpd$FLAGS);\
 		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\
 		bsMul = i2f(l2f(data,FXCUpd$BACKSTAB_MULTI)); \
-	}
+	} \
+	else if( nr == TASK_OFFENSIVE_MODS ){ \
+	\
+		dmod = llJson2List(j(s, 0)); \
+	\
+	} \
 	
 	
     // This is the standard linkmessages
