@@ -81,9 +81,7 @@ list SDTM;
 
 #define SPSTRIDE 3
 list SPI;   // Spell Icons [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc]
-
 list OST; // Output status to (key)id, (int)flags
-
 list cID;		// Custom ID (str)id, (var)mixed - Used for got Level integration
 
 // Updates description with the proper team
@@ -93,75 +91,36 @@ list cID;		// Custom ID (str)id, (var)mixed - Used for got Level integration
 // Description is $M$(int)team$(int)HP_BITWISE$(int)rAdd(decimeters)$(int)hAdd$(int)status_flags$(int)monster_flags$(int)fx_flags
 #define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)rAdd+"$"+(str)hAdd+"$"+(str)SF+"$"+(str)RF+"$"+(str)FF);}
 
-#define dropAggro( player, type ) \
+#define dropag( player, type ) \
 	runMethod((str)LINK_THIS, cls$name, StatusMethod$monster_dropAggro, [player, type], TNN)
 
-// output texture
-oTX(){
-
-	integer i; string out;
-	for( i=0; i<llGetListLength(SPI); i+=SPSTRIDE )
-		out+= l2s(SPI, i)+","+l2s(SPI,i+1)+",";
-
-	list opstat = OST;
-	if( RF&Monster$RF_IS_BOSS )
-		opstat = PLAYERS;
-		
-	out = llDeleteSubString(out, -1, -1);
-	
-    for( i = 0; i<count(opstat); i+= 2)
-		GUI$setSpellTextures(l2s(opstat, i), out);
-	
-	
-}
-
-
-#define aggroCheck(k) \
-    if(RF&Monster$RF_NOAGGRO || BFL&BFL_NOAGGRO)return; \
-    vector ppos = prPos(k); \
-    float dist =llVecDist(ppos, llGetPos());  \
-    if(dist>100)return; \
-    integer ainfo = llGetAgentInfo(k); \
-    float range = AR; \
-	prAngZ(k, ang) \
-	if(llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW) \
-		range *= 0.25; \
-    if(dist<range){ \
-        list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS])); \
-        if(llList2Integer(ray, -1) == 0){ \
-            Status$get(k, "aggro"); \
-        }  \
-    }
-
-
-
-
-aggro( key pl, float ag ){
+ag( key pl, float ag ){
 
     if( BFL&BFL_NOAGGRO || RF&(Monster$RF_FREEZE_AGGRO|Monster$RF_NOAGGRO) )
 		return;
     
 	list pre = AG;
 	
-	
     if( pl ){
 	
-        integer pre = llGetListLength(AG);
+        integer pre = count(AG);
         integer pos = llListFindList(AG, [pl]);
         key top; integer i;
         if( ~pos ){
 		
             float nr = llList2Float(AG, pos-1);
             nr+=ag;
-            if(nr<=0)
-				dropAggro(pl, TRUE);
+            if( nr<=0 )
+				dropag(pl, TRUE);
             else{
+			
                 // Newly aggroed
                 integer flag = llList2Integer(AG, pos+1);
-                if(flag&AGFLAG_NOT_AGGROD)
+                if( flag&AGFLAG_NOT_AGGROD )
                     AG = llListReplaceList(AG, [flag&~AGFLAG_NOT_AGGROD], pos+1, pos+1);
                 
                 AG = llListReplaceList(AG, [nr], pos-1, pos-1);
+				
             }
 			
         }
@@ -183,35 +142,34 @@ aggro( key pl, float ag ){
     }
 	
     AG = llListSort(AG, AGGRO_STRIDE, FALSE);
-    
-    
+
     key at = "";
     integer i;
-    for( i=0; i<llGetListLength(AG) && AG != []; i+=AGGRO_STRIDE ){
+    for( i=0; i<count(AG) && AG != []; i+=AGGRO_STRIDE ){
 	
 		// Aggro target has left
 		key t = l2k(AG, i+1);
-        if(llKey2Name(t) == "" || llVecDist(llGetPos(), prPos(t)) > 20){
+        if( llKey2Name(t) == "" || llVecDist(llGetPos(), prPos(t)) > 20 ){
 		
 			AG = llDeleteSubList(AG, i, i+AGGRO_STRIDE-1);
 			i-= AGGRO_STRIDE;
 			
 		}
-		else if(~llList2Integer(AG, i+2)&AGFLAG_NOT_AGGROD){
+		else if( ~llList2Integer(AG, i+2)&AGFLAG_NOT_AGGROD ){
 		
             at = llList2Key(AG, i+1);
-            i = llGetListLength(AG);
+            i = count(AG);
 			
         }
 		
     }
     
-    if(at != AT){ 
+    if( at != AT ){ 
 	
         AT = at;
-        if( at == "" && daSnd != "" ){
+        if( at == "" && daSnd != "" )
             llTriggerSound(daSnd, 1);
-        }else if( at != "" ){
+		else if( at != "" ){
 		
 			if( ~RF&Monster$RF_NO_TARGET ) 
 				Root$targetMe(at, icon, FALSE, TEAM);
@@ -231,7 +189,7 @@ aggro( key pl, float ag ){
 		
     }
 	
-	if(AG != pre)
+	if( AG != pre )
 		raiseEvent(StatusEvt$monster_aggro, mkarr(llList2ListStrided(llDeleteSubList(AG, 0, 0), 0, -1, AGGRO_STRIDE)));
 	
 }
@@ -269,9 +227,7 @@ outputStats( integer f ){
 		return;
 		
 	}
-	
-	
-	
+
 	if( SFP != SF ){
 	
 		raiseEvent(StatusEvt$flags, llList2Json(JSON_ARRAY,[SF, SFP]));
@@ -311,35 +267,42 @@ outputStats( integer f ){
 			outputStats(FALSE); \
 		} \
 	} \
-    else if( id == "A" && ~BFL&BFL_NOAGGRO ){ \
-        if( AT != "" ){ \
-			parseDesc(AT, resources, status, fx, sex, team, monsterFlags); \
-			if( \
-				status&StatusFlags$NON_VIABLE || \
-				fx&fx$UNVIABLE ||  \
-				team == TEAM || \
-				monsterFlags&Monster$RF_INVUL \
-			){ \
-				dropAggro(AT, TRUE); \
-			} \
-			return; \
-        } \
-		llSensor("", "", AGENT|ACTIVE, AR, PI); \
+    else if( id == "A" && ~BFL&BFL_NOAGGRO && AT != "" ){ \
+		parseDesc(AT, resources, status, fx, sex, team, monsterFlags); \
+		if( \
+			status&StatusFlags$NON_VIABLE || \
+			fx&fx$UNVIABLE ||  \
+			team == TEAM || \
+			monsterFlags&Monster$RF_INVUL \
+		)dropag(AT, TRUE); \
     }else if(id == "OT"){ \
-        oTX(); \
+		integer i; string out;\
+		for( i=0; i<count(SPI); i+=SPSTRIDE )\
+			out+= l2s(SPI, i)+","+l2s(SPI,i+1)+",";\
+		\
+		list opstat = OST;\
+		if( RF&Monster$RF_IS_BOSS )\
+			opstat = PLAYERS;\
+			\
+		out = llDeleteSubString(out, -1, -1);\
+		\
+		for( i = 0; i<count(opstat); i+= 2)\
+			GUI$setSpellTextures(l2s(opstat, i), out); \
+		\
     } 
 
 // Overwrite the default one
 #define TIMERSTRIDE 4
 // timeout, id, looptime, repeating
-MT(list data){
+MT( list data ){
+
     integer i;
     if(data != []){
         integer pos = llListFindList(llList2ListStrided(llDeleteSubList(_T,0,0), 0, -1, TIMERSTRIDE), llList2List(data,0,0));
         if(~pos)_T = llDeleteSubList(_T, pos*TIMERSTRIDE, pos*TIMERSTRIDE+TIMERSTRIDE-1);
-        if(llGetListLength(data)==TIMERSTRIDE-1)_T+=[llGetTime()+llList2Float(data,2)]+data;
+        if(count(data)==TIMERSTRIDE-1)_T+=[llGetTime()+llList2Float(data,2)]+data;
     }
-    for(i=0; i<llGetListLength(_T); i+=TIMERSTRIDE){
+    for(i=0; i<count(_T); i+=TIMERSTRIDE){
         if(llList2Float(_T,i)<=llGetTime()){
             string t = llList2String(_T, i+1);
             if(!llList2Integer(_T,i+TIMERSTRIDE-1))_T= llDeleteSubList(_T, i, i+TIMERSTRIDE-1);
@@ -507,6 +470,7 @@ default
     state_entry(){
         raiseEvent(evt$SCRIPT_INIT, "");
 		setTeam(tDEF);
+		qd((str)llGetFreeMemory());
     }
 	
 	sensor(integer total){
@@ -518,10 +482,30 @@ default
 			parseDesc(k, resources, status, fx, sex, team, mf);
 			
 			if(
-				(type&AGENT && TEAM != TEAM_PC && (ffa || ~llListFindList(PLAYERS, [(str)k]))) || 
-				(llGetSubString(prDesc(k), 0, 2) == "$M$" && team != TEAM && ~mf&Monster$RF_INVUL)
+				(
+					(type&AGENT && TEAM != TEAM_PC && (ffa || ~llListFindList(PLAYERS, [(str)k]))) || 
+					(llGetSubString(prDesc(k), 0, 2) == "$M$" && team != TEAM && ~mf&Monster$RF_INVUL)
+				) && ~RF&Monster$RF_NOAGGRO && ~BFL&BFL_NOAGGRO
 			){
-				aggroCheck(k);
+			
+				vector ppos = prPos(k);
+				float dist =llVecDist(ppos, llGetPos());
+				if( dist>100 )
+					return; 
+				integer ainfo = llGetAgentInfo(k);
+				float range = AR;
+				prAngZ(k, ang)
+				if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
+					range *= 0.25;
+					
+				if(dist<range){
+				
+					list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
+					if( llList2Integer(ray, -1) == 0 )
+						Status$get(k, "aggro");
+						
+				}
+				
 			}
         }
 	}
@@ -582,7 +566,7 @@ default
 	
 	
 	
-	if(METHOD == StatusMethod$batchUpdateResources && ~SF&StatusFlag$dead){
+	if( METHOD == StatusMethod$batchUpdateResources && ~SF&StatusFlag$dead ){
 	
 		// First part is a tokenized attacker, we remove it because we need the full attacker in NPC
 		if( llGetListEntryType(PARAMS, 0) == TYPE_STRING )
@@ -610,7 +594,7 @@ default
 				integer cn = key2int(attacker);
 	
 				integer i;
-				for( i=0; i<llGetListLength(SDTM); i+=3 ){
+				for( i=0; i<count(SDTM); i+=3 ){
 				
 					if( 
 						llList2String(SDTM, i) == spellName && 
@@ -647,7 +631,7 @@ default
 					amount*=fmdt;
 					parseDesc(attacker, _r, _s, _f, _st, team, _mo)
 					if(attacker != "" && team != TEAM){
-						aggro(attacker, llFabs(amount));
+						ag(attacker, llFabs(amount));
 					}
 				}
 				else{
@@ -707,10 +691,10 @@ default
 			// agc checks if it should rape or not
 			integer flags = (integer)method_arg(0);
 			if(!_attackable(PARAMS) || llList2Integer(PARAMS,7) == TEAM){
-				dropAggro(id, TRUE);
+				dropag(id, TRUE);
 				return;
 			}                
-			aggro(id, 10);
+			ag(id, 10);
 		} 
         return;
     }
@@ -809,7 +793,7 @@ default
 		if( cur ){
 		
             outputStats(TRUE);
-            oTX();
+            MT(["OT",.01,FALSE]);
 			
         }
 		
@@ -927,7 +911,7 @@ default
 			else if(complete)AG = llDeleteSubList(AG, pos-1, pos+AGGRO_STRIDE-2);
 			else AG = llListReplaceList(AG, [llList2Integer(AG, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
 		}
-		aggro("",0);
+		ag("",0);
 		
 	}
 	
@@ -936,19 +920,19 @@ default
         Root$targetMe(id, icon, (integer)method_arg(0), TEAM);
     // Add aggro
 	else if(METHOD == StatusMethod$monster_aggro){
-        aggro(method_arg(0), (float)method_arg(1));
+        ag(method_arg(0), (float)method_arg(1));
 	}
     else if(METHOD == StatusMethod$monster_taunt){
 		key t = method_arg(0);
 		integer inverse = (int)method_arg(1);
 		
 		integer i;
-		for(i=0; i<llGetListLength(AG); i+=AGGRO_STRIDE){
+		for(i=0; i<count(AG); i+=AGGRO_STRIDE){
 			if((llList2Key(AG, i+1) == t) == inverse){
 				AG = llListReplaceList(AG, [1.0], i, i);
 			}
 		}
-		aggro("",0);
+		ag("",0);
 	}   
 	
 	//Nearby monster has found aggro
@@ -960,7 +944,7 @@ default
 		if(llVecDist(llGetPos(), pp) > r)return;
 		list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 		if(llList2Integer(ray, -1) == 0)
-			aggro(p,10);
+			ag(p,10);
 		
 	}
 	

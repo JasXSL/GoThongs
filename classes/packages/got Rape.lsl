@@ -19,7 +19,6 @@ updateFxAttachments(){
 	for(i=0; i<count(FX_ATTACHMENTS); i+=3){
 		if(llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == "" && llGetInventoryType(l2s(FX_ATTACHMENTS, i)) == INVENTORY_OBJECT ){
 			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
-			//llRezAtRoot(llList2String(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_VECTOR, ZERO_ROTATION, 1);
 		}
 	}
 }

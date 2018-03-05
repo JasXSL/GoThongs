@@ -174,17 +174,17 @@ float rCnv( integer ty, float am ){
 
 // Returns TRUE if changed
 // Adds HP: amount, spellName, flags, isRegen, is conversion
-aHP( float am, string sn, integer flags, integer regen, integer iCnv, key atkr ){
+aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr ){
 
     if( 
 		SF&StatusFlag$dead || 
-		(SF&StatusFlag$cutscene && am<0 && ~flags&SMAFlag$OVERRIDE_CINEMATIC) 
+		(SF&StatusFlag$cutscene && am<0 && ~fl&SMAFlag$OVERRIDE_CINEMATIC) 
 	)return;
 		
     float pre = HP;
     am*=spdmtm(sn, atkr);
 		
-	if(flags&SMAFlag$IS_PERCENTAGE)
+	if(fl&SMAFlag$IS_PERCENTAGE)
 		am*=maxHP();
 	
     else if(am<0){
@@ -210,7 +210,7 @@ aHP( float am, string sn, integer flags, integer regen, integer iCnv, key atkr )
 		
     }
 	// Healing
-	else if( !regen ){
+	else if( !re ){
 		
 		// Healing taken multiplier
 		float fmht = 1;
@@ -224,7 +224,7 @@ aHP( float am, string sn, integer flags, integer regen, integer iCnv, key atkr )
 	}
 		
 	// Run conversions
-	if( !iCnv && ~flags&SMAFlag$IS_PERCENTAGE )
+	if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
 		am *= rCnv(FXC$CONVERSION_HP, am);
 	
     HP += am;

@@ -201,9 +201,9 @@ default
 			
 
 			// Checks if pos is actually received
-			if( mew&(BIT_DEBUG-1) ){
+			if( mew&(BIT_DEBUG-1) && pos != ZERO_VECTOR ){
 
-			int att = llSetRegionPos(pos);
+				int att = llSetRegionPos(pos);
 				if( !att && !llGetAttached() )
 					llOwnerSay("!SIM ERROR! Unable to position asset. Check build and object entry at "+(str)pos);
 				
