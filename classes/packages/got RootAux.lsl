@@ -1,5 +1,6 @@
 list PLAYERS;
 list PLAYER_ICONS = ["d1f4998d-edb0-4067-da12-d651a3dbe9ac"];
+list PLAYER_HUDS;
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -30,6 +31,8 @@ onEvt(string script, integer evt, list data){
 	if(script == "#ROOT" && evt == RootEvt$players){
 		PLAYERS = data;
 	}
+	else if( script == "#ROOT" && evt == RootEvt$coop_hud )
+		PLAYER_HUDS = data;
 	else if(script == "jas RLV"){
 		if(evt == RLVevt$cam_set && ~BFL&BFL_CAM_SET){
 			BFL = BFL|BFL_CAM_SET;
@@ -39,8 +42,10 @@ onEvt(string script, integer evt, list data){
 		}
 		else if(evt == RLVevt$cam_unset)BFL = BFL&~BFL_CAM_SET;
 	}
-	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons)
+	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons){
 		PLAYER_ICONS = data;
+	}
+		
 }
 
 integer diagchan;
@@ -200,7 +205,8 @@ default
 				integer n = (int)llGetSubString(message, 6, -1);
 				if(n >= count(PLAYERS))
 					return;
-				Root$targetThis(llList2Key(PLAYERS, n), l2s(PLAYER_ICONS, n), TRUE, -1);
+					
+				Root$targetThis(llList2Key(PLAYER_HUDS, n), l2s(PLAYER_ICONS, n), TRUE, -1);
 			}
 			
 			else if(message == "reset"){resetAll();}

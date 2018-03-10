@@ -620,7 +620,7 @@ OS( int ic ){
 	if(HP>maxHP())
 		HP = maxHP();
 	if(MANA>maxMana())
-		HP = maxHP();
+		MANA = maxMana();
 		
 	// int is 0000000 << 21 hp_perc, 0000000 << 14 mana_perc, 0000000 << 7 arousal_perc, 0000000 pain_perc 
 	string data = (string)(
@@ -955,6 +955,7 @@ default
 			multiTimer([TIMER_INVUL,"", 6, FALSE]);
 			
 		}
+		
         HP = maxHP();
         MANA = maxMana();
         AROUSAL = 0;

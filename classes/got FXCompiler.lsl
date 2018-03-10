@@ -114,7 +114,9 @@
         if(!l2i(fx,3))llTriggerSound(randElem(sounds), llList2Float(fx, 2)); \
 		else triggerSoundOn(llGetKey(), randElem(sounds), llList2Float(fx, 2)); \
     } \
-	else if(t == fx$FULLREGEN)Status$fullregen(); \
+	else if(t == fx$FULLREGEN){ \
+		Status$fullregen();  \
+	}\
 	else if(t == fx$DISPEL){ \
         integer flags = -PF_DETRIMENTAL; \
         if(l2i(fx,1))flags = PF_DETRIMENTAL; \

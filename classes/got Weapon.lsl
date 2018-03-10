@@ -20,3 +20,9 @@
 #define Weapon$ini(targ, slot, pos, rot, scale) runMethod(targ, "got Weapon", WeaponMethod$ini, [slot, pos, rot, scale], TNN)
 #define Weapon$removeAll() runOmniMethod("got Weapon", WeaponMethod$remove, ["_WEAPON_"], TNN)
 #define Weapon$trail(trails) llRegionSayTo(llGetOwner(), gotWeaponFxChan, trails)
+
+// 0b000000(6) task. Sent on gotWeaponFxChan
+#define gotWeaponSettingChan ((int)("0x"+(string)llGetOwner())+696969)
+#define gotWeapon$ctask$toggle 0x1	// 0b00 mainhand, offhand | Example: 0b10 000001 = show main hand, hide offhand
+
+#define gotWeapon$ctask$setData(n, data) n = n|(data<<6);

@@ -112,7 +112,7 @@ string runMath( string FX, integer index, key targ ){
 		"m", melee_range,
 		"ehp", ehp				// enemy HP from 0 to 100
     ];
-	
+
     integer i;
     for( i=1; i<llGetListLength(split); i++ ){
         

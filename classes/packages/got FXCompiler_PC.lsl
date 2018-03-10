@@ -20,10 +20,10 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
     while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
         fxs = llDeleteSubList(fxs,0,0);
+		
         
 		// Type
 		integer t = llList2Integer(fx, 0);
-		
         // Shared between PC/NPC, defined in got FXCompiler header file
 		dumpFxInstants()
 		

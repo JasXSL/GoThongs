@@ -267,14 +267,17 @@ outputStats( integer f ){
 			outputStats(FALSE); \
 		} \
 	} \
-    else if( id == "A" && ~BFL&BFL_NOAGGRO && AT != "" ){ \
-		parseDesc(AT, resources, status, fx, sex, team, monsterFlags); \
-		if( \
-			status&StatusFlags$NON_VIABLE || \
-			fx&fx$UNVIABLE ||  \
-			team == TEAM || \
-			monsterFlags&Monster$RF_INVUL \
-		)dropag(AT, TRUE); \
+    else if( id == "A" && ~BFL&BFL_NOAGGRO ){ \
+		if( AT ){ \
+			parseDesc(AT, resources, status, fx, sex, team, monsterFlags); \
+			if( \
+				status&StatusFlags$NON_VIABLE || \
+				fx&fx$UNVIABLE ||  \
+				team == TEAM || \
+				monsterFlags&Monster$RF_INVUL \
+			){dropag(AT, TRUE);} \
+		}\
+		llSensor("", "", AGENT|ACTIVE, AR, PI); \
     }else if(id == "OT"){ \
 		integer i; string out;\
 		for( i=0; i<count(SPI); i+=SPSTRIDE )\
@@ -470,7 +473,6 @@ default
     state_entry(){
         raiseEvent(evt$SCRIPT_INIT, "");
 		setTeam(tDEF);
-		qd((str)llGetFreeMemory());
     }
 	
 	sensor(integer total){
@@ -478,8 +480,15 @@ default
 		while(total--){
             key k = llDetectedKey(total);
 			integer type = llDetectedType(total);
+			vector ppos = prPos(k);
+			float dist =llVecDist(ppos, llGetPos());
 			
 			parseDesc(k, resources, status, fx, sex, team, mf);
+			
+			float range = AR;
+			prAngZ(k, ang)
+			if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
+				range *= 0.25;
 			
 			if(
 				(
@@ -487,25 +496,11 @@ default
 					(llGetSubString(prDesc(k), 0, 2) == "$M$" && team != TEAM && ~mf&Monster$RF_INVUL)
 				) && ~RF&Monster$RF_NOAGGRO && ~BFL&BFL_NOAGGRO
 			){
-			
-				vector ppos = prPos(k);
-				float dist =llVecDist(ppos, llGetPos());
-				if( dist>100 )
-					return; 
-				integer ainfo = llGetAgentInfo(k);
-				float range = AR;
-				prAngZ(k, ang)
-				if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
-					range *= 0.25;
-					
-				if(dist<range){
-				
-					list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
-					if( llList2Integer(ray, -1) == 0 )
-						Status$get(k, "aggro");
-						
-				}
-				
+
+				list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
+				if( llList2Integer(ray, -1) == 0 )
+					Status$get(k, "aggro");
+
 			}
         }
 	}
