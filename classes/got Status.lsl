@@ -9,6 +9,7 @@
 	
 	#define SMAFlag$IS_PERCENTAGE 0x1			// multiply durability by total HP	
 	#define SMAFlag$OVERRIDE_CINEMATIC 0x2		// Allow this effect even during cinematics
+	#define SMAFlag$SOFTLOCK 0x4				// Use with pain or arousal to prevent regeneration from kicking in for a few seconds
 	
 	#define SMBUR$buildDurability(durability, spellName, flags) [SMBUR$durability, 3, f2i(durability), spellName, flags]
 	#define SMBUR$buildDurabilityNPC(durability, spellName, flags, attacker) [SMBUR$durability, 4, f2i(durability), spellName, flags, attacker]

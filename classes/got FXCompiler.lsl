@@ -12,11 +12,11 @@
 	#define FXCUpd$MANA_REGEN 1			// (float)multiplier - Default 1
 	#define FXCUpd$DAMAGE_DONE 2		// (float)multiplier - Default 1
 	#define FXCUpd$DAMAGE_TAKEN 3		// (float)multiplier - Default 1
-	#define FXCUpd$DODGE 4				// (float)add - Default 0
+	#define FXCUpd$DODGE 4				// (float)multiplier - Default 1 (got FX handles conversion)
 	#define FXCUpd$CASTTIME 5			// (float)multiplier - Default 1
 	#define FXCUpd$COOLDOWN 6			// (float)multiplier - Default 1
 	#define FXCUpd$MANACOST 7			// (float)multiplier - Default 1
-	#define FXCUpd$CRIT 8				// (float)add - Default 0
+	#define FXCUpd$CRIT 8				// (float)multiplier - Default 1 (got SpellAux handles conversion)
 	
 	#define FXCUpd$PAIN_MULTI 9			// (float)multiplier - Default 1 - Pain taken
 	#define FXCUpd$AROUSAL_MULTI 10		// (float)multiplier - Default 1 - Arousal taken
@@ -45,7 +45,7 @@
 	#define FXCUpd$SWIM_SPEED_MULTI 31	// (float)multiplier - Default 1
 	
 // Settings that are are not multiplicative
-#define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$DODGE, FXCUpd$CRIT, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD, FXCUpd$TEAM]
+#define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD, FXCUpd$TEAM]
 // Settings that are arrays that should be appended
 #define FXCUpd$arrays [FXCUpd$CONVERSION]
 
@@ -114,9 +114,7 @@
         if(!l2i(fx,3))llTriggerSound(randElem(sounds), llList2Float(fx, 2)); \
 		else triggerSoundOn(llGetKey(), randElem(sounds), llList2Float(fx, 2)); \
     } \
-	else if(t == fx$FULLREGEN){ \
-		Status$fullregen();  \
-	}\
+	else if(t == fx$FULLREGEN)Status$fullregen(); \
 	else if(t == fx$DISPEL){ \
         integer flags = -PF_DETRIMENTAL; \
         if(l2i(fx,1))flags = PF_DETRIMENTAL; \

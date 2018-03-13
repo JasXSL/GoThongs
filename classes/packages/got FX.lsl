@@ -31,8 +31,7 @@ list PLAYERS;		// Contains the players
 integer PID;		// Maintains index
 
 // FX stuff
-float dodge_chance;
-float dodge_add;
+float DOD;
 integer FX_FLAGS;
  
 #define getRunPackage(slice) \
@@ -426,7 +425,7 @@ default{
 	if( nr == TASK_FX ){ \
 		list data = llJson2List(s); \
 		FX_FLAGS = l2i(data, FXCUpd$FLAGS); \
-		dodge_chance = i2f(l2i(data, FXCUpd$DODGE)); \
+		DOD = i2f(l2i(data, FXCUpd$DODGE))-1; \
 	}
     
 	#include "xobj_core/_LM.lsl"
@@ -494,7 +493,7 @@ default{
 				CB_DATA = [FALSE];
 			#endif
 			// Check dodge
-			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != llGetOwner() && llFrand(1)<(dodge_chance+dodge_add) ){
+			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != llGetOwner() && llFrand(1)<DOD ){
 				
 				// If not NPC we should animate when we dodge
 				#ifndef IS_NPC

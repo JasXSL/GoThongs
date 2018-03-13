@@ -180,11 +180,7 @@ updateGame(){
 	list teamMod = getDFXSlice( fx$SET_TEAM, 1);
 	if( teamMod )
 		team = l2i(teamMod, -1);
-		
-	float cm = stat( fx$CRIT_ADD, FALSE);
-    if( cm < 0 )
-		cm = 0;
-		
+
 	// Compile lists of spell specific modifiers
     list spdmtm; // [(str)spellName, (int)playerID, (float)dmgmod]
 	list data = getDFXSlice( fx$SPELL_DMG_TAKEN_MOD, 3 );
@@ -221,11 +217,11 @@ updateGame(){
 		0, 					// Mana regen
 		100, 			// Damage done multiplier
 		100, 			// Damage taken multiplier (not used)
-		f2i(stat( fx$DODGE, FALSE )), 		// Dodge add
-		f2i(stat( fx$CASTTIME_MULTI, TRUE )), 			// Casttime multiplier
-		f2i(stat( fx$COOLDOWN_MULTI, TRUE)), 			// Cooldown multiplier
+		stat( fx$DODGE ), 		// Dodge add
+		stat( fx$CASTTIME_MULTI ), 			// Casttime multiplier
+		stat( fx$COOLDOWN_MULTI ), 			// Cooldown multiplier
 		0, 					// Mana cost multiplier
-		f2i(cm), 			// Crit add
+		stat( fx$CRIT_ADD ), 			// Crit add
 		0,					// Pain multi
 		0,					// Arousal multi
 		// PASSIVES (not used in this)
@@ -236,7 +232,7 @@ updateGame(){
 		0,0,0,				// HP/Pain/Arousal regen
 		0,					// SPell highlights
 		100,				// Healing received mod (not used)
-		f2i(stat(fx$MOVE_SPEED, TRUE)),			// Movespeed multiplier
+		stat( fx$MOVE_SPEED ),			// Movespeed multiplier
 		1,					// (PC only)Healing done mod
 		team,
 		0,					// (unsupported)befuddle,

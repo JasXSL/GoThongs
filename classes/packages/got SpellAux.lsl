@@ -112,7 +112,7 @@ string runMath( string FX, integer index, key targ ){
 		"m", melee_range,
 		"ehp", ehp				// enemy HP from 0 to 100
     ];
-
+	
     integer i;
     for( i=1; i<llGetListLength(split); i++ ){
         
@@ -262,7 +262,7 @@ default
 	if(nr == TASK_FX){ \
 		list data = llJson2List(s); \
 		pdmod = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
-		cmod = i2f(l2f(data, FXCUpd$CRIT)); \
+		cmod = i2f(l2f(data, FXCUpd$CRIT))-1; \
 		cdmod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		hdmod = i2f(l2f(data, FXCUpd$HEAL_DONE_MOD)); \
 		fxFlags = l2i(data, FXCUpd$FLAGS);\

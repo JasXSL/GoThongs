@@ -163,10 +163,7 @@ handleWeaponEffect( list PARAMS ){
 
 // Visual effect boxes
 list BOXES = [0,0,0];
-list SINGLES;
 
-int WFX_CHAN;
-int SET_CHAN;
 
 
 default{ 
@@ -197,12 +194,7 @@ default{
         SLOT = startParam & 255;
         HAND = (startParam & 256) > 0;
 		baseScale = llGetScale();
-		
-		WFX_CHAN = gotWeaponFxChan;
-		SET_CHAN = gotWeaponSettingChan;
-		llListen(WFX_CHAN, "", "", "");
-		llListen(SET_CHAN, "", "", "");
-		
+		llListen(gotWeaponFxChan, "", "", "");
 		
         if( llGetStartParameter() ){
 		
@@ -221,8 +213,6 @@ default{
 				llLinkParticleSystem(nr, []);
 		
 			}
-			else if( l2s(llGetLinkPrimitiveParams(nr, [PRIM_DESC]), 0) != "IGNORE" && nr > 1 )
-				SINGLES += nr;
 			
 		)
 		
@@ -255,29 +245,8 @@ default{
     }
     
 	#define LISTEN_LIMIT_FREETEXT \
-		integer isOwner = llGetOwnerKey(id) == llGetOwner(); \
-		if( isOwner && chan == WFX_CHAN ) \
-			return handleWeaponEffect(llJson2List(message)); \
-		if( isOwner && chan == SET_CHAN ){\
-			int data = (int)message; \
-			int task = data&0x3F; \
-			data = data >> 6; \
-			if( task == gotWeapon$ctask$toggle ){ \
-				\
-				integer t = data&1; \
-				if( HAND ) \
-					t = data&2; \
-				\
-				list out; \
-				integer i; \
-				for(; i<count(SINGLES); ++i ) \
-					out+= (list)PRIM_LINK_TARGET + l2i(SINGLES, i) + \
-						PRIM_COLOR + ALL_SIDES + ONE_VECTOR + (t>0); \
-				llSetLinkPrimitiveParamsFast(0, out); \
-			 \
-			} \
-		}
-		
+		if( llGetOwnerKey(id) == llGetOwner() && chan == gotWeaponFxChan ) \
+			return handleWeaponEffect(llJson2List(message));
 	
     #include "xobj_core/_LISTEN.lsl"
 

@@ -20,18 +20,21 @@ if(SFp != SF){ \
 #define TIMER_COMBAT "e"
 #define TIMER_COOP_BREAKFREE "f"
 
+#define TIME_SOFTLOCK 4		// Arousal/Pain softlock lasts 3 sec
+
 #define updateCombatTimer() multiTimer([TIMER_COMBAT, "", StatusConst$COMBAT_DURATION, FALSE])
 
 integer BFL = 1;
 #define BFL_NAKED 1				// 
-//#define BFL_CAM 2				// Cam is overridden
 #define BFL_CLIMB_ROOT 4		// Ended climb, root for a bit
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
 #define BFL_STATUS_SENT 0x20		// Status sent
 #define BFL_AVAILABLE_BREAKFREE 0x40
 #define BFL_CHALLENGE_MODE 0x80
-
 #define BFL_QTE 0x100			// In a quicktime event
+#define BFL_SOFTLOCK_AROUSAL 0x200	// Arousal will not regenerate
+#define BFL_SOFTLOCK_PAIN 0x400		// Pain will not regenerate
+
 
 // Cache
 integer PC;							// Pre constants
@@ -71,6 +74,7 @@ float fmMA = 1;					// max arousal multi
 integer fmMAn = 0;				// max arousal adder
 float fmMP = 1;					// max pain multiplier
 integer fmMPn = 0;				// max pain adder
+
 
 list fxC; // Conversions, see got FXCompiler.lsl
 
@@ -310,7 +314,15 @@ aAR( float am, string sn, integer flags, integer iCnv, key atkr ){
 	
 	if( flags&SMAFlag$IS_PERCENTAGE )
 		am*=maxArousal();
-    else if(am>0)am*=fmAT;
+    else if( am>0 )
+		am*=fmAT;
+	
+	if( flags&SMAFlag$SOFTLOCK ){
+		
+		BFL = BFL|BFL_SOFTLOCK_AROUSAL;
+		multiTimer(["SL:"+(str)BFL_SOFTLOCK_AROUSAL, "", TIME_SOFTLOCK, 0]);
+		
+	}
 	
 	// Run conversions
 	if(!iCnv)
@@ -319,13 +331,16 @@ aAR( float am, string sn, integer flags, integer iCnv, key atkr ){
     AROUSAL += am;
     if(AROUSAL<=0)AROUSAL = 0;
     
-	if(AROUSAL >= maxArousal()){
+	if( AROUSAL >= maxArousal() ){
+	
         AROUSAL = maxArousal();
         if(~SF&StatusFlag$aroused){
             SF = SF|StatusFlag$aroused;
             llTriggerSound("d573fb93-d83e-c877-740f-6c28498668b8", 1);
         }
-    }else if(SF&StatusFlag$aroused)
+		
+    }
+	else if( SF&StatusFlag$aroused )
         SF = SF&~StatusFlag$aroused;
     
 }
@@ -344,6 +359,13 @@ aPP( float am, string sn, integer flags, integer iCnv, key atkr ){
 		am*=maxPain();
     else if( am>0 )
 		am*=fmPT;
+		
+	if( flags&SMAFlag$SOFTLOCK ){
+		
+		BFL = BFL|BFL_SOFTLOCK_PAIN;
+		multiTimer(["SL:"+(str)BFL_SOFTLOCK_PAIN, "", TIME_SOFTLOCK, 0]);
+		
+	}
     
 	// Run conversions
 	if(!iCnv && ~flags&SMAFlag$IS_PERCENTAGE)
@@ -620,7 +642,7 @@ OS( int ic ){
 	if(HP>maxHP())
 		HP = maxHP();
 	if(MANA>maxMana())
-		MANA = maxMana();
+		HP = maxHP();
 		
 	// int is 0000000 << 21 hp_perc, 0000000 << 14 mana_perc, 0000000 << 7 arousal_perc, 0000000 pain_perc 
 	string data = (string)(
@@ -689,9 +711,9 @@ timerEvent(string id, string data){
 
 			if(DEF_HP_REGEN*fmHR>0)
 				aHP(fmHR*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, FALSE, llGetOwner());
-			if(DEF_PAIN_REGEN*fmPR>0)
+			if( DEF_PAIN_REGEN*fmPR>0 && ~BFL&BFL_SOFTLOCK_PAIN )
 				aPP(-fmPR*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, FALSE, llGetOwner());
-			if(DEF_AROUSAL_REGEN*fmAR>0)
+			if( DEF_AROUSAL_REGEN*fmAR>0 && ~BFL&BFL_SOFTLOCK_AROUSAL )
 				aAR(-fmAR*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE, FALSE, llGetOwner());
 			
 		}
@@ -739,6 +761,10 @@ timerEvent(string id, string data){
 		SF = SF|StatusFlag$coopBreakfree;
 		saveFlags();
 	}
+	
+	else if( startsWith(id, "SL:") )
+		BFL = BFL&~(int)llGetSubString(id, 3, -1);
+	
 }
 
 
@@ -955,7 +981,6 @@ default
 			multiTimer([TIMER_INVUL,"", 6, FALSE]);
 			
 		}
-		
         HP = maxHP();
         MANA = maxMana();
         AROUSAL = 0;

@@ -30,11 +30,11 @@ list compiled_actives = [
 	1,	// 01 Mana regen - Multi | i2f
 	1,	// 02 Damge done - Multi | i2f
 	1,	// 03 Damage taken - Multi | i2f
-	0,	// 04 Dodge - Add | i2f
+	1,	// 04 Dodge - Add | i2f
 	1,	// 05 Casttime - Multi | i2f
 	1,	// 06 Cooldown - Multi | i2f
 	1,	// 07 Mana cost - Multi | i2f
-	0,	// 08 Crit - Add | i2f
+	1,	// 08 Crit - Add | i2f
 	1,	// 09 Pain - Multi | i2f
 	1,	// 10 Arousal - Multi | i2f
 	0,	// 11 HP add

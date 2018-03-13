@@ -383,6 +383,7 @@ default
 	
 	else if(METHOD == EvtsMethod$getTextureDesc){
         
+		
 		key t = method_arg(1);
 		if( t == "" )
 			t = llGetOwner();
@@ -412,7 +413,7 @@ default
 		
 		}
 		
-		llRegionSayTo(llGetOwnerKey(t), 0, implode("", out));
+		llRegionSayTo(t, 0, implode("", out));
 		
     }
 

@@ -20,10 +20,10 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
     while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
         fxs = llDeleteSubList(fxs,0,0);
-		
         
 		// Type
 		integer t = llList2Integer(fx, 0);
+		
         // Shared between PC/NPC, defined in got FXCompiler header file
 		dumpFxInstants()
 		
@@ -262,12 +262,6 @@ updateGame(){
         ThongMan$fxVisual(llJson2List(llList2String(getDFXSlice( fx$THONG_VISUAL, 1), -1)));
 		
     }
-
-	// Additive
-    float cm = stat( fx$CRIT_ADD, FALSE);
-    if( cm < 0 )
-		cm = 0;
-
 	integer team = -1;
 	list teamMod = getDFXSlice( fx$SET_TEAM, 1);
 	if( teamMod )
@@ -344,21 +338,21 @@ updateGame(){
 	// These are the FXCUpd$ values
 	Passives$setActive(([ 
 		CACHE_FLAGS, 		// 00 FLAGS
-		f2i(stat( fx$MANA_REGEN_MULTI, TRUE)), 		// 01 MANA_REGEN
+		stat( fx$MANA_REGEN_MULTI ), 		// 01 MANA_REGEN
 		100, 			// 02 DAMAGE_DONE
 		100, 			// 03 DAMAGE_TAKEN
-		f2i(stat( fx$DODGE, FALSE )), 		// 04 DODGE
-		f2i(stat( fx$CASTTIME_MULTI, TRUE )), 			// 05 CASTTIME
-		f2i(stat( fx$COOLDOWN_MULTI, TRUE)), 			// 06 COOLDOWN
-		f2i(stat( fx$MANA_COST_MULTI, TRUE)), 			// 07 MANA_COST
-		f2i(cm), 			// 08 CRIT
-		f2i(stat( fx$PAIN_MULTI, TRUE)), 			// 09 PAIN_MULTI
-		f2i(stat( fx$AROUSAL_MULTI, TRUE)),			// 10 AROUSAL_MULTI
+		stat( fx$DODGE ), 		// 04 DODGE
+		stat( fx$CASTTIME_MULTI ), 			// 05 CASTTIME
+		stat( fx$COOLDOWN_MULTI ), 			// 06 COOLDOWN
+		stat( fx$MANA_COST_MULTI ), 			// 07 MANA_COST
+		stat( fx$CRIT_ADD ), 			// 08 CRIT
+		stat( fx$PAIN_MULTI ), 			// 09 PAIN_MULTI
+		stat( fx$AROUSAL_MULTI ),			// 10 AROUSAL_MULTI
 		// These don't use f2i for now since these have no active effects, but if you add active effects at some point you should f2i them here and then i2f them in got Passives
-		f2i(stat( fx$HP_ADD, FALSE)),		// 11 HP_ADD
+		stat( fx$HP_ADD ),		// 11 HP_ADD
 		1,					// 12 HP_MULTI
 		0,					// 13 MANA_ADD
-		f2i(stat( fx$MANA_MULTI, TRUE)),					// 14 MANA_MULTI
+		stat( fx$MANA_MULTI ),					// 14 MANA_MULTI
 		0,					// 15 AROUSAL_ADD
 		1,					// 16 AROUSAL_MULTI
 		1,					// 17 PAIN_ADD
@@ -369,9 +363,9 @@ updateGame(){
 		hlt,				// 22 HIGHLIGHT_FLAGS
 		100,			// 23 Healing taken mod
 		1,					// 24 Movespeed (NPC only)
-		f2i(stat( fx$HEALING_DONE_MULTI, TRUE)),			// 25 Healing done mod
+		stat( fx$HEALING_DONE_MULTI ),			// 25 Healing done mod
 		team,				// 26 Team override
-		f2i(stat( fx$BEFUDDLE, TRUE)),		// 27 Befuddle
+		stat( fx$BEFUDDLE ),		// 27 Befuddle
 		mkarr(conv),		// 28 Conversions
 		100,				// 29 Sprint fade (f2i)
 		100,				// 30 Backstab mul (f2i)

@@ -99,24 +99,21 @@ list getDFXSlice( integer type, integer numElements ){
 }
 
 
-float stat( integer type, integer multiplication ){
+int stat( integer type ){
 	
 	// The value we want to add should be the first value
-	float out = multiplication;
+	float out = 1;
 	list check = getDFXSlice( type, 1 );
 	
 	integer i;
 	for( ; i<count(check); i+=2 ){
 		
 		int stacks = getStacks(dPid(l2i(check, i)), FALSE);
-		if( multiplication )
-			out *= (1+l2f(check, i+1)*stacks);
-		else
-			out += l2f(check, i+1)*stacks;
+		out *= (1+l2f(check, i+1)*stacks);
 		
 	}	
 	
-	return out;
+	return f2i(out);
 
 }
 
