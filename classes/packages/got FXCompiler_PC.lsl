@@ -15,7 +15,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 	
 	if(pflags&PF_DETRIMENTAL)
 		Status$refreshCombat();
-	
+
 	list fxs = llJson2List(fxobjs);
     while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
@@ -41,6 +41,9 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		else if( t == fx$CLASS_VIS )
 			gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2));
 		
+		else if( t == fx$REDUCE_CD ){
+			SpellMan$reduceCD(llDeleteSubList(fx, 0, 0));
+		}
 		else if(t == fx$SPAWN_MONSTER){
 			
 			vector rot = llRot2Euler(llGetRot());
@@ -90,7 +93,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
             SpellMan$interrupt(l2i(fx, 1));
         
         else if(t == fx$RESET_COOLDOWNS){
-            SpellMan$resetCooldowns(l2i(fx,1));
+            SpellMan$resetCooldowns(l2i(fx,1), l2i(fx,2));
 		}
         else if(t == fx$FORCE_SIT){
             string out = "@sit:"+l2s(fx,1)+"=force";
@@ -332,15 +335,13 @@ updateGame(){
 			hlt = hlt | (int)llPow(2,llList2Integer(data, i+1));
 	}
 	
-	
-	
 
 	// These are the FXCUpd$ values
 	Passives$setActive(([ 
 		CACHE_FLAGS, 		// 00 FLAGS
 		stat( fx$MANA_REGEN_MULTI ), 		// 01 MANA_REGEN
-		100, 			// 02 DAMAGE_DONE
-		100, 			// 03 DAMAGE_TAKEN
+		100, 			// 02 DAMAGE_DONE (handled in TASK_OFFENSIVE_MODS)
+		100, 			// 03 DAMAGE_TAKEN (handled in Status$spellModifiers)
 		stat( fx$DODGE ), 		// 04 DODGE
 		stat( fx$CASTTIME_MULTI ), 			// 05 CASTTIME
 		stat( fx$COOLDOWN_MULTI ), 			// 06 COOLDOWN
@@ -350,7 +351,7 @@ updateGame(){
 		stat( fx$AROUSAL_MULTI ),			// 10 AROUSAL_MULTI
 		// These don't use f2i for now since these have no active effects, but if you add active effects at some point you should f2i them here and then i2f them in got Passives
 		stat( fx$HP_ADD ),		// 11 HP_ADD
-		1,					// 12 HP_MULTI
+		stat( fx$HP_MULTI ),	// 12 HP_MULTI
 		0,					// 13 MANA_ADD
 		stat( fx$MANA_MULTI ),					// 14 MANA_MULTI
 		0,					// 15 AROUSAL_ADD

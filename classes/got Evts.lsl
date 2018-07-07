@@ -7,7 +7,7 @@
 	
 #define EvtsMethod$addTextureDesc 3	// pid, texture, desc, added, duration, stacks - Adds a spell icon
 #define EvtsMethod$remTextureDesc 4	// (key)texture						
-#define EvtsMethod$getTextureDesc 5	// (int)pos, (key)texture - Gets info about a spell by pos
+#define EvtsMethod$getTextureDesc 5	// (int)pid, (key)player - Gets info about a spell by pos
 #define EvtsMethod$stacksChanged 6	// (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
 	
 #define EvtsEvt$QTE 1						// (int)numButtons - Quick time event, 0 for off

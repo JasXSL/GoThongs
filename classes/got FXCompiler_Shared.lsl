@@ -119,6 +119,7 @@ int stat( integer type ){
 
 // Handler for a modifier that can also be limited to caster, such as damage and healing taken
 // Does similar to stat, except check is a 2-stride array: [int charID, float modifier] this also uses multiplication
+// charid of 0 is wildcard
 list cMod( int t ){
 
 	list out = [];

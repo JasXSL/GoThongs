@@ -143,7 +143,7 @@
 		} \
 	}\
 	else if(t == fx$ADD_STACKS){ \
-		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9)); \
+		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9), l2f(fx,10)); \
 	} \
 
 	
@@ -177,8 +177,14 @@
 	} \
 	else if( t == fx$SPELL_DMG_TAKEN_MOD && l2i(fx, 2) ) \
 		fx = llListReplaceList(fx, (list)key2int(caster), 2, 2); \
-	else if( l2i(fx, 1) && (t == fx$DAMAGE_TAKEN_MULTI || t == fx$HEALING_TAKEN_MULTI || t == fx$DAMAGE_DONE_MULTI ) ) \
-		fx = llListReplaceList(fx, (list)key2int(caster), 1, 1);
+	else if( t == fx$DAMAGE_TAKEN_MULTI || t == fx$HEALING_TAKEN_MULTI || t == fx$DAMAGE_DONE_MULTI ){ \
+		/* Use the caster */ \
+		if( l2i(fx, 1) ) \
+			fx = llListReplaceList(fx, (list)key2int(caster), 1, 1); \
+		/* Add wildcard if missing */ \
+		else if(count(fx) < 2) \
+			fx += (list)0; \
+	} \
 	
 	
 // These are REM tasks that are shared

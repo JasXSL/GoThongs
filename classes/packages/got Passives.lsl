@@ -588,7 +588,7 @@ default
 			i2f(l2f(set, 10)),		\
 			\
 			i2f(l2f(set, 11)),		\
-			l2f(set, 12),			\
+			i2f(l2f(set, FXCUpd$HP_MULTIPLIER)),			\
 			l2i(set, 13),			\
 			i2f(l2f(set, FXCUpd$MANA_MULTIPLIER)),			\
 			l2i(set, 15),			\

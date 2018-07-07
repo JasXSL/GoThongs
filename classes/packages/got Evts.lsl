@@ -413,7 +413,7 @@ default
 		
 		}
 		
-		llRegionSayTo(t, 0, implode("", out));
+		llRegionSayTo(llGetOwnerKey(t), 0, implode("", out));
 		
     }
 

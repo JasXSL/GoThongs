@@ -3,7 +3,7 @@
 
 /* This is the spell data cache */
 list CACHE;                     // [(float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (int)wrapperflags]
-list GCD_FREE;    				// Spells that are freed from global cooldown        
+int GCD_FREE;    				// Spells that are freed from global cooldown        
 
 integer TEAM = TEAM_PC;
 
@@ -21,17 +21,30 @@ integer TEAM = TEAM_PC;
 #define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
 
 /* Additional macros */
-#define CDSTRIDE 2
+#define CDSTRIDE 4
 // Should be sent after or more sets
 #define pushCooldowns() SpellVis$setCooldowns(COOLDOWNS, f2i(llGetTime()))
-// DOES NOT SET THE TIMER, only updates the list to be pushed to got SpellVis
-#define setCooldown(index, duration) COOLDOWNS = llListReplaceList(COOLDOWNS, [f2i(llGetTime()), f2i(duration)], index*CDSTRIDE, index*CDSTRIDE+CDSTRIDE-1)
+// Sets the cooldown of the spell
+#define setCooldown(index, intcd) COOLDOWNS = llListReplaceList(COOLDOWNS, [f2i(llGetTime()), f2i(intcd)], index*CDSTRIDE, index*CDSTRIDE+1); if(intcd){multiTimer(["CD_"+(string)index, "", intcd, FALSE]);}
+// Sets the global cooldown of the spell. Spells off the global cooldown have their own "global" cooldown with the same time, but only for that spell
+#define setGlobalCooldown(index, duration) COOLDOWNS = llListReplaceList(COOLDOWNS, [f2i(llGetTime()), f2i(duration)], index*CDSTRIDE+2, index*CDSTRIDE+3); multiTimer(["ICD_"+(string)index, "", duration, FALSE]);
+
 // Returns a duration, may be negative
 #define getCooldown(index) (i2f(l2i(COOLDOWNS, index*CDSTRIDE))+i2f(l2i(COOLDOWNS, index*CDSTRIDE+1))-llGetTime())
+#define getGlobalCooldown(index) (i2f(l2i(COOLDOWNS, index*CDSTRIDE+2))+i2f(l2i(COOLDOWNS, index*CDSTRIDE+3))-llGetTime())
 //#define pushCooldowns() integer _CD; list _CDS; for(_CD = 0; _CD<count(COOLDOWNS); ++_CD){_CDS+=f2i(l2f(COOLDOWNS, _CD));} SpellVis$setCooldowns(_CDS, llGetTime());
-#define COOLDOWNS_DEFAULT [0,0, 0,0, 0,0, 0,0, 0,0]
-list COOLDOWNS = COOLDOWNS_DEFAULT;            // (float)startTime0, (float)endTime0, startTime1, endTime1... - 0 endTime means no cooldown
+#define COOLDOWNS_DEFAULT [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+list COOLDOWNS = COOLDOWNS_DEFAULT;            // (float)startTime0, (float)endTime0, (float)intcd_startTime, (float)internal_cd, startTime1, endTime1, internal_cd1... - 0 endTime means no cooldown
 #define getGlobalCD() (GCD*cdm)
+
+int S_CHD = 0;				// 4bit array of max charges
+int S_CH = 0;				// 4bit array of current charges
+#define setSpellCharges(index, charges) S_CH = ((S_CH&~(0xF<<(index*4)))|(charges<<(index*4)))
+#define getSpellCharges(index) ((S_CH>>(index*4))&0xF)
+#define getSpellMaxCharges(index) ((S_CHD>>(index*4))&0xF)
+#define setSpellMaxCharges(index, charges) S_CHD = ((S_CHD&~(0xF<<(index*4)))|(charges<<(index*4)))
+
+#define sendCharges() raiseEvent(SpellManEvt$charges, (str)S_CH);
 
 // Standard spell input
 // If castSpell is false, play interrupt sound
@@ -52,13 +65,15 @@ list sp_mcm = [1,1,1,1,1];	// Mana cost
 list sp_ctm = [1,1,1,1,1];	// Cast time
 list sp_cdm = [1,1,1,1,1];	// Cooldown
 
-#define canCastWhileMoving() (fxflags&fx$F_CAST_WHILE_MOVING)
+#define canCastWhileMoving() (fxflags&fx$F_CAST_WHILE_MOVING || SPF&SpellMan$CASTABLE_WHILE_MOVING)
 
 
 // Cache
-integer STATUS_FLAGS;			// Flags from status
-integer SPELL_WRAPPER_FLAGS;	// Casted spell's wrapper flags
-integer SPELL_CASTED;			// -1 to 3 of casted spell
+int STATUS_FLAGS;			// Flags from status
+int SPELL_WRAPPER_FLAGS;	// Casted spell's wrapper flags
+int SPELL_CASTED;			// -1 to 3 of casted spell
+int SPF;					// Casted spell's target flags
+
 list SPELL_TARGS;				// List of targets to cast on
 key CACHE_ROOT_TARGET;			// Cache of the player's current target
 integer CACHE_ROOT_TARGET_TEAM;	// Team of target
@@ -75,7 +90,6 @@ list PLAYERS;					// Me and coop player
 integer BFL;
 #define BFL_CASTING 1
 #define BFL_START_CAST 2
-#define BFL_GLOBAL_CD 0x4
 #define BFL_CROUCH_HELD 0x8
 #define BFL_QUEUE_SELF_CAST 0x10
 
@@ -144,7 +158,8 @@ onEvt(string script, integer evt, list data){
             integer nr = llList2Integer(data,0);
             if(count(data) > 1){ 
 				string ln = llGetLinkName(nr); 
-                if(llGetSubString(ln, 0, 3) != "Abil")return;
+                if( !startsWith(ln,"aol") )
+					return;
                 nr = (integer)llGetSubString(ln, -1, -1);
             }
             startSpell(nr);
@@ -170,9 +185,7 @@ onEvt(string script, integer evt, list data){
 				RANGE_ADD = l2f(split, 3)/10;
 				HEIGHT_ADD = l2f(split, 4)/10;
 			}
-			
-			
-			
+
 		}
 
     }
@@ -249,17 +262,19 @@ else{ \
 // This attempts to start casting a spell
 integer castSpell(integer nr){
 
-	if(SPELL_ON_TARG == -1 && nr != QUEUE_SPELL)llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", .5);
-    SPELL_ON_TARG = -1;
+	if( SPELL_ON_TARG == -1 && nr != QUEUE_SPELL )
+		llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", .5);
+    
+	SPELL_ON_TARG = -1;
 	// Play the click sound
 	
 	// Grab data from cache
     list data = nrToData(nr);
-    // Grab target flags
-	integer spt = spellTargets(data);
+    // Grab spell flags
+	SPF = spellTargets(data);
 	
 
-// BEFORE QUEUE
+	// BEFORE QUEUE
 	// Check if I have enough mana BEFORE allowing a queue
     float cost = spellCost(data, nr);
     if(cost>CACHE_MANA){
@@ -268,38 +283,42 @@ integer castSpell(integer nr){
     }
 	
 	// Cannot cast right now because of FX silence
-    if(fxflags&fx$NOCAST || llGetAgentInfo(llGetOwner())&AGENT_SITTING || fxflags&fx$F_QUICKRAPE || spt&SpellMan$HIDE){
+    if(fxflags&fx$NOCAST || llGetAgentInfo(llGetOwner())&AGENT_SITTING || fxflags&fx$F_QUICKRAPE || SPF&SpellMan$HIDE){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
 	
-    if(BFL&BFL_CASTING || getCooldown(nr) > 0 || (BFL&BFL_GLOBAL_CD && ~spt&SpellMan$NO_GCD)){
+    if( BFL&BFL_CASTING || !getSpellCharges(nr) || getGlobalCooldown(nr) > 0 ){
+	
 		// Queue the spell
 		integer q = nr;
-		if(nr == QUEUE_SPELL){
+		if( nr == QUEUE_SPELL ){
+		
 			q = -1;
 			BFL = BFL&~BFL_QUEUE_SELF_CAST;
 			llPlaySound("691cc796-7ed6-3cab-d6a6-7534aa4f15a9", .5);
+			
 		}
-		else if(BFL&BFL_CROUCH_HELD){
+		else if( BFL&BFL_CROUCH_HELD )
 			BFL = BFL|BFL_QUEUE_SELF_CAST;
-		}
+		
 		setQueue(q);
 		return -2;
+		
 	}
     
 	
     
     // Cache the wrapper flags and check if player is pacified
     integer SPELL_WRAPPER_FLAGS = spellWrapperFlags(data);
-    if(fxflags&fx$F_PACIFIED && SPELL_WRAPPER_FLAGS&WF_DETRIMENTAL){
+    if( fxflags&fx$F_PACIFIED && SPELL_WRAPPER_FLAGS&WF_DETRIMENTAL ){
         A$(ASpellMan$errPacified);
         return FALSE;
     }
 
     
 	// Grab targets
-	flagsToTargets(spt, SPELL_TARGS);
+	flagsToTargets(SPF, SPELL_TARGS);
 	
 	// If I don't have a target and the spell requires one, try to grab one and cast on it
 	if((string)SPELL_TARGS == "Q"){
@@ -321,7 +340,7 @@ integer castSpell(integer nr){
 	
     
 	// If I'm raped or dead
-    if(STATUS_FLAGS&StatusFlags$noCast || (spt&SpellMan$NO_SWIM && STATUS_FLAGS&StatusFlag$swimming)){
+    if(STATUS_FLAGS&StatusFlags$noCast || (SPF&SpellMan$NO_SWIM && STATUS_FLAGS&StatusFlag$swimming)){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
@@ -367,24 +386,30 @@ integer castSpell(integer nr){
     SPELL_CASTED = nr;
     
     
-    // Set global cooldown
-    if(~spt&SpellMan$NO_GCD){
-        float gcd = getGlobalCD();
-		if(gcd<0.5)gcd = 0.5;
+	float gcd = getGlobalCD();
+	if(gcd<0.5)
+		gcd = 0.5;
+	
 		
+    // This spell should set the global cooldown for all relevant spells
+    if( ~SPF&SpellMan$NO_GCD ){
+	
         integer i;
-        for(i=0; i<5; i++){
+        for( i=0; i<5; i++ ){
+		
 			// If global cooldown is longer than any active cooldown
-			if(!llList2Integer(GCD_FREE,i) && getCooldown(i)<gcd){ //|| (i == SPELL_CASTED && casttime>0)
-				setCooldown(i, gcd);
-			}
+			if( ~GCD_FREE&(1<<i) )
+				setGlobalCooldown(i, gcd);
+			
         }
 
-        BFL = BFL|BFL_GLOBAL_CD;
         multiTimer(["GCD", "", gcd, FALSE]);
 		
     }
-	
+	// Set internal GCD for the spell
+	else
+		setGlobalCooldown(nr, gcd);
+
 	// Cache the casttime
 	CACHE_CASTTIME = casttime;
 	if(casttime){
@@ -392,7 +417,8 @@ integer castSpell(integer nr){
 		list evData = [
 			f2i(casttime), 
 			mkarr(SPELL_TARGS),
-			SPELL_CASTED
+			SPELL_CASTED,
+			SPF
 		];
 		raiseEvent(SpellManEvt$cast, mkarr(evData));
         BFL = BFL|BFL_CASTING;					// Set casting
@@ -403,11 +429,12 @@ integer castSpell(integer nr){
         multiTimer(["CAST", "", casttime, FALSE]);
     }
 	// Immediately finish
-    else spellComplete();
+    else 
+		spellComplete();
 	
 	// Push cooldowns after looks better
-	if(~spt&SpellMan$NO_GCD)
-		pushCooldowns();
+	//if( ~SPF&SpellMan$NO_GCD )
+	pushCooldowns();
 	
     return TRUE;
 }
@@ -429,12 +456,15 @@ spellComplete(){
 	
 	// Make sure LOS is proper unless it's instant cast
     if(CACHE_CASTTIME>0){
+	
 		CODE$VISION_CHECK()
 		SpellFX$stopSound();
+		
     }
     
 	float gcd = getGlobalCD();
-	if(gcd<0.5)gcd = 0.5;
+	if( gcd<0.5 )
+		gcd = 0.5;
 	
 	// Send to AUX to finish the cast
 	// Don't wipe CD if there's no cooldown on a non-gcd spell OR if casttime is less than global cooldown
@@ -447,18 +477,20 @@ spellComplete(){
 		Status$batchUpdateResources("", SMBUR$buildMana(-cost, "", 0));
 	
     // Set cooldown
-    if(cooldown){
-		setCooldown(SPELL_CASTED, cooldown);
-        multiTimer(["CD_"+(string)SPELL_CASTED, "", cooldown, FALSE]);
-		pushCooldowns();
+    if( cooldown ){
+	
+		// Only first charge sets the cooldown to prevent resetting subsequent charges
+		if( getSpellCharges(SPELL_CASTED) >= getSpellMaxCharges(SPELL_CASTED) ){
+			setCooldown(SPELL_CASTED, cooldown);
+		}
+		
+		// only spells with a cooldown can have charges
+		setSpellCharges(SPELL_CASTED, getSpellCharges(SPELL_CASTED)-1);
+		sendCharges();	// Charges need to be sent first to be shown properly
+		
+		
     }
-	/*
-	// If it's a casted spell on global cooldown and the casttime is less than global cooldown
-    else if(CACHE_CASTTIME<gcd && CACHE_CASTTIME>0 && ~tflags&SpellMan$NO_GCD)
-		SpellVis$setCooldown(SPELL_CASTED, gcd-CACHE_CASTTIME);
-	*/
-	
-	
+
     raiseEvent(SpellManEvt$complete, llList2Json(JSON_ARRAY, [
 		SPELL_CASTED, 
 		l2s(SPELL_TARGS,0), 
@@ -468,6 +500,11 @@ spellComplete(){
 		f2i(CACHE_CASTTIME)
 	]));
     spellEnd();
+	
+	// Cooldowns have to be pushed last
+	if( cooldown )
+		pushCooldowns();
+		
 }
 
 // Run from both complete and interrupt
@@ -490,32 +527,53 @@ spellEnd(){
 	
 	// Cast queued spell if possible
 	checkQueueCast();
+	// Push cooldowns to make sure cast bars are cleared right
+	pushCooldowns();
+	
 }
 
 timerEvent(string id, string data){
-    if(id == "CAST")spellComplete();
-	
-
-    else if(id == "SC")
+    
+	if( id == "CAST" )
+		spellComplete();
+    else if( id == "SC" )
         BFL = BFL&~BFL_START_CAST;
-    else if(id == "GCD"){
-        BFL = BFL&~BFL_GLOBAL_CD;
+    else if( id == "GCD" ){
+        
 		checkQueueCast(); // Cast queue if possible
+		
     }
-	else if(id == "Q")SPELL_ON_TARG = -1;
+	else if( id == "Q" )
+		SPELL_ON_TARG = -1;
+	else if( startsWith(id, "CD_") ){
+		
+		int idx = (int)llGetSubString(id, 3, -1);
+		setSpellCharges(idx, getSpellCharges(idx)+1);
+		if( getSpellCharges(idx) >= getSpellMaxCharges(idx) ){
+			setSpellCharges(idx, getSpellMaxCharges(idx));
+		}
+		sendCharges();
+		// Got another charge to load
+		if( getSpellCharges(idx) < getSpellMaxCharges(idx) ){
+			list d = nrToData(idx);
+			setCooldown(idx, spellCooldown(d, idx));
+			pushCooldowns();
+		}
+		
+		checkQueueCast();
+	}
 	
 	// Run a queue check by force OR A cooldown has finished and is not on GCD
-	else if(
-		(id == "CQ") ||
-		(
-			llGetSubString(id,0,2) == "CD_" && 
-			( ~BFL&BFL_GLOBAL_CD || spellTargetsByIndex((int)llGetSubString(id, 3, -1))&SpellMan$NO_GCD )
-		)
+	if(
+		id == "CQ" ||
+		startsWith(id, "ICD_") ||
+		startsWith(id, "CD_")
 	){
 		if(
 			QUEUE_SPELL == -1 ||
-			getCooldown(QUEUE_SPELL) > 0 ||
-			BFL&(BFL_GLOBAL_CD|BFL_CASTING)
+			!getSpellCharges(QUEUE_SPELL) ||
+			BFL&BFL_CASTING ||
+			getGlobalCooldown(QUEUE_SPELL) > 0		// Global cooldown is the only one that maaters, use charges instead for normal cd
 		)return;
 		castSpell(QUEUE_SPELL);
 	}
@@ -562,8 +620,9 @@ default
 	// Allow owner for debug
 	if(METHOD == SpellManMethod$rebuildCache && method$byOwner){
 		CACHE = [];
-		GCD_FREE = [];
+		GCD_FREE = 0;
 		COOLDOWNS = COOLDOWNS_DEFAULT;
+		S_CHD = 0;	// Charges default
 		
 		//SpellAux$cache();
 		raiseEvent(SpellManEvt$recache, "");
@@ -572,23 +631,28 @@ default
 		if(GCD<=0)GCD = 1.5;
 		
 		integer i;
-		for(i=0; i<5; i++){
+		for( i=0; i<5; i++ ){
 			
 			list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
 			if(d == [])
 				d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
 			
 			
-			if((integer)llList2Integer(d,5)&SpellMan$NO_GCD)GCD_FREE += TRUE;
-			else GCD_FREE+=FALSE;
+			if( (integer)llList2Integer(d,5)&SpellMan$NO_GCD )
+				GCD_FREE = GCD_FREE | (1<<i);
 			
-			CACHE+= llList2Float(d, 3);     // Cost
-			CACHE+= llList2Float(d, 4);     // Cooldowns
-			CACHE+= llList2Integer(d, 5);   // Targets
-			CACHE+= llList2Float(d, 6);     // Range
-			CACHE+= llList2Float(d, 7);     // Casttime
-			CACHE+= (integer)jVal(llList2String(d, 2), [0]); // Detrimental
+			CACHE+= llList2Float(d, BSSAA$mana);     // Cost
+			CACHE+= llList2Float(d, BSSAA$cooldown);     // Cooldowns
+			CACHE+= llList2Integer(d, BSSAA$target_flags);   // Targets
+			CACHE+= llList2Float(d, BSSAA$range);     // Range
+			CACHE+= llList2Float(d, BSSAA$casttime);     // Casttime
+			CACHE+= (int)j(llList2String(d, BSSAA$fxwrapper), 0); // Detrimental
+			setSpellMaxCharges(i, l2i(d, BSSAA$charges));
+			
 		}
+		
+		S_CH = S_CHD;	// Reset charges to max
+		
 	}
     
     // Internal means the method was sent from within the linkset
@@ -615,15 +679,82 @@ default
             SpellFX$startSound("6b050b67-295b-972d-113e-97bf21ccbb8f", .5, FALSE);
         }
         else if(METHOD == SpellManMethod$resetCooldowns){
+		
             integer flags = (integer)method_arg(0);
+			integer charges = (int)method_arg(1);
+			if(!charges)
+				charges = 1;
             integer i;
-            for(i=0; i<flags; i++){
-                if(flags&(integer)llPow(2,i)){
-                    setCooldown(i, 0);
+            for( i=0; i<flags; i++ ){
+			
+                if( flags&(1<<i) ){
+				
+					setSpellCharges(i, getSpellCharges(i)+charges);
+					if( getSpellCharges(i) >= getSpellMaxCharges(i) ){
+						
+						setSpellCharges(i, getSpellMaxCharges(i));
+						setCooldown(i, 0);
+						
+					}
+					
                 }
+				
             }
+			sendCharges();
 			pushCooldowns();
+			
         }
+		else if( METHOD == SpellManMethod$reduceCD ){
+			
+			integer n = l2i(PARAMS, 0);
+			float sec = l2f(PARAMS, 1);
+			integer i;
+			integer ch;
+			for( i=0; i<5; ++i ){
+				
+				if( n&(1<<i) && getCooldown(i) > 0 ){
+					
+					float c = sec;
+					@nextSpellCD;
+					// This should be reduced
+					COOLDOWNS = llListReplaceList(COOLDOWNS, (list)(l2i(COOLDOWNS, i*CDSTRIDE)-f2i(c)), i*CDSTRIDE, i*CDSTRIDE); 
+					// There is cooldown remaining
+					if( getCooldown(i) > 0 ){
+						multiTimer(["CD_"+(string)i, "", getCooldown(i), FALSE]);
+					}
+					// Cooldown went negative or 0
+					else{
+					
+						setSpellCharges(i, getSpellCharges(i)+1);
+						// Charges are full
+						if( getSpellCharges(i) >= getSpellMaxCharges(i) ){
+						
+							setSpellCharges(i, getSpellMaxCharges(i));
+							setCooldown(i, 0);
+							
+						}
+						// Charges are still not full so we need to reduce another cooldown
+						else{
+							// There are charges still needed
+							c+=getCooldown(i);	// this will be negative now
+							// Set a new cooldown
+							setCooldown(i, i2f(l2i(COOLDOWNS, i*CDSTRIDE+1)));
+							// Reduce it by time left
+							jump nextSpellCD;						
+						}
+					}
+					++ch;
+				
+				}
+				
+			}
+			
+			if( ch ){
+				sendCharges();
+				pushCooldowns();
+			}
+		}
+		
     }
 	
     if(METHOD == SpellManMethod$replace){

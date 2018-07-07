@@ -21,7 +21,10 @@ vector b_pos = BROWSER_POS;
 float b_scale = 1;
 
 checkPos(){
-    if(~BFL&BFL_LOADED)return;
+
+    if( ~BFL&BFL_LOADED )
+		return;
+		
     list d = llGetLinkPrimitiveParams(P_BROWSER, [PRIM_SIZE, PRIM_POS_LOCAL]);
     vector size = llList2Vector(d,0);
     float area = size.x*size.y;
@@ -32,23 +35,25 @@ checkPos(){
     vector check = b_pos;
     check.x = 0;
     
-    if(llFabs(area-cur)>.1 || llVecDist(pos,check) > 0.001){
+    if( llFabs(area-cur)>.1 || llVecDist(pos,check) > 0.001 ){
+	
         b_size = size;
         b_pos = <b_pos.x, pos.y, pos.z>;
         
         vector origin = BROWSER_SIZE;
-        cur = origin.x*origin.y;
-        b_scale = area/cur;
+        b_scale = size.x/origin.x;
         
         Bridge$saveBrowser(b_pos, b_scale);
+		
     }
+	
     
 }
 
 
 onEvt(string script, integer evt, list data){
 
-    if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
+    if( script == "got Bridge" && evt == BridgeEvt$userDataChanged ){
 	
         list dta = llJson2List(llList2String(data, 1)); // Browser conf
         if(llList2Float(dta, 1)>0){
@@ -56,14 +61,17 @@ onEvt(string script, integer evt, list data){
             b_size = BROWSER_SIZE*b_scale;
         }
         vector p = (vector)llList2String(dta, 0);
-        if(p != ZERO_VECTOR){
+        if( p != ZERO_VECTOR ){
+		
             b_pos.y = p.y;
             b_pos.z = p.z;
+			
         }
+		
         BFL = BFL|BFL_LOADED;
-        if(BFL&BFL_BROWSER_SHOWN)
+        if( BFL&BFL_BROWSER_SHOWN )
             llSetLinkPrimitiveParamsFast(P_BROWSER, [PRIM_SIZE, b_size, PRIM_POSITION, b_pos]);
-        
+		
     }
 	
 }
@@ -75,6 +83,7 @@ default
     //timer(){multiTimer([]);}
     
     state_entry(){
+	
         links_each(nr, name, 
             if(name == "BROWSER")
                 P_BROWSER = nr;
@@ -110,6 +119,8 @@ default
         llClearLinkMedia(P_BROWSER, 1);
         llClearLinkMedia(P_PAPER, 0);
         memLim(1.5);
+		
+		
     }
 	
 	attach(key id){

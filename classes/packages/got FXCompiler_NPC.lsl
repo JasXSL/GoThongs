@@ -215,8 +215,8 @@ updateGame(){
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(([
 		CACHE_FLAGS, 		// Flags
 		0, 					// Mana regen
-		100, 			// Damage done multiplier
-		100, 			// Damage taken multiplier (not used)
+		100, 			// Damage done multiplier (handled in Status$spellModifiers)
+		100, 			// Damage taken multiplier (handled in Status$spellModifiers)
 		stat( fx$DODGE ), 		// Dodge add
 		stat( fx$CASTTIME_MULTI ), 			// Casttime multiplier
 		stat( fx$COOLDOWN_MULTI ), 			// Cooldown multiplier
@@ -225,13 +225,14 @@ updateGame(){
 		0,					// Pain multi
 		0,					// Arousal multi
 		// PASSIVES (not used in this)
-		0,0,				// HP add/multi
+		stat( fx$HP_ADD ),			// HP add, Not yet implemented
+		stat( fx$HP_MULTI ),		// HP multi, not yet implemented
 		0,0,				// Mana add/multi
 		0,0,				// Arousal add/multi
 		0,0,				// Pain add/multi
 		0,0,0,				// HP/Pain/Arousal regen
 		0,					// SPell highlights
-		100,				// Healing received mod (not used)
+		100,				// Healing received mod (handled in Status$spellModifiers)
 		stat( fx$MOVE_SPEED ),			// Movespeed multiplier
 		1,					// (PC only)Healing done mod
 		team,

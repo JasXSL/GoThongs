@@ -37,6 +37,7 @@
 #define Level$HUD_TABLES [LevelStorage$points,LevelStorage$points+"_1",LevelStorage$points+"_2"]
 #define Level$CUSTOM_TABLES [LevelStorage$custom,LevelStorage$custom+"_1",LevelStorage$custom+"_2"]
 
+#define Level$ALL_TABLES Level$HUD_TABLES+Level$CUSTOM_TABLES+LevelStorage$main
 
 #define LevelEvt$players 0			// (arr)players - List of players has been updated
 #define LevelEvt$interact 1			// (key)player, (key)asset - When a player has attempted to interact with an item that needs to run a check with the server

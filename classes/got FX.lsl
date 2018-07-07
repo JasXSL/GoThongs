@@ -38,7 +38,7 @@
 #define FXMethod$setPCs 4				// (arr)pc_keys - Set PC keys on send to PC events
 #define FXMethod$setNPCs 5				// (arr)pc_keys - Set NPC keys to send to on NPC events
 #define FXMethod$hasTags 6				// (var)tag(s) - Callbacks TRUE/FALSE if the player has ANY of these tags
-#define FXMethod$addStacks 7			// (int)stacks, name, tag, sender, pid, runOnRem, flags, maxNR, isDispel - Adds x stacks to spells that match the filter
+#define FXMethod$addStacks 7			// (int)stacks, name, tag, sender, pid, runOnRem, flags, maxNR, isDispel, duration - Adds x stacks to spells that match the filter. If duration is non-zero, it is also updated.
 
 
 #define FXEvt$runEffect 1				// [(key)caster, (int)stacks, (arr)package, (int)id, (int)flags]
@@ -56,7 +56,7 @@
 #define FX$aoe(range, sender, wrapper, team) runLimitMethod((str)AOE_CHAN, "got FX", FXMethod$run, ([sender, wrapper, range, team]), TNN, range) 
 // Tags can be a JSON array or a single tag
 #define FX$hasTags(targ, tags, cb) runMethod(targ, "got FX", FXMethod$hasTags, [tags], cb)
-#define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel]), TNN)
+#define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration]), TNN)
 
 #ifndef fx$COND_HAS_PACKAGE_NAME
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names
@@ -145,7 +145,7 @@ string FX_buildCondition(integer cond, list vars){
 #define PF_FULL_UNIQUE 0x40				// Only allow one no matter the sender. Exclusive with PF_NOT_UNIQUE
 #define PF_TRIGGER_IMMEDIATE 0x80		// Runs as an instant effect once when it's added
 #define PF_NO_DISPEL 0x100
-
+#define PF_STACK_TIME 0x200				// Adds time to any existing spell instead of resetting to max time
 
 // an integer PID gets added on the end when added to FX
 

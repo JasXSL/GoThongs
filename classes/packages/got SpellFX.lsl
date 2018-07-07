@@ -57,6 +57,7 @@ default
 	}
     
     if(method$byOwner){
+	
         if(METHOD == SpellFXMethod$getTarg){
             string n = llKey2Name(id);
             integer pos = llListFindList(llList2ListStrided(queue, 0, -1, 3), [n]);
@@ -79,6 +80,7 @@ default
             else llStopSound();
         }
         else if(METHOD == SpellFXMethod$spawnInstant){
+		
             list data = llJson2List(method_arg(0));
             string name = llList2String(data, 0);
             vector pos_offset = (vector)llList2String(data, 1);
@@ -89,22 +91,31 @@ default
 				startParam = 1;
 			
             key targ = method_arg(1);
+
             
             boundsHeight(targ, b)
 			vector as = llGetAgentSize(targ);
-            if(as){
+            if( as ){
+			
 				b = 0;
 				pos_offset.z *= as.z;
+				
 			}
-			else{
+			else
 				pos_offset.z *= b;
-			}
+			
             
 			vector vrot = llRot2Euler(prRot(targ));
-			if(~flags&SpellFXFlag$SPI_FULL_ROT)vrot = <0,0,vrot.z>;
-			rotation rot = llEuler2Rot(vrot);
+			if( ~flags&SpellFXFlag$SPI_FULL_ROT )
+				vrot = <0,0,vrot.z>;
 			
-			vector to = prPos(targ)+<0,0,b/2>+pos_offset*rot;
+			rotation rot = llEuler2Rot(vrot);
+			//qd("Vrot: "+(str)vrot);
+			//qd("Pos offset "+(str)pos_offset);
+			vector offset = <0,0,b/2>+(pos_offset*rot);
+			//qd("Offset computed: "+(str)offset);
+			//qd("Target position: "+(str)prPos(targ));
+			vector to = prPos(targ)+offset;
 			
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
 

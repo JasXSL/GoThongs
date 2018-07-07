@@ -284,7 +284,6 @@ default
 			string targ = (string)LINK_ROOT;
 			if( floor((float)button/8) == 1 && TARG != llGetKey() )
 				targ = TARG;
-
             Status$getTextureDesc(targ, desc);
         }
         raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0), llDetectedTouchFace(0)]));

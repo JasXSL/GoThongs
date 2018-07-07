@@ -511,11 +511,14 @@ default
         }
         llSetLinkPrimitiveParamsFast(0,out);
     }
-	else if(METHOD == GUIMethod$toggleObjectives){
+	else if( METHOD == GUIMethod$toggleObjectives ){
+	
 		integer on = (integer)method_arg(0);
 		list data = [PRIM_POSITION, ZERO_VECTOR];
-		if(on)data = [PRIM_POSITION, PROGRESS_POS, PRIM_COLOR, ALL_SIDES, <1,1,1>, 0, PRIM_COLOR, 5, <1,1,1>, 1, PRIM_COLOR, 0, <1,1,1>,.5];
+		if( on )
+			data = [PRIM_POSITION, PROGRESS_POS, PRIM_COLOR, ALL_SIDES, <1,1,1>, 0, PRIM_COLOR, 5, <1,1,1>, 1, PRIM_COLOR, 0, <1,1,1>,.5];
 		llSetLinkPrimitiveParamsFast(P_PROGRESS, data);
+		
 	}
 	
 	

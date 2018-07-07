@@ -9,7 +9,10 @@
 #define LevelAuxMethod$assetVar 11	// (int)is_HUD, (int)ID, (int)index, (var)val - Sets item data.
 #define LevelAuxMethod$getOffset 12 // (vec)global_pos - Returns local pos
 #define LevelAuxMethod$spawn 13		// (str)prim, (vec)pos, (rot)rotation, (int)debug, (str)description
+#define LevelAuxMethod$restoreFromBackup 14		// (str)api_key, (str)backup_token  - Overwrites spawner data with data from the server
+#define LevelAuxMethod$ping 15					// void - Does nothing, but can callback
 
+#define LevelAux$ping(callback) runOmniMethod("got LevelAux", LevelAuxMethod$ping, [], callback)
 #define LevelAux$save(group) runOmniMethod("got LevelAux", LevelAuxMethod$save, [TRUE, group], TNN)
 #define LevelAux$purge() runOmniMethod("got LevelAux", LevelAuxMethod$purge, [], TNN)
 #define LevelAux$stats() runOmniMethod("got LevelAux", LevelAuxMethod$stats, [], TNN)
@@ -19,6 +22,7 @@
 #define LevelAux$remove(isHUD, id) runOmniMethod("got LevelAux", LevelAuxMethod$remove, [isHUD, id], TNN)
 #define LevelAux$assetVar(isHUD, id, index, val) runOmniMethod("got LevelAux", LevelAuxMethod$assetVar, [isHUD, id, index, val], TNN)
 #define LevelAux$getOffset(pos, cb) runOmniMethod("got LevelAux", LevelAuxMethod$getOffset, [pos], cb)
+#define LevelAux$restoreFromBackup(targ, api_key, token) runMethod(targ, "got LevelAux", LevelAuxMethod$restoreFromBackup, [api_key, token], TNN)
 
 
 #define LevelAux$spawnAsset(asset) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, llGetPos()+llRot2Fwd(llGetRot()), 0, TRUE], TNN)

@@ -496,6 +496,7 @@ default
 		list data = llJson2List(s); \
 		FXFLAGS = l2i(data, FXCUpd$FLAGS); \
 		if(RUNTIME_FLAGS & Monster$RF_IS_BOSS)FXFLAGS = FXFLAGS&~fx$F_STUNNED; \
+		if(FXFLAGS&fx$F_STUNNED_IMPORTANT)FXFLAGS = FXFLAGS|fx$F_STUNNED; \
 		fxSpeed = i2f(l2f(data, FXCUpd$MOVESPEED)); \
 		fxCooldownMod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
 		if(FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED))toggleMove(FALSE); \

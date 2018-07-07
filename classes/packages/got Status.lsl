@@ -51,6 +51,7 @@ integer SF = 0; 	// Status flags
 integer SFp = 0;	// Sttus flags pre
 #define coop_player llList2Key(PLAYERS, 1)
 
+int CF;			// Spell cast flags
 integer GF;	// Genital flags
 
 // FX
@@ -198,10 +199,9 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr ){
 		integer pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)0);
 		if( ~pos )
 			fmdt *= l2f(fmDT, pos*2+1);
-		if( ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(atkr))) )
+		if( key2int(atkr) && ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(atkr))) )
 			fmdt *= l2f(fmDT, pos*2+1);
 
-		
 		am*= 
 			(1+((SF&StatusFlag$pained)/StatusFlag$pained)*.1)*
 			(1+((SF&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
@@ -501,8 +501,10 @@ onEvt( string script, integer evt, list data ){
             if(evt == SpellManEvt$cast){
 			
                 // At least 1 sec to count as a cast
-                if(i2f(llList2Float(data, 0))<1)return;
+                if( i2f(llList2Float(data, 0))<1 )
+					return;
                 SF = SF|StatusFlag$casting;
+				CF = l2i(data, 3);	// cast flags
 				
             }
             else 
@@ -667,15 +669,15 @@ OS( int ic ){
 	
 	
     integer controls = CONTROL_ML_LBUTTON|CONTROL_UP|CONTROL_DOWN;
-    if(FXF&fx$F_STUNNED || BFL&BFL_QTE || (SF&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading|StatusFlag$cutscene) && ~SF&StatusFlag$raped)){
+    if( FXF&fx$F_STUNNED || BFL&BFL_QTE || (SF&(StatusFlag$dead|StatusFlag$climbing|StatusFlag$loading|StatusFlag$cutscene) && ~SF&StatusFlag$raped) )
         controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
-	}
-    if(FXF&fx$F_ROOTED || (SF&(StatusFlag$casting|StatusFlag$swimming) && ~FXF&fx$F_CAST_WHILE_MOVING) || BFL&BFL_CLIMB_ROOT){
+	
+    if( FXF&fx$F_ROOTED || SF&StatusFlag$swimming || (SF&StatusFlag$casting && ~FXF&fx$F_CAST_WHILE_MOVING && ~CF&SpellMan$CASTABLE_WHILE_MOVING && StatusFlag$casting) || BFL&BFL_CLIMB_ROOT )
 		controls = controls|CONTROL_FWD|CONTROL_BACK|CONTROL_LEFT|CONTROL_RIGHT;
-	}
-	if(FXF&fx$F_NOROT){
+	
+	if( FXF&fx$F_NOROT )
 		controls = controls|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
-	}
+	
 	
 	
     if(PC != controls){
@@ -877,6 +879,7 @@ default
         }
     }
 
+	// Public methods here
 	if(METHOD == StatusMethod$debug && method$byOwner){
 		qd(
 			"HP: "+(str)HP+"/"+(str)maxHP()+" | "+
@@ -1011,7 +1014,7 @@ default
 		SDTM = llJson2List(method_arg(0));
 		fmDT = llJson2List(method_arg(1));
 		fmHT = llJson2List(method_arg(2));
-		
+
 	}
     
 	
@@ -1068,8 +1071,9 @@ default
 		
 	} 
 	
-	else if( METHOD == StatusMethod$getTextureDesc )
+	else if( METHOD == StatusMethod$getTextureDesc ){
 		Evts$getTextureDesc(method_arg(0), id);
+	}
     
 	
 	if(METHOD == StatusMethod$coopInteract)

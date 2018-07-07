@@ -7,6 +7,7 @@ string group = "";
 integer assets_saved;
 integer points_saved;
 integer custom_saved;
+key backup_restore;
 
 #define HUD_TABLES Level$HUD_TABLES
 #define CUSTOM_TABLES Level$CUSTOM_TABLES
@@ -32,9 +33,7 @@ onEvt(string script, integer evt, list data){
 
 timerEvent(string id, string data){
     if(id == "SAVE"){
-        qd(xme(XLS(([
-			XLS_EN, "Save: \n"+(string)assets_saved+" HUD assets\n"+(string)points_saved+" spawnpoints\n"+(string)custom_saved+" custom assets"
-		]))));
+        qd("Save: \n"+(string)assets_saved+" HUD assets\n"+(string)points_saved+" spawnpoints\n"+(string)custom_saved+" custom assets");
     }
     else if(id == "S"){
         // Start save
@@ -77,9 +76,7 @@ list trimVecRot(list vec_or_rot, integer places, integer returnString){
 // Returns [(str)table, (int)internal_index, (str)data] or [] if not found
 list getAssetByIndex(integer customAsset, integer globalIndex){
 	if(globalIndex<0){
-		qd(xme(XLS(([
-			XLS_EN, "Negative indexes are no longer allowed"
-		]))));
+		qd("Negative indexes are no longer allowed");
 		return [];
 	}
 	// Tables
@@ -122,6 +119,44 @@ default
         multiTimer([]);
     }
     
+	
+	http_response(key id, integer status, list meat, string body){
+		
+		if( id != backup_restore )
+			return;
+		
+		if(llJsonValueType(body, []) != JSON_OBJECT )
+			return llOwnerSay(body);
+		
+		if(llJsonValueType(body, ["jsonapi", 0, "errors"]) != JSON_INVALID)
+			return llOwnerSay(llJsonGetValue(body, ["jsonapi", 0, "errors", 0, "title"]));
+		
+		if(llJsonValueType(body, ["jsonapi", 0, "data"]) == JSON_INVALID){
+			llOwnerSay("Load failed because data was invalid, body was ("+(str)llStringLength(body)+"):");
+			integer n;
+			while(n<llStringLength(body)){
+				llOwnerSay(llGetSubString(body, n, n+999));
+				n += 1000;
+			}
+			return;
+		}
+		body = llJsonGetValue(body, ["jsonapi", 0, "data"]);
+		llOwnerSay("Wiping existing tables");
+		list all = Level$ALL_TABLES;
+		list_shift_each(all, val,
+			db3$setOther(val, [], "[]");
+		)
+		list split = llJson2List(body);
+		body = "";
+		integer i;
+		for(i=0; i<count(split); i = i+2){
+			qd("Restoring "+l2s(split, i));
+			db3$setOther(l2s(split, i), [], l2s(split, i+1));
+		}
+		llOwnerSay("Backup load complete");
+		
+	}
+	
     #include "xobj_core/_LM.lsl"
     /*
         Included in all these calls:
@@ -146,13 +181,16 @@ default
             string name = llList2String(data, 0);
             string pos = (string)trimVecRot([llList2Vector(data, 2)-llGetPos()], 2, TRUE);
             string rot = "";
-            if((rotation)llList2String(data,3) != ZERO_ROTATION)rot = (string)trimVecRot([llList2Rot(data, 3)], 3, TRUE);
+            if( (rotation)llList2String(data,3) != ZERO_ROTATION )
+				rot = (string)trimVecRot([llList2Rot(data, 3)], 3, TRUE);
+				
             list out = [name, pos, rot];
             string desc = llStringTrim(llList2String(data, 1), STRING_TRIM);
             if( llGetSubString(desc, 0,0) != "$" || llGetSubString(desc, 0, 2) == "$M$" )
 				desc = "";
             else 
 				desc = llGetSubString(desc, 1, -1);
+				
             out+=desc;
             out+=group;
 			
@@ -167,8 +205,10 @@ default
             }
             // This is a start point
             else if(llGetSubString(name, 0, 12) == "_STARTPOINT_P"){
-                if(name == "_STARTPOINT_P1")db3$setOther("got Level", [LevelShared$P1_start], llList2String(out, 1));
-                else if(name == "_STARTPOINT_P2")db3$setOther("got Level", [LevelShared$P2_start], llList2String(out, 1));
+                if(name == "_STARTPOINT_P1")
+					db3$setOther("got Level", [LevelShared$P1_start], llList2String(out, 1));
+                else if(name == "_STARTPOINT_P2")
+					db3$setOther("got Level", [LevelShared$P2_start], llList2String(out, 1));
                 points_saved++;
             }
             // This is probably in the HUD then
@@ -277,32 +317,29 @@ default
         
 		list asset = getAssetByIndex(!HUD, index);
 		if(asset == [])
-			return qd(xme(XLS(([
-				XLS_EN, "Item not found: "+(str)index
-			]))));
+			return qd("Item not found: "+(str)index);
 		
 		list parse = llJson2List(l2s(asset, 2));
 		if(HUD){
-			qd(xme(XLS(([
-				XLS_EN, "Spawning from HUD: "+llList2String(parse, 0)]
-			))));
+			qd("Spawning from HUD: "+llList2String(parse, 0));
 			Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetPos(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}else{
-			qd(xme(XLS(([
-				XLS_EN, "Spawning from INV: "+llList2String(parse, 0)
-			]))));
+			qd("Spawning from INV: "+llList2String(parse, 0));
 			Spawner$spawnInt(llList2String(parse, 0), (vector)llList2String(parse,1)+llGetPos(), (rotation)llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}
     }
     
     else if(METHOD == LevelAuxMethod$list){
         list data = [];
-        if((integer)method_arg(0))data = HUD_TABLES;
-        else data = CUSTOM_TABLES;
+        if((integer)method_arg(0))
+			data = HUD_TABLES;
+        else 
+			data = CUSTOM_TABLES;
         
         integer i; integer n;
         for(i=0; i<llGetListLength(data); i++){
-			list spawns = llJson2List(db3$get(l2s(data, i), []));
+			string s = db3$get(l2s(data, i), []);
+			list spawns = llJson2List(s);
 			list_shift_each(spawns, val,
 				qd("["+(string)n+"] "+val);
 				++n;
@@ -310,6 +347,26 @@ default
         }
         
     }
+	
+	else if( METHOD == LevelAuxMethod$restoreFromBackup ){
+		
+		string api_key = method_arg(0);
+		string save_token = method_arg(1);
+		backup_restore = llHTTPRequest(
+			"http://jasx.org/lsl/got/app/mod_api/", 
+			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],
+			"tasks="+llEscapeURL(llList2Json(JSON_ARRAY, [
+				llList2Json(JSON_OBJECT, [
+					"type", "GetBackup",
+					"target", llGetObjectName(),
+					"data", llList2Json(JSON_OBJECT, [
+						"backup_token", save_token
+					])
+				])
+			]))
+		);
+		
+	}
 	
 	// Set a property of a spawn
 	else if(METHOD == LevelAuxMethod$assetVar){
@@ -321,18 +378,14 @@ default
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
 		if(asset == [])
-			return qd(xme(XLS(([
-				XLS_EN, "Error: Item not found."
-			]))));
+			return qd("Error: Item not found.");
 		
 		list data = llJson2List(l2s(asset, 2));
 		
 		data = llListReplaceList(data, [newVal], field, field);
 
         db3$setOther(l2s(asset, 0), [l2i(asset, 1)], mkarr(data));
-        llOwnerSay(xme(XLS(([
-			XLS_EN, "Item updated. Say 'listAssets' or 'listSpawns' for updated index"
-		]))));
+        llOwnerSay("Item updated. Say 'listAssets' or 'listSpawns' for updated index");
 		
 	}
     
@@ -342,18 +395,14 @@ default
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
 		if(asset == [])
-			return qd(xme(XLS(([
-				XLS_EN, "Error: Item not found."
-			]))));
+			return qd("Error: Item not found.");
 		string table = l2s(asset, 0);
 		integer localIndex = l2i(asset, 1);
 		
 		list out = llJson2List(db3$get(table, []));
 		out = llDeleteSubList(out, localIndex, localIndex);
 		db3$setOther(table, [], mkarr(out));
-        qd(xme(XLS(([
-			XLS_EN, "Asset removed. Say 'listAssets' or 'listSpawns' for updated index"
-		]))));
+        qd("Asset removed. Say 'listAssets' or 'listSpawns' for updated index");
     }
     
     #define LM_BOTTOM  

@@ -119,5 +119,6 @@
 	#define BSSAA$casttime 7
 	#define BSSAA$fx 8
 	#define BSSAA$selfcast 9
-	
+	#define BSSAA$charges 10
+	#define BSSAA$stance 11
 	

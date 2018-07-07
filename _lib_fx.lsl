@@ -63,7 +63,7 @@
 		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
 		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind
 		#define fx$NO_PROCS 0x20000					// PC - Disables procs
-		
+		#define fx$F_STUNNED_IMPORTANT 0x40000		// NPC - Effect stuns bosses as well
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE|fx$F_NO_TARGET)
@@ -84,7 +84,7 @@
 	#define fx$MANA_COST_MULTI 26				// (float)add - PC only
 	#define fx$HUD_TEXT 27						// (str)text, (bool)output_into_chat, (bool)play_sound
 	#define fx$AGGRO 28							// (float)amt - NPC only
-	#define fx$RESET_COOLDOWNS 29				// (int)flags, 0x1 = rest, 0x2 = abil1 etc - PC only
+	#define fx$RESET_COOLDOWNS 29				// (int)flags, 0x1 = rest, 0x2 = abil1 etc, charges=1 - PC only. Adds charges to a spell.
 	#define fx$RAND 30							// (float)chance, (bool)multiply_by_stacks, (arr)fxobj1, (arr)fxobj2... - Pseudo effect. If llFrand(1)<=chance, then the trailing fxobjs are run (fxobj is (int)fx, (var)data1.... Only works for instant effects. Multiply_by_stacks will make it so if you have a chance of .2, and 3 stacks, that's a chance of 0.6
 	#define fx$FORCE_SIT 31						// (key)object, (bool)allow_unsit 
 	#define fx$CRIT_ADD 32						// (float)amt - Increases chance of doing double damage
@@ -123,8 +123,9 @@
 	#define fx$PUSH 62							// (vec)dir - PC only - Applies an impulse
 	#define fx$CLASS_VIS 63						// (var)data[, (float)timeout=1] - PC only. Sends class vis data to got ClassAtt. Start is sent on add/instant and end is sent on fade with -1
 	#define fx$MANA_MULTI 64					// (float)amount - PC only, increases or decreases max mana
+	#define fx$HP_MULTI 65						// (float)amount - Increases or decreases max HP
+	#define fx$REDUCE_CD 66						// (int)spells, (float)seconds - spells is bitwise combination of (hotkeys) 1=5, 2=1, 4=2...
 	
-
 // conditions
 	// Built in
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names

@@ -138,15 +138,7 @@ default
 		// On remoteload
 		if(llGetStartParameter() == 2){
 			
-			list tables = [
-				LevelStorage$main,
-				LevelStorage$points,
-				LevelStorage$custom,
-				LevelStorage$points+"_1",
-				LevelStorage$custom+"_1",
-				LevelStorage$points+"_2",
-				LevelStorage$custom+"_2"
-			];
+			list tables = Level$ALL_TABLES;
 			db3$addTables(tables);
 			
 			vector p = llGetPos();

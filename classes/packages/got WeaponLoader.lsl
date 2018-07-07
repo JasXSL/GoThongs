@@ -5,8 +5,9 @@
 integer STATUS; // Flags from got Status
 
 integer BFL = 0x1;
-#define BFL_SHEATHED 0x1
+#define BFL_SHEATHED 0x1		// Weapon sheathed
 #define BFL_LOADED 0x2
+#define BFL_STANCE 0x4			// Stance entered
 
 integer WFLAGS;
 #define WFLAG_UNSHEATHABLE 0x8
@@ -43,6 +44,9 @@ rotation W_BACK_MAINHAND_ROT;
 rotation W_BACK_OFFHAND_ROT;
 
 string CLASS_STANCE;
+list SPELL_STANCES = ["","","","",""];		// Stance overrides after casting spells
+int LAST_SPELL_CAST = -1;
+#define getSpellStance() l2s(SPELL_STANCES, LAST_SPELL_CAST)
 string STANCE;
 list ANIM_SET;
 
@@ -54,6 +58,37 @@ vector BACK_OH_DEFAULT_POS = <0.11448, -0.37465, -0.04116>;
 vector CUSTOM_BACK_DEFAULT_POS;
 vector CUSTOM_BACK_OH_DEFAULT_POS;
 
+updateStance(){
+
+	string anim = "stance_fists";
+	if( STANCE != "" && !unsheatable )
+		anim = STANCE;
+	if( CLASS_STANCE )
+		anim = CLASS_STANCE;
+	if( getSpellStance() != "" && ~LAST_SPELL_CAST )
+		anim = getSpellStance();
+	if( LAST_SPELL_CAST == -1 && l2s(SPELL_STANCES, 1) != "" )
+		anim = l2s(SPELL_STANCES, 1);
+		
+	//if( BFL&BFL_STANCE )
+	//	anim = "";
+	gotClassAtt$stance(anim);
+	if( anim != CLASS_STANCE && anim != getSpellStance() && BFL&BFL_SHEATHED && ~LAST_SPELL_CAST )
+		WeaponLoader$toggleSheathe(LINK_THIS, STATUS&StatusFlag$combat);
+	
+	
+	// Animations
+	integer p = llGetPermissions()&PERMISSION_OVERRIDE_ANIMATIONS;
+	if( !p )
+		return;
+
+	if( BFL&BFL_STANCE )
+		llSetAnimationOverride( "Standing", anim );
+	else
+		llResetAnimationOverride("Standing");
+	
+}
+
 onEvt(string script, integer evt, list data){
     
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged)
@@ -64,25 +99,61 @@ onEvt(string script, integer evt, list data){
 		reloadWeapon();
 	}
 	
-	if( script == "got SpellMan" && evt == SpellManEvt$complete && BFL&BFL_SHEATHED )
-        WeaponLoader$toggleSheathe(LINK_THIS, 0);
+	if( script == "got SpellMan" && evt == SpellManEvt$complete ){
+		
+		int pre = LAST_SPELL_CAST;
+		LAST_SPELL_CAST = l2i(data, 0);
+		if( getSpellStance() != l2s(SPELL_STANCES, pre) )
+			updateStance();
+
+	}
 
     if(script == "got Status" && evt == StatusEvt$flags){
 	
         integer pre = STATUS;
         STATUS = l2i(data, 0);
-        
 		// Rape ended
         if( pre&StatusFlag$dead && ~STATUS&StatusFlag$dead )
             spawnWeapons();
         // Remove weapons
-		else if( ~pre&StatusFlag$dead && STATUS&StatusFlag$dead )
+		if( ~pre&StatusFlag$dead && STATUS&StatusFlag$dead )
             Weapon$removeAll();
-        // Auto sheathe
-		else if( pre&StatusFlag$combat && ~STATUS&StatusFlag$combat )
-			WeaponLoader$toggleSheathe(LINK_THIS, 1);
+        // Combat handles stance, and sheathe on stance end
+		if( (pre&StatusFlag$combat) != (STATUS&StatusFlag$combat) ){
+		
+			integer pre = BFL &BFL_STANCE;
+			BFL = BFL&~BFL_STANCE;
+			if( STATUS&StatusFlag$combat )
+				BFL = BFL|BFL_STANCE;
+				
+			if( pre != (BFL&BFL_STANCE) ){
+			
+				updateStance();
+				// Auto sheathe on combat end
+				if( ~BFL&BFL_STANCE && ~BFL&BFL_SHEATHED )
+					WeaponLoader$toggleSheathe(LINK_THIS, TRUE);
+					
+			}
+			
+		}
+		
 		
     }
+	
+	if( script == "got SpellMan" && evt == SpellManEvt$recache ){
+		
+		SPELL_STANCES = [];
+		integer i;
+        for( i=0; i<5; ++i ){
+            
+            list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
+            if(d == [])
+                d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
+            SPELL_STANCES += llList2String(d, BSSAA$stance);
+			
+        }
+
+	}
 	
     
 }
@@ -256,12 +327,15 @@ default
             "","","","","",1,"","","","","Iron Sword","Iron Sword"
         ]);
         */
-        if(llGetOwner() == "cf2625ff-b1e9-4478-8e6b-b954abde056b")
-            loadWeapon(llJson2List(Bridge$userData()));
+        
+		// Uncomment for debug
+        //loadWeapon(llJson2List(Bridge$userData()));
             
         if(llGetAttached()){
             llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION|PERMISSION_OVERRIDE_ANIMATIONS);
         }
+		
+		
     }
         
     run_time_permissions(integer perm){
@@ -367,60 +441,37 @@ default
         if( METHOD == WeaponLoaderMethod$toggleSheathe && ~STATUS&StatusFlag$dead ){
 		
             integer n = l2i(PARAMS, 0);
-            
-            // True if we should sheathe
+			// True if we should sheathe
             integer sheathe = (n == -1 && ~BFL&BFL_SHEATHED) || n == 1;
+			int pre = BFL;
 			
-			string anim = "stance_fists";
-			if( STANCE != "" && !unsheatable )
-				anim = STANCE;
-			if( CLASS_STANCE != "" )
-				anim = CLASS_STANCE;
-            
-            // Limit updates to change
-            if(
-                (!sheathe && BFL&BFL_SHEATHED) ||
-                (sheathe && ~BFL&BFL_SHEATHED)
-            ){
-				if( anim == CLASS_STANCE ){}
-                else if( anim == "stance_fists" )
-                    llTriggerSound("1c7916eb-8ceb-1e39-c88d-94d1eaa2deb5", .1);
-                else{
-				
-                    list anims = ["unsheathe", "unsheathe_ub"];
-                    AnimHandler$anim(mkarr(anims), TRUE, 0, 0, 0);
-                    llTriggerSound("d381de30-9ee8-e32f-8b5a-9f6f77e2c007", .5);
-					
-                }
-				
-                BFL = BFL&~BFL_SHEATHED;
-                if( sheathe )
-                    BFL = BFL|BFL_SHEATHED;
-                
-                // Update the weapons
-                if( !unsheatable )
-                    spawnWeapons();
-					
-				raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
-				
-            }
+			// Change sheathe state
+			BFL = BFL&~BFL_SHEATHED;
+			if( sheathe )
+				BFL = BFL|BFL_SHEATHED;
 			
-			if( BFL&BFL_SHEATHED )
-				anim = "";
-			gotClassAtt$stance(anim);
-            
-            // Animations
-            integer p = llGetPermissions()&PERMISSION_OVERRIDE_ANIMATIONS;
-			if( !p )
-				return;
-			
-            
-            
-            if( !sheathe )
-                llSetAnimationOverride( "Standing", anim );
-            else
-                llResetAnimationOverride("Standing");
+			if((pre&BFL_SHEATHED) != (BFL&BFL_SHEATHED) && !unsheatable){
+				// Animate draw/grab weapons
+				// Do not draw weapons because this was a custom or class stance
 
+				if( unsheatable )
+					llTriggerSound("1c7916eb-8ceb-1e39-c88d-94d1eaa2deb5", .1);
+				else{
+
+					list anims = ["unsheathe", "unsheathe_ub"];
+					AnimHandler$anim(mkarr(anims), TRUE, 0, 0, 0);
+					llTriggerSound("d381de30-9ee8-e32f-8b5a-9f6f77e2c007", .5);
+					
+				}
+
+				// Update the weapons
+				if( !unsheatable )
+					spawnWeapons();
+
+				raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
+
+			}
+            
         }
 		
 		// Calculate position offset and send to server. Also re-cache defaults

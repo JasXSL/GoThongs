@@ -327,9 +327,7 @@ default
         }
 		
 		else if(METHOD == PortalMethod$resetAll){
-			qd(xme(XLS(([
-				XLS_EN, "Resetting everything"
-			]))));
+			qd("Resetting everything");
 			resetAll();
 		}
 		
@@ -360,9 +358,7 @@ default
 		
 		// Forces the portal to load as if it was live
 		else if(METHOD == PortalMethod$forceLiveInitiate){
-			qd(xme(XLS(([
-				XLS_EN, "Updating and setting live"
-			]))));
+			qd("Updating and setting live");
 			vector g = llGetPos();
 			integer in = vec2int(g);
 			integer p = llCeil(llFrand(0xFFFFFFF));

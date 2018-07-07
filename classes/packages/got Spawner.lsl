@@ -53,7 +53,7 @@ next() {
 		return;
 	}
 	
-	if(SPAWN_START == 0)
+	if( SPAWN_START == 0 )
 		SPAWN_START = llGetTime();
 	
 	// Object Name
@@ -78,14 +78,17 @@ next() {
 		queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
 		next();
 		return;
+		
 	}
 	
 	// Asset not foudn in inventory, skip it
 	if(llGetInventoryType(asset) != INVENTORY_OBJECT){
+	
 		qd("Error. Asset not found: "+mkarr(llList2List(queue, 0, QUEUESTRIDE-1))+". The level may work but you probably want to restart.");
 		queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
 		next();
 		return;
+		
 	}
 	
 	// Set/reset clean up timer
@@ -104,26 +107,32 @@ next() {
 	
 	// Remove from the main queue
 	queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
+	
 }
 
 // An item has received description, continue rezzing
 done(key id){
+
 	// Find the ID in the description queue
 	integer pos = llListFindList(queue_desc, [id]);
-	if(~pos){
+	if( ~pos ){
+	
 		// Remove it from desc queue
 		queue_desc = llDeleteSubList(queue_desc, pos, pos+QUEUEDESCSTRIDE-1);
 		// Spawn another asset if possible
 		next();
+		
 	}
-	else{
+	else
 		qd("done() was run on an unknown UUID: "+(str)id+"\nqueue_desc was: "+mkarr(queue_desc));
-	}
+	
 }
 
 timerEvent(string id, string data){
+
 	// B is sent once all objects have been spawned
-	if(id == "B"){
+	if( id == "B" ){
+	
 		SPAWN_START = 0;
 		// If this spawner is inside the HUD, send to ROOT_LEVEL
 		#ifdef IS_HUD
@@ -132,12 +141,12 @@ timerEvent(string id, string data){
 		// Otherwise it's in the level itself, so it can send to self
 		Level$loaded(LINK_ROOT, FALSE);
 		#endif
+		
 	}
 	// Something has gotten stuck
-	else if(id == "FORCE_NEXT"){
-		qd(xme(XLS(([
-			XLS_EN, "Error! An item didn't spawn in a timely fashion. This is usually caused by high lag in the region. Debug:"
-		]))));
+	else if( id == "FORCE_NEXT" ){
+	
+		qd("Error! An item didn't spawn in a timely fashion. This is usually caused by high lag in the region. Debug:");
 		qd("Main queue: "+mkarr(queue));
 		qd("Flushing assets awaiting desc: "+mkarr(queue_desc));
 		qd("Asset being spawned: "+mkarr(queue_rez));
@@ -145,6 +154,7 @@ timerEvent(string id, string data){
 		queue_desc = [];
 		// Try next
 		next();
+		
 	}
 	
 }
@@ -182,17 +192,20 @@ default
 	listen(integer chan, string name, key id, string message){
 		idOwnerCheck
 		
-		if(message == "SP"){
+		if( message == "SP" ){
+		
 			integer pos = llListFindList(queue_desc, [id]);
+			
+			// Send the ini data
 			if(~pos){
-				// Send the ini data
 				Portal$iniData(id, llList2String(queue_desc, pos+1), llList2String(queue_desc, pos+2), llList2String(queue_desc, pos+3));
 			}
-			else {
+			// HAX: Send something to shut up the object
+			else{
 				qd("Error. Got unexpected description request from object '"+llKey2Name(id)+"' "+(string)id+".");
-				// HAX: Send something to shut up the object
 				Portal$iniData(id, "", "", llGetKey());
 			}
+			
 		}
 		else if(message == "DN"){
 			done(id);
@@ -233,22 +246,26 @@ default
 			llResetScript();
 		}
 		
-        if(METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn){
+        if( METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn ){
+			
 			key requester = id;
-			if(requester == "")requester = llGetLinkKey(LINK_THIS);
+			if( requester == "" )
+				requester = llGetLinkKey(LINK_THIS);
 			
 			list data = PARAMS;
-			if(METHOD == SpawnerMethod$spawn){
+			if( METHOD == SpawnerMethod$spawn )
 				data = [mkarr(PARAMS)];
-			}
+			
 			
 			integer i;
-			for(i=0; i<llGetListLength(data); i++){
+			for( i=0; i<llGetListLength(data); i++ ){
+			
 				string s = llList2String(data, i);
-				if(llJsonValueType(s, []) == JSON_ARRAY){
+				if( llJsonValueType(s, []) == JSON_ARRAY ){
+					
 					list dta = llJson2List(s);
 					string asset = llList2String(dta,0);
-					if(asset == "_CB_"){
+					if( asset == "_CB_" )
 						queue += [
 							asset,
 							id,
@@ -259,8 +276,8 @@ default
 							0,
 							0
 						];
-					}
-					else if(llGetInventoryType(asset) == INVENTORY_OBJECT){
+					
+					else if( llGetInventoryType(asset) == INVENTORY_OBJECT )
 						queue += [
 							asset,								// Obj name
 							(vector)llList2String(dta, 1),		// Position
@@ -271,8 +288,9 @@ default
 							llList2String(dta, 6),				// spawnround
 							requester							// sender
 						];
-					}
-					else qd("Inventory missing: "+llList2String(dta, 0));
+					
+					else 
+						qd("Inventory missing: '"+llList2String(dta, 0)+"'\n"+mkarr(PARAMS));
 				}
 			}
 			

@@ -1,0 +1,6 @@
+CASTER ANIMATION PRIORITIES:
+- Stance: 1
+- cast loop: 1
+- cast finish: 2
+- cast loop ub: 3
+- cast finish ub: 4

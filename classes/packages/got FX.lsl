@@ -190,7 +190,7 @@ onEvt(string script, integer evt, list data){
 				
 				// JSON array of parameters set in the package
 				list against = llJson2List(llList2String(evdata, 5));
-				
+
 				// Iterate over parameters and make sure they validate with the event params we received
 				integer i;
 				for( ; i<llGetListLength(against); ++i){
@@ -199,11 +199,9 @@ onEvt(string script, integer evt, list data){
 					list eva = explode("||", llList2String(against, i));
 					// From event
 					string evtv = l2s(data, i);
-
 					// Quick check
-					if( (~llListFindList(eva, [evtv]) && evtv != "") || l2s(eva, 0) == "" )
+					if( (~llListFindList(eva, [evtv]) && evtv != "") || !llStringLength(l2s(eva, 0)) )
 						jump vSuccess;
-					
 					
 					// Deep check
 					list_shift_each(eva, v,
@@ -229,7 +227,6 @@ onEvt(string script, integer evt, list data){
 				
 				// We have validated that this event should be accepted, let's extract the wrapper
 				string wrapper = llList2String(evdata, 4);
-
 				// We can use <index> and <-index> tags to replace with data from the event
 				for(i=0; i<llGetListLength(data); i++){
 					wrapper = implode((str)(-llList2Float(data, i)), explode("<-"+(str)i+">", wrapper));
@@ -619,6 +616,15 @@ default{
 						if( exists ){
 							// Remove the previous one and add its stacks
 							
+							// Append time, allowing it to exceed the max duration
+							// This is also calculated in 
+							if( flags & PF_STACK_TIME ){
+								
+								dur = dur+l2f(PACKAGES, l2i(exists, 0)+4)-(timeSnap()-l2f(PACKAGES, l2i(exists, 0)+3))/10.0;
+								slice = llListReplaceList(slice, (list)dur, 4,4);
+								
+							}
+							
 							// It exists, schedule an add stack
 							// Manage stacks
 							if( flags & PF_CANNIBALIZE ){
@@ -632,7 +638,8 @@ default{
 								
 							}
 							else{
-								FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE);
+							
+								FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE, dur);
 							
 								// If trigger immediate, we still need to run it
 								if(flags&PF_TRIGGER_IMMEDIATE){
@@ -739,6 +746,7 @@ default{
 			if( amount<1 )
 				amount = -1;					// Set to -1 for all
 			integer is_dispel = l2i(PARAMS, 8);			// Dispel event will be raised
+			float dur = l2f(PARAMS, 9);
 
 			// Owner is always S
 			integer pos = llListFindList(senders, [(str)llGetOwner()]);
@@ -761,7 +769,7 @@ default{
 				amount--;
 				
 				// UPDATE STACKS
-				if(METHOD == FXMethod$addStacks){
+				if( METHOD == FXMethod$addStacks ){
 				
 					integer stacks = pStacks(slice);			// Current stacks
 					stacks+= rEvent; 							// rEvent is num stacks to add or subtract in addStacks
@@ -771,6 +779,9 @@ default{
 						jump delContinue;						// Continue
 					}
 					
+					if( dur <= 0 )
+						dur = pDur(slice);
+						
 					// Update stacks
 					// Edit the stacknr
 					integer max = pMaxStacks(slice);
@@ -779,9 +790,11 @@ default{
 					PACKAGES = llListReplaceList(PACKAGES, [stacks], i+2,i+2);
 					
 					// If adding stacks we need to reset the timer as well
-					if(rEvent>=0){
-						PACKAGES = llListReplaceList(PACKAGES, [timeSnap()], i+3, i+3);
-						multiTimer(["F_"+(str)pID(slice), "", pDur(slice), FALSE]);
+					if( rEvent >= 0 ){
+
+						PACKAGES = llListReplaceList(PACKAGES, (list)timeSnap() + dur, i+3, i+4);
+						multiTimer(["F_"+(str)pID(slice), "", dur, FALSE]);
+						
 					}
 					
 					// Re-fetch slice with updated data
