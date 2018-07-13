@@ -647,7 +647,10 @@ default
 			CACHE+= llList2Float(d, BSSAA$range);     // Range
 			CACHE+= llList2Float(d, BSSAA$casttime);     // Casttime
 			CACHE+= (int)j(llList2String(d, BSSAA$fxwrapper), 0); // Detrimental
-			setSpellMaxCharges(i, l2i(d, BSSAA$charges));
+			int ch = l2i(d, BSSAA$charges);
+			if( ch < 1 )
+				ch = 1;
+			setSpellMaxCharges(i, ch);
 			
 		}
 		
