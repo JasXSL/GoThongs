@@ -182,7 +182,7 @@ default
             }
 			else{
 			
-				llOwnerSay("Note: Firestorm 5.0.7 prim media some times breaks. You can use ["+SITE_URL+"?token="+a+" this link] to run the GoT HUD in an external browser.");
+				llOwnerSay("Note: Prim media some times breaks. You can use ["+SITE_URL+"?token="+a+" this link] to run the GoT HUD in an external browser.");
                 // Update the URL
                 llSetLinkMedia(P_BROWSER, 1, [
                     PRIM_MEDIA_CURRENT_URL, SITE_URL+"?token="+a,

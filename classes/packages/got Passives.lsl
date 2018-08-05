@@ -57,7 +57,8 @@ list compiled_actives = [
 	"[]",  // 28 (arr)Conversion
 	1,	// 29 Sprint fade multiplier
 	1,	// 30 Backstab multiplier
-	1	// 31 FXCUpd$SWIM_SPEED_MULTI
+	1,	// 31 FXCUpd$SWIM_SPEED_MULTI
+	0	// 32 FXCUpd$FOV
 ];      // Compiled actives defaults
 
 /*
@@ -212,12 +213,17 @@ compilePassives(){
 	
     // These need to match compilation stride
     compiled_passives = [];
-    for(i=0; i<llGetListLength(keys); i++){
+    for( i=0; i<llGetListLength(keys); ++i ){
+	
         list v = llList2List(vals, i, i);
         // Flatten to integer if it doesn't have fractions
-		if(llGetListEntryType(v, 0) != TYPE_STRING && llList2Float(v,0) == (float)llList2Integer(v,0))
-			v = [llList2Integer(v,0)];
+		if( 
+			llGetListEntryType(v, 0) != TYPE_STRING && 
+			llList2Float(v,0) == (float)llList2Integer(v,0) 
+		)v = [llList2Integer(v,0)];
+		
         compiled_passives+= [llList2Integer(keys, i)]+v;
+		
     }
     
     output();
@@ -225,12 +231,15 @@ compilePassives(){
 
 
 output(){
-	if(BFL&BFL_SENT){
+
+	if( BFL& BFL_SENT ){
+	
 		BFL = BFL|BFL_QUEUE_SEND; // Update once queue ends
 		return;
+		
 	}
 	BFL = BFL|BFL_SENT;
-	multiTimer(["Q","",.5,FALSE]);
+	ptSet("Q",.5,FALSE);
 	
     // Output the same event as FXCEvt$update
     list output = compiled_actives;
@@ -239,21 +248,23 @@ output(){
 	integer unset_flags;
 	
     // Fields that should be treated as ints for shortening
-    list INT_FIELDS = [
-        FXCUpd$HP_ADD,
-        FXCUpd$MANA_ADD,
-        FXCUpd$AROUSAL_ADD,
-        FXCUpd$PAIN_ADD,
-		FXCUpd$SPELL_HIGHLIGHTS,
+    list INT_FIELDS = (list)
+        FXCUpd$HP_ADD +
+        FXCUpd$MANA_ADD +
+        FXCUpd$AROUSAL_ADD +
+        FXCUpd$PAIN_ADD +
+		FXCUpd$SPELL_HIGHLIGHTS +
 		FXCUpd$TEAM
-    ];
+    ;
     list non_multi = FXCUpd$non_multi; // Things that should be ADDed
 	list arrays = FXCUpd$arrays;
-
+	list overwrite = FXCUpd$overwrite;
+	
     integer i;
     for( ; i<count(compiled_passives); i+=COMPILATION_STRIDE ){
 	
-        integer type = llList2Integer(compiled_passives, i);
+		integer type = llList2Integer(compiled_passives, i);
+        
         // Cache the flags first so unset_flags can properly override
         if( type == FXCUpd$FLAGS )
             set_flags = set_flags|llList2Integer(compiled_passives,i+1);
@@ -261,16 +272,22 @@ output(){
         else if( type == FXCUpd$UNSET_FLAGS )
             unset_flags = unset_flags|llList2Integer(compiled_passives,i+1);			
 		// Data in this is an array, we merge them
-        else if( ~llListFindList(arrays, [type]) )
+        else if( ~llListFindList(arrays, (list)type) )
 			output = llListReplaceList(output, [mkarr(llJson2List(l2s(compiled_passives, i+1))+llJson2List(l2s(output,type)))], type, type);
 		// do actual math
+		else if( ~llListFindList(overwrite, (list)type) ){
+		
+			if( l2f(compiled_passives, i+1) != 0 )
+				output = llListReplaceList(output, llList2List(compiled_passives, i+1, i+1), type, type);
+				
+		}	
 		else{
 		
 			float val = llList2Float(compiled_passives, i+1)*llList2Float(output,type);
 			
-			if(~llListFindList(non_multi, [type]))
+			if( ~llListFindList(non_multi, (list)type) )
 				val = llList2Float(compiled_passives, i+1)+llList2Float(output,type);
-            output = llListReplaceList(output, [val], type, type);
+            output = llListReplaceList(output, (list)val, type, type);
 			
         }
 		
@@ -459,7 +476,7 @@ onEvt(string script, integer evt, list data){
 			
 				EVT_LISTENERS = llListReplaceList(EVT_LISTENERS, [flags|Passives$PF_ON_COOLDOWN], x+5, x+5);
 				flags = flags|Passives$PF_ON_COOLDOWN;
-				multiTimer(["CD_"+(str)evtid, "", cooldown, FALSE]);
+				ptSet("CD_"+(str)evtid, cooldown, FALSE);
 				
 			}
 					
@@ -527,7 +544,7 @@ onEvt(string script, integer evt, list data){
 
 
 
-timerEvent(string id, string data){
+ptEvt(string id){
 
 	// Send queue
 	if( id == "Q" ){
@@ -563,11 +580,12 @@ timerEvent(string id, string data){
 }
 
 
-default
-{
-    timer()
-    {
-		multiTimer([]);
+default{
+
+    timer(){
+	
+		ptRefresh();
+		
     }
     
 	// Handle active effects
@@ -608,7 +626,8 @@ default
 			l2s(set,28),				\
 			i2f(l2i(set,FXCUpd$SPRINT_FADE_MULTI)),		\
 			i2f(l2i(set,FXCUpd$BACKSTAB_MULTI)), \
-			i2f(l2i(set,FXCUpd$SWIM_SPEED_MULTI)) \
+			i2f(l2i(set,FXCUpd$SWIM_SPEED_MULTI)), \
+			i2f(l2i(set,FXCUpd$FOV)) \
 		]; \
         output(); \
 	}
@@ -679,7 +698,6 @@ default
 		// IDs of effects added
 		list added_effects;
 		
-		
 		integer i;
 		for( ; i<count(effects) && count(effects); i+=2 ){
 		
@@ -737,34 +755,31 @@ default
 					l2i(data, 4),	// flags,
 					l2s(data, 5)	// wrapper
 				];
-				/*
-				list EVT_CACHE;			// (str)scriptName, (int)evt, (arr)evt_listener_IDs
-#define CACHESTRIDE 3
-				
-				*/
+
 				
 				effects = llDeleteSubList(effects, i, i+1);
 				i-=2;
 				
 			}
-			else if(t == FXCUpd$ATTACH){
+			else if( t == FXCUpd$ATTACH )
 				ATTACHMENTS += [name, l2s(effects, i+1)];
-			}
+			
 		}
 		
-		PASSIVES += [name, mkarr(added_effects), llGetListLength(effects), flags]+effects;
-        outputDebug("ADD");
+		PASSIVES += (list)name + mkarr(added_effects) + llGetListLength(effects) + flags + effects;
+		outputDebug("ADD");
 		compilePassives();
+		
     }
     
     
     /*
         Removes a passive
     */
-    else if(METHOD == PassivesMethod$rem){
+    else if( METHOD == PassivesMethod$rem ){
 	
         string name = method_arg(0);
-        if(removePassiveByName(name))
+        if( removePassiveByName(name) )
 			compilePassives();
 			
     }

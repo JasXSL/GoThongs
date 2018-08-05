@@ -6,13 +6,30 @@
 */
 #define USE_EVENTS
 #define IS_NPC
+
+integer BFL = 0; 
+#define BFL_DEAD 0x1
+#define BFL_FRIENDLY 0x2
+#define BFL_STATUS_TIMER 0x4 
+#define BFL_INITIALIZED 0x8
+#define BFL_STATUS_QUEUE 0x10		// Send status on timeout
+#define BFL_STATUS_SENT 0x20		// Status sent
+#define BFL_AGGROED_ONCE 0x40		// If aggroed at least once
+#define BFL_DESC_OVERRIDE 0x80
+
+
+
+#define BFL_NOAGGRO (BFL_FRIENDLY|BFL_DEAD)
+
+#define initialized() (BFL&BFL_INITIALIZED)
+#define memDebug(name, lst) 
+//#define memDebug(name, lst) qd(name+" Entries: "+(str)count(lst));
+
+
+
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"
 
-#define initialized() (BFL&BFL_INITIALIZED)
-
-#define memDebug(name, lst) 
-//#define memDebug(name, lst) qd(name+" Entries: "+(str)count(lst));
 
 
 list PLAYERS;
@@ -26,11 +43,9 @@ float preHP = 1;
 float AR;			// aggro range
 key aSnd;         	// Aggro sound
 key daSnd;     		// Drop aggro sound
-key thSnd;      	// Take hit sound
 key atSnd;        	// Attack sound
 key dSnd;         	// Death sound 
 key icon;
-string RN;        	// Rape name, Usually prim name
 string drops;			// JSON array of sub arrays of [(str)asset, (float)drop_chance]
 integer rAdd;		// Hitbox range add for players to hit ME
 integer hAdd;		// LOS check height offset from the default 0.5m above root prim
@@ -48,17 +63,8 @@ key AT;			// Aggro target. Should be a HUD or NPC UUID
 integer tDEF = TEAM_NPC;			// This is the team set by the HUD itself, can be overridden by fxTeam
 integer TEAM = TEAM_NPC;
 
-integer BFL = 0; 
-#define BFL_DEAD 0x1
-#define BFL_FRIENDLY 0x2
-#define BFL_STATUS_TIMER 0x4 
-#define BFL_INITIALIZED 0x8
-#define BFL_STATUS_QUEUE 0x10		// Send status on timeout
-#define BFL_STATUS_SENT 0x20		// Status sent
-#define BFL_AGGROED_ONCE 0x40		// If aggroed at least once
-#define BFL_DESC_OVERRIDE 0x80
 
-#define BFL_NOAGGRO (BFL_FRIENDLY|BFL_DEAD)
+
 
 // Effects
 integer SF = 0; 		// Status flags
@@ -78,9 +84,7 @@ list fmHT;
 list SDTM;
 
 
-#define SPSTRIDE 3
-list SPI;   // Spell Icons [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc]
-list OST; // Output status to (key)id, (int)flags
+
 list cID;		// Custom ID (str)id, (var)mixed - Used for got Level integration
 
 // Updates description with the proper team
@@ -253,75 +257,12 @@ outputStats( integer f ){
 	}
 	
 	BFL = BFL|BFL_STATUS_SENT;
-	MT(["_", .5, FALSE]);
+	ptSet("_", .5, FALSE);
 	
 }
 
 
-#define timerEvent(id) \
-	if( id == "_" ){ \
-		BFL = BFL&~BFL_STATUS_SENT; \
-		if( BFL&BFL_STATUS_QUEUE ){ \
-			BFL = BFL&~BFL_STATUS_QUEUE; \
-			outputStats(FALSE); \
-		} \
-	} \
-    else if( id == "A" && ~BFL&BFL_NOAGGRO ){ \
-		parseDesc(AT, resources, status, fx, sex, team, monsterFlags); \
-		if( \
-			AT != "" && \
-			( \
-				status&StatusFlags$NON_VIABLE || \
-				fx&fx$UNVIABLE ||  \
-				team == TEAM || \
-				monsterFlags&Monster$RF_INVUL \
-			) \
-		)dropag(AT, TRUE); \
-		else if( AT == "" ) \
-			llSensor("", "", AGENT|ACTIVE, AR, PI); \
-    }\
-	else if(id == "OT"){ \
-		integer i; string out;\
-		for( i=0; i<count(SPI); i+=SPSTRIDE )\
-			out+= l2s(SPI, i)+","+l2s(SPI,i+1)+",";\
-		\
-		list opstat = OST;\
-		if( RF&Monster$RF_IS_BOSS )\
-			opstat = PLAYERS;\
-			\
-		out = llDeleteSubString(out, -1, -1);\
-		\
-		for( i = 0; i<count(opstat); i+= 2)\
-			GUI$setSpellTextures(l2s(opstat, i), out); \
-		\
-    } 
 
-// Overwrite the default one
-#define TIMERSTRIDE 4
-// timeout, id, looptime, repeating
-MT( list data ){
-
-    integer i;
-    if(data != []){
-        integer pos = llListFindList(llList2ListStrided(llDeleteSubList(_T,0,0), 0, -1, TIMERSTRIDE), llList2List(data,0,0));
-        if(~pos)_T = llDeleteSubList(_T, pos*TIMERSTRIDE, pos*TIMERSTRIDE+TIMERSTRIDE-1);
-        if(count(data)==TIMERSTRIDE-1)_T+=[llGetTime()+llList2Float(data,2)]+data;
-    }
-    for(i=0; i<count(_T); i+=TIMERSTRIDE){
-        if(llList2Float(_T,i)<=llGetTime()){
-            string t = llList2String(_T, i+1);
-            if(!llList2Integer(_T,i+TIMERSTRIDE-1))_T= llDeleteSubList(_T, i, i+TIMERSTRIDE-1);
-            else _T= llListReplaceList(_T, [llGetTime()+llList2Float(_T,i+2)], i, i);
-            timerEvent(t);
-            i-=TIMERSTRIDE;
-        }
-    }
-    if(_T== []){llSetTimerEvent(0); return;}
-    _T= llListSort(_T, TIMERSTRIDE, TRUE);
-    float t = llList2Float(_T,0)-llGetTime();
-    if(t<.01)t=.01;
-    llSetTimerEvent(t);
-}
 
 #define startAnim( anim ) \
 	MeshAnim$startAnim(anim); MaskAnim$start(anim)
@@ -364,8 +305,6 @@ MT( list data ){
 			aSnd = dtaStr; \
 		if(idx == MLC$dropaggro_sound) \
 			daSnd = dtaStr; \
-		if(idx == MLC$takehit_sound) \
-			thSnd = dtaStr; \
 		if(idx == MLC$attacksound) \
 			atSnd = dtaStr; \
 		if(idx == MLC$deathsound) \
@@ -380,8 +319,6 @@ MT( list data ){
 			hAdd = dtaInt; \
 		if(idx == MLC$team && dtaStr != "") \
 			team = dtaInt; \
-		if(idx == MLC$rapePackage && isset(dtaStr)) \
-			RN = dtaStr; \
 		if(idx == MLC$drops) \
 			drops = dtaStr; \
 		if( idx == MLC$melee_height ) \
@@ -390,9 +327,10 @@ MT( list data ){
 	if(mhp == -1 || HP>maxHP) \
 		HP = maxHP; \
 	if(AR > 0){ \
-		MT(["A", 2, TRUE]); \
-	}else \
-		MT(["A"]); \
+		ptSet("A", 2, TRUE); \
+	}else{ \
+		ptUnset("A"); \
+	} \
 	if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]"; \
 	setTeam(team); \
 	if(~BFL&BFL_INITIALIZED){ \
@@ -402,29 +340,18 @@ MT( list data ){
 
 
 
-
 #define onEvt(script, evt, data) \
 	if( script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players) ){ \
         PLAYERS = data; \
-		if(AR)MT(["A", 1, TRUE]); \
+		if(AR){ \
+			ptSet("A", 1, TRUE); \
+		} \
     } \
 	else if( script == "got Monster" ){ \
-	    if( evt == MonsterEvt$runtimeFlagsChanged ){ \
-            integer pre = RF; \
-			RF = llList2Integer(data,0); \
-			list opstat = OST; \
-			if(RF&Monster$RF_IS_BOSS) \
-				opstat = PLAYERS; \
-			if( \
-				(pre&Monster$RF_NO_TARGET) != (RF&Monster$RF_NO_TARGET) &&  \
-				RF&Monster$RF_NO_TARGET \
-			){ \
-				integer i; \
-				for( i = 0; i < count(opstat); i+= 2) \
-					Root$clearTargetOn(l2s(opstat, i)); \
-			} \
-			updateDesc(); \
-        } \
+	    if( evt == MonsterEvt$runtimeFlagsChanged ){\
+			RF = l2i(data, 0); \
+			updateDesc() \
+		} \
 		else if( evt == MonsterEvt$attack ){ \
 			\
 			key targ = llList2Key(data, 0); \
@@ -469,47 +396,114 @@ MT( list data ){
 	} \
 
 	
+	
+#define ptEvt(id) \
+	if( id == "_" ){ \
+		BFL = BFL&~BFL_STATUS_SENT; \
+		if( BFL&BFL_STATUS_QUEUE ){ \
+			BFL = BFL&~BFL_STATUS_QUEUE; \
+			outputStats(FALSE); \
+		} \
+	} \
+    else if( id == "A" && ~BFL&BFL_NOAGGRO ){ \
+		parseDesc(AT, resources, status, fx, sex, team, monsterFlags); \
+		if( \
+			AT != "" && \
+			( \
+				status&StatusFlags$NON_VIABLE || \
+				fx&fx$UNVIABLE ||  \
+				team == TEAM || \
+				monsterFlags&Monster$RF_INVUL \
+			) \
+		)dropag(AT, TRUE); \
+		else if( AT == "" ){ \
+			llSensor("", "", AGENT|ACTIVE, AR, PI); \
+		} \
+    }\
+	
+
+_MT(string id, integer t)
+{
+    float g = llGetTime();
+    if (!(id == ""))
+    {
+        integer pos = llListFindList(_mt, (list)id);
+        float to = (float)(t & ~0x80000000) / 100;
+        float nx = to + g;
+        if ((~t) & ((integer)-0x80000000))
+            to = 0;
+        if (~pos)
+            _mt = llDeleteSubList(_mt, ~-pos, -~pos);
+        if (t)
+            _mt = _mt + ((list)nx + id + to);
+    }
+    for (t = 0; t < (_mt != []); t = 3 + t)
+    {
+        if (!(g < llList2Float(_mt, t)))
+        {
+            float re = llList2Float(_mt, -~-~t);
+            string id = llList2String(_mt, -~t);
+            if (re == ((float)0))
+            {
+                _mt = llDeleteSubList(_mt, t, -~-~t);
+                t = ((integer)-3) + t;
+            }
+            else
+                _mt = llListReplaceList(_mt, (list)(g + re), t, t);
+			
+            ptEvt(id);
+        }
+    }
+    if (_mt == [])
+    {
+        llSetTimerEvent(0);
+        return;
+    }
+    _mt = llListSort(_mt, 3, 1);
+	float n = llList2Float(_mt, 0) + -g;
+    if (!(0 < n))
+        n = 0.01;
+	llSetTimerEvent(n);
+}
+	
 
 default 
 {
     state_entry(){
+	
         raiseEvent(evt$SCRIPT_INIT, "");
 		setTeam(tDEF);
+		
     }
 	
-	sensor(integer total){
+	sensor( integer total ){
 		
 		integer ffa = isFFA();
 		while( --total ){
+		
             key k = llDetectedKey(total-1);
 			integer type = llDetectedType(total-1);
 
 			parseDesc(k, resources, status, fx, sex, team, mf);
+			vector ppos = prPos(k);
+			float dist =llVecDist(ppos, llGetPos());
+			float range = AR;
+			prAngZ(k, ang)
+			if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
+				range *= 0.25;
+			
 			if(
 				(
 					(type&AGENT && TEAM != TEAM_PC && (ffa || ~llListFindList(PLAYERS, [(str)k]))) || 
 					(llGetSubString(prDesc(k), 0, 2) == "$M$" && team != TEAM && ~mf&Monster$RF_INVUL)
-				) && ~RF&Monster$RF_NOAGGRO && ~BFL&BFL_NOAGGRO
+				) && ~RF&Monster$RF_NOAGGRO && ~BFL&BFL_NOAGGRO &&
+				dist < range
 			){
-				vector ppos = prPos(k);
-				float dist =llVecDist(ppos, llGetPos());
-				if( dist>100 )
-					return; 
-				integer ainfo = llGetAgentInfo(k);
-				float range = AR;
-				prAngZ(k, ang)
-				if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
-					range *= 0.25;
-					
-				
-				if(dist<range){
-				
-					list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
-					if( llList2Integer(ray, -1) == 0 )
-						Status$get(k, "aggro");
-						
-				}
-				
+			
+				list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
+				if( llList2Integer(ray, -1) == 0 )
+					Status$get(k, "aggro");
+
 			}
 			
         }
@@ -518,23 +512,23 @@ default
 	
     
     
-    timer(){MT([]);}
+    timer(){ptRefresh();}
     
 	#define LM_PRE \
-	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		FF = l2i(data, FXCUpd$FLAGS); \
-		fmCR = i2f(l2f(data, FXCUpd$CRIT))-1; \
-		fxTeam = l2i(data, FXCUpd$TEAM); \
-        outputStats(FALSE); \
-	}\
-	else if(nr == TASK_MONSTER_SETTINGS){\
-		list data = llJson2List(s); \
-		onSettings(data); \
-	} \
-	else if( nr == TASK_OFFENSIVE_MODS )\
-		fmDD = llJson2List(j(s, 0));  \
-	
+		if(nr == TASK_FX){ \
+			list data = llJson2List(s); \
+			FF = l2i(data, FXCUpd$FLAGS); \
+			fmCR = i2f(l2f(data, FXCUpd$CRIT))-1; \
+			fxTeam = l2i(data, FXCUpd$TEAM); \
+			outputStats(FALSE); \
+		}\
+		else if(nr == TASK_MONSTER_SETTINGS){\
+			list data = llJson2List(s); \
+			onSettings(data); \
+		} \
+		else if( nr == TASK_OFFENSIVE_MODS )\
+			fmDD = llJson2List(j(s, 0));  \
+		
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -678,21 +672,15 @@ default
 		HP = maxHP;
 		outputStats(TRUE);
 	}
-	else if(METHOD == StatusMethod$setTeam){
+	else if(METHOD == StatusMethod$setTeam){ setTeam(l2i(PARAMS, 0)); }
 		
-		setTeam(l2i(PARAMS, 0));
-		
-	}
-	
-	
-	
-	
-	
+
 	// Combat stuff below here
-	if(!initialized()){
+	if( !initialized() )
 		return;
-	}
-    if(method$isCallback){
+	
+    if( method$isCallback ){
+	
         if( METHOD == StatusMethod$get && id!="" && SENDER_SCRIPT == "got Status" && CB == "aggro" ){
 
 			// agc checks if it should rape or not
@@ -702,120 +690,27 @@ default
 				return;
 			}                
 			ag(id, 10);
+			
 		} 
         return;
+		
     }
 	
-	
-	
-    if(id == ""){
-	
-		if(METHOD == StatusMethod$addTextureDesc){
-		
-            SPI += [
-				(integer)method_arg(0), 
-				method_arg(1)+","+method_arg(3)+","+method_arg(4)+","+method_arg(5), 
-				(str)method_arg(2)
-			];
-			MT(["OT", .05, FALSE]);
-			
-        }
-        else if(METHOD == StatusMethod$remTextureDesc){
-		
-            integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(SPI, [pid]);
-			if( pos == -1 )
-				return;
-			
-            SPI = llDeleteSubList(SPI, pos, pos+SPSTRIDE-1);
-            MT(["OT", .3, FALSE]);
-			
-        }
-		else if(METHOD == StatusMethod$stacksChanged){
-		
-			integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(SPI, [pid]);
-			if( pos == -1 )
-				return;
-			
-			list spl = llCSV2List(l2s(SPI, pos+1));
-			spl = llListReplaceList(spl, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], 1, -1);
-			SPI = llListReplaceList(SPI, [implode(",", spl)], pos+1,pos+1);
-			MT(["OT", .2, FALSE]);
-			
-		}
-    }
-    
 
 	// Sets runtime flags
-	if(METHOD == StatusMethod$monster_setFlag){
+	if(METHOD == StatusMethod$monster_setFlag)
 		SF = SF|(integer)method_arg(0);
-	}
-	else if(METHOD == StatusMethod$monster_remFlag){
+	
+	else if(METHOD == StatusMethod$monster_remFlag)
 		SF = SF&~(integer)method_arg(0);
-	}
-
 	
+	else if( METHOD == StatusMethod$kill ){
 	
-    
-	// This person has toggled targeting on you
-    if(METHOD == StatusMethod$setTargeting){
-	
-		integer flags = (integer)method_arg(0);
-        integer pos = llListFindList(OST, [(str)id]);
-		
-		integer remove;
-		if( flags < 0 ){
-			
-			flags = llAbs(flags);
-			remove = TRUE;
-			
-		}
-		
-		integer cur = l2i(OST, pos+1);
-		
-		// Remove from existing
-		if( ~pos && remove )
-			cur = cur&~flags;
-		// Add either new or existing
-		else if( 
-			(~pos && !remove && (cur|flags) != flags ) ||
-			( pos == -1 && !remove )
-		)cur = cur|flags;
-		// Cannot remove what does not exist
-		else
-			return;
-		
-		// Exists, update
-		if( ~pos && cur )
-			OST = llListReplaceList(OST, [cur], pos+1, pos+1);
-		// Exists, delete
-		else if( ~pos && !cur )
-			OST = llDeleteSubList(OST, pos, pos+1);
-		// Insert new
-		else
-			OST += [(str)id, cur];
-
-
-		if( cur ){
-		
-            outputStats(TRUE);
-            MT(["OT",.01,FALSE]);
-			
-        }
-		
-		//raiseEvent(StatusEvt$targeted_by, mkarr(OST));
-		NPCSpells$setOutputStatusTo(OST);
-		
-    }
-	
-	else if(METHOD == StatusMethod$kill){
 		HP = 0;
 		
 		if(RF&Monster$RF_IS_BOSS){
 			runOnPlayers(targ, GUI$toggleBoss(targ, "", FALSE);)
 		}
-		list_shift_each(OST, val, Root$clearTargetOn(val);)
 		
 		Level$idEvent(LevelEvt$idDied, llList2String(cID, 0), mkarr(llDeleteSubList(cID, 0, 0)), portalConf$spawnround);
 		
@@ -832,10 +727,14 @@ default
 		llSetObjectDesc("");			// Prevent targeting
 
 		
-		if(dSnd)llTriggerSound(dSnd, 1);
+		if(dSnd)
+			llTriggerSound(dSnd, 1);
+			
+		outputStats(TRUE);
 		
 		// The monster will remove itself
 		if(~RF&Monster$RF_NO_DEATH){
+		
 			// Drop loot
 			list d = llListRandomize(llJson2List(drops), 1);
 			list_shift_each(d, val,
@@ -844,44 +743,25 @@ default
 					d = [];
 				}
 			)
+			
 			llSleep(2);
 			llDie();
+			
 		}
 		else{
 			// The monster will die but not delete itself
 			raiseEvent(StatusEvt$death_hit, "");
 		}
 		
-		outputStats(TRUE);
-	}
-	
-	else if(METHOD == StatusMethod$monster_rapeMe && ~RF&Monster$RF_INVUL){
 		
-		parseDesc(id, resources, status, fx, sex, team, mf);
-		
-		if(team == TEAM)
-			return;
-	
-		list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
-		if(llList2Integer(ray, -1) == 0){
-		
-			if(!isset(RN))
-				RN = llGetObjectName();
-			Bridge$fetchRape(llGetOwnerKey(id), RN);
-			
-		}
 		
 	}
-	
+
 	// Get status
-    else if(METHOD == StatusMethod$get){
-        CB_DATA = [SF, FF, floor(HP/maxHP), 0, 0, 0, 0, TEAM];
-    }
-	// Take hit animation
-    else if(METHOD == StatusMethod$monster_takehit){
-		startAnim("hit");
-        if(thSnd)llTriggerSound(thSnd, 1);
-    }
+    else if( METHOD == StatusMethod$get )
+        CB_DATA = (list)SF + FF + floor(HP/maxHP) + 0 + 0 + 0 + 0 + TEAM;
+    
+	
 	// Whenever spell modifiers have changed
     else if( METHOD == StatusMethod$spellModifiers ){
         
@@ -890,22 +770,7 @@ default
 		fmHT = llJson2List(method_arg(2));
 		
 	}
-    
-	// Get the description of an effect affecting me
-    else if( METHOD == StatusMethod$getTextureDesc ){
-	
-        if( id == "" )
-			id = llGetOwner();
-		
-		integer pid = (integer)method_arg(0);
-        integer pos = llListFindList(SPI, [pid]);
-        if( pos == -1 )
-			return;
-		
-		llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPI, pos+2));
-		
-    }
-	
+
 	// Drop aggro from this
     else if(METHOD == StatusMethod$monster_dropAggro){
 	
@@ -954,13 +819,6 @@ default
 			ag(p,10);
 		
 	}
-	
-	
-	
-	
-	
-	
-    // Public code can be put here
 
     // End link message code
     #define LM_BOTTOM  

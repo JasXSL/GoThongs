@@ -169,6 +169,10 @@ default
 			// Required together
 			if( llGetInventoryType("got LevelLite") == INVENTORY_SCRIPT )
 				required+= [1, "got LevelData"];
+			// Status needs NPCInt which offloads it
+			if( llGetInventoryType("got Status") == INVENTORY_SCRIPT )
+				required+= [1, "got NPCInt"];
+			
 			
 			check = PORTAL_SEARCH_OBJECTS;
 			list_shift_each(check, val,

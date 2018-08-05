@@ -2,7 +2,7 @@
 #define RootMethod$statusControls 1				// (int)controls - Additional controls for root to take
 #define RootMethod$debugHuds 2					// void - Owner-says a JSON array of the coop HUDs
 //#define RootMethod$setThongIni 3				// (int)has_thong		- Initialize thong
-#define RootMethod$setTarget 4					// (key)target, (key)texture, (int)force_override, (int)team
+#define RootMethod$setTarget 4					// (key)target, (key)texture, (int)force_override|(key)pre_targ, (int)team - If pre_targ is a key, it only clears if that is the current target
 #define RootMethod$getPlayers 5					// NULL - Returns an array of players
 #define RootMethod$setParty 6					// (key)coop_player, (key)players2... - 
 #define RootMethod$setLevel 7					// void - Returns players
@@ -33,6 +33,7 @@
 #define Root$aggro(targ) runMethod(targ, "#ROOT", RootMethod$aggro, [], TNN)
 #define Root$setParty(uuids) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setParty, uuids, TNN)
 #define Root$clearTargetOn(targ) runMethod(targ, "#ROOT", RootMethod$setTarget, ["", "", TRUE], TNN)
+#define Root$clearTargetIfIs(targ, uuid) runMethod((str)targ, "#ROOT", RootMethod$setTarget, ["", "", uuid], TNN)
 #define Root$setLevel() runMethod(llGetOwner(), "#ROOT", RootMethod$setLevel, [], "LV")
 #define Root$setLevelOn(targ) runMethod(targ, "#ROOT", RootMethod$setLevel, [], TNN)
 #define Root$addPlayer(player) runMethod(llGetOwner(), "#ROOT", RootMethod$manageAdditionalPlayer, [player], TNN)

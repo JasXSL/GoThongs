@@ -81,11 +81,12 @@
 // Note: if you add your own targ flags, use 65536 and greater values as this list might be extended
 #define TARG_CASTER 1
 #define TARG_VICTIM 2			// only used on events
-#define TARG_PC 4
-#define TARG_NPC 8
+#define TARG_PC 4				// Lazy name for players on your team. Used in spellMan
+#define TARG_NPC 8				// Lazy name for players not on your team. Used in spellMan
 #define TARG_DISPELLER 0x10
 #define TARG_REQUIRE_NO_FACING 0x20
 #define TARG_AOE 0x40			// Runs the effect as omni method at 10m max. When using this, maxtarg becomes range in meters
+// A negative or 0 value will use that argument from the event
 
 // packages is strided [(int)stacks, (arr)package...]
 string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs, list packages){
@@ -114,8 +115,9 @@ string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs,
 	
 	Some notes on events:
 	Currently the first param will be compared to the entire JSON data string of the event. This could be improved.
-	JSON_INVALID or unset indexes in params will be treated as wild cards
+	JSON_INVALID or "" indexes in params will be treated as wild cards
 	Wrappers can use <0> <1> etc to be replaced with the event value of that index. If it's numerical you can also use <-0> <-1> etc to inverse
+	You can use a target less or equal to 0 to use a parameter from the event as target
 	You can add || in a param for OR, ex: FX_buildEvent(SpellManEvt$complete, "got SpellMan", TARG_VICTIM, 1, wrap, ["2||3"]) spell 2 OR 3 cast
 */
 string FX_buildEvent(integer evtype, string evscript, integer targ, integer maxtargets, string wrapper, list params){

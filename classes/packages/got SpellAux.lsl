@@ -53,7 +53,8 @@ integer fxFlags = 0;
 
 string runMath( string FX, integer index, key targ ){
 
-    list split = llParseString2List(FX, ["$MATH$"], []);
+	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
+    list split = llParseString2List(FX, ["$MATH$","$M$"], []);
 	parseDesc(targ, resources, status, fxf, sex, team, monsterflags)
 	int ehp = llRound((resources>>21&127) / 127.0 * 100);
 	
@@ -114,13 +115,27 @@ string runMath( string FX, integer index, key targ ){
     ];
 	
     integer i;
-    for( i=1; i<llGetListLength(split); i++ ){
+    for( i=1; i<llGetListLength(split); ++i ){
         
-		split = llListReplaceList(split, [llGetSubString(llList2String(split, i-1), 0, -2)], i-1, i-1);
+		// Shifts off the last character of the string prior to the $MATH$
+		split = llListReplaceList(split, [
+				llGetSubString(llList2String(split, i-1), 0, -2)
+			], 
+			i-1, i-1
+		);
+		// Get the math block
         string block = llList2String(split, i);
-        integer q = llSubStringIndex(block, "\"");
-        string math = implode("/", explode("\\/", llGetSubString(block, 0, q-1)));
-		float out = pandaMath(math);
+        // Get the end char
+		integer q = llStringLength(llList2String(llParseString2List(block, ["\"","$"], []), 0));
+        // JSON fix?
+		string math = implode("/", explode("\\/", llGetSubString(block, 0, q-1)));
+		// Run the math
+		string out = (str)pandaMath(math);
+		// Don't remove the point, since output should always be a float
+		while( llGetSubString(out, -1, -1) == "0" )
+			out = llDeleteSubString(out, -1, -1);
+			
+		// Remove the end char
         block = llGetSubString(block, q+1, -1);
 		split = llListReplaceList(split, [(string)out+block], i, i);
 		

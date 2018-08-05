@@ -19,10 +19,11 @@ if(SFp != SF){ \
 #define TIMER_CLIMB_ROOT "d"
 #define TIMER_COMBAT "e"
 #define TIMER_COOP_BREAKFREE "f"
+#define TIMER_MOUSELOOK "g"
 
 #define TIME_SOFTLOCK 4		// Arousal/Pain softlock lasts 3 sec
 
-#define updateCombatTimer() multiTimer([TIMER_COMBAT, "", StatusConst$COMBAT_DURATION, FALSE])
+#define updateCombatTimer() ptSet(TIMER_COMBAT, StatusConst$COMBAT_DURATION, FALSE)
 
 integer BFL = 1;
 #define BFL_NAKED 1				// 
@@ -265,7 +266,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr ){
             tClt();
 			
 			
-			multiTimer([TIMER_BREAKFREE]);
+			ptUnset(TIMER_BREAKFREE);
 			GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
 			GUI$toggleQuit(FALSE);
 			
@@ -320,7 +321,7 @@ aAR( float am, string sn, integer flags, integer iCnv, key atkr ){
 	if( flags&SMAFlag$SOFTLOCK ){
 		
 		BFL = BFL|BFL_SOFTLOCK_AROUSAL;
-		multiTimer(["SL:"+(str)BFL_SOFTLOCK_AROUSAL, "", TIME_SOFTLOCK, 0]);
+		ptSet("SL:"+(str)BFL_SOFTLOCK_AROUSAL, TIME_SOFTLOCK, 0);
 		
 	}
 	
@@ -363,7 +364,7 @@ aPP( float am, string sn, integer flags, integer iCnv, key atkr ){
 	if( flags&SMAFlag$SOFTLOCK ){
 		
 		BFL = BFL|BFL_SOFTLOCK_PAIN;
-		multiTimer(["SL:"+(str)BFL_SOFTLOCK_PAIN, "", TIME_SOFTLOCK, 0]);
+		ptSet("SL:"+(str)BFL_SOFTLOCK_PAIN, TIME_SOFTLOCK, 0);
 		
 	}
     
@@ -443,12 +444,12 @@ onDeath( string customAnim ){
 		if(SF & StatusFlag$boss_fight)
 			dur = 0;
 		else
-			multiTimer([TIMER_COOP_BREAKFREE, "", 20, FALSE]);
+			ptSet(TIMER_COOP_BREAKFREE, 20, FALSE);
 			
 	}
 	if(dur){
 	
-		multiTimer([TIMER_BREAKFREE, "", dur, FALSE]);
+		ptSet(TIMER_BREAKFREE, dur, FALSE);
 		GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, dur);
 		
 	}
@@ -458,7 +459,7 @@ onDeath( string customAnim ){
 		return Bridge$fetchRape((str)LINK_ROOT, customAnim);
 	
 	// Otherwise fetch one
-	Status$monster_rapeMe();
+	NPCInt$rapeMe();
 	Rape$activateTemplate();
 	
 
@@ -565,7 +566,7 @@ onEvt( string script, integer evt, list data ){
 			integer f = (int)j(llList2String(data,1), 0);
 			if( f&StatusClimbFlag$root_at_end ){
 				
-				multiTimer([TIMER_CLIMB_ROOT, "", 1.5, FALSE]);
+				ptSet(TIMER_CLIMB_ROOT, 1.5, FALSE);
 				BFL = BFL|BFL_CLIMB_ROOT;
 				
 			}
@@ -637,7 +638,7 @@ OS( int ic ){
 		]));
 
 		BFL = BFL|BFL_STATUS_SENT;
-		multiTimer(["_", "", 0.25, FALSE]);
+		ptSet("_", 0.25, FALSE);
 	}
 	
 	// Always keep description up to date
@@ -678,19 +679,21 @@ OS( int ic ){
 	if( FXF&fx$F_NOROT )
 		controls = controls|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
 	
-	
-	
     if(PC != controls){
         PC = controls;
         Root$statusControls(controls);
     }
-    if(PF != SF){
+	
+    if( PF != SF ){
+	
         PF = SF;
         saveFlags();
+		
     }
+	
 }
 
-timerEvent(string id, string data){
+ptEvt(string id){
 	
     if(id == TIMER_REGEN){
 		integer inCombat = (SF&StatusFlags$combatLocked)>0;
@@ -758,12 +761,17 @@ timerEvent(string id, string data){
 		saveFlags();
 		
 	}
-	else if(id == TIMER_COOP_BREAKFREE){
+	else if( id == TIMER_COOP_BREAKFREE ){
+	
 		llRezAtRoot("BreakFree", llGetPos(), ZERO_VECTOR, ZERO_ROTATION, 1);
 		SF = SF|StatusFlag$coopBreakfree;
 		saveFlags();
+		
 	}
 	
+	else if( id == TIMER_MOUSELOOK )
+		llOwnerSay("@setcam_mode:mouselook=force");
+
 	else if( startsWith(id, "SL:") )
 		BFL = BFL&~(int)llGetSubString(id, 3, -1);
 	
@@ -777,7 +785,7 @@ default
 		PLAYERS = [(string)llGetOwner()];
         OS( TRUE );
         Status$fullregen();
-        multiTimer([TIMER_REGEN, "", 1, TRUE]);
+        ptSet(TIMER_REGEN, 1, TRUE);
         llRegionSayTo(llGetOwner(), 1, "jasx.settings");
         tClt();
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
@@ -785,7 +793,7 @@ default
     }
     
     timer(){
-        multiTimer([]);
+        ptRefresh();
     }
     
 	#define LM_PRE \
@@ -799,21 +807,21 @@ default
 		list data = llJson2List(s); \
         integer pre = FXF; \
 		FXF = llList2Integer(data, 0); \
-		\
-		integer divisor = 0; \
-		if(FXF&fx$F_BLURRED){ \
-			divisor = 8; \
-		} \
 		if((pre&fx$F_BLURRED) != (FXF&fx$F_BLURRED)){ \
+			integer divisor = 0; \
+			if(FXF&fx$F_BLURRED) \
+				divisor = 2; \
 			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force"); \
 		}\
-		\
+		if((pre&fx$F_FORCE_MOUSELOOK) != (FXF&fx$F_FORCE_MOUSELOOK)){\
+			ptSet(TIMER_MOUSELOOK, (float)((FXF&fx$F_FORCE_MOUSELOOK)>0)/10, TRUE); \
+			if(~FXF&fx$F_FORCE_MOUSELOOK) \
+				llOwnerSay("@"); \
+		}\
         paDT = i2f(l2f(data, FXCUpd$DAMAGE_TAKEN)); \
         fmMR = i2f(l2f(data, FXCUpd$MANA_REGEN)); \
-		 \
 		fmPT = i2f(l2f(data,FXCUpd$PAIN_MULTI)); \
 		fmAT = i2f(l2f(data,FXCUpd$AROUSAL_MULTI)); \
-		 \
 		float perc = HP/maxHP(); \
 		float mperc = MANA/maxMana(); \
 		fmMH = i2f(l2f(data, FXCUpd$HP_MULTIPLIER)); \
@@ -981,7 +989,7 @@ default
 		
 			SF = SF|StatusFlag$invul;
 			OS(TRUE);
-			multiTimer([TIMER_INVUL,"", 6, FALSE]);
+			ptSet(TIMER_INVUL, 6, FALSE);
 			
 		}
         HP = maxHP();
@@ -1002,7 +1010,7 @@ default
 		
 		
 		// Clear rape stuff
-		multiTimer([TIMER_BREAKFREE]);
+		ptUnset(TIMER_BREAKFREE);
 		GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
 		GUI$toggleQuit(FALSE);
     }
@@ -1070,11 +1078,6 @@ default
 		OS(TRUE);
 		
 	} 
-	
-	else if( METHOD == StatusMethod$getTextureDesc ){
-		Evts$getTextureDesc(method_arg(0), id);
-	}
-    
 	
 	if(METHOD == StatusMethod$coopInteract)
 		raiseEvent(StatusEvt$interacted, (str)id);

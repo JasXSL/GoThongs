@@ -37,8 +37,26 @@ default
                 return;
             }
         }
+		
+		llSetTimerEvent(10);
         
     }
+	
+	timer(){
+		// purge deleted every 10 seconds
+		int i;
+		for(; i<count(VIS) && count(VIS); i+= VIS_STRIDE){
+			
+			if( llKey2Name(l2k(VIS, i+visAssetKey)) == "" ){
+				
+				VIS = llDeleteSubList(VIS, i, i+VIS_STRIDE-1);
+				i -= VIS_STRIDE;
+				
+			}
+			
+		}
+		
+	}
     
     listen(integer chan, string name, key id, string message){
         idOwnerCheck
@@ -92,21 +110,25 @@ default
         
         vector pos = llGetPos()-<0,0,5>;
         _portal_spawn_std(visual, pos, ZERO_ROTATION, -<0,0,5>, FALSE, FALSE, FALSE);
+		
     }
     else if(METHOD == BuffVisMethod$rem){
+	
         integer n = l2i(PARAMS, 0);
         integer i;
         for(i=0; i<count(VIS) && VIS != []; i+= VIS_STRIDE){
             
             if(l2i(VIS, i+visID) == n && l2s(VIS, i+visFollow) == (str)id){
+				
                 // Remove
                 key targ = l2k(VIS, i+visAssetKey);
-                if(targ){
+                if(targ)
                     BuffSpawn$purgeTarg(targ);
-                }
+                
                 VIS = llDeleteSubList(VIS, i, i+VIS_STRIDE-1);
                 
                 i-= VIS_STRIDE;
+				
             }
             
         }

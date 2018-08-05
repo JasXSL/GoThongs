@@ -64,6 +64,7 @@
 		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind
 		#define fx$NO_PROCS 0x20000					// PC - Disables procs
 		#define fx$F_STUNNED_IMPORTANT 0x40000		// NPC - Effect stuns bosses as well
+		#define fx$F_FORCE_MOUSELOOK 0x80000		// PC - Makes only mouselook work
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE|fx$F_NO_TARGET)
@@ -72,7 +73,7 @@
 
 	#define fx$MANA_REGEN_MULTI 15				// (float)add
 	#define fx$DAMAGE_TAKEN_MULTI 16			// (float)add, (bool)by_caster
-	#define fx$DAMAGE_DONE_MULTI 17				// (float)add, (bool)to_caster (TODO)
+	#define fx$DAMAGE_DONE_MULTI 17				// (float)add, (bool)to_caster
 	#define fx$CASTTIME_MULTI 18				// (float)add
 	#define fx$SPELL_DMG_TAKEN_MOD 19			// (str)spellName, (float)add, (bool)by_caster - PC only SpellName is the FX package name :: Increases efficiency of dur/man/ars/pain sections of a spell, useful for heals too
 	#define fx$ICON 20							// (key)icon, (str)description
@@ -125,6 +126,7 @@
 	#define fx$MANA_MULTI 64					// (float)amount - PC only, increases or decreases max mana
 	#define fx$HP_MULTI 65						// (float)amount - Increases or decreases max HP
 	#define fx$REDUCE_CD 66						// (int)spells, (float)seconds - spells is bitwise combination of (hotkeys) 1=5, 2=1, 4=2...
+	#define fx$FOV 67							// (float)fov - Field of view. PC only. Last one in gets used
 	
 // conditions
 	// Built in
@@ -150,7 +152,7 @@
 	
 	#define fx$COND_HAS_GENITALS 12				// (int)bitflags - See _core
 	#define fx$COND_TEAM 14						// (int)team1, (int)team2... - Validates if the receiver is on any of these teams. If reverse it validates if the receiver is not on either of the teams
-	#define fx$COND_CASTER_ANGLE 15				// Minimum angle from caster fwd. Positive X for player casters, positive Z for NPC casters. Viable values are 0-PI
+	#define fx$COND_CASTER_ANGLE 15				// Minimum angle from caster fwd. Positive X for player casters, positive Z for NPC casters. Viable values are 0-PI. 1.57 is "in front"
 	
 // Reserved names:
 	#define FXN$INFUSION "_I"					// Bloodlust

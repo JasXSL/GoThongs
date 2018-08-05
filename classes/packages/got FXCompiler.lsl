@@ -158,7 +158,7 @@ default
 				replaceStacks(PID, s);
 
 				#ifdef IS_NPC
-					Status$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
+					NPCInt$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
 				#else
 					Evts$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
 				#endif

@@ -4,6 +4,8 @@
 integer BFL;
 #define BFL_RECENT_CACHE 0x1
 #define BFL_QTE_PRESSED 0x2 // QTE button pressed
+#define BFL_TEXTURES_SENT 0x4			// Block sending more textures
+#define BFL_TEXTURES_SCHEDULED 0x8		// Textures should be sent when cooldown expires
 
 integer TEAM = TEAM_PC;
 
@@ -106,7 +108,7 @@ onEvt(string script, integer evt, list data){
 	else if( evt == StatusEvt$targeted_by && script == "got Status" ){
 		
 		TARGETED_BY = data;
-		multiTimer(["OP", "", .2, FALSE]);
+		ptSet("OP", .2, FALSE);
 		
 	}
 	
@@ -144,7 +146,7 @@ qteButtonTouched(integer button){
 		llPlaySound("dafef83b-035f-b2b8-319d-daac01b0936e", 1);
 		llSetLinkColor(P_BUTTONS, <1,.25,.25>, l2i(QTE_BORDERMAP, button));
 		llSetLinkTextureAnim(P_BUTTONS, ANIM_ON|LOOP|PING_PONG, l2i(QTE_BORDERMAP, button), 16,2, 0,0, 120);
-		multiTimer(["QTE", "", 2, FALSE]);
+		ptSet("QTE", 2, FALSE);
 		BFL = BFL|BFL_QTE_PRESSED;
 	}
 	
@@ -155,7 +157,7 @@ qteButtonTouched(integer button){
 toggleQTE(integer on){
 	
 	if(!on){
-		multiTimer(["QTE"]);
+		ptUnset("QTE");
 		llSetLinkPrimitiveParamsFast(P_BUTTONS, [PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR]);
 		return;
 	}
@@ -187,28 +189,48 @@ onQteEnd(integer success){
 }
 
 
-timerEvent(string id, string data){
+ptEvt( string id ){
+
 	if(id == "CACHE")
 		BFL = BFL&~BFL_RECENT_CACHE;
 	else if(id == "QTE")
 		toggleQTE(QTE_STAGES);
 	else if(id == "OP"){
 	
+		// Always send to self
 		integer i; list out;
 		for( i=0; i<llGetListLength(SPELL_ICONS) && i/SPSTRIDE < 8; i+=SPSTRIDE )
 			out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
+		GUI$setMySpellTextures(out);
+	
+		// Textures sent too recently
+		if( BFL&BFL_TEXTURES_SENT || !count(TARGETED_BY) ){
+		
+			BFL = BFL|BFL_TEXTURES_SCHEDULED;
+			return;
+			
+		}
+			
+		BFL = BFL_TEXTURES_SENT;
 		
 		string s = llDumpList2String(out,",");
-		GUI$setMySpellTextures(out);
 		for( i=0; i<count(TARGETED_BY); i+= 2 ){
 			
 			integer n = l2i(TARGETED_BY, i+1);
-			if( n&StatusTargetFlag$targeting )
+			if( n&NPCInt$targeting )
 				GUI$setSpellTextures(l2s(TARGETED_BY, i), s);
 		
 		}
+		ptSet("OPE", count(TARGETED_BY)*0.25, FALSE);
 		
     }
+	else if( id == "OPE" ){
+		
+		BFL = BFL&~BFL_TEXTURES_SENT;
+		if( BFL&BFL_TEXTURES_SCHEDULED )
+			ptSet("OP", 0.1, FALSE);			
+		
+	}
 	
 }
 
@@ -266,7 +288,7 @@ default
 	
 	
 	timer(){
-		multiTimer([]);
+		ptRefresh();
 	}
 	
 	// This is the standard linkmessages
@@ -312,46 +334,62 @@ default
 				pointer++;
 				output(FALSE);
 			}
-			multiTimer(["CACHE", "", 4, FALSE]);
+			ptSet("CACHE", 4, FALSE);
 		}
 		
-		else if(METHOD == EvtsMethod$addTextureDesc){
-			// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
-            SPELL_ICONS += [
-				// PID
-				(integer)method_arg(0), 
-				// Texture
-				(key)method_arg(1), 
-				// Desc
-				(str)method_arg(2), 
-				// Added
-				(int)method_arg(3), 
-				// Duration
-				(int)method_arg(4), 
-				// Stacks
-				(int)method_arg(5)
-			];
-			multiTimer(["OP", "", .1, FALSE]);
+		else if(
+			METHOD == EvtsMethod$addTextureDesc ||
+			METHOD == EvtsMethod$remTextureDesc ||
+			METHOD == EvtsMethod$stacksChanged
+		){
+			
+			if( METHOD == EvtsMethod$addTextureDesc ){
+				// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
+				SPELL_ICONS += 
+					// PID
+					(list)l2i(PARAMS, 0) + 
+					// Texture
+					method_arg(1) +
+					// Desc
+					method_arg(2) + 
+					// Added
+					l2i(PARAMS, 3) + 
+					// Duration
+					l2i(PARAMS, 4) + 
+					// Stacks
+					l2i(PARAMS, 5)
+				;
+			}
+			else if(METHOD == EvtsMethod$remTextureDesc){
+			
+				integer pid = l2i(PARAMS, 0);
+				integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+				if( pos == -1 )
+					return;
+				
+				SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
+				
+			}
+			else{
+			
+				integer pid = (integer)method_arg(0);
+				integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+				if( pos == -1 )
+					return;
+				
+				SPELL_ICONS = llListReplaceList(SPELL_ICONS, 
+					(list)l2i(PARAMS, 1) +l2i(PARAMS, 2) + l2i(PARAMS, 3), 
+				pos*SPSTRIDE+3,pos*SPSTRIDE+5);
+				
+			}
+			
+			
+			// Set textures after 0.2 sec of finishing receiving updates
+			ptSet("OP", 0.2, FALSE);
+			
+			
         }
-        else if(METHOD == EvtsMethod$remTextureDesc){
-            integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if(pos == -1)return;
-			
-            SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
-            multiTimer(["OP", "", .1, FALSE]);
-        }
-		
-		else if(METHOD == EvtsMethod$stacksChanged){
-			
-			integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if(pos == -1)return;
-			
-			SPELL_ICONS = llListReplaceList(SPELL_ICONS, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], pos*SPSTRIDE+3,pos*SPSTRIDE+5);
-			multiTimer(["OP", "", .1, FALSE]);
-		}
-		
+
     }
 	
 	if(METHOD == EvtsMethod$startQuicktimeEvent){
@@ -374,7 +412,7 @@ default
 		
 		float preDelay = l2f(PARAMS, 1);
 		if(preDelay){
-			multiTimer(["QTE", 0, preDelay, FALSE]);
+			ptSet("QTE", preDelay, FALSE);
 			BFL = BFL|BFL_QTE_PRESSED;
 		}
 		else
@@ -383,10 +421,8 @@ default
 	
 	else if(METHOD == EvtsMethod$getTextureDesc){
         
-		
-		key t = method_arg(1);
-		if( t == "" )
-			t = llGetOwner();
+		if( id == "" )
+			id = llGetOwner();
 		
 		integer pid = (integer)method_arg(0);
         integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
@@ -413,7 +449,7 @@ default
 		
 		}
 		
-		llRegionSayTo(llGetOwnerKey(t), 0, implode("", out));
+		llRegionSayTo(llGetOwnerKey(id), 0, implode("", out));
 		
     }
 

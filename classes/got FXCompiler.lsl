@@ -43,11 +43,15 @@
 	#define FXCUpd$SPRINT_FADE_MULTI 29	// (float)multiplier - Lower = longer sprint
 	#define FXCUpd$BACKSTAB_MULTI 30	// (float)multiplier - Increases or lowers damage from behind
 	#define FXCUpd$SWIM_SPEED_MULTI 31	// (float)multiplier - Default 1
+	#define FXCUpd$FOV 32				// (float)field_of_view - 0 resets
 	
 // Settings that are are not multiplicative
-#define FXCUpd$non_multi [FXCUpd$FLAGS, FXCUpd$UNSET_FLAGS, FXCUpd$HP_ADD, FXCUpd$MANA_ADD, FXCUpd$AROUSAL_ADD, FXCUpd$PAIN_ADD, FXCUpd$TEAM]
+#define FXCUpd$non_multi (list)FXCUpd$FLAGS + FXCUpd$UNSET_FLAGS + FXCUpd$HP_ADD + FXCUpd$MANA_ADD + FXCUpd$AROUSAL_ADD + FXCUpd$PAIN_ADD + FXCUpd$TEAM
 // Settings that are arrays that should be appended
-#define FXCUpd$arrays [FXCUpd$CONVERSION]
+#define FXCUpd$arrays (list)FXCUpd$CONVERSION
+// Settings that are floats that should be overwritten
+#define FXCUpd$overwrite (list)FXCUpd$FOV
+
 
 #define FXCEvt$hitFX 1					// (vec)color, (int)flags, (key)attacker
 #define FXCEvt$pullStart 2				// void - Pull has started
@@ -149,8 +153,8 @@
 	
 // Texture desc, npc/pc specific
 #ifdef IS_NPC
-	#define ATD Status$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE));
-	#define RTD Status$remTextureDesc(pid);
+	#define ATD NPCInt$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE));
+	#define RTD NPCInt$remTextureDesc(pid);
 #else
 	#define ATD Evts$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE));
 	#define RTD Evts$remTextureDesc(pid);

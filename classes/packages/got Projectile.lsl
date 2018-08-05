@@ -84,7 +84,7 @@ STEP(){
     if(dist<.3){
         llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
         raiseEvent(ProjectileEvt$targetReached, TARGET);
-        Status$hitfx(TARGET);
+        NPCInt$hitfx(TARGET);
 		llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
         llSleep(2);
         llDie();

@@ -17,12 +17,15 @@ key TARG;
 key TARG_ICON;
 integer TARG_TEAM;
 integer TEAM = TEAM_PC;
+integer TARG_IS_PC;
 key TARG_FOCUS;			// Player focus target
 
 key ROOT_LEVEL;			// Current level being played
 
 integer BFL;
 #define BFL_WILDCARD 0x1
+
+
 
 
 #define sendHUDs() runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN)
@@ -100,7 +103,12 @@ integer setTarget(key t, key icon, integer force, integer team){
 		
 	}
 	
-	Status$setTargeting(TARG, -StatusTargetFlag$targeting);
+	// Clear previous target targeting flag
+	TARG_IS_PC = l2i(llGetObjectDetails(t, [OBJECT_ATTACHED_POINT]), 0);
+	if( TARG_IS_PC )
+		Status$setTargeting(TARG, -NPCInt$targeting);
+	else
+		NPCInt$setTargeting(TARG, -NPCInt$targeting);
 	
 	TARG_ICON = icon;
 	TARG = t;
@@ -108,17 +116,19 @@ integer setTarget(key t, key icon, integer force, integer team){
 	
 	// Clear current target if it has changed
 	
-	integer tflags = StatusTargetFlag$targeting;
+	integer tflags = NPCInt$targeting;
 	
 	// You get status updates from yourself and coop partner automatically, but not spell icons
 	llPlaySound("0b81cd3f-c816-1062-332c-bca149ef1c82", .2);
-	// Don't focus coop target
-	if( team == TEAM && t != TARG_FOCUS && t != "" && llListFindList(COOP_HUDS, [(str)t]) == -1 ){
+	// NPC only
+	if( team == TEAM && t != TARG_FOCUS && t != ""  ){
 	
-		Status$setTargeting(TARG_FOCUS, -StatusTargetFlag$focusing);
+		// Need to clear from previous NPC
+		if( !l2i(llGetObjectDetails(TARG_FOCUS, (list)OBJECT_ATTACHED_POINT), 0) )
+			NPCInt$setTargeting(TARG_FOCUS, -NPCInt$focusing);
 		TARG_FOCUS = t;
 		raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
-		tflags = tflags|StatusTargetFlag$focusing;
+		tflags = tflags|NPCInt$focusing;
 		
 	}
 	
@@ -132,10 +142,12 @@ integer setTarget(key t, key icon, integer force, integer team){
 		
     // Make sure your target knows you are targeting them
 	string ta = TARG;
-	if(ta == llGetKey())
+	if( ta == llGetKey() )
 		ta = (string)LINK_THIS;
-    Status$setTargeting(ta, tflags);
-    
+	if( TARG_IS_PC )
+		Status$setTargeting(ta, tflags);
+    else
+		NPCInt$setTargeting(ta, tflags);
 	
     return TRUE;
 }
@@ -284,7 +296,11 @@ default
 			string targ = (string)LINK_ROOT;
 			if( floor((float)button/8) == 1 && TARG != llGetKey() )
 				targ = TARG;
-            Status$getTextureDesc(targ, desc);
+			
+			if( TARG_IS_PC || targ == (string)LINK_ROOT )
+				Evts$getTextureDesc(targ, desc);
+			else
+				NPCInt$getTextureDesc(targ, desc);
         }
         raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0), llDetectedTouchFace(0)]));
     }
@@ -489,7 +505,16 @@ default
 	}
     
     else if(METHOD == RootMethod$setTarget){
+		
+		if( l2k(PARAMS, 2) ){
+			
+			if( l2k(PARAMS, 2) != TARG )
+				return;
+			PARAMS = llListReplaceList(PARAMS, (list)TRUE, 2,2);
+			
+		}
         setTarget(method_arg(0), method_arg(1), l2i(PARAMS, 2), l2i(PARAMS, 3));
+		
     }
 	else if(METHOD == RootMethod$setLevel){
 	

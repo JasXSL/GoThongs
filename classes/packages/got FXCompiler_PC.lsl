@@ -270,11 +270,7 @@ updateGame(){
 	if( teamMod )
 		team = l2i(teamMod, -1);
 		
-	float grav = 0;
-	list gMod = getDFXSlice( fx$GRAVITY, 1);
-	if( gMod )
-		grav = l2f(gMod, -1);
-	llSetBuoyancy(grav);
+	llSetBuoyancy(l2f(getDFXSlice( fx$GRAVITY, 1), -1));
 	
     // Compile lists of spell specific modifiers
     list spdmtm; // [(str)spellName, (int)playerID, (float)dmgmod]
@@ -370,7 +366,8 @@ updateGame(){
 		mkarr(conv),		// 28 Conversions
 		100,				// 29 Sprint fade (f2i)
 		100,				// 30 Backstab mul (f2i)
-		100					// 31 Swim speed (f2i)
+		100,					// 31 Swim speed (f2i)
+		f2i(l2f(getDFXSlice( fx$FOV, 1), -1)) // 32, FoV (f2i)
 	])); 
 }
 #include "got/classes/packages/got FXCompiler.lsl"

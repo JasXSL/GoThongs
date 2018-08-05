@@ -39,10 +39,6 @@ integer P_BOSS_PORTRAIT;
 integer P_PROGRESS;
 #define PROGRESS_POS <0.000000, -0.328401, 0.307781>
 
-integer P_BLIND;
-#define BLIND_SCALE <2.50000, 1.25000, 0.01000>
-#define BLIND_POS <0.204500, 0.000000, 0.660400>
-
 integer P_SPINNER;
 #define SPINNER_POS <-0.035507, -0.000000, 0.390417>
 
@@ -169,41 +165,51 @@ default
 		if(~BFL&BFL_TOGGLED)
 			return;
 			
-		list statuses = [TARG]+PLAYER_HUDS+[ boss];
+		list statuses = (list)TARG+PLAYER_HUDS+boss;
 		list statuses_flags;
 		integer i;
 		
 		
 		list out = [];
 		
-		if(llKey2Name(boss) == "" && boss != ""){
+		if( llKey2Name(boss) == "" && boss != "" )
 			GUI$toggleBoss(LINK_THIS, "", FALSE);
-		}
-		
 		
 		// Loops through the keys above and sets to -1 if not found, or a bitwise resource block
-		for(i=0; i<llGetListLength(statuses); i++){
+		for( ; i<count(statuses); ++i ){
+		
 			integer n = -1;
 			key t = l2k(statuses, i);
 			integer s = 0;
 			
-			if(llKey2Name(t)){
+			if( llKey2Name(t) ){
+			
 				list data = llGetObjectDetails(t, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
 				list split = explode("$", l2s(data, 1));
 				n = l2i(split, 2); // Resource block
 				s = l2i(split, 5);
+				
 				// PC
-				if(l2i(data, 0)){ // Attached
+				if( l2i(data, 0) ){ // Attached
+					
 					n = l2i(split, 0); // HP block is in a different position of the description for PC
 					s = l2i(split, 1); // Same with status
+					
 				}
+				
+				if( i == 0 && (l2i(split, 6)&Monster$RF_NO_TARGET || s&StatusFlag$dead) )
+					Root$clearTargetIfIs(LINK_THIS, TARG);
+				
 			}
+			
 			statuses_flags += s;
-			statuses = llListReplaceList(statuses, [n], i, i);
+			statuses = llListReplaceList(statuses, (list)n, i, i);
+			
 		}
 		
 		// Cycle status bars
-		for(i=0; i<count(statuses); i++){
+		for( i=0; i<count(statuses); ++i ){
+		
 			integer n = l2i(statuses, i);
 				
 			integer bar = l2i(BARS, 1); 						// Targ
@@ -389,7 +395,6 @@ default
 			else if(name == "LOADING")P_LOADINGBAR = nr;
             else if(name == "QUIT")P_QUIT = nr;
             else if(name == "SPINNER")P_SPINNER = nr;
-			else if(name == "BLIND")P_BLIND = nr;
 			else if(name == "PROGRESS")P_PROGRESS = nr;
 			else if(name == "BOSS_HEALTH")P_BOSS_HP = nr;
 			else if(name == "BOSS_PORTRAIT")P_BOSS_PORTRAIT = nr;
@@ -403,6 +408,7 @@ default
 		llListen(GCHAN+1, "", "", "");
 		llSetTimerEvent(0.5); // tick status bars
 		//toggle(TRUE);
+		llOwnerSay("@setoverlay=y");
     } 
 	
 	listen(integer chan, string name, key id, string message){
@@ -421,11 +427,12 @@ default
 			(flags&fx$F_BLINDED && ~CACHE_FX_FLAGS&fx$F_BLINDED) || \
 			(~flags&fx$F_BLINDED && CACHE_FX_FLAGS&fx$F_BLINDED) \
 		){ \
-			integer on; \
-			if(flags&fx$F_BLINDED)on = TRUE; \
-			list d = [PRIM_POSITION, BLIND_POS, PRIM_SIZE, BLIND_SCALE]; \
-			if(!on)d = [PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR]; \
-			llSetLinkPrimitiveParams(P_BLIND, d); \
+			string out = "@setoverlay=n,setoverlay_texture:"+TEXTURE_BLANK+"=force,setoverlay_tint:0/0/0=force"; \
+			if(flags&fx$F_BLINDED) \
+				out+= ",setoverlay_alpha:1=force"; \
+			else \
+				out+= ",setoverlay_tween:0;;1=force"; \
+			llOwnerSay(out); \
 		} \
 		CACHE_FX_FLAGS = flags; \
 	}
@@ -683,7 +690,6 @@ default
 			out+= [
 				PRIM_LINK_TARGET, P_BOSS_HP, PRIM_POSITION, ZERO_VECTOR,
 				PRIM_LINK_TARGET, P_BOSS_PORTRAIT, PRIM_POSITION, ZERO_VECTOR,
-				PRIM_LINK_TARGET, P_BLIND, PRIM_POSITION, ZERO_VECTOR, PRIM_SIZE, ZERO_VECTOR,
 				PRIM_LINK_TARGET, P_PROGRESS, PRIM_POSITION, ZERO_VECTOR
 			];
 			onEvt("#ROOT", RootEvt$targ, []);

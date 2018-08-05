@@ -82,15 +82,14 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
         else if(t == fx$AGGRO)
             Status$monster_aggro(caster, l2f(fx,1));
         else if(t == fx$HITFX)
-            Status$hitfx((string)LINK_ROOT);
+            NPCInt$hitfx((string)LINK_ROOT);
         else if(t == fx$TAUNT)
 			Status$monster_taunt(caster, l2i(fx,1));
 		
 		else if(t == fx$SPAWN_VFX){
 			CACHE_SFX += [llGetTime(), mkarr(llDeleteSubList(fx,0,0))];
-			if(llGetInventoryType(l2s(fx, 1)) != INVENTORY_OBJECT){
+			if( llGetInventoryType(l2s(fx, 1)) != INVENTORY_OBJECT )
 				SpellFX$fetchInventory(l2s(fx,1));
-			}
 			spawnEffects();
 		}
     }
@@ -112,7 +111,6 @@ addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, 
         fxs = llDeleteSubList(fxs,0,0);
         integer t = llList2Integer(fx, 0);
 		fx = llDeleteSubList(fx, 0, 0);
-        
         // Don't forget to multiply by stacks
         dumpFxAddsShared()
         
@@ -129,7 +127,7 @@ addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, 
 
 		else if( t == fx$LTB ){
 			
-			BuffVis$addToMe(pid, l2s(fx, 1), l2s(fx,2));
+			BuffVis$addToMe(pid, l2s(fx, 0), l2s(fx,1));
 			jump fxContinue;
 			
 		}
@@ -165,9 +163,10 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
             }
 			
         }
-		else if(t == fx$LTB)
+		
+		if(t == fx$LTB)
 			BuffVis$remFromMe(pid);
-
+		
         // Shared are defined in the got FXCompiler header file
         dumpFxRemsShared()
         
@@ -225,8 +224,8 @@ updateGame(){
 		0,					// Pain multi
 		0,					// Arousal multi
 		// PASSIVES (not used in this)
-		stat( fx$HP_ADD ),			// HP add, Not yet implemented
-		stat( fx$HP_MULTI ),		// HP multi, not yet implemented
+		0,			// HP add, Not yet implemented
+		0,		// HP multi, not yet implemented
 		0,0,				// Mana add/multi
 		0,0,				// Arousal add/multi
 		0,0,				// Pain add/multi

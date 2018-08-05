@@ -199,6 +199,7 @@ onEvt(string script, integer evt, list data){
 					list eva = explode("||", llList2String(against, i));
 					// From event
 					string evtv = l2s(data, i);
+					
 					// Quick check
 					if( (~llListFindList(eva, [evtv]) && evtv != "") || !llStringLength(l2s(eva, 0)) )
 						jump vSuccess;
@@ -209,6 +210,7 @@ onEvt(string script, integer evt, list data){
 						string f = llGetSubString(v, 0, 0);
 						float evtF = (float)evtv;
 						float packageF = (float)llGetSubString(v, 1, -1);
+						
 						if( 
 							(f == ">" && evtF > packageF ) ||
 							(f == "<" && evtF < packageF ) ||
@@ -237,6 +239,14 @@ onEvt(string script, integer evt, list data){
 				integer targ = llList2Integer(evdata, 2);
 				integer maxtargs = llList2Integer(evdata, 3);
 				if(maxtargs == 0)maxtargs = -1;
+				
+				// 0 or lower uses an event value
+				if( targ < 1 ){
+				
+					FX$send(l2s(data, llAbs(targ)), sender, wrapper, TEAM);
+					jump evtNext;
+					
+				}
 				
 				// AOE cannot be limited by nr, maxtargs is instead used as a way to limit distance
 				if(targ&TARG_AOE){
@@ -303,6 +313,7 @@ integer preCheck(key sender, list package, integer team){
         integer inverse = (c<0);				// Should return TRUE if validation fails, otherwise false
         c = llAbs(c);
         
+		
         // Built in conditions
         if(c == fx$COND_HAS_PACKAGE_NAME || c == fx$COND_HAS_PACKAGE_TAG){
             integer found;
@@ -344,12 +355,9 @@ integer preCheck(key sender, list package, integer team){
 			add = llFabs(ang) < l2f(dta, 0);
 		
 		}
-			
-		
 		else if( c == fx$COND_TEAM )
 			add = ~llListFindList(dta, (list)((float)TEAM));
-		
-		
+
 		else if(c == fx$COND_SELF)
 			add = (sender == "s");
 		

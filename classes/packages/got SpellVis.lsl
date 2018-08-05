@@ -1,12 +1,3 @@
-/*
-	Todo:
-	
-	- SpellMan queue needs fix
-	
-	
-*/
-
-
 #define USE_EVENTS
 #include "got/_core.lsl"
  

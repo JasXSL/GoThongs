@@ -39,7 +39,6 @@
 #include "xobj_core/libraries/XLS.lsl"
 
 // Here you can also include xobj headers like:
-#include "xobj_core/classes/jas Dialog.lsl"
 #include "xobj_core/classes/jas Supportcube.lsl"
 #include "xobj_core/classes/jas Remoteloader.lsl"
 #include "xobj_core/classes/jas AnimHandler.lsl"
@@ -60,6 +59,7 @@
 #include "./_lib_fx.lsl"
 #include "./_lib_fx_macros.lsl"
 #include "./classes/got Bridge.lsl"
+#include "./classes/got NPCInt.lsl"
 #include "./classes/got ThongMan.lsl"
 #include "./classes/got FX.lsl"
 #include "./classes/got FXCompiler.lsl"

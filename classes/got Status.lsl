@@ -18,20 +18,15 @@
 	#define SMBUR$buildPain(pain, spellName, flags) [SMBUR$pain, 3, f2i(pain), spellName, flags]
 	
 #define StatusMethod$fullregen 5		// NULL
-#define StatusMethod$setTargeting 6		// (int)target_flags - This sender is now targeting you. Send status updates to them. Use negative values to untarget
-	#define StatusTargetFlag$targeting 0x1			// simple targeting
-	#define StatusTargetFlag$focusing 0x2			// focusing as well
+#define StatusMethod$setTargeting 6		// (int)flags, see got NPCInt
 #define StatusMethod$get 7				// returns [STATUS_FLAGS, FXFLAGS, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), (int)sex_flags, (int)team]
 #define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, (arr)damage_taken_mod, (arr)healing_taken_mod]
 										// First argument is a strided array of [str package_name, int key2int(caster), float multiplier]
-#define StatusMethod$addTextureDesc 9	// NPC only. PC uses EvtMethod$addTextureDesc | pid, texture, desc, added, duration, stacks - Adds a spell icon
-#define StatusMethod$remTextureDesc 10	// NPC only. PC uses EvtMethod$remTextureDesc | (key)texture						
-#define StatusMethod$getTextureDesc 11	// (int)pos, (key)texture - Gets info about a spell by pos
+
 #define StatusMethod$setSex 12			// (int)sex - 
 #define StatusMethod$outputStats 13		// NULL - Forces stats update (pc only)
 #define StatusMethod$loading 14			// (bool)loading - Sets loading flag
 #define StatusMethod$setDifficulty 15	// (int)difficulty - between 0->5
-#define StatusMethod$stacksChanged 16	// NPC Only, use got Evts for PC. (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
 #define StatusMethod$coopInteract 17		// void - Coop player has interacted with you
 #define StatusMethod$toggleBossFight 18			// (bool)fight - Received from GUI, toggles boss fight on or off
 #define StatusMethod$setTeam 19					// (int)team - PC/NPC
@@ -44,12 +39,10 @@
 #define StatusMethod$monster_dropAggro 100		// (key)target, (int)complete - Drops aggro. If complete is 0, it removes the player from aggro list. If 1 it preserves the aggro until the enemy is seen/deals damage again, like if 2 players are fighting and the tank gets out of LOS it will not remove the aggro next time it sees the tank. If 2 it will just reset the aggro number to 1. If 3, it shuffles all aggro
 #define StatusMethod$monster_setFlag 101		// (int)flag
 #define StatusMethod$monster_remFlag 102		// (int)flag - Can be used to set a status flag on a monster
-#define StatusMethod$monster_takehit 103		// void - Triggers monster take hit visual
 #define StatusMethod$monster_aggro 104			// (key)targ, (float)amt
 #define StatusMethod$monster_attemptTarget 105	// (int)force - Same effect as clicking the monster
 #define StatusMethod$monster_taunt 106			// (key)targ, (bool)inverse - Resets everyone but target's aggro or if inverse is set, resets target's aggro
 #define StatusMethod$monster_aggroed 107		// (key)targ, (float)range, (int)team - Sent by monsters when they aggro a player naturally. Aggros everything in range.
-#define StatusMethod$monster_rapeMe 108			// void - Sent as omni from player upon death
 #define StatusMethod$monster_overrideDesc 109	// (str)desc - Overrides the monster description
 
 // CLIMBABLE DOCUMENTATION
@@ -128,7 +121,7 @@
 #define StatusFlags$NON_VIABLE (StatusFlag$dead|StatusFlag$raped|StatusFlag$loading|StatusFlag$cutscene)		// For monsters to assume the PC can't be interacted with
 
 
-#define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
+
 
 /*
 #define Status$addDurability(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addDurability, [amt, "", spellName, flags], TNN)
@@ -137,6 +130,8 @@
 #define Status$addPain(amt, spellName, flags) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addPain, [amt, spellName, flags], TNN)
 */
 
+// This is only for PC. NPC uses got NPCInt instead
+#define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
 
 #define Status$batchUpdateResources(attacker, SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, (list)llGetSubString((str)attacker, 0, 7)+SMBUR, TNN)
 // NPC
@@ -154,13 +149,10 @@
 #define Status$fullregenTargetNoInvul(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [1], TNN)
 #define Status$get(targ, cb) runMethod(targ, "got Status", StatusMethod$get, [], cb)
 #define Status$spellModifiers(spell_dmg_taken_mod, dmg_taken_mod, healing_taken_mod) runMethod((string)LINK_ROOT, "got Status", StatusMethod$spellModifiers, [mkarr(spell_dmg_taken_mod), mkarr(dmg_taken_mod), mkarr(healing_taken_mod)], TNN)
-#define Status$addTextureDesc(pid, texture, desc, added, duration, stacks) runMethod((string)LINK_ROOT, "got Status", StatusMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks], TNN)
-#define Status$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Status", StatusMethod$remTextureDesc, [pid], TNN)
-#define Status$getTextureDesc(targ, pid) runMethod(targ, "got Status", StatusMethod$getTextureDesc, [pid], TNN)
+
 #define Status$setSex(sex) runMethod((string)LINK_ROOT, "got Status", StatusMethod$setSex, [sex], TNN)
 #define Status$loading(targ, loading) runMethod(targ, "got Status", StatusMethod$loading, [loading], TNN)
 #define Status$setDifficulty(difficulty) runMethod((str)LINK_ROOT, "got Status", StatusMethod$setDifficulty, [difficulty], TNN)
-#define Status$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Status", StatusMethod$stacksChanged, [pid, added, duration, stacks], TNN)
 #define Status$refreshCombat() llMessageLinked(LINK_ROOT, TASK_REFRESH_COMBAT, "", "") 
 #define Status$toggleBossFight(on) runMethod((str)LINK_ROOT, "got Status", StatusMethod$toggleBossFight, [on], TNN)
 #define Status$coopInteract(targ) runMethod((str)targ, "got Status", StatusMethod$coopInteract, [], TNN)
@@ -169,13 +161,11 @@
 
 // Monster
 #define Status$dropAggro(targ) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ], TNN)
-#define Status$hitfx(targ) runMethod(targ, "got Status", StatusMethod$monster_takehit, [], TNN)
 #define Status$monster_attemptTarget(targ, force) runMethod(targ, "got Status", StatusMethod$monster_attemptTarget, [force], TNN)
 #define Status$monster_aggro(targ, amt) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_aggro, [targ, amt], TNN)
 #define Status$dropAggroConditional(targ, condition) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ, condition], TNN)
 #define Status$monster_taunt(targ, inverse) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_taunt, [targ, inverse], TNN)
 #define Status$monster_aggroed(player, range, team) runLimitMethod(llGetOwner(), "got Status", StatusMethod$monster_aggroed, [player, range, team], TNN, range)
-#define Status$monster_rapeMe() runOnPlayers(k, runLimitMethod(k, "got Status", StatusMethod$monster_rapeMe, [], TNN, 10);)
 #define Status$monster_overrideDesc(desc) runMethod((str)LINK_ROOT, "got Status", StatusMethod$monster_overrideDesc, [desc], TNN)
 #define Status$setTeam(targ, team) runMethod((str)targ, "got Status", StatusMethod$setTeam, [team], TNN)
 
