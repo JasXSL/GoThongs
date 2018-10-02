@@ -2,8 +2,8 @@
 #include "got/_core.lsl"
 
 list OST; // Output status to (key)id, (int)flags
-#define SPSTRIDE 3
-list SPI;   // Spell Icons [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc]
+#define SPSTRIDE 5
+list SPI;   // Spell Icons [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc, (str)senderKey[0-8], (int)detrimental]
 integer T_CHAN;
 list PLAYERS;
 integer BFL;
@@ -21,16 +21,39 @@ string RN;            // Rape name, Usually prim name
 float hAdd;             // Height add for raycast
 
 // Min time between icon outputs
-#define oqTime count(OST)*0.25
+#define oqTime count(OST)/2*0.25
+
+// Turns an 8 byte character into a key if they are targeting you
+string getTargetingPlayer( string stub ){
+
+	int i;
+	for( ;i<count(OST); i+= 2 ){
+		if( llGetSubString(l2s(OST, i), 0, 7) == stub && l2i(OST, i+1)&NPCInt$targeting  )
+			return l2s(OST, i);
+	}
+	return "";
+	
+}
+sendTextures( string target ){
+	if(target == "")
+		return;
+	string t = llGetSubString(target, 0, 7);
+	string out = "";
+	integer i;
+    for( ; i<count(SPI); i+=SPSTRIDE ){
+		if( !l2i(SPI, i+4) || l2s(SPI, i+3) == t )		// Show beneficial effects and sender effects
+			out+= l2s(SPI, i)+","+l2s(SPI,i+1)+",";
+	}
+	out = llDeleteSubString(out, -1, -1);	// Remove trailing comma
+	GUI$setSpellTextures(target, out);
+}
 
 ptEvt(string id){
     if( id == "OT" ){ \
-        integer i; string out;\
-        for( ; i<count(SPI); i+=SPSTRIDE )\
-            out+= l2s(SPI, i)+","+l2s(SPI,i+1)+",";\
-        out = llDeleteSubString(out, -1, -1);\
+		integer i; \
         for( i = 0; i<count(OST); i+= 2)\
-            GUI$setSpellTextures(l2s(OST, i), out); \
+			if(l2i(OST, i+1)&NPCInt$targeting) \
+				sendTextures(l2s(OST, i)); \
     } \
     else if( id == "OQ" ){ \
         if( BFL&BFL_TEX_QUEUE ){ \
@@ -108,7 +131,7 @@ default{
                 OST += [(str)id, cur];
 
             if( cur )
-                ptSet("OT",.01,FALSE);
+                sendTextures(id);
 
             //raiseEvent(StatusEvt$targeted_by, mkarr(OST));
             NPCSpells$setOutputStatusTo(OST);
@@ -156,10 +179,15 @@ default{
             SPI += [
                 l2i(PARAMS, 0), 
                 method_arg(1)+","+method_arg(3)+","+method_arg(4)+","+method_arg(5), 
-                method_arg(2)
+                method_arg(2),
+				method_arg(6),
+				l2i(PARAMS, 7)
             ];
-            ptSet("OT", .05, FALSE);
-            
+			
+			if( l2i(PARAMS, 7) ){
+				sendTextures(getTargetingPlayer(method_arg(6)));
+				return;
+			}
         }
         else if(METHOD == NPCIntMethod$remTextureDesc){
         
@@ -167,9 +195,14 @@ default{
             integer pos = llListFindList(SPI, [pid]);
             if( pos == -1 )
                 return;
+            int detrimental = l2i(SPI, pos+4);
+			str casterStub = l2s(SPI, pos+3);
+			SPI = llDeleteSubList(SPI, pos, pos+SPSTRIDE-1);
+			if( detrimental ){
+				sendTextures(getTargetingPlayer(casterStub));
+				return;
+			}
             
-            SPI = llDeleteSubList(SPI, pos, pos+SPSTRIDE-1);
-            ptSet("OT", .3, FALSE);
             
         }
         // Stacks changed
@@ -184,7 +217,12 @@ default{
             spl = llListReplaceList(spl, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], 1, -1);
             SPI = llListReplaceList(SPI, [implode(",", spl)], pos+1,pos+1);
             
-            
+			// Detrimental should only be sent to sender
+			if( l2i(SPI, pos+4) ){
+				sendTextures(getTargetingPlayer(l2s(SPI, pos+3)));
+				return;
+			}
+			
         }
 		
 		// Nobody to output status to
@@ -199,7 +237,7 @@ default{
         }
         
         BFL = BFL|BFL_TEX_SENT;
-        ptSet("OT", .01, FALSE);    // Send textures
+		ptSet("OT", .01, FALSE);    // Send textures
         ptSet("OQ", oqTime, FALSE);
         
     }

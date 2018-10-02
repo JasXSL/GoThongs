@@ -153,7 +153,7 @@
 	
 // Texture desc, npc/pc specific
 #ifdef IS_NPC
-	#define ATD NPCInt$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE));
+	#define ATD NPCInt$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE), llGetSubString(caster,0,7), pflags);
 	#define RTD NPCInt$remTextureDesc(pid);
 #else
 	#define ATD Evts$addTextureDesc(pid, llList2String(fx, 0), llList2String(fx, 1), timesnap, (int)(duration*10), getStacks(pid, TRUE));
