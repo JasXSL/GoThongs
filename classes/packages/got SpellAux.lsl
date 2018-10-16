@@ -72,7 +72,7 @@ string runMath( string FX, integer index, key targ ){
 		spdmdm = 0;
 
 	int melee_range;
-	if( llVecDist(llGetPos(), prPos(targ)) < MELEE_RANGE || targ == "1" )
+	if( llVecDist(llGetRootPosition(), prPos(targ)) < MELEE_RANGE || targ == "1" )
 		melee_range = TRUE;
 		
 	float dm = pdmod;
@@ -231,7 +231,7 @@ onEvt(string script, integer evt, list data){
 			string targ = randElem(PLAYERS);
 			if(targ == llGetOwner())
 				SPELL_TARGS = [LINK_ROOT];
-			else if(llVecDist(llGetPos(), prPos(targ)) < r){
+			else if(llVecDist(llGetRootPosition(), prPos(targ)) < r){
 				SPELL_TARGS = [targ];
 			}
 		}

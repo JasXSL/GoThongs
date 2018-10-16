@@ -301,7 +301,7 @@ spawnWeapons(){
     
     if(RHAND != "" && llGetInventoryType(RHAND) == INVENTORY_OBJECT){
         // Spawn a new weapon
-        llRezAtRoot(RHAND, llGetPos()+llRot2Fwd(llGetRot())*2-<0,0,5>, ZERO_VECTOR, ZERO_ROTATION, getAttachSlot(TRUE));
+        llRezAtRoot(RHAND, llGetRootPosition()+llRot2Fwd(llGetRot())*2-<0,0,5>, ZERO_VECTOR, ZERO_ROTATION, getAttachSlot(TRUE));
     }
         
     // Remove current weapon
@@ -309,7 +309,7 @@ spawnWeapons(){
     if(LHAND != "" && llGetInventoryType(LHAND) == INVENTORY_OBJECT){
         // Spawn a new weapon
         // 256 means it's left handed
-        llRezAtRoot(LHAND, llGetPos()+llRot2Fwd(llGetRot())*2-<0,0,5>, ZERO_VECTOR, ZERO_ROTATION, getAttachSlot(FALSE)|256);
+        llRezAtRoot(LHAND, llGetRootPosition()+llRot2Fwd(llGetRot())*2-<0,0,5>, ZERO_VECTOR, ZERO_ROTATION, getAttachSlot(FALSE)|256);
     }
     multiTimer(["WC", "", 10, TRUE]);
 }

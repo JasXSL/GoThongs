@@ -64,7 +64,7 @@ integer BFL = 0x20;            // Don't roam unless a player is in range
 integer moveInDir(vector dir){
 	if(dir == ZERO_VECTOR)return FALSE;
     dir = llVecNorm(dir);
-	vector gpos = llGetPos();
+	vector gpos = llGetRootPosition();
     
 	float sp = getSpeed();
     if(~getRF()&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp>0){
@@ -140,7 +140,7 @@ toggleMove(integer on){
 #define updateLookAt() \
 	if(~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED){ \
 		vector pp = prPos(chasetarg); \
-		vector gpos = llGetPos(); \
+		vector gpos = llGetRootPosition(); \
 		if(look_override)pp = prPos(look_override); \
 		llLookAt(<pp.x, pp.y, gpos.z>,1,1); \
 	}\
@@ -164,8 +164,8 @@ timerEvent(string id, string data){
             // Find a random pos to go to maybe
             if(wander == 0 || llFrand(1)>.1 || ~BFL&BFL_PLAYERS_NEARBY)return;
 			
-            vector a = llGetPos()+<0,0,.5>;
-            vector b = llGetPos()+<0,0,.5>+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
+            vector a = llGetRootPosition()+<0,0,.5>;
+            vector b = llGetRootPosition()+<0,0,.5>+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
             
 			if(llVecDist(b, rezpos)>wander)return;
 			
@@ -185,7 +185,7 @@ timerEvent(string id, string data){
 				return;
 			}
 			
-			vector gpos = llGetPos();
+			vector gpos = llGetRootPosition();
 			
 			float md = 0.1;				// Min dist to be considered at target
 			vector t = lastseen;		// Pos to go to
@@ -200,7 +200,7 @@ timerEvent(string id, string data){
             if(BFL & BFL_PLAYERS_NEARBY && dist>md && t != ZERO_VECTOR){
 			
 				// Movement, hAdd() not added
-                list ray = llCastRay(llGetPos()+<0,0,1>, t+<0,0,1>, [RC_DATA_FLAGS, RC_GET_ROOT_KEY, RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+                list ray = llCastRay(llGetRootPosition()+<0,0,1>, t+<0,0,1>, [RC_DATA_FLAGS, RC_GET_ROOT_KEY, RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
                 
                 if(llList2Integer(ray, -1)==0 || l2k(ray, 0) == l2k(SEEKTARG, 0)){
                     if(moveInDir(t-gpos))
@@ -248,7 +248,7 @@ timerEvent(string id, string data){
             }
             
             // Close enough to attack
-			if(llVecDist(ppos, llGetPos())<=hitbox){
+			if(llVecDist(ppos, llGetRootPosition())<=hitbox){
 				if(~BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$inRange, chasetarg);
                 }
@@ -262,7 +262,7 @@ timerEvent(string id, string data){
 					~FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED) && 
 					~getRF()&Monster$RF_PACIFIED && 
 					// Attack LOS, hAdd() IS added
-					llList2Integer(llCastRay(llGetPos()+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
+					llList2Integer(llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
 				){
 					
 					parseDesc(chasetarg, resources, status, fx, sex, team, mf);
@@ -290,7 +290,7 @@ timerEvent(string id, string data){
 			}
 			
 			// Stop moving at half the hitbox
-            if(llVecDist(ppos, llGetPos())<=hitbox/2){
+            if(llVecDist(ppos, llGetRootPosition())<=hitbox/2){
                 updateLookAt();
 				toggleMove(FALSE);
             }
@@ -301,7 +301,7 @@ timerEvent(string id, string data){
                 vector add = <0,0,1>;
                 if(llGetAgentInfo(chasetarg)&AGENT_CROUCHING)add = ZERO_VECTOR;
                 
-                list ray = llCastRay(llGetPos()+add, ppos+add, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
+                list ray = llCastRay(llGetRootPosition()+add, ppos+add, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
 
                 if(llList2Integer(ray, -1)>0){
                     if(getRF()&Monster$RF_FREEZE_AGGRO)return;
@@ -314,7 +314,7 @@ timerEvent(string id, string data){
                 }else{
                     lastseen = ppos+add;
                     // move towards player
-                    moveInDir(llVecNorm(ppos-llGetPos()));
+                    moveInDir(llVecNorm(ppos-llGetRootPosition()));
                 }
             }
         }
@@ -334,7 +334,7 @@ timerEvent(string id, string data){
 
 onEvt(string script, integer evt, list data){
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
-        rezpos = llGetPos();
+        rezpos = llGetRootPosition();
         
         LocalConf$ini();
 		multiTimer(["INI", "", 5, FALSE]);	// Some times localconf fails, I don't know why

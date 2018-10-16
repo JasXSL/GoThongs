@@ -139,7 +139,7 @@
 		if(!targs || targs&FXAF$SELF || (targs&FXAF$CASTER && t == "")){ \
 			FX$run("", l2s(fx,1)); \
 		} \
-		if(t != "" && targs&FXAF$CASTER && (range<=0 || llVecDist(llGetPos(), prPos(caster))<=range)){ \
+		if(t != "" && targs&FXAF$CASTER && (range<=0 || llVecDist(llGetRootPosition(), prPos(caster))<=range)){ \
 			FX$send(caster, llGetKey(), l2s(fx,1), TEAM); \
 		} \
 		if(targs&FXAF$AOE){ \

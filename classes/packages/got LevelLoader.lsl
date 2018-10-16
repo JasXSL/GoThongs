@@ -81,7 +81,7 @@ default
 					spawned++;
 					string chunk = llList2Json(JSON_ARRAY, [
 						llList2String(val, 0), 
-						(vector)llList2String(val, 1)+llGetPos(), 
+						(vector)llList2String(val, 1)+llGetRootPosition(), 
 						llList2String(val, 2), 
 						llList2String(val, 3), 
 						debug, 
@@ -138,7 +138,7 @@ default
 					// No limit on link messages, just send all of the things
 					string add = llList2Json(JSON_ARRAY, [
 						llList2String(val, 0), 
-						(vector)llList2String(val,1)+llGetPos(), 
+						(vector)llList2String(val,1)+llGetRootPosition(), 
 						llList2String(val, 2), 
 						llStringTrim(llList2String(val, 3), STRING_TRIM), 
 						debug, 

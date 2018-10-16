@@ -272,7 +272,7 @@ default{
         if(team == TEAM)
             return;
     
-        list ray = llCastRay(llGetPos()+<0,0,1+hAdd>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+        list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
         if(llList2Integer(ray, -1) == 0){
         
             if(!isset(RN))

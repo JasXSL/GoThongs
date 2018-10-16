@@ -763,7 +763,7 @@ ptEvt(string id){
 	}
 	else if( id == TIMER_COOP_BREAKFREE ){
 	
-		llRezAtRoot("BreakFree", llGetPos(), ZERO_VECTOR, ZERO_ROTATION, 1);
+		llRezAtRoot("BreakFree", llGetRootPosition(), ZERO_VECTOR, ZERO_ROTATION, 1);
 		SF = SF|StatusFlag$coopBreakfree;
 		saveFlags();
 		

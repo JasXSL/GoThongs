@@ -48,11 +48,11 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			
 			vector rot = llRot2Euler(llGetRot());
 			rotation r = llEuler2Rot(<0,0,rot.z>);
-			list ray = llCastRay(llGetPos(), llGetPos()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
+			list ray = llCastRay(llGetRootPosition(), llGetRootPosition()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 			vector pos = llList2Vector(ray, 1);
 			if(pos == ZERO_VECTOR){
 				vector ascale = llGetAgentSize(llGetOwner());
-				pos = llGetPos()-<0,0,ascale.z/2>;
+				pos = llGetRootPosition()-<0,0,ascale.z/2>;
 			}
 
 			Spawner$spawnInt(l2s(fx, 1), pos+((vector)l2s(fx, 2)*r), llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,3)*r, l2s(fx,4), FALSE, TRUE, "");

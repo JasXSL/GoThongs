@@ -189,7 +189,7 @@ default
 			integer mew = llList2Integer(llGetPrimitiveParams([PRIM_TEXT]), 0)&~BIT_TEMP;
 			REZ_PARAM = mew;
 			
-			vector p = llGetPos();
+			vector p = llGetRootPosition();
 			vector pos;
 			
 			
@@ -363,7 +363,7 @@ default
 		// Forces the portal to load as if it was live
 		else if(METHOD == PortalMethod$forceLiveInitiate){
 			qd("Updating and setting live");
-			vector g = llGetPos();
+			vector g = llGetRootPosition();
 			integer in = vec2int(g);
 			integer p = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(p);

@@ -108,7 +108,7 @@ default
             ""
         ];
         
-        vector pos = llGetPos()-<0,0,5>;
+        vector pos = llGetRootPosition()-<0,0,5>;
         _portal_spawn_std(visual, pos, ZERO_ROTATION, -<0,0,5>, FALSE, FALSE, FALSE);
 		
     }

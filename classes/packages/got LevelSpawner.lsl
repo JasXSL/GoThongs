@@ -40,8 +40,8 @@ default
             return;
         }
 		
-        if(startPos == ZERO_VECTOR || llVecDist(startPos, llGetPos())>300){
-			startPos = llGetPos()+<0,0,8>;
+        if(startPos == ZERO_VECTOR || llVecDist(startPos, llGetRootPosition())>300){
+			startPos = llGetRootPosition()+<0,0,8>;
 		}
             
         // Clear old

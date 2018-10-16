@@ -510,7 +510,7 @@ onEvt(string script, integer evt, list data){
 				if( strlen(t) != 36 )
 					t = llGetKey();
 
-				if( llVecDist(llGetPos(), prPos(t))< range || range <= 0 ){
+				if( llVecDist(llGetRootPosition(), prPos(t))< range || range <= 0 ){
 				
 					if( t == llGetKey() )
 						FX$run("", wrapper);

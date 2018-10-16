@@ -179,7 +179,7 @@ default
 				return;
             
             string name = llList2String(data, 0);
-            string pos = (string)trimVecRot([llList2Vector(data, 2)-llGetPos()], 2, TRUE);
+            string pos = (string)trimVecRot([llList2Vector(data, 2)-llGetRootPosition()], 2, TRUE);
             string rot = "";
             if( (rotation)llList2String(data,3) != ZERO_ROTATION )
 				rot = (string)trimVecRot([llList2Rot(data, 3)], 3, TRUE);
@@ -322,14 +322,15 @@ default
 		list parse = llJson2List(l2s(asset, 2));
 		if(HUD){
 			qd("Spawning from HUD: "+llList2String(parse, 0));
-			Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetPos(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
+			Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetRootPosition(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}else{
 			qd("Spawning from INV: "+llList2String(parse, 0));
-			Spawner$spawnInt(llList2String(parse, 0), (vector)llList2String(parse,1)+llGetPos(), (rotation)llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
+			Spawner$spawnInt(llList2String(parse, 0), (vector)llList2String(parse,1)+llGetRootPosition(), (rotation)llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}
     }
     
     else if(METHOD == LevelAuxMethod$list){
+		qd("Listing "+method_arg(0)+" ["+SENDER_SCRIPT+"]");
         list data = [];
         if((integer)method_arg(0))
 			data = HUD_TABLES;

@@ -48,7 +48,7 @@
 
 
 #define Portal$isPlayerListIfStatement script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players)
-
+#define Portal$plif Portal$isPlayerListIfStatement
 
 #define PortalEvt$desc_updated 1		// Portal has received a custom desc from the level
 #define PortalEvt$spawner 2				// (key)spawner - Spawner is the key of the object that requested the spawn
@@ -56,7 +56,7 @@
 #define PortalEvt$players 4				// (arr)players - Player UUIDs have been updated
 
 _portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, integer debug, integer reqDesc, integer temp){
-	vector mpos = llGetPos();
+	vector mpos = llGetRootPosition();
 	vector local = vecFloor(mpos)+(pos-vecFloor(pos));
 	integer in = vec2int(pos);
 	if(debug)in = in|BIT_DEBUG;

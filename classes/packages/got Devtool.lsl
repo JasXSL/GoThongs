@@ -29,7 +29,7 @@ default
             } \
             LevelAux$getOffset(llGetCameraPos(), "CAM"); \
         } \
-        else if(message=="pos")llOwnerSay("Your pos: "+(str)llGetPos()); \
+        else if(message=="pos")llOwnerSay("Your pos: "+(str)llGetRootPosition()); \
         else if(llGetSubString(message, 0, 8) == "load live"){ \
             qd(xme(XLS(([ \
 				XLS_EN, "Loading live..." \
@@ -97,7 +97,7 @@ default
             LevelAux$remove(0, (integer)llGetSubString(message, 9, -1)); \
         } \
         else if(llToLower(message) == "walkpad" || llToLower(message) == "walkassist" || llToLower(message) == "path"){\
-            llRezAtRoot("WalkAssist", llGetPos()+llRot2Fwd(llGetRot()), ZERO_VECTOR, llEuler2Rot(<0,PI_BY_TWO,0>), 1);\
+            llRezAtRoot("WalkAssist", llGetRootPosition()+llRot2Fwd(llGetRot()), ZERO_VECTOR, llEuler2Rot(<0,PI_BY_TWO,0>), 1);\
         } \
         else if(llGetSubString(message, 0, 11) == "setSpawnVal "){ \
             list split = explode(" ", message); \
@@ -120,7 +120,7 @@ default
     {
         string n = llGetLinkName(llDetectedLinkNumber(0));
         if(llGetSubString(n, 0, 12) == "_STARTPOINT_P"){
-            _portal_spawn_std(n, llGetPos()+llRot2Fwd(llGetRot()), ZERO_ROTATION, <0,0,-8>, TRUE, FALSE, FALSE);
+            _portal_spawn_std(n, llGetRootPosition()+llRot2Fwd(llGetRot()), ZERO_ROTATION, <0,0,-8>, TRUE, FALSE, FALSE);
         }
     }
     

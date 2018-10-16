@@ -44,7 +44,7 @@ default
 			
 			
 			
-            llRezAtRoot(item, llGetPos()-<0,0,3>, ZERO_VECTOR, llEuler2Rot(<0,0,r.z>), 1);
+            llRezAtRoot(item, llGetRootPosition()-<0,0,3>, ZERO_VECTOR, llEuler2Rot(<0,0,r.z>), 1);
         }
 		else if(METHOD == SpellFXMethod$remInventory){
 			list assets = llJson2List(method_arg(0));

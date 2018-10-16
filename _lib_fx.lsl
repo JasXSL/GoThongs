@@ -77,6 +77,7 @@
 	#define fx$CASTTIME_MULTI 18				// (float)add
 	#define fx$SPELL_DMG_TAKEN_MOD 19			// (str)spellName, (float)add, (bool)by_caster - PC only SpellName is the FX package name :: Increases efficiency of dur/man/ars/pain sections of a spell, useful for heals too
 	#define fx$ICON 20							// (key)icon, (str)description
+												// Description can use a macro <|s3|> for a value multiplied by stacks
 	#define fx$INTERRUPT 21						// (bool)force - Force will override fx$F_NO_INTERRUPT
 	#define fx$SPELL_DMG_DONE_MOD 22			// (int)index, (float)add - Index is the index of the spell, 0 is rest and then 1-4 for the others :: Increases efficiency of spells cast by you with this name
 	#define fx$FULLREGEN 23						// NULL - Fully restores a player

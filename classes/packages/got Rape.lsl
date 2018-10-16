@@ -18,7 +18,7 @@ updateFxAttachments(){
 	integer i;
 	for(i=0; i<count(FX_ATTACHMENTS); i+=3){
 		if(llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == "" && llGetInventoryType(l2s(FX_ATTACHMENTS, i)) == INVENTORY_OBJECT ){
-			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetPos()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
+			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetRootPosition()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
 		}
 	}
 }
@@ -81,12 +81,12 @@ default
             
             integer i;
             for(i=0; i<llGetListLength(RAPE_ATTACHMENTS); i++){
-                llRezAtRoot(llList2String(RAPE_ATTACHMENTS, i), llGetPos()-<0,0,2>, ZERO_VECTOR, ZERO_ROTATION, 1);
+                llRezAtRoot(llList2String(RAPE_ATTACHMENTS, i), llGetRootPosition()-<0,0,2>, ZERO_VECTOR, ZERO_ROTATION, 1);
             }
             for(i=0; i<llGetListLength(RAPE_ANIMS); i++)
                 AnimHandler$anim(llList2String(RAPE_ANIMS, i), TRUE, 0, 0, 0);
             
-            vector pos = llGetPos();
+            vector pos = llGetRootPosition();
             vector ascale = llGetAgentSize(llGetOwner());
             list ray = llCastRay(pos, pos-<0,0,5>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
             if(llList2Integer(ray,-1) == 1)

@@ -152,7 +152,7 @@ ag( key pl, float ag ){
 	
 		// Aggro target has left
 		key t = l2k(AG, i+1);
-        if( llKey2Name(t) == "" || llVecDist(llGetPos(), prPos(t)) > 20 ){
+        if( llKey2Name(t) == "" || llVecDist(llGetRootPosition(), prPos(t)) > 20 ){
 		
 			AG = llDeleteSubList(AG, i, i+AGGRO_STRIDE-1);
 			i-= AGGRO_STRIDE;
@@ -486,7 +486,7 @@ default
 
 			parseDesc(k, resources, status, fx, sex, team, mf);
 			vector ppos = prPos(k);
-			float dist =llVecDist(ppos, llGetPos());
+			float dist =llVecDist(ppos, llGetRootPosition());
 			float range = AR;
 			prAngZ(k, ang)
 			if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
@@ -500,7 +500,7 @@ default
 				dist < range
 			){
 			
-				list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
+				list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
 				if( llList2Integer(ray, -1) == 0 )
 					Status$get(k, "aggro");
 
@@ -739,7 +739,7 @@ default
 			list d = llListRandomize(llJson2List(drops), 1);
 			list_shift_each(d, val,
 				if(llFrand(1)<(float)j(val, 1)){ 
-					Spawner$spawn(j(val,0), (llGetPos()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
+					Spawner$spawn(j(val,0), (llGetRootPosition()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
 					d = [];
 				}
 			)
@@ -813,8 +813,8 @@ default
 		key p = method_arg(0);
 		vector pp = prPos(p);
 		float r = (float)method_arg(1);
-		if(llVecDist(llGetPos(), pp) > r)return;
-		list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
+		if(llVecDist(llGetRootPosition(), pp) > r)return;
+		list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 		if(llList2Integer(ray, -1) == 0)
 			ag(p,10);
 		

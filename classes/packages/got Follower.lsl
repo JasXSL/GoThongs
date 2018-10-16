@@ -83,7 +83,7 @@ warp(){
 integer moveInDir(vector dir, float speed){
 	if(dir == ZERO_VECTOR)return FALSE;
     dir = llVecNorm(dir);
-	vector gpos = llGetPos();
+	vector gpos = llGetRootPosition();
     
 	// Determines how smooth it should run, timer even should be faster than this
 	float STEPPING = 0.3;
@@ -104,7 +104,7 @@ integer moveInDir(vector dir, float speed){
 		// Too steep drop
 		llList2Integer(r, -1) <=0 || 
 		// Inside a wall
-		llVecDist(llGetPos()+dir+<0,0,1>, llList2Vector(r, 1))<.1
+		llVecDist(llGetRootPosition()+dir+<0,0,1>, llList2Vector(r, 1))<.1
 	){
 		return FALSE;
     }
@@ -166,7 +166,7 @@ timerEvent(string id, string data){
 		
 		BFL = BFL|BFL_HAS_TARGET;
 	
-		vector gpos = llGetPos();
+		vector gpos = llGetRootPosition();
 		
 		// Successfully determined a place to go (and not in range)
 		integer success;

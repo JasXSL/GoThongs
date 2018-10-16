@@ -103,16 +103,16 @@ if(targ != (string)LINK_ROOT && targ != "AOE"){ \
     integer flags = spellTargets(data); \
 	vector pos = prPos(llList2String(SPELL_TARGS, 0));\
     if(~flags&TARG_REQUIRE_NO_FACING){ \
-		vector gpos = llGetPos();\
+		vector gpos = llGetRootPosition();\
         prAngX(targ, ang); \
-		integer inRange = (llVecDist(pos, llGetPos())<3 && llVecDist(<gpos.x,gpos.y,0>,<pos.x,pos.y,0>)<0.5);\
+		integer inRange = (llVecDist(pos, llGetRootPosition())<3 && llVecDist(<gpos.x,gpos.y,0>,<pos.x,pos.y,0>)<0.5);\
         if(llFabs(ang)>PI_BY_TWO && !inRange){ \
             A$(ASpellMan$errTargInFront); \
             SpellMan$interrupt(TRUE); \
             return ret; \
         } \
     }\
-    list ray = llCastRay(llGetPos()+<0,0,.5>, pos+<0,0,1+HEIGHT_ADD>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); \
+    list ray = llCastRay(llGetRootPosition()+<0,0,.5>, pos+<0,0,1+HEIGHT_ADD>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); \
     if(llList2Integer(ray, -1) == 1 && llList2Key(ray,0) != targ){ \
         A$(ASpellMan$errVisionObscured); \
         SpellMan$interrupt(TRUE); \
@@ -363,7 +363,7 @@ integer castSpell(integer nr){
         if(val == "AOE")hits = TRUE;
         else{
             float dist = 0; 
-            if((integer)val != LINK_ROOT)dist = llVecDist(llGetPos(), prPos(val));
+            if((integer)val != LINK_ROOT)dist = llVecDist(llGetRootPosition(), prPos(val));
             if(dist <= range)hits++;
         }
     }

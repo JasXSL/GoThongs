@@ -86,7 +86,6 @@ onDesc(key obj, string text){
 			parseDesc(l2k(PLAYER_HUDS, pos), resources, status, fx, sex, team, monsterflags);
 			if( status&StatusFlag$coopBreakfree )
 				text = "Break Free";
-			
 		}
 		
 	}

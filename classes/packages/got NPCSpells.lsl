@@ -372,8 +372,8 @@ ptEvt(string id){
                     key targ = llList2Key(p, 0);
                     p = llDeleteSubList(p, 0, 0);
                     vector ppos = prPos(targ);
-                    float dist = llVecDist(llGetPos(), ppos);
-                    list ray = llCastRay(llGetPos()+<0,0,1+hAdd()>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+                    float dist = llVecDist(llGetRootPosition(), ppos);
+                    list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 					
 					// Get some info about the target
 					parseDesc(targ, resources, status, fx, sex, team, rf);

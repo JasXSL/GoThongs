@@ -72,7 +72,7 @@ vector czBezier(float seg, vector start, vector handle1, vector handle2, vector 
 STEP(){
     
     vector to = endPos();
-	float dist = llVecDist(llGetPos(), to);
+	float dist = llVecDist(llGetRootPosition(), to);
 	
 	if(MAX_DIST == 0){
 		MAX_DIST = dist;
@@ -91,7 +91,7 @@ STEP(){
     }
     
 	
-	vector basepos = llVecNorm(to-llGetPos());
+	vector basepos = llVecNorm(to-llGetRootPosition());
 	
 	vector add;
 	if(WIGGLE_POW){

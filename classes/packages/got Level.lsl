@@ -141,7 +141,7 @@ default
 			list tables = Level$ALL_TABLES;
 			db3$addTables(tables);
 			
-			vector p = llGetPos();
+			vector p = llGetRootPosition();
 			vector pos = p-vecFloor(p)+int2vec(START_PARAM);
 			
 			if(START_PARAM == 1)pos = ZERO_VECTOR;
@@ -238,9 +238,9 @@ default
 			vector p2 = (vector)db3$get(cls$name, [LevelShared$P2_start]); 
 			if(debug){
 				if(p1)
-					Devtool$spawnAt("_STARTPOINT_P1", p1+llGetPos(), ZERO_ROTATION);
+					Devtool$spawnAt("_STARTPOINT_P1", p1+llGetRootPosition(), ZERO_ROTATION);
 				if(p2)
-					Devtool$spawnAt("_STARTPOINT_P2", p2+llGetPos(), ZERO_ROTATION);
+					Devtool$spawnAt("_STARTPOINT_P2", p2+llGetRootPosition(), ZERO_ROTATION);
 			}else{
 				// Send player to start
 				Alert$freetext(llGetOwner(), "Loading Cell.. Please wait.", FALSE, FALSE);
@@ -259,7 +259,7 @@ default
 						SupportcubeBuildTask(Supportcube$tSetPos, [prPos(targ)]), 
 						SupportcubeBuildTask(Supportcube$tDelay, [.1]), 
 						SupportcubeBuildTask(Supportcube$tForceSit, ([FALSE, TRUE])), 
-						SupportcubeBuildTask(Supportcube$tSetPos, [pos+llGetPos()]), 
+						SupportcubeBuildTask(Supportcube$tSetPos, [pos+llGetRootPosition()]), 
 						SupportcubeBuildTask(Supportcube$tDelay, [6]), 
 						SupportcubeBuildTask(Supportcube$tForceUnsit, [])
 					]);

@@ -34,8 +34,8 @@ output(integer first){
 			key t = l2k(nearby_cache, i);
 			vector pos = prPos(t);
 				
-			float dist = llVecDist(pos, llGetPos());
-			float angle = llRot2Angle(llRotBetween(llRot2Fwd(llGetRot()), llVecNorm(pos-llGetPos())))*RAD_TO_DEG;
+			float dist = llVecDist(pos, llGetRootPosition());
+			float angle = llRot2Angle(llRotBetween(llRot2Fwd(llGetRot()), llVecNorm(pos-llGetRootPosition())))*RAD_TO_DEG;
 			float score = dist+angle/8;
 			
 			// Prevents targeting the same one again
@@ -56,7 +56,7 @@ output(integer first){
 		
 		key t = llList2Key(output_cache, pointer*2+1);
 		vector pos = prPos(t);
-		list ray = llCastRay(llGetPos(), pos+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
+		list ray = llCastRay(llGetRootPosition(), pos+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 		
 		string desc = prDesc(t);
 		if(llList2Integer(ray, -1) <1 && descIsProper(desc)){
@@ -313,7 +313,7 @@ default
 			
 			if(
 				// Moved more than 1m
-				llVecDist(llGetPos(), cache_pos)>1 || 
+				llVecDist(llGetRootPosition(), cache_pos)>1 || 
 				// Rotated more than 45 deg
 				llAngleBetween(llGetRot(), cache_rot)>PI/8 || 
 				// Not cached within 4 sec
@@ -323,7 +323,7 @@ default
 			){
 				// Build a new list of targets
 				BFL = BFL|BFL_RECENT_CACHE;
-				cache_pos = llGetPos();
+				cache_pos = llGetRootPosition();
 				cache_rot = llGetRot();
 				nearby_cache = [];
 				output_cache = [];

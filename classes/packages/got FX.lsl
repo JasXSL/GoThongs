@@ -475,9 +475,9 @@ default{
 					vector pos = l2v(data, 0);
 					if(llGetSubString(l2s(data, 1), 0, 2) == "$M$")
 						pos+= <0,0,1>;
-					if(llList2Integer(llCastRay(llGetPos()+<0,0,.5>, pos, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]), -1)> 0){
+					list rc = llCastRay(llGetRootPosition()+<0,0,.5>, pos, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS,RC_GET_ROOT_KEY]);
+					if( llList2Integer(rc, -1) > 0 && l2k(rc, 0) != llGetKey() )
 						RC = FALSE;
-					}
 				}
 			#endif
 
@@ -486,7 +486,7 @@ default{
 				(~flags&WF_ALLOW_WHEN_DEAD && STATUS&StatusFlag$dead) || 
 				(~flags&WF_ALLOW_WHEN_QUICKRAPE && FX_FLAGS&fx$F_QUICKRAPE) || 
 				(~flags&WF_ALLOW_WHEN_RAPED && STATUS&StatusFlag$raped) ||
-				(range > 0 && llVecDist(llGetPos(), prPos(id))>range)
+				(range > 0 && llVecDist(llGetRootPosition(), prPos(id))>range)
 				#ifdef IS_NPC
 				|| !RC
 				#endif

@@ -34,7 +34,7 @@ timerEvent(string id, string data){
 dropPotion(){
 	if(NAME == "" || FLAGS&PotionsFlag$no_drop)return;
 	
-	vector pos = llGetPos()+llRot2Left(llGetRot())*.3;
+	vector pos = llGetRootPosition()+llRot2Left(llGetRot())*.3;
 	rotation rot = llGetRot();
 	if(FLAGS&PotionsFlag$is_in_hud){
 		Spawner$spawnInt(NAME, pos, rot, "", FALSE, TRUE, ""); 
