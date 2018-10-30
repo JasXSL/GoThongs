@@ -59,7 +59,22 @@ integer onInteract(key obj, string task, list params){
     else if( task == "CUSTOM" ){
         
 		Status$coopInteract(obj);
-		Level$playerInteract(level, obj);
+		key hud;
+		integer i;
+		for( ; i<count(PLAYER_HUDS); ++i ){
+		
+			if( llGetOwnerKey(l2k(PLAYER_HUDS, i)) == obj ){
+			
+				hud = l2k(PLAYER_HUDS, i);
+				i = count(PLAYER_HUDS);
+				
+			}
+			
+		}
+
+		list players = additionalAllow+llGetOwner();
+		for(i=0; i<count(players); ++i)
+			runOmniMethodOn(l2s(players, i), "got Level", LevelMethod$playerInteract, (list)obj+hud, TNN);
 		
     }
     else 

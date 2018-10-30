@@ -339,7 +339,7 @@ default
     
 // PUBLIC HERE
     if(METHOD == LevelMethod$interact)
-        return raiseEvent(LevelEvt$interact, mkarr(([llGetOwnerKey(id), method_arg(0), method_arg(1)]))); 
+        return raiseEvent(LevelEvt$interact, mkarr((list)llGetOwnerKey(id) + PARAMS)); 
     
     if(METHOD == LevelMethod$trigger)
         return raiseEvent(LevelEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
@@ -357,8 +357,10 @@ default
 		return runMethod((str)LINK_THIS, "got LevelAux", LevelAuxMethod$spawn, PARAMS, TNN);
     
 	if(METHOD == LevelMethod$playerInteract)
-		return raiseEvent(LevelEvt$playerInteract, mkarr(([llGetOwnerKey(id), method_arg(0)])));
+		return raiseEvent(LevelEvt$playerInteract, mkarr((list)llGetOwnerKey(id) + PARAMS));
 	
+	if( METHOD == LevelMethod$playerSceneDone )
+		return raiseEvent(LevelEvt$playerSceneDone, mkarr((list)llKey2Name(id) + PARAMS));
 	
 // OWNER ONLY
 	if( method$byOwner && METHOD == gotMethod$setHuds ){

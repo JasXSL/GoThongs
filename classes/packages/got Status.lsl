@@ -1049,9 +1049,10 @@ default
 		raiseEvent(StatusEvt$loading_level, id);
 		
 	}
-	else if(METHOD == StatusMethod$debugOut){
+	else if(METHOD == StatusMethod$debugOut)
 		llOwnerSay(mkarr(([maxHP(), maxMana(), maxArousal(), maxPain()])));
-	}
+	else if( METHOD == StatusMethod$playerSceneDone && SF&StatusFlag$dead )
+		AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
 	else if( METHOD == StatusMethod$toggleBossFight ){
 		
 		integer on = (int)method_arg(0);

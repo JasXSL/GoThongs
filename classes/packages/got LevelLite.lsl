@@ -101,8 +101,6 @@ default
         return;
     }
 	
-
-	
     if(METHOD == LevelMethod$load && method$byOwner){
         integer debug = (integer)method_arg(0);
 		string group = method_arg(1);
@@ -134,9 +132,8 @@ default
 		return;
 	}
 	*/
-	
 	if( METHOD == LevelMethod$interact )
-        raiseEvent(LevelLiteEvt$interact, mkarr(([llGetOwnerKey(id), method_arg(0), method_arg(1)]))); 
+        raiseEvent(LevelLiteEvt$interact, mkarr((list)llGetOwnerKey(id)+PARAMS)); 
     
     else if( METHOD == LevelMethod$trigger )
         raiseEvent(LevelLiteEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
@@ -148,6 +145,12 @@ default
         return raiseEvent(evt, mkarr(out));
 		
     }
+	
+	if( METHOD == LevelMethod$playerSceneDone )
+		return raiseEvent(LevelEvt$playerSceneDone, mkarr((list)llKey2Name(id) + PARAMS));
+
+	if(METHOD == LevelMethod$playerInteract)
+		return raiseEvent(LevelEvt$playerInteract, mkarr((list)llGetOwnerKey(id)+PARAMS) );
 	
 	if( method$internal && METHOD == LevelMethod$raiseEvent )
 		raiseEvent(l2i(PARAMS, 0), mkarr(llDeleteSubList(PARAMS, 0, 0)));

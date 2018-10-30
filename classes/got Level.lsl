@@ -21,6 +21,8 @@
 #define LevelMethod$potionDropped 20		// (str)name - Potion with PotionsFlag$raise_drop_event has been dropped
 
 #define LevelMethod$raiseEvent 21			// (int)event, (var)param1, (var)param2... - Internal only
+#define LevelMethod$playerSceneDone 22		// (str)sceneName, (bool)success, (arr)players
+
 
 
 #define LevelMethod$despawn 0x71771E5	// Deletes a level
@@ -62,11 +64,12 @@
 #define LevelEvt$playerHUDs 14		// (arr)HUDs - Raised when party changes
 #define LevelEvt$playerInteract 15	// (key)interactor, (key)interactee - Sent from the interactor 
 #define LevelEvt$potionDropped 16	// (key)HUD, (str)potion - Raised when a player drops a potion with PotionsFlag$raise_drop_event
+#define LevelEvt$playerSceneDone 17	// (str)pose_name, (bool)success, (arr)HUDs - Raised when a PlayerPose scene finished
 
 // Level description config: [[(int)task, (var)param1, (var)param2...]...]
 #define LevelDesc$additionalScripts 0			// List of names of scripts to wait for evt$SCRIPT_INIT from
 #define LevelDesc$difficulty 1					// (int)difficulty, (int)isChallenge
-
+#define LevelDesc$live 2						// void - Present when level is live
 
 
 #define Level$loadDebug(group) runOmniMethod("got Level", LevelMethod$load, [1,group], TNN)
@@ -93,13 +96,12 @@
 #define Level$spawnLive(asset, pos, rot) Level$spawnAsset(a)
 #define Level$spawnLiveTarg(targ, asset, pos, rot) Level$spawnAsset(a)
 #define Level$raiseEvent(evt, args) runMethod((str)LINK_THIS, "got Level", LevelMethod$raiseEvent, [evt]+args, TNN)
-
-
+#define Level$playerSceneDone(host, success, players) runOmniMethodOn(host, "got Level", LevelMethod$playerSceneDone, (list)success + players, TNN)
 
 
 
 // Level internal
-#define _lSharp() ((integer)db3$get("got Level", [LevelShared$isSharp]))
+#define _lSharp() ((integer)db3$get("got Level", (list)LevelShared$isSharp))
 
 
 

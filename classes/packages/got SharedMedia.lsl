@@ -105,6 +105,7 @@ default
             PRIM_POSITION, ZERO_VECTOR,
             PRIM_SIZE, ZERO_VECTOR,
             PRIM_COLOR, 0, ZERO_VECTOR, .5,
+			PRIM_ROTATION, llEuler2Rot(<0, -PI_BY_TWO, -PI_BY_TWO>),
             
             PRIM_LINK_TARGET, P_BOOK_BG,
             PRIM_POSITION, ZERO_VECTOR,

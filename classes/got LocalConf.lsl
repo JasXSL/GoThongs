@@ -6,7 +6,7 @@
 #define LocalConfMethod$finishSpell 3			// (int)id
 #define LocalConfMethod$testIdle 4				// null - Debug command only. Tests the monsters's idle animation
 #define LocalConfMethod$checkCastSpell 5		// (int)id, (key)targ, expects callback true on success
-#define LocalConfMethod$stdInteract 6			// (key)sender, (var)data - A player has interacted with the object. You can input anything you want as variables
+#define LocalConfMethod$stdInteract 6			// (key)sender, (key)object, (var)data - A player has interacted with the object. You can input anything you want as variables
 #define LocalConfMethod$generic 7 				// Generic method, put any data you want in it. Effect will vary between implementations
 
 #define LocalConf$startSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$startSpell, [id], TNN)

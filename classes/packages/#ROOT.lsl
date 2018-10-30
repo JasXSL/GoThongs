@@ -39,6 +39,7 @@ integer BFL;
 
 // Timer to handle double clicks and click hold
 timerEvent(string id, string data){
+
     if(llGetSubString(id, 0, 1) == "H_"){
         integer d = (integer)data;
         d++;
@@ -56,6 +57,14 @@ timerEvent(string id, string data){
 			raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
 			
 		}
+		
+	}
+	
+	else if( id == "TI" && llKey2Name(ROOT_LEVEL) == "" && ROOT_LEVEL != "" ){
+		
+		raiseEvent(RootEvt$level, "");
+		ROOT_LEVEL = "";
+		
 		
 	}
 	
@@ -170,15 +179,20 @@ default
     }
     
     // Start up the script
-    state_entry()
-    { 
-		llDialog(llGetOwner(), 
-"\n⚔️ WELCOME TO GAME OF THONGS! ⚔️\n \n"+
-"  ⚠ The [http://jasx.org/?JB=gme&JBv=%7B%22g%22%3A%22jasxhud%22%7D JasX HUD] is required to play!\n"+
-"  🗓 Join the secondlife:///app/group/6ff2300b-8199-518b-c5be-5be5d864fe1f/about group for support!\n"+
-"️  🔑 License [https://creativecommons.org/licenses/by-nc-sa/4.0/ Creative Commons BY-NC-SA 4.0]\n"+
-"  🖊 Source & Modding @ [https://github.com/JasXSL/GoThongs/ GitHub]\n"+
-"  🌐 [http://go-thongs.wikia.com/wiki/Go_Thongs_Wiki Community Wiki]", [], 123);
+    state_entry(){ 
+	
+		string text = "\n⚔️ GoThongs ⚔️\n"+
+"⚠ [https://jasx.org JasX HUD] is required to play!\n\n"+
+"🗓 secondlife:///app/group/6ff2300b-8199-518b-c5be-5be5d864fe1f/about SL Group!\n"+
+"️🔑 [https://goo.gl/TQftHT CC BY-NC-SA 4.0 License]\n"+
+"🖊 [https://goo.gl/nBVmME GitHub]\n"+
+"🌐 [https://goo.gl/rKz2iW Community Wiki]\n"+
+"🐙 [https://goo.gl/67PfR7 JasX Patreon]  "+
+"🐼 [https://goo.gl/dtjvSf Toonie Patreon]";
+
+		if( l2i(llGetObjectDetails(llGetOwner(), (list)OBJECT_ATTACHED_SLOTS_AVAILABLE), 0) < 5  )
+			text += "\n\n  ⚠️ YOU HAVE TOO MANY ATTACHMENTS ⚠️\nThis may cause errors";
+		llDialog(llGetOwner(), text, [], 123);
 
         clearDB3();
         PLAYERS = [(str)llGetOwner()];
@@ -193,6 +207,7 @@ default
 
 		savePlayers(); 
 		ThongMan$reset();
+		multiTimer(["TI", 0, 2, TRUE]);
 		
 		// Create schema before resetting the other scripts
 		list tables = [
@@ -521,16 +536,19 @@ default
 		ROOT_LEVEL = id;
 		list split = llJson2List(prDesc(ROOT_LEVEL));
 		integer isChallenge;
+		int isLive;
 		
 		list_shift_each(split, val,
 		
 			list d = llJson2List(val);
-			if(l2i(d, 0) == LevelDesc$difficulty)
+			if( l2i(d, 0) == LevelDesc$difficulty )
 				isChallenge = l2i(d, 2);
+			if( l2i(d, 0) == LevelDesc$live )
+				isLive = TRUE;
 				
 		)
 		
-		raiseEvent(RootEvt$level, mkarr(([ROOT_LEVEL, isChallenge])));
+		raiseEvent(RootEvt$level, (list)ROOT_LEVEL + isChallenge + isLive);
 			
 		if(pre != ROOT_LEVEL && !method$byOwner){
 		

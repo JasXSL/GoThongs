@@ -17,7 +17,7 @@
 #define BIT_TEMP 2147483648			// Binary bit (32) that determines if the object should be temp or not
 
 // got LevelData should NOT be in this. It's auto fetched along with got LevelLite
-#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim","jas MaskAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "got LevelLite", "got LevelAux", "got LevelLoader", "got Spawner", "got BuffSpawn", "got ClassAtt"]
+#define PORTAL_SEARCH_SCRIPTS ["ton MeshAnim","jas MaskAnim", "got Projectile", "got Status", "got Monster", "got FXCompiler", "got FX", "got NPCSpells", "jas Attached", "got Trap", "got LevelLite", "got LevelAux", "got LevelLoader", "got Spawner", "got BuffSpawn", "got ClassAtt", "got PlayerPoser"]
 #define PORTAL_SEARCH_OBJECTS ["Trigger"]
 
 #define Portal$save() runOmniMethod("got Portal", PortalMethod$save, [], "SV")
@@ -49,6 +49,7 @@
 
 #define Portal$isPlayerListIfStatement script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players)
 #define Portal$plif Portal$isPlayerListIfStatement
+#define Portal$hif script == "got Portal" && evt == PortalEvt$playerHUDs
 
 #define PortalEvt$desc_updated 1		// Portal has received a custom desc from the level
 #define PortalEvt$spawner 2				// (key)spawner - Spawner is the key of the object that requested the spawn

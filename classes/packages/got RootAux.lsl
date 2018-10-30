@@ -15,15 +15,18 @@ key VALIDATE;		// HTTP request to fetch manifest
 
 
 cleanup(key id, integer manual){
+	
 	// Owner cleanup only
-	if(id == llGetOwner()){
+	if( id == llGetOwner() )
 		Level$despawn(); 
-	}
+	
 	Portal$killAll(); 
 	GUI$toggleObjectives((string)LINK_ROOT, FALSE); 
 	Soundspace$reset();
 	raiseEvent(RootAuxEvt$cleanup, (str)manual);
-	RLV$reset();			// Reset RLV locks and windlight on cleanup			
+	if( manual )
+		RLV$reset();			// Reset RLV locks and windlight on cleanup			
+		
 }
 
 onEvt(string script, integer evt, list data){

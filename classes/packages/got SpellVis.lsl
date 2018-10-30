@@ -84,6 +84,7 @@ integer WEAPON_SHEATHED = TRUE;
 #define stopCast(abil) llSetLinkPrimitiveParamsFast(llList2Integer(ABILS, abil), [PRIM_COLOR, 2, <1,1,1>, 0])
 
 onEvt(string script, integer evt, list data){
+
     // Status flags updated
     if(script == "got Status" && evt == StatusEvt$flags){
 
@@ -92,9 +93,9 @@ onEvt(string script, integer evt, list data){
         
         integer hideOn = (StatusFlag$dead|StatusFlag$loading);
         
-        if(BFL&BFL_INI && (!(pre&hideOn) && STATUS_FLAGS&hideOn) || (pre&hideOn && !(STATUS_FLAGS&hideOn))){
+        if( BFL&BFL_INI && (!(pre&hideOn) && STATUS_FLAGS&hideOn) || (pre&hideOn && !(STATUS_FLAGS&hideOn)) )
             SpellVis$toggle(TRUE);        // Auto hides if dead. So we can just go with TRUE for both cases
-        } 
+        
     }
     
     else if(script == "got Status" && evt == StatusEvt$resources){
@@ -104,11 +105,8 @@ onEvt(string script, integer evt, list data){
 		updateBorders();
 		
     }
-    else if( script == "got FXCompiler" && evt == FXCEvt$spellMultipliers ){
-
+    else if( script == "got FXCompiler" && evt == FXCEvt$spellMultipliers )
         manacostMulti = llJson2List(llList2String(data,1));
-		
-    }
 	
 	// Builds the buttons on the HUD
     else if(script == "got SpellMan" && evt == SpellManEvt$recache){
@@ -191,7 +189,7 @@ onEvt(string script, integer evt, list data){
 
 
         if( ct>0 )
-            setAbilitySpinner(SPELL_CASTED, 0, ct, FALSE);                // Not an instant spell, show cast bar
+            setAbilitySpinner(SPELL_CASTED, 0, ct, FALSE, __LINE__);                // Not an instant spell, show cast bar
 		
         list visual = llList2List(FX_CACHE, SPELL_CASTED*FXSTRIDE, SPELL_CASTED*FXSTRIDE+FXSTRIDE-1);
         
@@ -241,7 +239,7 @@ onEvt(string script, integer evt, list data){
     else if(script == "got SpellMan" && evt == SpellManEvt$complete){
 	
         
-        integer SPELL_CASTED = l2i(data, 0);                    // Spell casted index 0-4
+        integer casted = l2i(data, 0);                    // Spell casted index 0-4
         list SPELL_TARGS = llJson2List(l2s(data, 3));                    // Targets casted at
 		
         /*
@@ -249,7 +247,7 @@ onEvt(string script, integer evt, list data){
             stopCast(SPELL_CASTED);
         */
         
-        list visual = llList2List(FX_CACHE, SPELL_CASTED*FXSTRIDE, SPELL_CASTED*FXSTRIDE+FXSTRIDE-1);
+        list visual = llList2List(FX_CACHE, casted*FXSTRIDE, casted*FXSTRIDE+FXSTRIDE-1);
 
         // ANimations and sounds
                 
@@ -258,7 +256,7 @@ onEvt(string script, integer evt, list data){
             sounds = llJson2List((string)sounds);
         
 		
-		list p = llList2List(PARTICLE_CACHE, SPELL_CASTED*PSTRIDE, SPELL_CASTED*PSTRIDE+PSTRIDE-1);
+		list p = llList2List(PARTICLE_CACHE, casted*PSTRIDE, casted*PSTRIDE+PSTRIDE-1);
 		if( l2i(p, 0) == -2 ){
 
 			if( l2s(p, 1) )
@@ -314,7 +312,8 @@ onEvt(string script, integer evt, list data){
                 }
             }
         )
-        onSpellEnd(SPELL_CASTED, i2f(l2f(data, 5)));
+        onSpellEnd(casted, i2f(l2f(data, 5)));
+		
     }
 	// Cast interrupted
     else if(script == "got SpellMan" && evt == SpellManEvt$interrupted){
@@ -434,7 +433,7 @@ updateBorders(){
 
 }
 
-setAbilitySpinner( integer abil, float startPercent, float duration, integer reverse ){
+setAbilitySpinner( integer abil, float startPercent, float duration, integer reverse, integer line ){
     
 	if( duration<=0 )
 		return;
@@ -456,12 +455,12 @@ setAbilitySpinner( integer abil, float startPercent, float duration, integer rev
         flags = REVERSE;
     }
 
+	//qd("Setting castbar on "+(str)abil+" "+(str)startPercent+" "+(str)duration+" "+(str)reverse);
     float width = .25; float height = 1./32;
 	// Shows the cast/cdbar
     llSetLinkPrimitiveParamsFast(llList2Integer(ABILS, abil), [ PRIM_COLOR, 2, color, 0.75 ]);
     llSetLinkTextureAnim(llList2Integer(ABILS, abil), 0, 2, 4,32, 0,32, total);
-    
-    //qd("StartFrame: "+(str)startFrame+" Total frames: "+(str)(4*32-startFrame));
+    llSleep(.05);
     llSetLinkTextureAnim(llList2Integer(ABILS, abil), ANIM_ON|flags, 2, 4,32, startFrame, totalFrames, total);
 }
 
@@ -516,10 +515,9 @@ timerEvent(string id, string data){
 	
 }
 
-default 
-{
-    state_entry()
-    {
+default {
+
+    state_entry(){
 
         list out;
         links_each(nr, name, 
@@ -663,7 +661,7 @@ default
 					else{
 
 						// Set the primary (dark) cooldown
-						setAbilitySpinner(index, (currentTime-blackStartTime)/blackDuration, blackDuration, TRUE);
+						setAbilitySpinner(index, (currentTime-blackStartTime)/blackDuration, blackDuration, TRUE, __LINE__);
 						// Only one timer is needed for global cooldown
 						if( isGCD ){
 						
@@ -694,6 +692,7 @@ default
 						float total = 128./duration; // Total frames are 128
 						integer startFrame = llRound(perc*127.); 
 						integer totalFrames = 127-startFrame;
+						
 						llSetLinkTextureAnim(l2i(ABILS_OL, index), 0, 1, 0,0, 0,0, 0);
 						//qd("StartFrame: "+(str)startFrame+" Total frames: "+(str)(4*32-startFrame));
 						llSetLinkTextureAnim(llList2Integer(ABILS_OL, index), ANIM_ON, 1, 4,32, startFrame, totalFrames, total);
@@ -714,6 +713,7 @@ default
 				}
 				 
             }
+			
         }
         // Stores CD values, can be negative
         CACHE_COOLDOWNS = CDS;

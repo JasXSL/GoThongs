@@ -100,7 +100,8 @@
 #include "./classes/got LevelData.lsl"
 #include "./classes/got Attached.lsl"
 #include "./classes/got ClassAtt.lsl"
-
+#include "./classes/got PlayerPoser.lsl"
+#include "./classes/got PISpawner.lsl"
 
 
 
@@ -174,14 +175,15 @@ string toGSCReadable( integer copper ){
 // The if statement checks if this is a HUD which has a slightly different syntax
 // _data[0] is the attached point, if attached, the syntax is a bit different
 #define parseDesc(aggroTarg, resources, status, fx, sex, team, monsterflags) \
+integer resources; integer status; integer fx; integer team; integer sex; integer monsterflags; \
+{\
 list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-integer resources = l2i(_split,2); \
-integer status = l2i(_split,5); \
-integer fx = l2i(_split,7); \
-integer team = l2i(_split,1); \
-integer sex; \
-integer monsterflags = l2i(_split, 6); \
+resources = l2i(_split,2); \
+status = l2i(_split,5); \
+fx = l2i(_split,7); \
+team = l2i(_split,1); \
+monsterflags = l2i(_split, 6); \
 if(l2i(_data, 0)){ \
 	resources = l2i(_split, 0); \
 	status = l2i(_split, 1); \
@@ -190,6 +192,7 @@ if(l2i(_data, 0)){ \
 	team = l2i(_split, 4); \
 	monsterflags = 0;\
 }\
+}
 
 // Same as above but only gets sex
 #define parseSex(targ, var) \
@@ -223,7 +226,29 @@ integer var = l2i(_split, 7); \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 2);
 	
+#define parseResources(targ, hp, mp, ars, pain) \
+list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+list _split = explode("$", l2s(_data, 1)); \
+integer _n = l2i(_split,2); \
+if( l2i(_data, 0) ) \
+	_n = l2i(_split, 0); \
+_split = splitResources(_n); \
+float hp = l2f(_split, 0); \
+float mp = l2f(_split, 1); \
+float ars = l2f(_split, 2); \
+float pain = l2f(_split, 3);
 
+int _attackableHUD(key HUD){
+	list _data = llGetObjectDetails(HUD, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); 
+	list _split = explode("$", l2s(_data, 1)); 
+	integer status = l2i(_split, 5); 
+	integer fx = l2i(_split, 7);
+	if(l2i(_data, 0)){
+		status = l2i(_split, 1);
+		fx = l2i(_split, 2);
+	}
+	return _attackableV(status, fx);
+}
 	
 
 // Returns an array of hp, mana, arousal, pain

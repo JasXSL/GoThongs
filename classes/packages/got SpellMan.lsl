@@ -664,7 +664,8 @@ default
             string dta = method_arg(0);
             
             integer spell = -1;
-            if(llGetSubString(dta, 0, 4) == "abil_")spell = (integer)llGetSubString(dta, 5, -1);
+            if( llGetSubString(dta, 0, 4) == "abil_" )
+				spell = (integer)llGetSubString(dta, 5, -1);
             if(~spell && spell<5)
                 onEvt("#ROOT", evt$TOUCH_START, [spell]);
             

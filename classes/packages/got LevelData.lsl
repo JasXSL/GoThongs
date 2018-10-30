@@ -209,7 +209,7 @@ default
 		Level$raiseEvent(LevelEvt$questData, llJson2List(dta));
 	}
 
-	if(METHOD == gotLevelDataMethod$difficulty && method$byOwner){
+	if( METHOD == gotLevelDataMethod$difficulty && method$byOwner ){
 	
 		DIFFICULTY = l2i(PARAMS, 0);
 		CHALLENGE = l2i(PARAMS, 1);
@@ -224,7 +224,11 @@ default
 				--i;
 			}
 		}
-		desc+= mkarr(([LevelDesc$difficulty, DIFFICULTY, CHALLENGE]));
+		desc+= mkarr((list)LevelDesc$difficulty + DIFFICULTY + CHALLENGE);
+		
+		if( _lSharp() )
+			desc+= mkarr((list)LevelDesc$live);
+		
 		llSetObjectDesc(mkarr(desc));
 		Level$raiseEvent(LevelEvt$difficulty, ([DIFFICULTY, CHALLENGE]));
 		runOnPlayers(pk, 

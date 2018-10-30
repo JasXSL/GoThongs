@@ -118,6 +118,8 @@ onEvt(string script, integer evt, list data){
         // Remove weapons
 		if( ~pre&StatusFlag$dead && STATUS&StatusFlag$dead )
             Weapon$removeAll();
+			
+		
         // Combat handles stance, and sheathe on stance end
 		if( (pre&StatusFlag$combat) != (STATUS&StatusFlag$combat) ){
 		

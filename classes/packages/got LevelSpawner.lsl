@@ -7,16 +7,92 @@ quit(){
     startPos = ZERO_VECTOR;
 }
 
-onEvt(string script, integer evt, list data){
-    if(script == "got RootAux" && evt == RootAuxEvt$cleanup){
-		integer manual = l2i(data, 0);
-        if(manual)
-			startPos = ZERO_VECTOR;
-    }
+key CURRENT_LEVEL;
+int LOADING;
+list PLAYERS;
+key PRELOADED_TEXTURE;
+list TEXTURES = [
+	"4f484ea3-8aa0-f09b-3173-ea61a5221ab4", // Panda VS Skel
+	"ae46da92-2078-0882-db82-39fa3e5b3ec5", // Fuyu & friend
+	"10a121c0-6296-749e-090c-67800975873b",	// Climbing rope
+	"683ed954-20f6-8026-1f42-b32bbfce5479",	// Riding the elevator
+	"ff0e1b2e-d9e4-0f78-7a81-4bca426cf6b9"	// Imp lair entrance
+];
+
+toggleLoadingScreen( int visible ){
+	
+	list textures = [];
+	if( visible ){
+	
+		// Seat the player
+		list cubeTasks = 
+			(list)SupportcubeBuildTask(Supportcube$tSetPos, (list)llGetRootPosition()) + 
+			SupportcubeBuildTask(Supportcube$tDelay, (list).1) + 
+			SupportcubeBuildTask(Supportcube$tForceSit, (list)FALSE + TRUE)
+		;
+		RLV$cubeTaskOn(llGetOwner(), cubeTasks);
+		ptSet("LOADED", 20, FALSE);
+		GUI$setOverlay(LINK_ALL_OTHERS, PRELOADED_TEXTURE);
+		
+		
+		PRELOADED_TEXTURE = randElem(TEXTURES);
+		llSetTexture(PRELOADED_TEXTURE, ALL_SIDES);
+		
+		return;
+		
+	}
+	
+	
+	GUI$setOverlay(LINK_ALL_OTHERS, 1);
+
 }
 
-default
-{
+onEvt(string script, integer evt, list data){
+
+	if( script == "#ROOT" && evt == RootEvt$players )
+		PLAYERS = data;
+
+    if( script == "got RootAux" && evt == RootAuxEvt$cleanup ){
+	
+		integer manual = l2i(data, 0);
+        if( manual ){
+		
+			startPos = ZERO_VECTOR;			
+			toggleLoadingScreen(FALSE);
+			
+		}
+		
+    }
+	
+	if( script == "#ROOT" && evt == RootEvt$level ){
+		
+		CURRENT_LEVEL = l2k(data, 0);
+		// Level spawned so lower loading timer
+		if( CURRENT_LEVEL )
+			ptSet("LOADED", 4, FALSE);
+		
+	}
+	
+}
+
+ptEvt( string id ){
+
+	if( id == "LOADED" ){
+		
+		toggleLoadingScreen(FALSE);
+		
+	}
+
+}
+
+default{
+
+	state_entry(){
+		PRELOADED_TEXTURE = randElem(TEXTURES);
+		llSetTexture(PRELOADED_TEXTURE, ALL_SIDES);
+	}
+
+	timer(){ptRefresh();}
     
     #include "xobj_core/_LM.lsl"
     /*
@@ -30,7 +106,7 @@ default
     if(method$isCallback)return;
     
     
-    if(METHOD == LevelSpawnerMethod$spawnLevel && method$byOwner){
+    if( METHOD == LevelSpawnerMethod$spawnLevel && method$byOwner ){
 	
 		string level = method_arg(0);
 		
@@ -44,13 +120,26 @@ default
 			startPos = llGetRootPosition()+<0,0,8>;
 		}
             
+		
+		// Show loading screen but max 20 seconds
+		toggleLoadingScreen(TRUE);
+		
+		
+		runOnPlayers(targ,
+			if( targ != llGetOwner() )
+				LevelSpawner$setLoading(targ);
+		)
+			
         // Clear old
         Portal$killAll();
         Level$despawn();
         _portal_spawn_std(level, startPos, ZERO_ROTATION, <0,0,8>, FALSE, FALSE, FALSE);
 		
-		
     }
+	
+	if( METHOD == LevelSpawnerMethod$setLoading )
+		toggleLoadingScreen(TRUE);
+
  
 	if(METHOD == LevelSpawnerMethod$remInventory && method$internal){
         list assets = llJson2List(method_arg(0));

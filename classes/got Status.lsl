@@ -33,7 +33,8 @@
 
 #define StatusMethod$debug 20			// void - Outputs your resources in human readable format
 #define StatusMethod$kill 21			// (str)customRapeName - Kills the player or npc immediately. If customRapeName is supplied, that will be used for rape
-	
+#define StatusMethod$playerSceneDone 22	// void - Player scene was finished
+
 
 // Monster only
 #define StatusMethod$monster_dropAggro 100		// (key)target, (int)complete - Drops aggro. If complete is 0, it removes the player from aggro list. If 1 it preserves the aggro until the enemy is seen/deals damage again, like if 2 players are fighting and the tank gets out of LOS it will not remove the aggro next time it sees the tank. If 2 it will just reset the aggro number to 1. If 3, it shuffles all aggro
@@ -44,6 +45,7 @@
 #define StatusMethod$monster_taunt 106			// (key)targ, (bool)inverse - Resets everyone but target's aggro or if inverse is set, resets target's aggro
 #define StatusMethod$monster_aggroed 107		// (key)targ, (float)range, (int)team - Sent by monsters when they aggro a player naturally. Aggros everything in range.
 #define StatusMethod$monster_overrideDesc 109	// (str)desc - Overrides the monster description
+
 
 // CLIMBABLE DOCUMENTATION
 // Climbable items onStart and onEnd events can contain a JSON array: [(int)flags]
@@ -87,6 +89,8 @@
 // These accept vars instead of getdata, usefulf or parseDesc
 #define _attackableV(status_flags, fxflags) (!(status_flags&StatusFlags$NON_VIABLE)&&!(fxflags&fx$UNVIABLE))
 #define _attackableVQuickrape(status_flags) (!(status_flags&StatusFlags$NON_VIABLE))
+
+
 
 #define runOnAttackable(huds, targ, run) { integer _i; for(_i=0; _i<count(huds); ++_i){  \
 	key targ = l2k(huds, _i); \
@@ -142,13 +146,12 @@
 #define Status$addArousal(attacker,amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildArousal(amt, spellName, flags))
 #define Status$addPain(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildPain(amt, spellName, flags))
 
-
-
 #define Status$fullregen() runMethod((string)LINK_ROOT, "got Status", StatusMethod$fullregen, [], TNN)
 #define Status$fullregenTarget(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [], TNN)
 #define Status$fullregenTargetNoInvul(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [1], TNN)
 #define Status$get(targ, cb) runMethod(targ, "got Status", StatusMethod$get, [], cb)
 #define Status$spellModifiers(spell_dmg_taken_mod, dmg_taken_mod, healing_taken_mod) runMethod((string)LINK_ROOT, "got Status", StatusMethod$spellModifiers, [mkarr(spell_dmg_taken_mod), mkarr(dmg_taken_mod), mkarr(healing_taken_mod)], TNN)
+#define Status$playerSceneDone(targ) runMethod((string)targ, "got Status", StatusMethod$playerSceneDone, [], TNN)
 
 #define Status$setSex(sex) runMethod((string)LINK_ROOT, "got Status", StatusMethod$setSex, [sex], TNN)
 #define Status$loading(targ, loading) runMethod(targ, "got Status", StatusMethod$loading, [loading], TNN)
@@ -167,7 +170,7 @@
 #define Status$monster_taunt(targ, inverse) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_taunt, [targ, inverse], TNN)
 #define Status$monster_aggroed(player, range, team) runLimitMethod(llGetOwner(), "got Status", StatusMethod$monster_aggroed, [player, range, team], TNN, range)
 #define Status$monster_overrideDesc(desc) runMethod((str)LINK_ROOT, "got Status", StatusMethod$monster_overrideDesc, [desc], TNN)
-#define Status$setTeam(targ, team) runMethod((str)targ, "got Status", StatusMethod$setTeam, [team], TNN)
+#define Status$setTeam(targ, team) runMethod((str)targ, "got Status", StatusMethod$setTeam, (list)team, TNN)
 
 
 

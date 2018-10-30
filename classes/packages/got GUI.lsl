@@ -8,6 +8,7 @@ integer BFL;
 #define BFL_TOGGLED 0x1
 #define BFL_FIRST_ENABLED 0x2		// If it's been enabled manually
 #define BFL_UPDATE_QUEUE 0x4		// Bars update queue
+#define BFL_LOADING_SCREEN 0x8
 
 #define BAR_STRIDE 2
 list BARS = [0,0,0,0,0,0,0,0,0,0];  // [(int)portrait, (int)bars], target, self, coop0, coop1, coop2
@@ -424,8 +425,10 @@ default
 		integer flags = (int)j(s, 0); \
 		if(flags == CACHE_FX_FLAGS)return; \
 		if( \
-			(flags&fx$F_BLINDED && ~CACHE_FX_FLAGS&fx$F_BLINDED) || \
-			(~flags&fx$F_BLINDED && CACHE_FX_FLAGS&fx$F_BLINDED) \
+			~BFL&BFL_LOADING_SCREEN && (\
+				(flags&fx$F_BLINDED && ~CACHE_FX_FLAGS&fx$F_BLINDED) || \
+				(~flags&fx$F_BLINDED && CACHE_FX_FLAGS&fx$F_BLINDED) \
+			)\
 		){ \
 			string out = "@setoverlay=n,setoverlay_texture:"+TEXTURE_BLANK+"=force,setoverlay_tint:0/0/0=force"; \
 			if(flags&fx$F_BLINDED) \
@@ -563,6 +566,22 @@ default
 		llSetLinkPrimitiveParamsFast(P_SPINNER, out);
 	}
 	
+	else if( METHOD == GUIMethod$setOverlay ){
+		
+		key texture = method_arg(0);
+		if( texture ){
+			llOwnerSay("@setoverlay=n,setoverlay_texture:"+(str)texture+"=force,setoverlay_tint:1/1/1=force,setoverlay_alpha:1=force");
+			BFL = BFL|BFL_LOADING_SCREEN;
+		}
+		else{
+			
+			BFL = BFL&~BFL_LOADING_SCREEN;
+			float fade = l2f(PARAMS, 0);
+			llOwnerSay("@setoverlay_tween:0;;"+(str)fade+"=force");	
+			
+		}
+	
+	}
 
     else if(METHOD == GUIMethod$toggle){
 		integer show = l2i(PARAMS, 0);
