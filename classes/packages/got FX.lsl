@@ -361,6 +361,9 @@ integer preCheck(key sender, list package, integer team){
 		else if(c == fx$COND_SELF)
 			add = (sender == "s");
 		
+		else if( c == fx$COND_CASTER_RANGE )
+			add = llVecDist(llGetRootPosition(), prPos(sender)) < l2f(dta, 0);
+		
 		// User defined conditions
         else
 			add = checkCondition(sender, c, dta, flags, team);

@@ -5,6 +5,7 @@
 list _C;		// Math constants
 
 integer TEAM = TEAM_PC;
+key HUD_TARG;
 
 // Contains the fx data
 #define CSTRIDE 4
@@ -70,10 +71,6 @@ string runMath( string FX, integer index, key targ ){
 		spdmdm = 1;
 	else if(spdmdm<0)
 		spdmdm = 0;
-
-	int melee_range;
-	if( llVecDist(llGetRootPosition(), prPos(targ)) < MELEE_RANGE || targ == "1" )
-		melee_range = TRUE;
 		
 	float dm = pdmod;
 	integer pos = llListFindList(dmod, (list)0);
@@ -110,8 +107,10 @@ string runMath( string FX, integer index, key targ ){
 		"mmp", cMMP,
 		// Current HP
 		"hp", cHP,
-		"m", melee_range,
-		"ehp", ehp				// enemy HP from 0 to 100
+		"m", ( llVecDist(llGetRootPosition(), prPos(targ)) < MELEE_RANGE || targ == "1" ),		// melee range of the spell target
+		"ehp", ehp,				// enemy HP from 0 to 100
+		// HUD target flags
+		"tm", ( llVecDist(llGetRootPosition(), prPos(HUD_TARG)) < MELEE_RANGE || HUD_TARG == "1" )		// Melee range of the HUD target
     ];
 	
     integer i;
@@ -149,6 +148,11 @@ onEvt(string script, integer evt, list data){
 
     if(script == "#ROOT" && evt == RootEvt$players)
         PLAYERS = data;
+		
+	else if( script == "#ROOT" && evt == RootEvt$targ )
+        HUD_TARG = l2s(data,0);
+		
+	
 
 	else if(script == "got Status" && evt == StatusEvt$flags)
         SF = llList2Integer(data,0);
@@ -226,14 +230,15 @@ onEvt(string script, integer evt, list data){
 			
 		}
 		
-		else if(llFrand(1) < befuddle-1){
+		else if( llFrand(1) < befuddle-1 ){
+		
 			float r = spellRange(SPELL_CASTED);
 			string targ = randElem(PLAYERS);
 			if(targ == llGetOwner())
 				SPELL_TARGS = [LINK_ROOT];
-			else if(llVecDist(llGetRootPosition(), prPos(targ)) < r){
+			else if(llVecDist(llGetRootPosition(), prPos(targ)) < r)
 				SPELL_TARGS = [targ];
-			}
+			
 		}
 		
 		// Send effects and rez visuals

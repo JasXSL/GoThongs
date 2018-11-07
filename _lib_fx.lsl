@@ -154,6 +154,8 @@
 	#define fx$COND_HAS_GENITALS 12				// (int)bitflags - See _core
 	#define fx$COND_TEAM 14						// (int)team1, (int)team2... - Validates if the receiver is on any of these teams. If reverse it validates if the receiver is not on either of the teams
 	#define fx$COND_CASTER_ANGLE 15				// Minimum angle from caster fwd. Positive X for player casters, positive Z for NPC casters. Viable values are 0-PI. 1.57 is "in front"
+	#define fx$COND_CASTER_RANGE 16				// (float)range - Caster range must be less or equal than range
+	
 	
 // Reserved names:
 	#define FXN$INFUSION "_I"					// Bloodlust
