@@ -164,7 +164,6 @@ float rCnv( integer ty, float am ){
 		}
 	}
 	
-	
 	if(l2f(resources, 0))
 		aHP(l2f(resources,0), "", 0, FALSE, TRUE, "");
 	if(l2f(resources, 1))
@@ -645,7 +644,7 @@ OS( int ic ){
 	if(HP>maxHP())
 		HP = maxHP();
 	if(MANA>maxMana())
-		HP = maxHP();
+		MANA = maxMana();
 		
 	// int is 0000000 << 21 hp_perc, 0000000 << 14 mana_perc, 0000000 << 7 arousal_perc, 0000000 pain_perc 
 	string data = (string)(
@@ -890,10 +889,11 @@ default
 	// Public methods here
 	if(METHOD == StatusMethod$debug && method$byOwner){
 		qd(
-			"HP: "+(str)HP+"/"+(str)maxHP()+" | "+
-			"Mana: "+(str)MANA+"/"+(str)maxMana()+" | "+
-			"Ars: "+(str)AROUSAL+"/"+(str)maxArousal()+" | "+
-			"Pain: "+(str)PAIN+"/"+(str)maxPain()
+			"HP: "+(str)HP+"/"+(str)maxHP()+"\n"+
+			"Mana: "+(str)MANA+"/"+(str)maxMana()+"\n"+
+			"Ars: "+(str)AROUSAL+"/"+(str)maxArousal()+"\n"+
+			"Pain: "+(str)PAIN+"/"+(str)maxPain()+"\n"+
+			"Dmg Taken: "+(str)paDT
 		);
 	}
 	
@@ -992,6 +992,7 @@ default
 			ptSet(TIMER_INVUL, 6, FALSE);
 			
 		}
+		
         HP = maxHP();
         MANA = maxMana();
         AROUSAL = 0;
@@ -1049,8 +1050,6 @@ default
 		raiseEvent(StatusEvt$loading_level, id);
 		
 	}
-	else if(METHOD == StatusMethod$debugOut)
-		llOwnerSay(mkarr(([maxHP(), maxMana(), maxArousal(), maxPain()])));
 	else if( METHOD == StatusMethod$playerSceneDone && SF&StatusFlag$dead )
 		AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
 	else if( METHOD == StatusMethod$toggleBossFight ){
