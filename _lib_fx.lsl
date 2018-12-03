@@ -65,6 +65,7 @@
 		#define fx$NO_PROCS 0x20000					// PC - Disables procs
 		#define fx$F_STUNNED_IMPORTANT 0x40000		// NPC - Effect stuns bosses as well
 		#define fx$F_FORCE_MOUSELOOK 0x80000		// PC - Makes only mouselook work
+		#define fx$F_SPELLS_MAX_RANGE 0x100000		// PC - Makes all spells cast as if they were done from max range (10m)
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE|fx$F_NO_TARGET)
@@ -118,7 +119,7 @@
 	#define fx$CUBETASKS 55						// (arr)tasks - PC ONLY Sends cubetasks to the owner
 	#define fx$BEFUDDLE 56						// (float)perc - PC ONLY - Adds a chance on spell cast to target a random player
 	#define fx$CONVERSION 57					// (int)conversion1, (int)conversion2... - PC ONLY - See got FXCompiler.lsl
-	#define fx$LTB 58							// (str)asset, (arr)conf - PC Only - Spawns a long term buff visual which sticks around on the affected player until the spell is removed.
+	#define fx$LTB 58							// (str)asset, (arr)conf - PC Only - Spawns a long term buff visual which sticks around on the affected player until the spell is removed. For conf, see got BuffSpawn. It's a strided list.
 	#define fx$REFRESH_SPRINT 59				// void - PC Only - Instant only. Refreshes sprint
 	#define fx$HP_ADD 60						// (float)amount - PC only - Increases max HP by amount nr of points.
 	#define fx$GRAVITY 61						// (float)n - PC only - Overrides gravity, the last call is the active one

@@ -40,8 +40,8 @@
 #define Monster$RF_PACIFIED 2			// No attacks, but can aggro
 #define Monster$RF_NOROT 4
 #define Monster$RF_NOAGGRO 8			// No new aggro, but will keep attacking until it's lost all current aggro
-#define Monster$RF_FREEZE_AGGRO 0x10	// While this is set got Monster will not lose it's aggro target on itself
-#define Monster$RF_NO_DEATH 0x20		// Don't delete on death, let LocalConf handle it
+#define Monster$RF_FREEZE_AGGRO 0x10	// While this is set got Monster will not lose its aggro target on itself
+#define Monster$RF_NO_DEATH 0x20		// Don't delete on death, let LocalConf handle it through StatusEvt$death_hit
 #define Monster$RF_INVUL 0x40			// Invulnerable
 #define Monster$RF_NO_TARGET 0x80		// Not targetable 
 #define Monster$RF_NO_SPELLS 0x100		// Unable to cast spells

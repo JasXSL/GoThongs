@@ -120,8 +120,6 @@
 
 #define SITE_URL "http://jasx.org/lsl/got/hud2/index.php"
 
-#define INITIALIZED ((integer)db2$get("#ROOT", [RootShared$flags])&RootFlag$ini)
-
 #define DEFAULT_DURABILITY 100.
 #define DEFAULT_MANA 50.
 #define DEFAULT_PAIN 25.

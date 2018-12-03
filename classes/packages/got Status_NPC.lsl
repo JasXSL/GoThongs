@@ -415,7 +415,9 @@ outputStats( integer f ){
 				team == TEAM || \
 				monsterFlags&Monster$RF_INVUL \
 			) \
-		)dropag(AT, TRUE); \
+		){ \
+			dropag(AT, TRUE); \
+		} \
 		else if( AT == "" ){ \
 			llSensor("", "", AGENT|ACTIVE, AR, PI); \
 		} \

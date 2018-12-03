@@ -3,13 +3,12 @@
 #define RootMethod$debugHuds 2					// void - Owner-says a JSON array of the coop HUDs
 //#define RootMethod$setThongIni 3				// (int)has_thong		- Initialize thong
 #define RootMethod$setTarget 4					// (key)target, (key)texture, (int)force_override|(key)pre_targ, (int)team - If pre_targ is a key, it only clears if that is the current target
-#define RootMethod$getPlayers 5					// NULL - Returns an array of players
+#define RootMethod$getPlayers 5					// callbacks [(arr)players, (arr)huds]
 #define RootMethod$setParty 6					// (key)coop_player, (key)players2... - 
 #define RootMethod$setLevel 7					// void - Returns players
 #define RootMethod$manageAdditionalPlayer 8		// (key)player, (int)rem - Adds or removes a player to be able to interact with the HUD and any monsters you spawn
 #define RootMethod$attached 9					// Sent as omni com on HUD attach - Also used to get the coop player's HUD
 #define RootMethod$refreshTarget 10				// (key)id, Force a target refresh command if id is "" or we are currently targeting ID
-
 
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed

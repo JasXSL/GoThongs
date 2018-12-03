@@ -87,6 +87,7 @@ default
             rotation rot_offset = (rotation)llList2String(data, 2);
 			integer flags = llList2Integer(data, 3);
 			integer startParam = l2i(data, 4);
+			
 			if(startParam == 0)
 				startParam = 1;
 			

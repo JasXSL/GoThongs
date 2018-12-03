@@ -78,6 +78,10 @@ string runMath( string FX, integer index, key targ ){
 		dm = dm*l2f(dmod, pos+1);
 	if( ~(pos = llListFindList(dmod, (list)key2int(targ))) )
 		dm = dm*l2f(dmod, pos+1);
+		
+	float targRange = llVecDist(llGetRootPosition(), prPos(targ));
+	if( fxFlags&fx$F_SPELLS_MAX_RANGE )
+		targRange = 10;
 
 	_C = [
 		// Damage done multiplier
@@ -107,7 +111,9 @@ string runMath( string FX, integer index, key targ ){
 		"mmp", cMMP,
 		// Current HP
 		"hp", cHP,
-		"m", ( llVecDist(llGetRootPosition(), prPos(targ)) < MELEE_RANGE || targ == "1" ),		// melee range of the spell target
+		// note that for selfcast, these still reference the target of the nonself if one of those exist
+		"m", (targRange < MELEE_RANGE || targ == "1" ),		// melee range of the spell target
+		"r", targRange,										// Total range to target
 		"ehp", ehp,				// enemy HP from 0 to 100
 		// HUD target flags
 		"tm", ( llVecDist(llGetRootPosition(), prPos(HUD_TARG)) < MELEE_RANGE || HUD_TARG == "1" )		// Melee range of the HUD target
@@ -128,8 +134,9 @@ string runMath( string FX, integer index, key targ ){
 		integer q = llStringLength(llList2String(llParseString2List(block, ["\"","$"], []), 0));
         // JSON fix?
 		string math = implode("/", explode("\\/", llGetSubString(block, 0, q-1)));
+
 		// Run the math
-		string out = (str)pandaMath(math);
+		string out = l2s(pandaMath(math),0);
 		// Don't remove the point, since output should always be a float
 		while( llGetSubString(out, -1, -1) == "0" )
 			out = llDeleteSubString(out, -1, -1);

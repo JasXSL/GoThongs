@@ -492,9 +492,9 @@ default
 			qd(mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0)));
     }
     
-    if(METHOD == RootMethod$getPlayers){
+    if(METHOD == RootMethod$getPlayers)
 		CB_DATA = [mkarr(getPlayers()), mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0))];
-	}
+	
 	
 	else if(METHOD == RootMethod$attached){
 		
