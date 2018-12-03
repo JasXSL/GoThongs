@@ -1,4 +1,5 @@
 list PLAYERS;
+list PLAYER_HUDS;
 list PLAYER_ICONS = ["d1f4998d-edb0-4067-da12-d651a3dbe9ac"];
 #define USE_EVENTS
 #include "got/_core.lsl"
@@ -10,6 +11,7 @@ integer BFL;
 
 key MOD_TO_ACCEPT;
 list MANIFEST;
+
 
 key VALIDATE;		// HTTP request to fetch manifest
 
@@ -30,9 +32,12 @@ cleanup(key id, integer manual){
 }
 
 onEvt(string script, integer evt, list data){
-	if(script == "#ROOT" && evt == RootEvt$players){
+
+	if( script == "#ROOT" && evt == RootEvt$players )
 		PLAYERS = data;
-	}
+	if( script == "#ROOT" && evt == RootEvt$coop_hud )
+		PLAYER_HUDS = data;
+		
 	else if(script == "jas RLV"){
 		if(evt == RLVevt$cam_set && ~BFL&BFL_CAM_SET){
 			BFL = BFL|BFL_CAM_SET;
@@ -201,9 +206,9 @@ default
 			
 			else if(llGetSubString(message, 0, 5) == "player"){
 				integer n = (int)llGetSubString(message, 6, -1);
-				if(n >= count(PLAYERS))
+				if(n >= count(PLAYER_HUDS))
 					return;
-				Root$targetThis(llList2Key(PLAYERS, n), l2s(PLAYER_ICONS, n), TRUE, -1);
+				Root$targetThis(llList2Key(PLAYER_HUDS, n), l2s(PLAYER_ICONS, n), TRUE, -1);
 			}
 			
 			else if(message == "reset"){resetAll();}
