@@ -102,7 +102,7 @@
 #include "./classes/got ClassAtt.lsl"
 #include "./classes/got PlayerPoser.lsl"
 #include "./classes/got PISpawner.lsl"
-
+#include "./classes/got AniAnim.lsl"
 
 
 
@@ -182,7 +182,7 @@ status = l2i(_split,5); \
 fx = l2i(_split,7); \
 team = l2i(_split,1); \
 monsterflags = l2i(_split, 6); \
-if(l2i(_data, 0)){ \
+if(l2i(_data, 0)){ /* HUD */ \
 	resources = l2i(_split, 0); \
 	status = l2i(_split, 1); \
 	fx = l2i(_split, 2); \
@@ -235,6 +235,19 @@ float hp = l2f(_split, 0); \
 float mp = l2f(_split, 1); \
 float ars = l2f(_split, 2); \
 float pain = l2f(_split, 3);
+
+// Checks if NPC or PC is humanoid
+integer targetIsHumanoid( key targ ){
+	list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
+	// Attachments always count as humanoid
+	if( l2i(_data, 0) )
+		return TRUE;
+	list _split = explode("$", l2s(_data, 1));
+	if( l2i(_split, 6) & Monster$RF_HUMANOID )
+		return TRUE;
+	return FALSE;
+}
+	
 
 int _attackableHUD(key HUD){
 	list _data = llGetObjectDetails(HUD, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); 

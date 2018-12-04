@@ -302,10 +302,8 @@ onEvt(string script, integer evt, list data){
                     if(prAttachPoint(targ))
                         targ = llGetOwnerKey(val);
                     
-                    if(llJsonValueType(v, []) == JSON_ARRAY){
+                    if( llJsonValueType(v, []) == JSON_ARRAY )
                         SpellFX$spawnInstant(v, targ);
-					}
-
                     else
                         SpellFX$spawn(v, targ);
                     

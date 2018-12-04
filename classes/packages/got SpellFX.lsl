@@ -34,17 +34,17 @@ default
     
     if(method$internal){
         if(METHOD == SpellFXMethod$spawn){
-            purge();
-            string item = method_arg(0);
+
+			string item = method_arg(0);
             key targ = method_arg(1);
+			purge();
+            
             if(!isset(item) || !isset(targ))return;
             queue+=[item, targ, llGetTime()];
 			
 			vector r = llRot2Euler(prRot(llGetOwner()));
-			
-			
-			
             llRezAtRoot(item, llGetRootPosition()-<0,0,3>, ZERO_VECTOR, llEuler2Rot(<0,0,r.z>), 1);
+			
         }
 		else if(METHOD == SpellFXMethod$remInventory){
 			list assets = llJson2List(method_arg(0));
@@ -92,10 +92,12 @@ default
 				startParam = 1;
 			
             key targ = method_arg(1);
-
+			key t = targ;
+			if( flags & SpellFXFlag$SPI_SPAWN_FROM_CASTER )
+				t = llGetOwner();
             
-            boundsHeight(targ, b)
-			vector as = llGetAgentSize(targ);
+            boundsHeight(t, b)
+			vector as = llGetAgentSize(t);
             if( as ){
 			
 				b = 0;
@@ -106,9 +108,12 @@ default
 				pos_offset.z *= b;
 			
             
-			vector vrot = llRot2Euler(prRot(targ));
+			vector vrot = llRot2Euler(prRot(t));
 			if( ~flags&SpellFXFlag$SPI_FULL_ROT )
 				vrot = <0,0,vrot.z>;
+			
+			if( flags&SpellFXFlag$SPI_TARG_IN_REZ )
+				startParam = (int)("0x"+llGetSubString(targ,0,7));
 			
 			rotation rot = llEuler2Rot(vrot);
 			//qd("Vrot: "+(str)vrot);
@@ -116,7 +121,7 @@ default
 			vector offset = <0,0,b/2>+(pos_offset*rot);
 			//qd("Offset computed: "+(str)offset);
 			//qd("Target position: "+(str)prPos(targ));
-			vector to = prPos(targ)+offset;
+			vector to = prPos(t)+offset;
 			
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
 
