@@ -72,7 +72,10 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			resource_updates += SMBUR$buildDurabilityNPC(-l2f(fx,1)*stacks, pname, l2i(fx,2), caster);
         
 		else if(t == fx$ANIM){
-            if(llList2Integer(fx,2))MeshAnim$startAnim(llList2String(fx, 1));
+			
+			if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT )
+				AniAnim$customAnim(LINK_THIS, l2s(fx,1), l2i(fx,2));
+            else if(llList2Integer(fx,2))MeshAnim$startAnim(llList2String(fx, 1));
             else MeshAnim$stopAnim(llList2String(fx, 1));
         }
         
@@ -117,7 +120,9 @@ addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, 
         // These are NPC specific 
         else if( t == fx$ANIM ){
 		
-            if( l2i(fx,1) )
+			if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT )
+				AniAnim$customAnim(LINK_THIS, l2s(fx,0), l2i(fx,1));
+            else if( l2i(fx,1) )
 				MeshAnim$startAnim(l2s(fx, 0));
             else 
 				MeshAnim$stopAnim(l2s(fx, 0));
@@ -150,15 +155,18 @@ remEffect(integer pid, integer pflags, string pname, string fxobjs, integer time
         list fx = llJson2List(llList2String(fxs,0));
         fxs = llDeleteSubList(fxs,0,0);
         integer t = llList2Integer(fx, 0);
-        
+        fx = llDeleteSubList(fx, 0, 0);
+		
         if(!overwrite){
 		
             if(t == fx$ANIM){
 			
-                if(!llList2Integer(fx,2))
-					MeshAnim$startAnim(llList2String(fx, 1));
+				if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT )
+					AniAnim$customAnim(LINK_THIS, l2s(fx,0), !l2i(fx,1));
+                else if(!llList2Integer(fx,2))
+					MeshAnim$startAnim(llList2String(fx, 0));
                 else 
-					MeshAnim$stopAnim(llList2String(fx, 1));
+					MeshAnim$stopAnim(llList2String(fx, 0));
 					
             }
 			

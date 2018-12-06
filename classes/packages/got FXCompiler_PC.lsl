@@ -44,6 +44,8 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		else if( t == fx$REDUCE_CD ){
 			SpellMan$reduceCD(llDeleteSubList(fx, 0, 0));
 		}
+		
+
 		else if(t == fx$SPAWN_MONSTER){
 			
 			vector rot = llRot2Euler(llGetRot());

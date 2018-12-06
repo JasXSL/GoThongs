@@ -7,7 +7,9 @@
 
 #define TIMER_FRAME "a"
 #define TIMER_ATTACK "b" 
+#define TIMER_EXEC_ATTACK "c"
 
+#define isAnimesh() (RUNTIME_FLAGS&Monster$RF_ANIMESH)
 
 
 list PLAYERS;           // The players, should always contain owner
@@ -31,9 +33,10 @@ float hitbox = 3;       // Range of melee attacks
 #define HITBOX_DEFAULT 1.5		// if hitbox is this value, use default
 float atkspeed = 1;     // Time between melee attacks
 float wander;           // Range to roam
+float hoverHeight;		// Hover height. Primarily used for animesh
 
 integer height_add;		// LOS check height offset from the default 0.5m above root prim
-#define hAdd() ((float)height_add/10)
+#define hAdd() ((float)height_add/10+hoverHeight)
 
 float fxSpeed = 1;			// FX speed modifier
 float fxCooldownMod = 1;	// Used for attack speed
@@ -61,26 +64,39 @@ integer BFL = 0x20;            // Don't roam unless a player is in range
 #define getSpeed() (speed*fxSpeed)
 #define setState(n) STATE = n; raiseEvent(MonsterEvt$state, (str)STATE)
 
+lookAt( vector pos ){
+	
+	vector mpos = llGetPos();
+	pos.z = mpos.z;
+	if( isAnimesh() )
+		llRotLookAt(llRotBetween(<1,0,0>, llVecNorm(pos-mpos)), 1, 1);
+	else
+		llLookAt(pos,1,1);
+	
+
+}
+
 integer moveInDir(vector dir){
-	if(dir == ZERO_VECTOR)return FALSE;
+
+	if( dir == ZERO_VECTOR )
+		return FALSE;
     dir = llVecNorm(dir);
 	vector gpos = llGetRootPosition();
     
 	float sp = getSpeed();
-    if(~getRF()&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp>0){
+    if( ~getRF()&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp>0 ){
         
-        if(~BFL&BFL_CHASING && ~BFL&BFL_SEEKING)sp/=2;
+        if( ~BFL&BFL_CHASING && ~BFL&BFL_SEEKING )
+			sp/=2;
 
+			
         dir = dir*sp;
-		vector a = <0,0,0.5+hAdd()>;	// Max climb distance
-		vector b = <0,0,-1>;	// Max drop distance
+		vector a = <0,0,0.5+hAdd()-hoverHeight>;	// Max climb distance
+		vector b = <0,0,-1-hoverHeight>;	// Max drop distance
 		// If flying, go directly towards the target 
-		if(getRF()&Monster$RF_FLYING){
+		if( getRF()&Monster$RF_FLYING )
 			a = b = ZERO_VECTOR;
-		}
-		
-		
-		
+
 		// Vertical raycast
 		vector rayStart = gpos+a;
 		// movement, hAdd() is not added
@@ -101,15 +117,19 @@ integer moveInDir(vector dir){
         */
 		
 		vector z = llList2Vector(r, 1);
-		if(getRF()&Monster$RF_FLYING)
+		if( getRF()&Monster$RF_FLYING )
 			z = gpos+dir;
 			
-        llSetKeyframedMotion([z-gpos, .25/sp], [KFM_DATA, KFM_TRANSLATION]);
+        llSetKeyframedMotion([z-gpos+<0,0,hoverHeight>, .25/sp], [KFM_DATA, KFM_TRANSLATION]);
         toggleMove(TRUE);
-    }else toggleMove(FALSE);
+		
+    }else 
+		toggleMove(FALSE);
     
-    if(~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED && (look_override == "" || look_override == NULL_KEY))
-        llLookAt(gpos+<dir.x, dir.y, 0>, 1, 1);
+    if( ~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED && (look_override == "" || look_override == NULL_KEY ) )
+		lookAt(gpos+<dir.x, dir.y, 0>);
+		
+	
     return TRUE;
 }
 
@@ -142,7 +162,7 @@ toggleMove(integer on){
 		vector pp = prPos(chasetarg); \
 		vector gpos = llGetRootPosition(); \
 		if(look_override)pp = prPos(look_override); \
-		llLookAt(<pp.x, pp.y, gpos.z>,1,1); \
+		lookAt(<pp.x, pp.y, gpos.z>); \
 	}\
 
 
@@ -275,10 +295,11 @@ timerEvent(string id, string data){
 						return;
 					}
 					
-					multiTimer([TIMER_ATTACK, "", atkspeed*fxCooldownMod, FALSE]);
+					multiTimer([TIMER_ATTACK, 0, atkspeed*fxCooldownMod, FALSE]);
 					raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));
 					BFL = BFL|BFL_ATTACK_CD;
 					anim("attack", TRUE);
+					multiTimer([TIMER_EXEC_ATTACK, 0, 0.2, FALSE]);
 				}
 				
                 BFL = BFL|BFL_IN_RANGE;
@@ -325,6 +346,9 @@ timerEvent(string id, string data){
 		// Set it so we can attack again
 		BFL = BFL&~BFL_ATTACK_CD;
     }
+	
+	else if( id == TIMER_EXEC_ATTACK )
+		attack();
 	
 	else if(id == "INI"){
 		LocalConf$ini();
@@ -376,21 +400,8 @@ onEvt(string script, integer evt, list data){
         string task = llList2String(split, 0);
         
         if(task == FRAME_AUDIO)llPlaySound(llList2String(split,1), llList2Float(split,2));
-        else if(task == Monster$atkFrame || (script == "got LocalConf" && evt == LocalConfEvt$emulateAttack)){
-            list odata = llGetPrimitiveParams([PRIM_POSITION, PRIM_ROTATION]);
-
-            list ifdata = llGetObjectDetails(chasetarg, [OBJECT_POS, OBJECT_ROT]);
-            vector pos = llList2Vector(odata,0);
-            vector dpos = llList2Vector(ifdata, 0);
-            
-            if(~getRF()&Monster$RF_NOROT && chasetarg != "" && (look_override == "" || look_override == NULL_KEY))
-                llLookAt(<dpos.x, dpos.y, pos.z>, 1,1);
-            
-            float dist = llVecDist(pos, dpos);
-            if(dist>hitbox*2)return;
-            
-            raiseEvent(MonsterEvt$attack, mkarr([chasetarg]));
-        }
+        else if(script == "got LocalConf" && evt == LocalConfEvt$emulateAttack)
+			attack();
         
     }
     
@@ -421,6 +432,21 @@ onEvt(string script, integer evt, list data){
             BFL = BFL&~BFL_PLAYERS_NEARBY;
     }
 
+}
+
+attack(){
+	list odata = llGetPrimitiveParams([PRIM_POSITION, PRIM_ROTATION]);
+	list ifdata = llGetObjectDetails(chasetarg, [OBJECT_POS, OBJECT_ROT]);
+	vector pos = llList2Vector(odata,0);
+	vector dpos = llList2Vector(ifdata, 0);
+	
+	if(~getRF()&Monster$RF_NOROT && chasetarg != "" && (look_override == "" || look_override == NULL_KEY))
+		lookAt(<dpos.x, dpos.y, pos.z>);
+	
+	float dist = llVecDist(pos, dpos);
+	if(dist>hitbox*2)return;
+	
+	raiseEvent(MonsterEvt$attack, mkarr([chasetarg]));
 }
 
 // Settings received
@@ -455,6 +481,8 @@ onSettings(list settings){
 		if(idx == MLC$height_add)
 			height_add = l2i(dta,0);
 		
+		if( idx == MLC$hover_height )
+			hoverHeight = l2f(dta, 0);
 		
 	}
 	

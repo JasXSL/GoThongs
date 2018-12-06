@@ -43,7 +43,7 @@ float preHP = 1;
 float AR;			// aggro range
 key aSnd;         	// Aggro sound
 key daSnd;     		// Drop aggro sound
-key atSnd;        	// Attack sound
+list atSnd;        	// Attack sound
 key dSnd;         	// Death sound 
 key icon;
 string drops;			// JSON array of sub arrays of [(str)asset, (float)drop_chance]
@@ -306,7 +306,7 @@ outputStats( integer f ){
 		if(idx == MLC$dropaggro_sound) \
 			daSnd = dtaStr; \
 		if(idx == MLC$attacksound) \
-			atSnd = dtaStr; \
+			atSnd = llJson2List(dtaStr); \
 		if(idx == MLC$deathsound) \
 			dSnd = dtaStr; \
 		if(idx == MLC$icon) \
@@ -387,8 +387,8 @@ outputStats( integer f ){
 					llInsertString((str)pain, llStringLength((str)pain)-1, ".")+ \
 				"],"+hitfx+"],[],[],[],0,0,0]]", TEAM); \
         } \
-		else if( evt == MonsterEvt$attackStart && atSnd != "" ){ \
-            llTriggerSound(atSnd, 1); \
+		else if( evt == MonsterEvt$attackStart && count(atSnd) ){ \
+            llTriggerSound(randElem(atSnd), 1); \
         } \
     } \
 	else if( evt == evt$TOUCH_START && initialized() && ~RF&Monster$RF_NO_TARGET ){ \

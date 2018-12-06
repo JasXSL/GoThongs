@@ -10,7 +10,7 @@ integer BFL;
 #define BFL_TEX_QUEUE 0x100            // Spell icon send timeout
 #define BFL_TEX_SENT 0x200            // Spell icon send timeout
 
-key thSnd;          // Take hit sound
+list thSnd;          // Take hit sound
 integer RF;         // Monster runtime flags
 integer TEAM = TEAM_NPC;
 string RN;            // Rape name, Usually prim name
@@ -150,7 +150,7 @@ default{
                 if(idx == 0) \
                     RF = l2i(dta, 0); \
                 if(idx == MLC$takehit_sound) \
-                    thSnd = l2s(dta, 0); \
+                    thSnd = llJson2List(l2s(dta, 0)); \
                 if(idx == MLC$height_add) \
                     hAdd = l2f(dta, 0)/10; \
                 if(idx == MLC$rapePackage && isset(l2s(dta, 0))) \
@@ -262,7 +262,7 @@ default{
     else if(METHOD == NPCIntMethod$takehit){
         startAnim("hit");
         if(thSnd)
-            llTriggerSound(thSnd, 1);
+            llTriggerSound(randElem(thSnd), 1);
     }
     
     else if(METHOD == NPCIntMethod$rapeMe && ~RF&Monster$RF_INVUL){

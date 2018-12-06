@@ -49,6 +49,8 @@
 #define Monster$RF_FLYING 0x400			// Travels in a linear fashion to enemy groin height without following the ground
 #define Monster$RF_360_VIEW 0x800		// Does not get shorter aggro range when players are behind it
 #define Monster$RF_FOLLOWER 0x1000		// Follower mode enabled
+#define Monster$RF_ANIMESH 0x2000		// This is an animesh monster
+#define Monster$RF_HUMANOID 0x4000		// This is a humanoid (allow certain monster interactions)
 
 #define Monster$atkFrame "_a"
 
@@ -68,7 +70,7 @@
 // LocalConf INI data:
 // [(int)RUNTIME_FLAGS, (float)speed, (float)hitbox, (float)atkspeed, (float)dmg, (float)wander, (int)maxhp, (float)aggro_range, (key)aggrosound, (key)dropaggrosound, (key)takehitsound, (key)attacksound, (key)deathsound, (key)icon]
 
-#define MLC$RF 0					// Monster runtime flags?
+#define MLC$RF 0					// Monster runtime flags
 #define MLC$speed 1
 #define MLC$hitbox 2
 #define MLC$atkspeed 3
@@ -88,4 +90,5 @@
 #define MLC$range_add 17			// (int)decimeters - Range increase in decimeters players players can hit this monster 
 #define MLC$height_add 18			// (int)decimeters - Offset the Z center used for LOS calculations
 #define MLC$melee_height 19			// Int signifying the point of the avatar to hit. 0 = groin/butt, 1 = chest, -1 = none
+#define MLC$hover_height 20			// Offsets the monster's Z from the ground
 
