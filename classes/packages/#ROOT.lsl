@@ -28,7 +28,7 @@ integer BFL;
 
 
 
-#define sendHUDs() runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, [llGetKey()], 0,0), TNN)
+#define sendHUDs() runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, (list)llGetKey(), 0,0), TNN)
 
 #define refreshTarget() \
 	setTarget(TARG, TARG_ICON, TRUE, -1);
@@ -530,7 +530,7 @@ default
         setTarget(method_arg(0), method_arg(1), l2i(PARAMS, 2), l2i(PARAMS, 3));
 		
     }
-	else if(METHOD == RootMethod$setLevel){
+	else if( METHOD == RootMethod$setLevel ){
 	
 		key pre = ROOT_LEVEL;
 		ROOT_LEVEL = id;
@@ -548,7 +548,7 @@ default
 				
 		)
 		
-		raiseEvent(RootEvt$level, (list)ROOT_LEVEL + isChallenge + isLive);
+		raiseEvent(RootEvt$level, mkarr((list)ROOT_LEVEL + isChallenge + isLive));
 			
 		if(pre != ROOT_LEVEL && !method$byOwner){
 		
