@@ -17,7 +17,7 @@
 #define gotWeaponFxChan (playerChan(llGetOwner())+0xDEDD)
 
 #define Weapon$remove(targ, data) runMethod(targ, "got Weapon", WeaponMethod$remove, [data], TNN)
-#define Weapon$ini(targ, slot, pos, rot, scale) runMethod(targ, "got Weapon", WeaponMethod$ini, [slot, pos, rot, scale], TNN)
+#define Weapon$ini(targ, slot, pos, rot, scale, onBack) runMethod(targ, "got Weapon", WeaponMethod$ini, [slot, pos, rot, scale, onBack], TNN)
 #define Weapon$removeAll() runOmniMethod("got Weapon", WeaponMethod$remove, ["_WEAPON_"], TNN)
 #define Weapon$trail(trails) llRegionSayTo(llGetOwner(), gotWeaponFxChan, trails)
 

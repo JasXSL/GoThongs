@@ -354,6 +354,7 @@ default
         if(llGetSubString(message,0,2) == "INI"){
             integer hand = (int)llGetSubString(message, 3, 3);
 
+			int sheathed = BFL&BFL_SHEATHED || unsheatable;
             // Right hand
             if( hand == 0 ){
 
@@ -364,7 +365,7 @@ default
                 RHAND_ATT = id;
 				
                 // Send data
-                Weapon$ini(id, getAttachSlot(TRUE), getAttachPos(TRUE), getAttachRot(TRUE), W_SCALE);
+                Weapon$ini(id, getAttachSlot(TRUE), getAttachPos(TRUE), getAttachRot(TRUE), W_SCALE, sheathed);
 				
             }
             
@@ -375,7 +376,7 @@ default
                     
                 LHAND_ATT = id;
                 // Send data
-                Weapon$ini(id, getAttachSlot(FALSE), getAttachPos(FALSE), getAttachRot(FALSE), W_SCALE);
+                Weapon$ini(id, getAttachSlot(FALSE), getAttachPos(FALSE), getAttachRot(FALSE), W_SCALE, sheathed);
             }
             
             

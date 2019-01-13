@@ -4,11 +4,12 @@ integer BFL;
 #define BFL_INI 0x1
 
 integer HAND; // 0 = mainhand 1 = offhand
-integer SLOT;
+integer SLOT;	// Attachment slot
 vector POS;
 rotation ROT;
 vector SC;
 vector baseScale;
+int BACK;		// Sheathed
 
 #define TIMER_CHECK_ATTACH "a"
 #define TIMER_CHECK_OFFSETS "b"
@@ -262,7 +263,7 @@ default{
 			int data = (int)message; \
 			int task = data&0x3F; \
 			data = data >> 6; \
-			if( task == gotWeapon$ctask$toggle ){ \
+			if( task == gotWeapon$ctask$toggle && !BACK ){ \
 				\
 				integer t = data&1; \
 				if( HAND ) \
@@ -307,6 +308,7 @@ default{
 			POS = (vector)method_arg(1);
 			ROT = (rotation)method_arg(2);
 			float sc = l2f(PARAMS, 3);
+			BACK = l2i(PARAMS, 4);
 			if( sc )
 				llScaleByFactor(sc);
 			
