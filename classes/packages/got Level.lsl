@@ -18,7 +18,6 @@ integer DIFFICULTY;
 integer CHALLENGE;
 
 integer pin;
-integer DEATHS;
 
 integer BFL;
 #define BFL_MONSTERS_LOADED 0x1
@@ -97,7 +96,6 @@ timerEvent(string id, string data){
 	else if(id == "WIPE"){
 	
 		BFL = BFL&~BFL_WIPED;
-		DEATHS = 0;
 		Portal$killAll();
 		multiTimer(["RESTART", "", 2, FALSE]);
 		runOnPlayers(targ,

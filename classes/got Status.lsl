@@ -34,6 +34,7 @@
 #define StatusMethod$debug 20			// void - Outputs your resources in human readable format
 #define StatusMethod$kill 21			// (str)customRapeName - Kills the player or npc immediately. If customRapeName is supplied, that will be used for rape
 #define StatusMethod$playerSceneDone 22	// void - Player scene was finished
+#define StatusMethod$damageArmor 23		// (int)damage
 
 
 // Monster only
@@ -45,6 +46,7 @@
 #define StatusMethod$monster_taunt 106			// (key)targ, (bool)inverse - Resets everyone but target's aggro or if inverse is set, resets target's aggro
 #define StatusMethod$monster_aggroed 107		// (key)targ, (float)range, (int)team - Sent by monsters when they aggro a player naturally. Aggros everything in range.
 #define StatusMethod$monster_overrideDesc 109	// (str)desc - Overrides the monster description
+
 
 
 // CLIMBABLE DOCUMENTATION
@@ -70,6 +72,25 @@
 #define StatusEvt$team 14					// (int)team - Team has been updated
 #define StatusEvt$interacted 15				// (key)id - Another player has interacted with you
 #define StatusEvt$targeted_by 16			// (key)id, (int)flags - List of players targeting me. PC only
+#define StatusEvt$armor 17					// (int)armor - Raised when armor has been damaged. Armor is between 0 and 50
+	#define Status$armorSlot$HEAD 0		// 
+	#define Status$armorSlot$CHEST 1
+	#define Status$armorSlot$ARMS 2
+	#define Status$armorSlot$BOOTS 3
+	#define Status$armorSlot$GROIN 4
+	
+	#define Status$FULL_ARMOR 852176050		// 50 in each type
+	#define Status$getArmorVal( armor, slot ) ((armor>>(slot*6))&63)
+	#define Status$setArmorVal( armor, slot, val ) armor = ((armor&~(63<<(slot*6)))|((val&63)<<(slot*6)))
+	
+	#define Status$armorMaxVal 63
+	#define Status$sumArmorSlots( armor ) \
+		(!!Status$getArmorVal( armor, Status$armorSlot$HEAD))+ \
+		(!!Status$getArmorVal( armor, Status$armorSlot$CHEST))+ \
+		(!!Status$getArmorVal( armor, Status$armorSlot$ARMS))+ \
+		(!!Status$getArmorVal( armor, Status$armorSlot$BOOTS))+ \
+		(!!Status$getArmorVal( armor, Status$armorSlot$GROIN))
+		
  
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC
@@ -160,6 +181,7 @@
 #define Status$toggleBossFight(on) runMethod((str)LINK_ROOT, "got Status", StatusMethod$toggleBossFight, [on], TNN)
 #define Status$coopInteract(targ) runMethod((str)targ, "got Status", StatusMethod$coopInteract, [], TNN)
 #define Status$kill(targ) runMethod((str)targ, "got Status", StatusMethod$kill, [], TNN)
+#define Status$damageArmor(targ, damage) runMethod((str)targ, "got Status", StatusMethod$damageArmor, (list)damage, TNN)
 
 
 // Monster

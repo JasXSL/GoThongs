@@ -69,6 +69,7 @@
 #define BridgeEvt$userDataChanged 4		// (arr)userData, see class User.php fn.getOut
 #define BridgeEvt$goldChanged 5			// (int)gold
 #define BridgeEvt$partyIcons 6			// (arr)UUIDs - UUIDs of the party
+#define BridgeEvt$spawningLevel 7		// (str)level - "FINISHED" means you just completed a quest, but did not hand it in yet
 
 // Thong data
 #define BridgeShared$data "a"			
@@ -93,7 +94,9 @@
 	#define BSUD$ENCHANTS 11			// arr Passives
 	#define BSUD$IGNORE_TOKEN 12		// bool ignore - Don't reload the website
 	#define BSUD$DEFAULT_STANCE 13		// Default stance of thong, overrides all weapon stances
-	
+	#define BSUD$SETTING_FLAGS 14		// user Setting flags
+		#define BSUD$SFLAG_BREAST_ANIMS 0x1		// enable breast anims
+		
 	
 #define Bridge$userData() db3$get("got Bridge", [BridgeShared$userData])
 

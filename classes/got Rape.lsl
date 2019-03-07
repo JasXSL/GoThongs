@@ -11,7 +11,7 @@
 #define Rape$end() runMethod((string)LINK_ALL_OTHERS, "got Rape", RapeMethod$end, [], TNN)
 #define Rape$assetSpawned() runMethod(llGetOwner(), "got Rape", RapeMethod$assetSpawned, [], TNN)
 #define Rape$remInventory(assets) runMethod((str)LINK_ALL_OTHERS, "got Rape", RapeMethod$remInventory, [mkarr(assets)], TNN)
-#define Rape$setTemplates(targ, templates) runMethod(targ, "got Rape", RapeMethod$setTemplates, templates, TNN)
+#define Rape$setTemplates(targ, templates) runMethod(targ, "got Rape", RapeMethod$setTemplates, (list)templates, TNN)
 #define Rape$activateTemplate() runMethod((str)LINK_ALL_OTHERS, "got Rape", RapeMethod$activateTemplate, [], TNN)
 #define Rape$addFXAttachments(attachments) runMethod((str)LINK_ALL_OTHERS, "got Rape", RapeMethod$addFXAttachments, attachments, TNN)
 #define Rape$remFXAttachments(attachments) runMethod((str)LINK_ALL_OTHERS, "got Rape", RapeMethod$remFXAttachments, attachments, TNN)

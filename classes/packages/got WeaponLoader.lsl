@@ -7,7 +7,6 @@ integer STATUS; // Flags from got Status
 integer BFL = 0x1;
 #define BFL_SHEATHED 0x1		// Weapon sheathed
 #define BFL_LOADED 0x2
-#define BFL_STANCE 0x4			// Stance entered
 
 integer WFLAGS;
 #define WFLAG_UNSHEATHABLE 0x8
@@ -30,6 +29,7 @@ list W_SOUNDS;
 
 // FX
 integer FX_FLAGS;
+list FXS;			// Fx Stances
 
 // 
 vector W_MAINHAND_POS;
@@ -45,6 +45,7 @@ rotation W_BACK_OFFHAND_ROT;
 
 string CLASS_STANCE;
 list SPELL_STANCES = ["","","","",""];		// Stance overrides after casting spells
+list SPELL_FLAGS = [0,0,0,0,0];
 int LAST_SPELL_CAST = -1;
 #define getSpellStance() l2s(SPELL_STANCES, LAST_SPELL_CAST)
 string STANCE;
@@ -69,24 +70,39 @@ updateStance(){
 		anim = getSpellStance();
 	if( LAST_SPELL_CAST == -1 && l2s(SPELL_STANCES, 1) != "" )
 		anim = l2s(SPELL_STANCES, 1);
+	if( count(FXS) )
+		anim = l2s(FXS, -1);
 		
 	//if( BFL&BFL_STANCE )
 	//	anim = "";
+	
+	if( ~STATUS&StatusFlag$combat )
+		anim = "";
+		
 	gotClassAtt$stance(anim);
-	if( anim != CLASS_STANCE && anim != getSpellStance() && BFL&BFL_SHEATHED && ~LAST_SPELL_CAST )
-		WeaponLoader$toggleSheathe(LINK_THIS, STATUS&StatusFlag$combat);
-	
-	
+
 	// Animations
 	integer p = llGetPermissions()&PERMISSION_OVERRIDE_ANIMATIONS;
 	if( !p )
 		return;
 
-	if( BFL&BFL_STANCE )
+	if( anim )
 		llSetAnimationOverride( "Standing", anim );
 	else
 		llResetAnimationOverride("Standing");
 	
+}
+
+onCombatEntered(){
+	
+	updateStance();
+	
+}
+
+onCombatExited(){
+
+	updateStance();
+
 }
 
 onEvt(string script, integer evt, list data){
@@ -105,7 +121,10 @@ onEvt(string script, integer evt, list data){
 		LAST_SPELL_CAST = l2i(data, 0);
 		if( getSpellStance() != l2s(SPELL_STANCES, pre) )
 			updateStance();
-
+			
+		if( l2i(SPELL_FLAGS, LAST_SPELL_CAST)&SpellMan$DRAW_WEAPON && BFL&BFL_SHEATHED )
+			WeaponLoader$toggleSheathe(LINK_THIS, STATUS&StatusFlag$combat);
+			
 	}
 
     if(script == "got Status" && evt == StatusEvt$flags){
@@ -123,19 +142,10 @@ onEvt(string script, integer evt, list data){
         // Combat handles stance, and sheathe on stance end
 		if( (pre&StatusFlag$combat) != (STATUS&StatusFlag$combat) ){
 		
-			integer pre = BFL &BFL_STANCE;
-			BFL = BFL&~BFL_STANCE;
-			if( STATUS&StatusFlag$combat )
-				BFL = BFL|BFL_STANCE;
-				
-			if( pre != (BFL&BFL_STANCE) ){
-			
-				updateStance();
-				// Auto sheathe on combat end
-				if( ~BFL&BFL_STANCE && ~BFL&BFL_SHEATHED )
-					WeaponLoader$toggleSheathe(LINK_THIS, TRUE);
-					
-			}
+			if( STATUS & StatusFlag$combat )
+				onCombatEntered();
+			else
+				onCombatExited();
 			
 		}
 		
@@ -144,15 +154,16 @@ onEvt(string script, integer evt, list data){
 	
 	if( script == "got SpellMan" && evt == SpellManEvt$recache ){
 		
-		SPELL_STANCES = [];
+		SPELL_STANCES = SPELL_FLAGS = [];
 		integer i;
         for( i=0; i<5; ++i ){
             
             list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
             if(d == [])
                 d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
-            SPELL_STANCES += llList2String(d, BSSAA$stance);
-			
+            SPELL_STANCES += l2s(d, BSSAA$stance);
+			SPELL_FLAGS += l2i(d, BSSAA$target_flags);
+
         }
 
 	}
@@ -316,10 +327,9 @@ spawnWeapons(){
     multiTimer(["WC", "", 10, TRUE]);
 }
 
-default
-{
-    state_entry()
-    {
+default{
+
+    state_entry(){
         memLim(1.5);
         llListen(12, "", "", "");
         
@@ -440,6 +450,23 @@ default
     }
     
     if(method$byOwner){
+		
+		if( METHOD == WeaponLoaderMethod$fxStance ){
+			
+			str stance = l2s(PARAMS, 0);
+			int begin = l2i(PARAMS, 1);
+			int pos = llListFindList(FXS, (list)stance);
+			if( (~pos && begin) || (pos == -1 && !begin) )
+				return;
+			
+			if( begin )
+				FXS += stance;
+			else
+				FXS = llDeleteSubList(FXS, pos, pos);
+			
+			updateStance();
+			
+		}
 	
         if( METHOD == WeaponLoaderMethod$toggleSheathe && ~STATUS&StatusFlag$dead ){
 		
@@ -447,6 +474,9 @@ default
 			// True if we should sheathe
             integer sheathe = (n == -1 && ~BFL&BFL_SHEATHED) || n == 1;
 			int pre = BFL;
+			
+			if( sheathe && STATUS & StatusFlag$combat )
+				return;
 			
 			// Change sheathe state
 			BFL = BFL&~BFL_SHEATHED;

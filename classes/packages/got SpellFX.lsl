@@ -96,6 +96,9 @@ default
 			if( flags & SpellFXFlag$SPI_SPAWN_FROM_CASTER )
 				t = llGetOwner();
             
+			
+			
+			
             boundsHeight(t, b)
 			vector as = llGetAgentSize(t);
             if( as ){
@@ -104,9 +107,12 @@ default
 				pos_offset.z *= as.z;
 				
 			}
-			else
+			else{
+				parseDesc(t, resources, status, fx, sex, team, monsterflags)
+				if( monsterflags & Monster$RF_ANIMESH  )
+					b /= 2;
 				pos_offset.z *= b;
-			
+			}			
             
 			vector vrot = llRot2Euler(prRot(t));
 			if( ~flags&SpellFXFlag$SPI_FULL_ROT )

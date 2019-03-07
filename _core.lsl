@@ -103,6 +103,7 @@
 #include "./classes/got PlayerPoser.lsl"
 #include "./classes/got PISpawner.lsl"
 #include "./classes/got AniAnim.lsl"
+#include "./classes/got AnimeshScene.lsl"
 
 
 
@@ -192,6 +193,18 @@ if(l2i(_data, 0)){ /* HUD */ \
 }\
 }
 
+
+// For got FXCompiler.lsl
+#define smartHealDescParse(targ, resources, status, fx, team) \
+	integer resources; integer status; integer fx; integer team;  \
+	list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+	list _split = explode("$", l2s(_data, 1));  \
+	resources = l2i(_split, 0); \
+	status = l2i(_split, 1); \
+	fx = l2i(_split, 2);  \
+	team = l2i(_split, 4);
+
+
 // Same as above but only gets sex
 #define parseSex(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
@@ -247,7 +260,9 @@ integer targetIsHumanoid( key targ ){
 		return TRUE;
 	return FALSE;
 }
-	
+
+#define _attackableData( status, fx ) \
+		(!(fx&fx$UNVIABLE) && !(status&StatusFlags$NON_VIABLE))
 
 int _attackableHUD(key HUD){
 	list _data = llGetObjectDetails(HUD, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); 

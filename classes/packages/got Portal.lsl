@@ -20,7 +20,7 @@ integer BFL;
 #define BFL_PERSISTENT 0x20
 
 #define BFL_INI 11
-#define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); raiseEvent(PortalEvt$spawner, (str)requester); raiseEvent(PortalEvt$desc_updated, INI_DATA); raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS)); }
+#define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); debugUncommon("Raising script init"); raiseEvent(PortalEvt$spawner, (str)requester); raiseEvent(PortalEvt$desc_updated, INI_DATA); raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS)); }
 
 // Fetches desc from spawner
 #define fetchDesc() llRegionSayTo(spawner, playerChan(spawner), "SP")
@@ -42,7 +42,10 @@ onEvt( string script, integer evt, list data ){
 		
 			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
 			//qd(BFL);
+			debugUncommon("All scripts acquired");
 			BFL = BFL|BFL_SCRIPTS_INITIALIZED;
+			
+			debugUncommon(BFL);
 			checkIni() 
 			
         }
@@ -76,8 +79,10 @@ timerEvent( string id, string data ){
 			
 			qd("Portal failed to initialize. BFL was: "+(string)BFL+" & non-initialized was "+mkarr(required));
 			// Description is gone for good because simulator fuckery
-			if( ~BFL&BFL_HAS_DESC )
-				return qd("Fatal error: Description has gone missing in the vast abyss of the simulator.");
+			if( ~BFL&BFL_HAS_DESC ){
+				qd("Fatal error: Description has gone missing in the vast abyss of the simulator.");
+				return;
+			}
 			// Players can be refetched
 			if( ~BFL&BFL_GOT_PLAYERS )
 				Root$getPlayers("INI");
@@ -123,16 +128,17 @@ default
         if(mew != 0){
 			integer p = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(p);
-			setText((string)mew);
             multiTimer([]);
+			setText((str)mew);
             Remoteloader$load(cls$name, p, 2);
 			return;
         }
+		setText("");
         llResetScript();
     }
-    state_entry()
-    {
+    state_entry(){
 	
+		
 		requester = mySpawner();
 		PLAYERS = [(string)llGetOwner()];
         initiateListen();
@@ -140,9 +146,10 @@ default
         pin = llCeil(llFrand(0xFFFFFFF));
         llSetRemoteScriptAccessPin(pin);
 		spawner = llList2Key(llGetObjectDetails(llGetKey(), [OBJECT_REZZER_KEY]), 0);
-
-        if(!llGetStartParameter())return;
 		
+		
+        if(!llGetStartParameter())
+			return;
 		
         if( llGetStartParameter() == 2 ){
 		
@@ -166,6 +173,7 @@ default
                 
             )
 			
+			
 			// Required together
 			if( llGetInventoryType("got LevelLite") == INVENTORY_SCRIPT )
 				required+= [1, "got LevelData"];
@@ -183,7 +191,6 @@ default
 			
 			Remoteloader$load(mkarr(llList2ListStrided(llDeleteSubList(required, 0, 0), 0, -1, 2)), pin, 2);
 			debugUncommon("Waiting for "+mkarr(required));
-			
 			
 			
 			integer mew = llList2Integer(llGetPrimitiveParams([PRIM_TEXT]), 0)&~BIT_TEMP;
@@ -214,7 +221,7 @@ default
 			}
 			
 			
-			
+			debugUncommon("Start params "+(str)mew);
 			if( mew&BIT_DEBUG )
 				BFL = BFL|BFL_IS_DEBUG;
 			else
@@ -288,7 +295,10 @@ default
 			multiTimer(["INI"]);
 			BFL = BFL|BFL_GOT_PLAYERS;
 			PLAYER_HUDS = llJson2List(method_arg(1));
+			debugUncommon("Got players "+mkarr(PLAYERS));
+			debugUncommon(BFL);
 			checkIni()
+			
         } 
         return;
     }
@@ -322,7 +332,11 @@ default
 						llGetInventoryType("got LevelLite") == INVENTORY_NONE || 
 						REZ_PARAM
 					) && 
-					~BFL&BFL_PERSISTENT
+					~BFL&BFL_PERSISTENT &&
+					(
+						llAvatarOnSitTarget() == NULL_KEY ||
+						llGetInventoryType("got AnimeshScene") == INVENTORY_NONE
+					)
 				) || 
 				l2i(PARAMS, 0)
 			)
@@ -331,8 +345,11 @@ default
         }
 		
 		else if(METHOD == PortalMethod$resetAll){
+		
 			qd("Resetting everything");
+			setText("");
 			resetAll();
+			
 		}
 		
 		else if(METHOD == PortalMethod$removeBySpawner){

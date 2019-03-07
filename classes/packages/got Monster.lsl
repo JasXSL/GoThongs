@@ -66,6 +66,7 @@ integer BFL = 0x20;            // Don't roam unless a player is in range
 
 lookAt( vector pos ){
 	
+	debugCommon("LookAt "+(str)isAnimesh());
 	vector mpos = llGetPos();
 	pos.z = mpos.z;
 	if( isAnimesh() )
@@ -138,8 +139,9 @@ anim(string anim, integer start){
 	integer meshAnim = (llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT);
 	if(start){
 		if(meshAnim)MeshAnim$startAnim(anim);
-		else MaskAnim$start(anim);
-		
+		else{
+			MaskAnim$start(anim);
+		}
 	}else{
 		if(meshAnim)MeshAnim$stopAnim(anim);
 		else MaskAnim$stop(anim);
@@ -299,7 +301,7 @@ timerEvent(string id, string data){
 					raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));
 					BFL = BFL|BFL_ATTACK_CD;
 					anim("attack", TRUE);
-					multiTimer([TIMER_EXEC_ATTACK, 0, 0.2, FALSE]);
+					multiTimer([TIMER_EXEC_ATTACK, 0, 0.1, FALSE]);
 				}
 				
                 BFL = BFL|BFL_IN_RANGE;

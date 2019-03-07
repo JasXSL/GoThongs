@@ -10,10 +10,9 @@
 	updateGame()
 	
 */
-
+list PLAYER_HUDS;
 //#define USE_EVENTS
 //#define DEBUG DEBUG_UNCOMMON
-#define USE_EVENTS
 #include "got/_core.lsl"
 
 /*
@@ -26,6 +25,11 @@
 	]
 
 */
+
+// Cache proc chance beneficial/detrimental
+float CPB = 1.0;
+float CPD = 1.0;
+
 list STACKS;
 #define sGetStacks( n ) (n&0x3FFF);
 #define sGetPid( n ) ((n>>14)&0xFFFF)
@@ -86,13 +90,14 @@ default
 		
 		if(llGetStartParameter())
 			raiseEvent(evt$SCRIPT_INIT, "");
-
 	}
 	changed(integer change){
 		if(change&(CHANGED_INVENTORY|CHANGED_ALLOWED_DROP)){
 			spawnEffects();
 		}
 	}
+	#else
+	state_entry(){ PLAYER_HUDS = (list)((string)llGetKey()); }
 	#endif
 	
 	link_message( integer link, integer nr, string s, key id ){
@@ -103,9 +108,33 @@ default
 		// Event handler
 		if(nr == EVT_RAISED){
 		
+			int evt = (int)((str)id);
 			list dta = llJson2List(s);
-			if( l2s(dta,0) == "got Status" && (int)((str)id) == StatusEvt$team )
+			str script = l2s(dta, 0);
+			if( l2s(dta,0) == "got Status" && evt == StatusEvt$team )
 				TEAM = l2i(dta,1);
+				
+			#ifdef NPC
+			if( script == "got Portal" && evt == PortalEvt$playerHUDs )
+				PLAYER_HUDS = llJson2List(l2s(dta, 1));
+			#else
+			if( script == "#ROOT" && evt == RootEvt$coop_hud ){
+				
+				PLAYER_HUDS = llListReplaceList(llJson2List(l2s(dta, 1)), (list)((str)llGetKey()), 0, 0);
+
+			}
+			#endif
+			#ifdef USE_EVENTS
+				onEvt( l2s(dta, 0), (int)((str)id), llJson2List(l2s(dta, 1)) );
+			#endif
+		}
+		
+		if( nr == TASK_FX ){
+			
+			list dta = llJson2List(s);
+			CPB = i2f(l2i(dta, FXCUpd$PROC_BEN));
+			CPD = i2f(l2i(dta, FXCUpd$PROC_DET));
+			return;
 			
 		}
 

@@ -12,9 +12,103 @@ integer BFL;
 key MOD_TO_ACCEPT;
 list MANIFEST;
 
+int P_SFX;
+int ARMOR = Status$FULL_ARMOR;			// Received from got Status
+int FXF;			// FX Flags
+int SF;				// Status flags
+
+int ARMOR_SLOTS;	// Currently equipped slots in bits
+#define getSlotEquipped(slot) (ARMOR_SLOTS&(1<<slot))
 
 key VALIDATE;		// HTTP request to fetch manifest
 
+
+// tCLT should be triggered: state entry, status flags changed, fx flags changed, armor changed
+
+// Toggle clothes
+tClt(){
+
+	int vis = 0;
+	int fxStripped = FXF&fx$F_SHOW_GENITALS || SF&(StatusFlag$dead|StatusFlag$raped);
+	if( !fxStripped ){
+		
+		int i;
+		for(; i<5; ++i ){
+			
+			if( Status$getArmorVal( ARMOR, i ) )
+				vis = vis|(1<<i);
+			
+		}
+		
+	}
+
+	integer lostArmor;
+	list slots = ["head", "chest", "arms", "boots", "crotch"];
+	int i;
+	for(; i<5; ++i ){
+		
+		int cur = ARMOR_SLOTS&(1<<i);
+		int set = vis & (1<<i);
+		
+		if( cur != set ){
+			
+			string folder = "dressed";
+			if( !set )
+				folder = "bits";
+			llRegionSayTo(llGetOwner(), 1, "jasx.setclothes "+folder+"/"+l2s(slots, i));
+			
+			if( i == Status$armorSlot$GROIN ){
+			
+				if( set ){
+					ThongMan$dead(FALSE, FALSE); 
+				}
+				else{
+					ThongMan$dead(
+						TRUE, 							// Hide thong
+						!!(SF&StatusFlag$dead)	// But don't show particles or sound if this was an FX call
+					);
+				}
+			}
+			
+			if( !set )
+				lostArmor = i+1;
+			
+		}
+	
+	}
+	
+	ARMOR_SLOTS = vis;
+	
+	// Spawn armor rip
+	
+	if( lostArmor && !fxStripped ){
+		
+		list locs = [<0.1,0,.5>,<0.1,0,.25>,<0.0,.2,.4>,<0.1,0,-.45>,<0.1,0,0>];
+		int slot = lostArmor-1;
+		SpellFX$spawnInstantTarg(P_SFX, mkarr((list)"ArmorLost" + l2v(locs, slot)), llGetOwner());
+		
+	}
+		
+	
+	/*
+	// Show genitals
+	integer show = (SF&(StatusFlag$dead|StatusFlag$raped)) || FXF&fx$F_SHOW_GENITALS;
+	
+    if(show && ~BFL&BFL_NAKED){
+		BFL = BFL|BFL_NAKED;
+        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Bits");
+		
+    }
+	
+	else if(!show && BFL&BFL_NAKED){
+		BFL = BFL&~BFL_NAKED;
+        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed");
+		llSleep(1);
+        llRegionSayTo(llGetOwner(), 1, "jasx.togglefolder Dressed/Groin, 0");
+    }
+	*/
+	
+}
 
 cleanup(key id, integer manual){
 	
@@ -49,6 +143,24 @@ onEvt(string script, integer evt, list data){
 	}
 	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons)
 		PLAYER_ICONS = data;
+		
+	else if(script == "got Status" && evt == StatusEvt$flags){
+		SF = l2i(data, 0);
+		tClt();
+	}
+	else if(script == "got Status" && evt == StatusEvt$armor ){
+		ARMOR = l2i(data, 0);
+		tClt();
+	}
+	
+	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" ){
+		
+		runOnPlayers(targ,
+			Status$damageArmor(targ, -1000);
+		)
+		
+	}
+		
 }
 
 integer diagchan;
@@ -151,6 +263,7 @@ timerEvent(string id, string data){
 		multiTimer(["C", "", 3, FALSE]);
 	}
 	
+	
 	// Clean up
 	else if(id == "C"){
 		purge();
@@ -174,9 +287,10 @@ purge(){
 	BFL = BFL&~BFL_INSTALLING;
 }
 
-default
-{
+default{
+
 	state_entry(){
+	
 		purge();
 		PLAYERS = [llGetOwner()];
 		diagchan = llCeil(llFrand(0xFFFFFFF));
@@ -184,6 +298,12 @@ default
 		llListen(3, "", llGetOwner(), "");
 		llListen(diagchan, "", llGetOwner(), "");
         llListen(2, "", "", "");
+		tClt();
+		
+		links_each( nr, name,
+			if( name == "SpellFX" )
+				P_SFX = nr;
+		)
 		
 	}
 	
@@ -298,18 +418,18 @@ default
 		llDialog(llGetOwner(), "Do you want to install files for the mod '"+llList2String(MANIFEST, 0)+"'? MAKE SURE YOU BACK UP YOUR HUD BEFORE INSTALLING A MOD! It will install the following items:\n- "+llDumpList2String(features, "\n- "), ["Accept", "Reject"], diagchan);
     }
 
+	
+	#define LM_PRE \
+	if(nr == TASK_FX){ \
+		list data = llJson2List(s); \
+		FXF = llList2Integer(data, 0); \
+		tClt(); \
+    } \
+	
     #include "xobj_core/_LM.lsl"
-    /*
-        Included in all these calls:
-        METHOD - (int)method
-        PARAMS - (var)parameters
-        SENDER_SCRIPT - (var)parameters   
-        CB - The callback you specified when you sent a task
-    */ 
-    if(method$isCallback){
+    if(method$isCallback)
         return;
-    }
-    
+
     if(method$byOwner){
 		if(METHOD == RootAuxMethod$prepareManifest){
 			if(BFL&BFL_INSTALLING){

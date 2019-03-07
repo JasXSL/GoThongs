@@ -20,6 +20,7 @@ string RN;            // Rape name, Usually prim name
 
 float hAdd;             // Height add for raycast
 
+
 // Min time between icon outputs
 #define oqTime count(OST)/2*0.25
 
@@ -37,6 +38,8 @@ string getTargetingPlayer( string stub ){
 sendTextures( string target ){
 	if(target == "")
 		return;
+		
+		
 	string t = llGetSubString(target, 0, 7);
 	string out = "";
 	integer i;
@@ -269,10 +272,10 @@ default{
         
         parseDesc(id, resources, status, fx, sex, team, mf);
         
-        if(team == TEAM)
+        if( team == TEAM )
             return;
     
-        list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+        list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd*0.5>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
         if(llList2Integer(ray, -1) == 0){
         
             if(!isset(RN))

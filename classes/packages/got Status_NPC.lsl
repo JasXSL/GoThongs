@@ -17,6 +17,7 @@ integer BFL = 0;
 #define BFL_AGGROED_ONCE 0x40		// If aggroed at least once
 #define BFL_DESC_OVERRIDE 0x80
 
+#define isAnimesh() (RF&Monster$RF_ANIMESH)
 
 
 #define BFL_NOAGGRO (BFL_FRIENDLY|BFL_DEAD)
@@ -481,22 +482,32 @@ default
 	sensor( integer total ){
 		
 		integer ffa = isFFA();
-		while( --total ){
+		while( total-- ){
 		
-            key k = llDetectedKey(total-1);
-			integer type = llDetectedType(total-1);
-
+            key k = llDetectedKey(total);
+			integer type = llDetectedType(total);
+			
+			// These can not be relied on for PC
 			parseDesc(k, resources, status, fx, sex, team, mf);
 			vector ppos = prPos(k);
 			float dist =llVecDist(ppos, llGetRootPosition());
 			float range = AR;
-			prAngZ(k, ang)
+			
+			float ang;
+			if( isAnimesh() ){
+				prAngleOn(k, ang, ZERO_ROTATION);
+			}
+			else{
+				prAngleOn(k, ang, llEuler2Rot(<0,PI_BY_TWO,0>));
+			}
+			
 			if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
 				range *= 0.25;
-			
+				
+						
 			if(
 				(
-					(type&AGENT && TEAM != TEAM_PC && (ffa || ~llListFindList(PLAYERS, [(str)k]))) || 
+					(type&AGENT && (ffa || ~llListFindList(PLAYERS, [(str)k]))) || 
 					(llGetSubString(prDesc(k), 0, 2) == "$M$" && team != TEAM && ~mf&Monster$RF_INVUL)
 				) && ~RF&Monster$RF_NOAGGRO && ~BFL&BFL_NOAGGRO &&
 				dist < range
@@ -746,7 +757,22 @@ default
 				}
 			)
 			
-			llSleep(2);
+			float rand = llFrand(1);
+			if( maxHP >= 40 && rand < 0.2 ){
+			
+				list ray = llCastRay(llGetPos()+<0,0,1>, llGetPos()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
+				if( l2i(ray, -1) == 1 ){
+					
+					vector pos = l2v(ray, 1)+<0,0,.75>;
+					Spawner$spawn("Armor Scraps", pos, 0, "", FALSE, TRUE, "ARMOR");
+					
+				}
+				
+			}
+			
+			llSleep(3);
+			llSetKeyframedMotion([<0,0,-4>, 8],[KFM_DATA,KFM_TRANSLATION]);
+			llSleep(6);
 			llDie();
 			
 		}

@@ -44,6 +44,9 @@
 	#define FXCUpd$BACKSTAB_MULTI 30	// (float)multiplier - Increases or lowers damage from behind
 	#define FXCUpd$SWIM_SPEED_MULTI 31	// (float)multiplier - Default 1
 	#define FXCUpd$FOV 32				// (float)field_of_view - 0 resets
+	#define FXCUpd$PROC_BEN 33			// (float)multi - Beneficial effect proc chance multiplier
+	#define FXCUpd$PROC_DET 34			// (float)multi - Detrimental effect proc chance multiplier
+	
 	
 // Settings that are are not multiplicative
 #define FXCUpd$non_multi (list)FXCUpd$FLAGS + FXCUpd$UNSET_FLAGS + FXCUpd$HP_ADD + FXCUpd$MANA_ADD + FXCUpd$AROUSAL_ADD + FXCUpd$PAIN_ADD + FXCUpd$TEAM
@@ -93,13 +96,20 @@
 	
 	
 // LIBRARY
-
+#ifndef NPC
+	#define spawn Spawner$spawnInt
+#else
+	#define spawn Spawner$spawn
+#endif
 
 
 // These are INSTNAT tasks that are shared
 #define dumpFxInstants() \
 	if(t == fx$RAND){ \
-        float chance = l2f(fx,1); \
+		float multi = CPB; \
+		if( pflags & PF_DETRIMENTAL ) \
+			multi = CPD; \
+        float chance = l2f(fx,1)*multi; \
         if(llList2Integer(fx,2))chance*=stacks; \
         if(llFrand(1)>chance)t = -1; \
         else{ \
@@ -145,11 +155,42 @@
 		if(targs&FXAF$AOE){ \
 			FX$aoe(range, llGetKey(), l2s(fx,1), TEAM); \
 		} \
+		if( targs&FXAF$SMART_HEAL ){ \
+			float s = llGetTime(); \
+			key targ; float chp = 1; \
+			runOnHUDs(hud,  \
+				smartHealDescParse(hud, resources, status, fx, team) \
+				if( team == TEAM && !(status&StatusFlags$NON_VIABLE) && !(fx&fx$UNVIABLE) ){ \
+					float hp = (float)(resources>>21&127)/127.0; \
+					if( (hp <= chp || targ == "") && llVecDist(llGetPos(), prPos(hud)) <= 10 ){ \
+						targ = hud; \
+						chp = hp; \
+					} \
+				} \
+			) \
+			if( targ != "" && targ != llGetKey() )\
+				FX$send(targ, llGetKey(), l2s(fx,1), TEAM); \
+			if( targ != "" && targ == llGetKey() ) \
+				FX$run("", l2s(fx,1)); \
+		} \
 	}\
 	else if(t == fx$ADD_STACKS){ \
 		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9), l2f(fx,10)); \
 	} \
-
+	else if(t == fx$SPAWN_MONSTER){ \
+			\
+		vector rot = llRot2Euler(llGetRot());\
+		rotation r = llEuler2Rot(<0,0,rot.z>);\
+		list ray = llCastRay(llGetRootPosition(), llGetRootPosition()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);\
+		vector pos = llList2Vector(ray, 1);\
+		if(pos == ZERO_VECTOR){\
+			vector ascale = llGetAgentSize(llGetOwner());\
+			pos = llGetRootPosition()-<0,0,ascale.z/2>;\
+		}\
+		\
+		spawn(l2s(fx, 1), pos+((vector)l2s(fx, 2)*r), llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,3)*r, l2s(fx,4), FALSE, TRUE, "");\
+		\
+	}\
 	
 // Texture desc, npc/pc specific
 #ifdef IS_NPC

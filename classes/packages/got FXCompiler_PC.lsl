@@ -15,6 +15,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 	
 	if(pflags&PF_DETRIMENTAL)
 		Status$refreshCombat();
+		
 
 	list fxs = llJson2List(fxobjs);
     while(llGetListLength(fxs)){
@@ -45,21 +46,12 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			SpellMan$reduceCD(llDeleteSubList(fx, 0, 0));
 		}
 		
-
-		else if(t == fx$SPAWN_MONSTER){
+		else if( t == fx$LOOK_AT )
+			llOwnerSay("@setrot:"+l2s(fx, 1)+"=force");
 			
-			vector rot = llRot2Euler(llGetRot());
-			rotation r = llEuler2Rot(<0,0,rot.z>);
-			list ray = llCastRay(llGetRootPosition(), llGetRootPosition()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
-			vector pos = llList2Vector(ray, 1);
-			if(pos == ZERO_VECTOR){
-				vector ascale = llGetAgentSize(llGetOwner());
-				pos = llGetRootPosition()-<0,0,ascale.z/2>;
-			}
-
-			Spawner$spawnInt(l2s(fx, 1), pos+((vector)l2s(fx, 2)*r), llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,3)*r, l2s(fx,4), FALSE, TRUE, "");
-			
-		}
+		
+		else if( t == fx$DAMAGE_ARMOR )
+			Status$damageArmor(LINK_ROOT, l2i(fx, 1));
 
 		else if(t == fx$PUSH){
 			vector z = llGetVel();
@@ -175,6 +167,12 @@ addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, 
 			jump fxContinue;
 			
 		}
+		
+		else if( t == fx$STANCE ){
+			WeaponLoader$fxStance(l2s(fx, 0), TRUE);
+		}
+		
+		
 		else if( t == fx$FORCE_SIT ){
 		
             string out = "@sit:"+llList2String(fx, 0)+"=force";
@@ -227,6 +225,9 @@ remEffect( integer pid, integer pflags, string pname, string fxobjs, integer tim
 		else if( t == fx$PULL ){
 			raiseEvent(FXCEvt$pullEnd, "");
 			llStopMoveToTarget();
+		}
+		else if( t == fx$STANCE ){
+			WeaponLoader$fxStance(l2s(fx, 0), FALSE);
 		}
 		else if(t == fx$LTB)
 			BuffVis$rem(pid);
@@ -369,7 +370,9 @@ updateGame(){
 		100,				// 29 Sprint fade (f2i)
 		100,				// 30 Backstab mul (f2i)
 		100,					// 31 Swim speed (f2i)
-		f2i(l2f(getDFXSlice( fx$FOV, 1), -1)) // 32, FoV (f2i)
+		f2i(l2f(getDFXSlice( fx$FOV, 1), -1)), // 32, FoV (f2i)
+		stat( fx$PROC_BEN ),	// Beneficial proc chance
+		stat( fx$PROC_DET )		// Detrimental proc chance
 	])); 
 }
 #include "got/classes/packages/got FXCompiler.lsl"

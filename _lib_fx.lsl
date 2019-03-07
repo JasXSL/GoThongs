@@ -110,11 +110,12 @@
 		#define FXAF$SELF 0x1						// Apply FX on victim
 		#define FXAF$CASTER 0x2						// Apply FX on caster
 		#define FXAF$AOE 0x4						// Apply FX on AOE
+		#define FXAF$SMART_HEAL 0x8					// Targets the lowest HP party member. Only use this for PC because using this on an NPC will also target the party
 	#define fx$ADD_STACKS 49					// (int)stacks, (str)name... - See FXMethod$addStacks -  Adds (resets timer) or removes stacks (does not affect timer)
 	#define fx$SPELL_HIGHLIGHT 50				// (int)index, (int)min_stacks - PC Only - Draws a yellow border around a spell. 0 is the bottom ability, then 1-4 for the upper row. If min_stacks is set, then you need a minimum of that amount of stacks for it to proc
 	#define fx$HEALING_TAKEN_MULTI 51			// (float)add, (bool)by_caster - Increases or decreases healing received
 	#define fx$HEALING_DONE_MULTI 52			// (float)add - Increases or decreases healing done
-	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc - (PC only) Spawns a monster from HUD
+	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc - Spawns a monster from HUD
 	#define fx$SET_TEAM 54						// (int)team - (PC ONLY for now)Overrides the current team
 	#define fx$CUBETASKS 55						// (arr)tasks - PC ONLY Sends cubetasks to the owner
 	#define fx$BEFUDDLE 56						// (float)perc - PC ONLY - Adds a chance on spell cast to target a random player
@@ -129,6 +130,13 @@
 	#define fx$HP_MULTI 65						// (float)amount - Increases or decreases max HP
 	#define fx$REDUCE_CD 66						// (int)spells, (float)seconds - spells is bitwise combination of (hotkeys) 1=5, 2=1, 4=2...
 	#define fx$FOV 67							// (float)fov - Field of view. PC only. Last one in gets used
+	#define fx$PROC_BEN 68						// (float)multiplier - Affects chances of procs from passives and nondetrimental effects
+	#define fx$PROC_DET 69						// (float)multiplier - Affects chances of detrimental effects
+	#define fx$STANCE 70						// (str)anim - Overrides the stance. PC only. Non instant only.
+	#define fx$LOOK_AT 71						// (vec)pos - PC only. Turns the avatar towards a position
+	#define fx$DAMAGE_ARMOR 72					// (int)points - PC only. 50 per slot. Can be negative to restore
+	
+	
 	
 // conditions
 	// Built in
@@ -156,6 +164,9 @@
 	#define fx$COND_TEAM 14						// (int)team1, (int)team2... - Validates if the receiver is on any of these teams. If reverse it validates if the receiver is not on either of the teams
 	#define fx$COND_CASTER_ANGLE 15				// Minimum angle from caster fwd. Positive X for player casters, positive Z for NPC casters. Viable values are 0-PI. 1.57 is "in front"
 	#define fx$COND_CASTER_RANGE 16				// (float)range - Caster range must be less or equal than range
+	#define fx$COND_NAME 17						// (str)name - Recipient has name
+	#define fx$COND_SAME_OWNER 18				// void - Recipient has the same owner as the sender
+	
 	
 	
 // Reserved names:
@@ -172,3 +183,5 @@
 	#define fx$TAG_NAKED 6
 	#define fx$TAG_ACTIVE_MITIGATION 7			// Used by tank active mitigation abilities
 	#define fx$TAG_VULNERABLE 8					// Used in pvp events
+	
+	

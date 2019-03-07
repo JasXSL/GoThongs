@@ -25,6 +25,7 @@
 #define SpellMan$NO_SWIM 0x200
 #define SpellMan$HIDE 0x400
 #define SpellMan$CASTABLE_WHILE_MOVING 0x800
+#define SpellMan$DRAW_WEAPON 0x1000
 
 #define SpellMan$hotkey(text) runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$hotkey, [text], TNN)
 #define SpellMan$interrupt(force) runMethod((string)LINK_ROOT, "got SpellMan", SpellManMethod$interrupt, [force], TNN)

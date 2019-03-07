@@ -37,6 +37,9 @@ integer BFL = 1;
 #define BFL_SOFTLOCK_PAIN 0x400		// Pain will not regenerate
 
 
+int ARMOR = Status$FULL_ARMOR;				// Full armor
+int A_ARM = 0;						// Currently targeted armor slot. Shuffled each armor break.
+
 // Cache
 integer PC;							// Pre constants
 integer PF;							// pre flags
@@ -100,30 +103,7 @@ list TG; 		// Targeting: (key)id, (int)flags
 integer DIF = 1;	// 
 #define difMod() ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.4)
 
-// Toggle clothes
-tClt(){
 
-	// Show genitals
-	integer show = (SF&(StatusFlag$dead|StatusFlag$raped)) || FXF&fx$F_SHOW_GENITALS;
-	
-    if(show && ~BFL&BFL_NAKED){
-		BFL = BFL|BFL_NAKED;
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Bits");
-		ThongMan$dead(
-			TRUE, 							// Hide thong
-			!(FXF&fx$F_SHOW_GENITALS)	// But don't show particles or sound if this was an FX call
-		);
-    }
-	
-	else if(!show && BFL&BFL_NAKED){
-		BFL = BFL&~BFL_NAKED;
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed");
-		llSleep(1);
-        llRegionSayTo(llGetOwner(), 1, "jasx.togglefolder Dressed/Groin, 0");
-		ThongMan$dead(FALSE, FALSE); 
-    }
-	
-}
 
 // Runs conversion
 // Returns conversion effects of a FXC$CONVERSION_* type
@@ -176,6 +156,87 @@ float rCnv( integer ty, float am ){
 	return out;
 }
 
+
+dArm( int amount ){
+
+	if( !ARMOR && amount > 0 )
+		return;
+	
+	int pre = ARMOR;
+			
+	while( amount != 0 ){
+	
+		int a = Status$getArmorVal(ARMOR, A_ARM);
+		a -= amount;
+		amount = 0;
+		
+		if( a <= 0 || a >= 50 ){
+			
+			amount = -a;
+			if( a <= 0 )
+				a = 0;
+			else if( a >= 50 ){
+				amount = -(a-50);
+				a = 50;
+			}
+			Status$setArmorVal(ARMOR, A_ARM, a);
+		
+			// Randomize a new A_ARM
+			list v; int i;
+			for(; i<4; ++i ){	// 4 here because groin is last
+			
+				int n = Status$getArmorVal(ARMOR, i);
+				if( ((n && a == 0) || (!n && a == 50)) && i != A_ARM )
+					v += i;
+					
+			}
+			
+			A_ARM = l2i(v, llFloor(llFrand(count(v))));
+			
+			// None are viable
+			if( !count(v) ){
+				// Default to groin
+				A_ARM = Status$armorSlot$GROIN;
+				// But if armor was all full, pick any other
+				if( a >= 50 )
+					A_ARM = llFloor(llFrand(4));
+			}
+			
+			
+			// Break
+			if( ARMOR >= Status$FULL_ARMOR || ARMOR <= 0 )
+				amount = 0;
+			
+		}
+		else
+			Status$setArmorVal(ARMOR, A_ARM, a);
+		
+		
+	
+	}
+	
+	// Raise event
+	/*
+	qd(mkarr((list)
+		Status$getArmorVal(ARMOR, Status$armorSlot$HEAD) +
+		Status$getArmorVal(ARMOR, Status$armorSlot$CHEST) +
+		Status$getArmorVal(ARMOR, Status$armorSlot$ARMS) +
+		Status$getArmorVal(ARMOR, Status$armorSlot$BOOTS) +
+		Status$getArmorVal(ARMOR, Status$armorSlot$GROIN)
+	));
+	*/
+	
+	// Dressed
+	if( !pre && ARMOR )
+		Passives$rem(LINK_THIS, "_SS_");
+	// Stripped
+	else if( pre && !ARMOR )
+		Passives$set(LINK_THIS, "_SS_", (list)0+fx$F_SHOW_GENITALS, 0);
+		
+		
+	raiseEvent(StatusEvt$armor, (str)ARMOR);
+	
+}
 
 // Returns TRUE if changed
 // Adds HP: amount, spellName, flags, isRegen, is conversion
@@ -231,6 +292,11 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr ){
 	if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
 		am *= rCnv(FXC$CONVERSION_HP, am);
 	
+	// Every 2 points of damage hurts armor
+	int aDmg = llFloor(llFabs(am)/4) + (llFrand(1) < llFabs((am-llFloor(am/4))/4));
+	if( am < 0 && aDmg )
+		dArm(aDmg);
+	
     HP += am;
     if( HP <= 0 ){
 	
@@ -262,12 +328,11 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr ){
             raiseEvent(StatusEvt$dead, 0);
             Rape$end();
             AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
-            tClt();
-			
 			
 			ptUnset(TIMER_BREAKFREE);
 			GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
 			GUI$toggleQuit(FALSE);
+			OS(TRUE);
 			
         }
 		
@@ -433,17 +498,17 @@ onDeath( string customAnim ){
 	OS( TRUE );
 	raiseEvent(StatusEvt$dead, 1);
 	AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
-	
-	tClt();
-	
+		
 	float dur = 20;
 	if( isChallenge() ){
 	
 		dur = 90;
+		/*
 		if(SF & StatusFlag$boss_fight)
 			dur = 0;
 		else
-			ptSet(TIMER_COOP_BREAKFREE, 20, FALSE);
+		*/
+		ptSet(TIMER_COOP_BREAKFREE, 20, FALSE);
 			
 	}
 	if(dur){
@@ -465,19 +530,23 @@ onDeath( string customAnim ){
 }
 
 onEvt( string script, integer evt, list data ){
+
     if(script == "#ROOT"){
-        if(evt == RootEvt$players){
+	
+        if( evt == RootEvt$players )
             PLAYERS = data;
-        }
-        else if(evt == evt$TOUCH_START){
-            if(~SF&StatusFlag$dead && ~SF&StatusFlag$raped)return;
+        else if( evt == evt$TOUCH_START ){
+            
+			if( ~SF&StatusFlag$dead && ~SF&StatusFlag$raped )
+				return;
             integer prim = llList2Integer(data, 0);
             string ln = llGetLinkName(prim);
-            if(ln == "QUIT"){
+            if( ln == "QUIT" )
                 Status$fullregen();
-            }
+            
         }
-		else if(evt == RootEvt$level){
+		
+		else if (evt == RootEvt$level ){
 		
 			rLV = llList2String(data, 0);
 			BFL = BFL&~BFL_CHALLENGE_MODE;
@@ -485,9 +554,9 @@ onEvt( string script, integer evt, list data ){
 				BFL = BFL|BFL_CHALLENGE_MODE;
 			
 		}
-		else if(evt == evt$BUTTON_PRESS && l2i(data, 0)&CONTROL_UP && BFL&BFL_AVAILABLE_BREAKFREE && SF&StatusFlag$dead){
+		else if( evt == evt$BUTTON_PRESS && l2i(data, 0)&CONTROL_UP && BFL&BFL_AVAILABLE_BREAKFREE && SF&StatusFlag$dead )
 			Status$fullregen();
-		}
+		
         // Force update on targeting self, otherwise it requests
         else if( evt == RootEvt$targ && llList2Key(data, 0) == llGetOwner() )
 			OS( TRUE );
@@ -516,14 +585,11 @@ onEvt( string script, integer evt, list data ){
 		
     }
 	
-	else if(script == "got Bridge"){
-		if(evt == BridgeEvt$userDataChanged){
-			Status$setDifficulty(l2i(data, 4));
-		}
-		else if(evt == BridgeEvt$thong_initialized)
-			tClt();
-        
-    }
+	else if( script == "got Bridge" && evt == BridgeEvt$userDataChanged )
+		Status$setDifficulty(l2i(data, 4));
+		
+	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" )
+		dArm(-1000);
 	
     else if( script == "got Rape" ){
 	
@@ -786,8 +852,8 @@ default
         Status$fullregen();
         ptSet(TIMER_REGEN, 1, TRUE);
         llRegionSayTo(llGetOwner(), 1, "jasx.settings");
-        tClt();
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
+		A_ARM = floor(llFrand(4));	// 0-3
 		
     }
     
@@ -840,7 +906,6 @@ default
 		HP = maxHP()*perc; \
 		MANA = maxMana()*mperc; \
         OS( TRUE ); \
-		tClt(); \
     } \
 	
     // This is the standard linkmessages
@@ -888,7 +953,7 @@ default
 
 	// Public methods here
 	if(METHOD == StatusMethod$debug && method$byOwner){
-		qd(
+		llOwnerSay(
 			"HP: "+(str)HP+"/"+(str)maxHP()+"\n"+
 			"Mana: "+(str)MANA+"/"+(str)maxMana()+"\n"+
 			"Ars: "+(str)AROUSAL+"/"+(str)maxArousal()+"\n"+
@@ -897,7 +962,7 @@ default
 		);
 	}
 	
-	if(METHOD == StatusMethod$kill){
+	if( METHOD == StatusMethod$kill && ~SF&StatusFlag$dead ){
 	
 		HP = 0;
 		onDeath( method_arg(0) );
@@ -1006,8 +1071,6 @@ default
         
         AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
         OS(TRUE);
-        tClt();
-		
 		
 		
 		// Clear rape stuff
@@ -1078,6 +1141,9 @@ default
 		OS(TRUE);
 		
 	} 
+	
+	if( METHOD == StatusMethod$damageArmor )
+		dArm( l2i(PARAMS, 0) );
 	
 	if(METHOD == StatusMethod$coopInteract)
 		raiseEvent(StatusEvt$interacted, (str)id);

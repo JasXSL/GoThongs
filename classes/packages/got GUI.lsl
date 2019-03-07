@@ -15,6 +15,17 @@ list BARS = [0,0,0,0,0,0,0,0,0,0];  // [(int)portrait, (int)bars], target, self,
 list FX_PRIMS = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 list PARTY_ICONS = [];
 
+// Rez tracker
+int P_SKULL;
+int P_SKULL_NR;
+#define SKULL_SIZE <0.02813, 0.02813, 0.02240>
+#define SKULL_POS <0.000000, 0.203495, 0.264575>
+#define SKULL_TEXT_POS <-0.010000, 0.204623, 0.266049>
+
+int P_ARMOR;
+#define ARMOR_SCALE <0.032596, 0.032596, 0.025960>
+#define ARMOR_POS <-0.068990, 0.174857, 0.265924>
+
 list SPELL_UPDATE_QUEUE;	// (key)id, (csv)data 
 #define SUQSTRIDE 2
 
@@ -47,6 +58,8 @@ integer P_LOADINGBAR;
 #define LOADING_SCALE <0.35011, 0.04376, 0.04376>
 #define LOADING_POS <-0.159409, -0.001064, 0.359453>
 
+
+
 key boss;				// ID of boss (used if boss is a monster)
 
 #define toggle(show) GUI$toggle(show)
@@ -68,10 +81,10 @@ key boss;				// ID of boss (used if boss is a monster)
 			integer team = l2i(data, 2); \
 			TARG = targ; \
 			list out = [ \
-					PRIM_LINK_TARGET, llList2Integer(BARS, 0),  \
-					PRIM_POSITION, ZERO_VECTOR, \
-					PRIM_LINK_TARGET, llList2Integer(BARS, 1), \
-					PRIM_POSITION, ZERO_VECTOR \
+				PRIM_LINK_TARGET, llList2Integer(BARS, 0),  \
+				PRIM_POSITION, ZERO_VECTOR, \
+				PRIM_LINK_TARGET, llList2Integer(BARS, 1), \
+				PRIM_POSITION, ZERO_VECTOR \
 			]; \
 			integer i; \
 			for(i=8; i<16; i++){ \
@@ -145,9 +158,16 @@ key boss;				// ID of boss (used if boss is a monster)
 			} \
 			PP(0,out); \
 		} \
+		else if( evt == RootEvt$level ){ \
+			GUI$setChallenge(l2i(data, 1)); \
+		} \
     } \
 	else if(script == "got Status" && evt == StatusEvt$team){ \
 		TEAM = l2i(data,0); \
+	} \
+	else if(script == "got Status" && evt == StatusEvt$armor){ \
+		int slots = Status$sumArmorSlots( l2i(data, 0) ); \
+		llSetLinkPrimitiveParamsFast(P_ARMOR, (list)PRIM_TEXTURE + 0 + "bceae9a2-68d7-1dfe-1461-700a2b3ee23e" + (<1./8,1,0>) + (<-.0625-1./8*3+(1./8*(5-slots)), 0, 0>) + 0); \
 	} \
 	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons){ \
 		PARTY_ICONS = data; \
@@ -158,8 +178,7 @@ key boss;				// ID of boss (used if boss is a monster)
 
 
 integer GCHAN;
-default 
-{
+default {
 
 	timer(){
 		// Tick the updates
@@ -248,7 +267,7 @@ default
 
 				if(flags&StatusFlag$dead)
 					overlay = <.5,0,0>;
-				else if(flags&StatusFlag$coopBreakfree)
+				else if( flags&StatusFlag$coopBreakfree )
 					overlay = <.5,.75,1>;
 						
 						
@@ -377,6 +396,8 @@ default
 	}
 	
     state_entry(){
+	
+		PLAYER_HUDS = (list)llGetKey();
 
         links_each(nr, name, 
             integer n = (integer)llGetSubString(name, -1, -1); 
@@ -399,6 +420,13 @@ default
 			else if(name == "PROGRESS")P_PROGRESS = nr;
 			else if(name == "BOSS_HEALTH")P_BOSS_HP = nr;
 			else if(name == "BOSS_PORTRAIT")P_BOSS_PORTRAIT = nr;
+			else if( name == "ARMOR" )
+				P_ARMOR = nr;
+			else if( name == "WCOUNT" )
+				P_SKULL_NR = nr;
+			else if( name == "WSKULL" )
+				P_SKULL = nr;
+				
 			//else if(name == "SingleFace")singles+= ([PRIM_LINK_TARGET, nr, PRIM_POSITION, <.1,0,0>]);
         ) 
 		//return;
@@ -410,6 +438,7 @@ default
 		llSetTimerEvent(0.5); // tick status bars
 		//toggle(TRUE);
 		llOwnerSay("@setoverlay=y");
+		//GUI$toggle(TRUE);
     } 
 	
 	listen(integer chan, string name, key id, string message){
@@ -449,7 +478,10 @@ default
 	// Updates status and stuff
 	if(method$internal && METHOD == GUIMethod$setSpellTextures){
 		updateSpellIcons(id, llList2CSV(PARAMS));
+		return;
     }
+	
+	
 	
 
 	// Toggles the boss portrait
@@ -503,6 +535,30 @@ default
 			PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <0.25-((float)method_arg(0)*.5),0,0>, 0
 		]);
 	}
+	
+	else if( METHOD == GUIMethod$setWipes ){
+		int wipes = l2i(PARAMS, 0);
+		if( wipes == -1 )
+			PP(P_SKULL_NR, (list)PRIM_POSITION + ZERO_VECTOR);
+		else{
+			int y = wipes/16;
+			int x = wipes-y*16;
+			PP(P_SKULL_NR, (list)PRIM_POSITION + SKULL_TEXT_POS + PRIM_TEXTURE + 0 + "b8fbd724-51ac-eef4-ab8c-e643241de558" + (<1./16, 1./4,0>) + (<-1./32-1./16*7+1./16*x,1./8+1./4-1./4*y,0>) + 0);
+		}
+	}
+	
+	else if( METHOD == GUIMethod$setChallenge ){
+		
+		vector pos; float alpha;
+		if( l2i(PARAMS, 0) ){
+			pos = SKULL_POS;
+			alpha = 1;
+		}
+		PP(P_SKULL, (list)PRIM_POSITION + pos + PRIM_LINK_TARGET + P_SKULL_NR + PRIM_COLOR + 0 + ONE_VECTOR + alpha);
+			
+	}
+	
+	
     // This needs to show the proper breakfree messages
     else if(METHOD == GUIMethod$toggleQuit){
 		integer show = l2i(PARAMS, 0);
@@ -706,14 +762,19 @@ default
 			BFL = BFL&~BFL_TOGGLED;
 			GUI$toggleLoadingBar((string)LINK_THIS, FALSE, 0);
 			GUI$toggleSpinner((string)LINK_THIS, FALSE, "");
-			out+= [
-				PRIM_LINK_TARGET, P_BOSS_HP, PRIM_POSITION, ZERO_VECTOR,
-				PRIM_LINK_TARGET, P_BOSS_PORTRAIT, PRIM_POSITION, ZERO_VECTOR,
-				PRIM_LINK_TARGET, P_PROGRESS, PRIM_POSITION, ZERO_VECTOR
-			];
+			out+= 
+				(list)PRIM_LINK_TARGET + P_BOSS_HP + PRIM_POSITION + ZERO_VECTOR +
+				PRIM_LINK_TARGET + P_BOSS_PORTRAIT + PRIM_POSITION + ZERO_VECTOR +
+				PRIM_LINK_TARGET + P_PROGRESS + PRIM_POSITION + ZERO_VECTOR +
+				PRIM_LINK_TARGET + P_ARMOR + PRIM_POSITION + ZERO_VECTOR +
+				PRIM_TEXTURE + 0 + "bceae9a2-68d7-1dfe-1461-700a2b3ee23e" + (<1./8,1,0>) + (<-.0625-1./8*3, 0, 0>) + 0 +
+				PRIM_LINK_TARGET + P_SKULL + PRIM_POSITION + ZERO_VECTOR +
+				PRIM_LINK_TARGET + P_SKULL_NR + PRIM_POSITION + ZERO_VECTOR 
+			;
 			onEvt("#ROOT", RootEvt$targ, []);
+		}else{
+			out += (list)PRIM_LINK_TARGET + P_ARMOR + PRIM_POSITION + ARMOR_POS + PRIM_SIZE + ARMOR_SCALE;
 		}
-		
 		llSetLinkPrimitiveParamsFast(0, out);
 	}
 

@@ -52,12 +52,33 @@ integer fxFlags = 0;
 
 #define pmod (1./count(PLAYERS))
 
+/* Constants:
+	$T0$	Target of spell (if not AoE) Only differs from _TA_ in self cast
+	$TARG$	Target of wrapper
+	$SELF$	Script owner
+	$otI$	Integered version of original target
+	$tI$	Same but for wrapper target
+	$sI$	Same but for sender
+*/
+string t0;	// First target of a targeted spell
+
 string runMath( string FX, integer index, key targ ){
+
+	FX = implode(targ, explode("$TARG$", FX));
+	FX = implode(t0, explode("$T0$", FX));
+	FX = implode((str)llGetKey(), explode("$SELF$", FX));
+	
+	// these can not be math vars because of float limitations
+	FX = implode((str)((int)("0x"+t0)), explode("$otI$", FX));
+	FX = implode((str)((int)("0x"+(str)targ)), explode("$tI$", FX));
+	FX = implode((str)((int)("0x"+(str)llGetKey())), explode("$sI$", FX));
 
 	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
     list split = llParseString2List(FX, ["$MATH$","$M$"], []);
 	parseDesc(targ, resources, status, fxf, sex, team, monsterflags)
-	int ehp = llRound((resources>>21&127) / 127.0 * 100);
+	list res = splitResources(resources);
+	int ehp = (int)(l2f(res, 0)*100);
+	
 	
 	float bsMul = 1;
 	integer B = 0;
@@ -103,10 +124,16 @@ string runMath( string FX, integer index, key targ ){
 		// HEaling done multiplier
 		"h", hdmod,
 		"T", TEAM,
+		
+		// HP/MP percent. Faster than using a formula
+		"hpp", cHP/cMHP,
+		"mpp", cMP/cMMP,
+		
 		// Max HP
 		"mhp", cMHP,
 		// Current MP
 		"mp", cMP,
+		
 		// Max MP
 		"mmp", cMMP,
 		// Current HP
@@ -117,7 +144,11 @@ string runMath( string FX, integer index, key targ ){
 		"ehp", ehp,				// enemy HP from 0 to 100
 		// HUD target flags
 		"tm", ( llVecDist(llGetRootPosition(), prPos(HUD_TARG)) < MELEE_RANGE || HUD_TARG == "1" )		// Melee range of the HUD target
+		
+		
     ];
+	
+	
 	
     integer i;
     for( i=1; i<llGetListLength(split); ++i ){
@@ -137,6 +168,7 @@ string runMath( string FX, integer index, key targ ){
 
 		// Run the math
 		string out = l2s(pandaMath(math),0);
+		
 		// Don't remove the point, since output should always be a float
 		while( llGetSubString(out, -1, -1) == "0" )
 			out = llDeleteSubString(out, -1, -1);
@@ -150,6 +182,8 @@ string runMath( string FX, integer index, key targ ){
 	_C = [];
     return llDumpList2String(split, "");
 }
+
+
 
 onEvt(string script, integer evt, list data){
 
@@ -228,11 +262,11 @@ onEvt(string script, integer evt, list data){
 		}
 		
 		// RunMath should be done against certain targets for backstab to work
-
+		string wrapper = spellWrapper(SPELL_CASTED);
+		
 		// Handle AOE
 		if((string)SPELL_TARGS == "AOE"){
-		
-			FX$aoe(spellRange(SPELL_CASTED), llGetKey(), runMath(spellWrapper(SPELL_CASTED),SPELL_CASTED, ""), TEAM);  
+			FX$aoe(spellRange(SPELL_CASTED), llGetKey(), runMath(wrapper, SPELL_CASTED, ""), TEAM);  
 			SPELL_TARGS = [LINK_ROOT];
 			
 		}
@@ -255,18 +289,20 @@ onEvt(string script, integer evt, list data){
 			for( ; i<count(SPELL_TARGS); ++i ){ 
 				
 				string val = l2s(SPELL_TARGS, i);
+				t0 = val;
 				if( val == llGetKey() || val == llGetOwner() )
 					val = (str)LINK_ROOT;
-
-				FX$send(val, llGetKey(), runMath(spellWrapper(SPELL_CASTED),SPELL_CASTED, val), TEAM);
+				
+				FX$send(val, llGetKey(), runMath(wrapper,SPELL_CASTED, val), TEAM);
 
 			}
 			
 		}
 		
-		if( llStringLength(spellSelfcast(SPELL_CASTED)) > 2 )
-			FX$run(llGetOwner(), runMath(spellSelfcast(SPELL_CASTED), SPELL_CASTED, l2s(SPELL_TARGS, 0)));
-		
+		if( llStringLength(spellSelfcast(SPELL_CASTED)) > 2 ){
+			wrapper = spellSelfcast(SPELL_CASTED);
+			FX$run(llGetOwner(), runMath(wrapper, SPELL_CASTED, l2s(SPELL_TARGS, 0)));
+		}
     }
 	/*
     else if(script == "got SpellMan" && evt == SpellManEvt$interrupted){
@@ -282,7 +318,6 @@ default
 {
 	state_entry(){
 		PLAYERS = [(str)llGetOwner()];
-		
 	}
 	
 	#define LM_PRE \

@@ -112,9 +112,9 @@ default{
         
         if(METHOD == MaskAnimMethod$start){
             
-            string anim = method_arg(0);
+			string anim = method_arg(0);
             integer restart = l2i(PARAMS, 1);
-            if( restart )
+			if( restart )
                 animKit(anim, FALSE);
             animKit(anim, TRUE);
             

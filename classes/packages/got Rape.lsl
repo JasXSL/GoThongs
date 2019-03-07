@@ -8,6 +8,7 @@ integer BFL;
 
 list RAPE_ANIMS;
 list RAPE_ATTACHMENTS;
+list RAPE_REZZED;
 
 integer STATUS_FLAGS;
 
@@ -47,11 +48,13 @@ default
 	timer(){multiTimer([]);}
 	
 	object_rez(key id){
+	
 		str name = llKey2Name(id);
 		integer pos = llListFindList(FX_ATTACHMENTS, [name]);
 		if(~pos){
 			FX_ATTACHMENTS = llListReplaceList(FX_ATTACHMENTS, [id], pos+1, pos+1);
 		}
+		
 	}
     
     // This is the standard linkmessages
@@ -69,25 +72,42 @@ default
     }
     
     if(method$internal){
-        if(METHOD == RapeMethod$start && count(PARAMS) > 1){
+	
+        if( METHOD == RapeMethod$start && count(PARAMS) > 1 ){
 		
-            if(BFL&BFL_RAPE_STARTED || ~STATUS_FLAGS&StatusFlag$dead)return;
+
+            if( BFL&BFL_RAPE_STARTED || ~STATUS_FLAGS&StatusFlag$dead )
+				return;
             
             BFL = BFL|BFL_RAPE_STARTED;
             
             RAPE_ANIMS = llJson2List(method_arg(0));
             RAPE_ATTACHMENTS = llJson2List(method_arg(1));
-            list sounds = llJson2List(method_arg(2));
+            RAPE_REZZED = llJson2List(method_arg(2));
+			//list sounds = llJson2List(method_arg(2));
+			
+			vector pos = llGetRootPosition();
+            vector ascale = llGetAgentSize(llGetOwner());
             
             integer i;
-            for(i=0; i<llGetListLength(RAPE_ATTACHMENTS); i++){
-                llRezAtRoot(llList2String(RAPE_ATTACHMENTS, i), llGetRootPosition()-<0,0,2>, ZERO_VECTOR, ZERO_ROTATION, 1);
-            }
-            for(i=0; i<llGetListLength(RAPE_ANIMS); i++)
-                AnimHandler$anim(llList2String(RAPE_ANIMS, i), TRUE, 0, 0, 0);
+            for( ; i<llGetListLength(RAPE_ATTACHMENTS); i++ )
+                llRezAtRoot(llList2String(RAPE_ATTACHMENTS, i), pos-<0,0,2>, ZERO_VECTOR, ZERO_ROTATION, 1);
             
-            vector pos = llGetRootPosition();
-            vector ascale = llGetAgentSize(llGetOwner());
+            for( i=0; i<llGetListLength(RAPE_ANIMS); i++ )
+                AnimHandler$anim(llList2String(RAPE_ANIMS, i), TRUE, 0, 0, 0);
+				
+			for( i=0; i<llGetListLength(RAPE_REZZED); i++ )
+				_portal_spawn_std( 
+					llList2String(RAPE_REZZED, i), 
+					pos-<0,0,ascale.z/2>, 
+					ZERO_ROTATION, 
+					ZERO_VECTOR, 
+					FALSE, 
+					FALSE, 
+					TRUE
+				);
+            
+            
             list ray = llCastRay(pos, pos-<0,0,5>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
             if(llList2Integer(ray,-1) == 1)
                 pos = llList2Vector(ray, 1)+<0,0,ascale.z/2-.1>;
@@ -97,11 +117,12 @@ default
             vector vrot = llRot2Euler(rot);
             vrot = <0,0,vrot.z>;
             
-            RLV$cubeTask(([
-                SupportcubeBuildTask(Supportcube$tSetPos, [pos]),
-                SupportcubeBuildTask(Supportcube$tSetRot, [llEuler2Rot(vrot)]),
-                SupportcubeBuildTask(Supportcube$tForceSit, [true])
-            ]));
+			RLV$cubeTask(([
+				SupportcubeBuildTask(Supportcube$tSetPos, [pos]),
+				SupportcubeBuildTask(Supportcube$tSetRot, [llEuler2Rot(vrot)]),
+				SupportcubeBuildTask(Supportcube$tForceSit, [!count(RAPE_REZZED)])
+			]));
+		
             
 
             raiseEvent(RapeEvt$onStart, "");
@@ -172,12 +193,17 @@ default
 			string val = llList2String(RAPE_ATTACHMENTS, i);
             Attached$remove(val);
 		}
+		
+		for( i=0; i<llGetListLength(RAPE_REZZED); i++ )
+            gotAnimeshScene$killByName(l2s(RAPE_REZZED, i));
+					
+		
         list_shift_each(RAPE_ANIMS, val,
             AnimHandler$anim(val, FALSE, 0, 0, 0);
         )
         
         raiseEvent(RapeEvt$onEnd, "");
-        
+        llOwnerSay("@unsit=y");
         RLV$cubeTask([
             SupportcubeBuildTask(Supportcube$tForceUnsit, [])
         ]);

@@ -22,6 +22,8 @@ list PASSIVES;
 list ATTACHMENTS; 			// [(str)passive, (arr)attachments]
 list CACHE_ATTACHMENTS;		// Contains names of attachments
 
+float CPC = 1;				// Chance proc chance multiplier passive
+
 #define COMPILATION_STRIDE 2
 list compiled_passives;     // Compiled passives [id, val, id2, val2...]
 // This should correlate to the FXCUpd$ index
@@ -58,7 +60,9 @@ list compiled_actives = [
 	1,	// 29 Sprint fade multiplier
 	1,	// 30 Backstab multiplier
 	1,	// 31 FXCUpd$SWIM_SPEED_MULTI
-	0	// 32 FXCUpd$FOV
+	0,	// 32 FXCUpd$FOV
+	1,	// 33 FXCUpd$PROC_BEN
+	1	// 34 FXCUpd$PROC_DET
 ];      // Compiled actives defaults
 
 /*
@@ -341,6 +345,7 @@ output(){
     output = llListReplaceList(output, [set_flags], FXCUpd$FLAGS, FXCUpd$FLAGS);
 	CACHE_FLAGS = set_flags;
 	
+	CPC = i2f(l2i(output, FXCUpd$PROC_BEN));
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(output), "");
 }
 
@@ -396,7 +401,7 @@ onEvt(string script, integer evt, list data){
 		
 		list targs = llJson2List(l2s(EVT_LISTENERS, x+1));
 		integer max_targs = l2i(EVT_LISTENERS, x+2);
-		float proc_chance = l2f(EVT_LISTENERS, x+3);
+		float proc_chance = l2f(EVT_LISTENERS, x+3)*CPC;
 		float cooldown = l2f(EVT_LISTENERS, x+4);
 		integer flags = l2i(EVT_LISTENERS, x+5);
 		// wrapper = l2s(EVT_LISTENERS, x+6);
@@ -627,7 +632,9 @@ default{
 			i2f(l2i(set,FXCUpd$SPRINT_FADE_MULTI)),		\
 			i2f(l2i(set,FXCUpd$BACKSTAB_MULTI)), \
 			i2f(l2i(set,FXCUpd$SWIM_SPEED_MULTI)), \
-			i2f(l2i(set,FXCUpd$FOV)) \
+			i2f(l2i(set,FXCUpd$FOV)), \
+			i2f(l2i(set,FXCUpd$PROC_BEN)), \
+			i2f(l2i(set,FXCUpd$PROC_DET)) \
 		]; \
         output(); \
 	}

@@ -10,6 +10,8 @@
 #define GUIMethod$toggleBoss 11			// (key)texture OR "" to clear, (bool)manual_hp OR (key)boss - Toggles the boss portrait. If manual_hp is set, only bossHP calls will update the HP
 #define GUIMethod$bossHP 12				// (float)perc - Sets boss HP percentage
 #define GUIMethod$setOverlay 13			// (key)texture or a number to clear
+#define GUIMethod$setWipes 14			// (int)wipes_remaining - -1 to hide
+#define GUIMethod$setChallenge 15		// (bool)on - Shows or hides the skull
 
 //#define GUI$myStatus(hp, mana, arousal, pain, flags, fxflags) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$status, [hp, mana, arousal, pain, flags, fxflags], TNN)
 #define GUI$setMySpellTextures(data) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$setSpellTextures, data, TNN)
@@ -35,3 +37,6 @@
 #define GUI$bossHP(targ, perc) runMethod((str)(targ), "got GUI", GUIMethod$bossHP, [perc], TNN)
 
 #define GUI$setOverlay(targ, texture) runMethod((str)targ, "got GUI", GUIMethod$setOverlay, (list)texture, TNN)
+
+#define GUI$setChallenge(challenge) runMethod((str)LINK_THIS, "got GUI", GUIMethod$setChallenge, (list)challenge, TNN)
+#define GUI$setWipes(targ, wipes) runMethod((str)targ, "got GUI", GUIMethod$setWipes, (list)wipes, TNN)

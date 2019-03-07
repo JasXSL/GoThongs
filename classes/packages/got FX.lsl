@@ -227,8 +227,10 @@ onEvt(string script, integer evt, list data){
 				}
 				
 				
+				
 				// We have validated that this event should be accepted, let's extract the wrapper
 				string wrapper = llList2String(evdata, 4);
+
 				// We can use <index> and <-index> tags to replace with data from the event
 				for(i=0; i<llGetListLength(data); i++){
 					wrapper = implode((str)(-llList2Float(data, i)), explode("<-"+(str)i+">", wrapper));
@@ -239,6 +241,7 @@ onEvt(string script, integer evt, list data){
 				integer targ = llList2Integer(evdata, 2);
 				integer maxtargs = llList2Integer(evdata, 3);
 				if(maxtargs == 0)maxtargs = -1;
+				
 				
 				// 0 or lower uses an event value
 				if( targ < 1 ){
@@ -256,7 +259,7 @@ onEvt(string script, integer evt, list data){
 				}
 				
 				// Run on self
-				if(targ&TARG_VICTIM || (targ&TARG_CASTER && sender == "s")){
+				if( targ&TARG_VICTIM || (targ&TARG_CASTER && sender == llGetOwner()) ){
 					FX$run(sender, wrapper); maxtargs--;
 				}
 				// Run on dispeller (if dispel event)
@@ -267,7 +270,13 @@ onEvt(string script, integer evt, list data){
 				}
 				
 				// Run on caster last
-				if(targ&TARG_CASTER && maxtargs != 0){FX$send(sender, sender, wrapper, TEAM); maxtargs--;}
+				if( targ&TARG_CASTER && maxtargs != 0 && sender != "s" ){
+					
+					FX$send(sender, sender, wrapper, TEAM); 
+					maxtargs--;
+					
+				}
+				
             }
         }
         
@@ -343,6 +352,12 @@ integer preCheck(key sender, list package, integer team){
 		else if(c == fx$COND_SAME_TEAM){
 			inverse = l2i(dta,0);
 			add = (TEAM == team);
+		}
+		else if( c == fx$COND_NAME )
+			add = (llGetObjectName() == l2s(dta, 0));
+		
+		else if( c == fx$COND_SAME_OWNER ){
+			add = (sender == "s" || llGetOwnerKey(sender) == llGetOwner());
 		}
 		else if( c == fx$COND_CASTER_ANGLE ){
 		
@@ -453,10 +468,13 @@ default{
         if( METHOD == FXMethod$run ){
 			
 			string sender = method_arg(0);						// UUID of FX sender
+			
+			
 			// Convert sender to "s" if self
 			if( sender == (str)llGetOwner() || sender == "" )
 				sender = "s";
-						
+
+			
             list packages = llJson2List(method_arg(1));			// Open up the wrapper
 			float range = llList2Float(PARAMS, 2);				// Max range for FX (if >0)
 			integer team = llList2Integer(PARAMS, 3);			// Team defaults to NPC unless set
@@ -494,6 +512,7 @@ default{
 				|| !RC
 				#endif
 			)CB_DATA = [FALSE];
+			
 			
 			// If a user defined invul function is defined
 			#ifdef IS_INVUL_CHECK

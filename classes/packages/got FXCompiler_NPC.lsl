@@ -1,10 +1,12 @@
+#define USE_EVENTS
 #define IS_NPC
 #include "got/_core.lsl"
 #include "../got FXCompiler_Shared.lsl"
 integer TEAM = TEAM_NPC;
 
 list CACHE_SFX;				// [(float)time, (arr)data]Spell FX to spawn when received
-
+float hoverHeight;			// Hover height. Primarily used for animesh
+int RF;
 
 // Spawn instant spell visuals that we have
 spawnEffects(){
@@ -30,22 +32,51 @@ spawnEffects(){
 			if(startParam == 0)
 				startParam = 1;
 			
-            boundsHeight(llGetKey(), b)
-			pos_offset.z *= b;
-			
+			boundsHeight(llGetKey(), b)
+			if( RF&Monster$RF_ANIMESH ){
+				pos_offset.z = hoverHeight;
+			}
+			else{
+				pos_offset.z = pos_offset.z*b+b/2;
+			}			
             
 			vector vrot = llRot2Euler(llGetRootRotation());
 			if(~flags&SpellFXFlag$SPI_FULL_ROT)
 				vrot = <0,0,-vrot.x>;
 			rotation rot = llEuler2Rot(vrot);
 			
-			vector to = llGetRootPosition()+<0,0,b/2>+pos_offset*rot;
+			vector to = llGetRootPosition()+pos_offset*rot;
 			
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
 		}
 	}
 	
 }
+
+onSettings(list settings){ 
+	integer flagsChanged;
+	while(settings){
+		integer idx = l2i(settings, 0);
+		list dta = llList2List(settings, 1, 1);
+		settings = llDeleteSubList(settings, 0, 1);
+		if( idx == MLC$hover_height )
+			hoverHeight = l2f(dta, 0);
+		
+	}
+	
+	// Limits
+	if(speed<=0)
+		speed = 1;
+
+}
+
+onEvt( string sc, int evt, list data ){
+	
+	if( sc == "got Monster" && evt == MonsterEvt$runtimeFlagsChanged )
+		RF = l2i(data, 0);
+
+}
+
 
 integer current_visual;
 
@@ -247,8 +278,16 @@ updateGame(){
 		0,					// (unsupported)conversion
 		0,					// (unsupported)sprint
 		0,					// (unsupported)backstab
-		0					// (unsupported)swimspeed
+		0,					// (unsupported)swimspeed
+		0,					// (unsupported)fov
+		stat( fx$PROC_BEN ),	// Beneficial proc chance
+		stat( fx$PROC_DET )		// Detrimental proc chance
 	])), "");
 }
 
+#define LM_PRE \
+	if(nr == TASK_MONSTER_SETTINGS){\
+		onSettings(llJson2List(s)); \
+	}\
+	
 #include "got/classes/packages/got FXCompiler.lsl"

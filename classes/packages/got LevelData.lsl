@@ -10,6 +10,7 @@ integer DIFFICULTY;
 integer CHALLENGE;
 integer DEATHS;
 
+
 integer slave;
 
 integer BFL;
@@ -25,8 +26,17 @@ onEvt(string script, integer evt, list data){
 		if( evt == LevelEvt$players )
 			PLAYERS = data;
 		
-		else if( evt == LevelEvt$playerHUDs )
+		else if( evt == LevelEvt$playerHUDs ){
+			
 			PLAYER_HUDS = data;
+			if( BFL&BFL_WIPE_TRACKER ){
+				runOnPlayers(targ,
+					GUI$setWipes(targ, wipesRemaining());
+				)
+			}
+			
+			
+		}
 		
 		else if( evt == LevelEvt$load && l2s(data, 1) == "" ){
 			
@@ -55,7 +65,7 @@ onEvt(string script, integer evt, list data){
 
 timerEvent(string id, string data){
 
-	if(id == "WIPE"){
+	if( id == "WIPE" ){
 	
 		BFL = BFL&~BFL_WIPED;
 		DEATHS = 0;
@@ -65,12 +75,34 @@ timerEvent(string id, string data){
 			Status$fullregenTarget(targ);
 		)
 		
+		
 	}
 	
-	else if( id == "RESTART" )
+	else if( id == "RESTART" ){
 		runMethod((string)LINK_THIS, "got Level", LevelMethod$load, [FALSE], TNN);
-	
+		runOnPlayers(targ,
+			GUI$setWipes(targ, wipesRemaining());
+		)
+	}
 
+}
+
+int getNumViablePlayers(){
+	int viable;
+	runOnPlayers(targ,
+		if(llKey2Name(targ) != "")
+			++viable;
+	)
+	return viable;
+}
+
+int wipesRemaining(){
+	
+	int out = getNumViablePlayers()-1-DEATHS;
+	if( out < 0 )
+		return 0;
+	return out;
+	
 }
 
 
@@ -102,23 +134,31 @@ default
         CB - The callback you specified when you sent a task
     */
 
-	if( METHOD == gotLevelDataMethod$died ){
+	if( METHOD == gotLevelDataMethod$died && ~BFL&BFL_WIPED ){
 
 		Level$raiseEvent(LevelEvt$playerDied, [id]);
 		
 		++DEATHS;
 		
-		integer viable; // Players in region
-		runOnPlayers(targ,
-			if(llKey2Name(targ) != "")
-				++viable;
-		)
+		integer viable = getNumViablePlayers(); // Players in region
+		
+		
+		if( BFL&BFL_WIPE_TRACKER ){
+						
+			runOnPlayers(targ,
+				GUI$setWipes(targ, wipesRemaining());
+			)
+			
+		}
 		
 		if( BFL&BFL_WIPE_TRACKER && DEATHS >= viable && viable ){
 		
 			BFL = BFL|BFL_WIPED;
-			
 			Level$raiseEvent(LevelEvt$wipe, []);
+			Portal$killAll();
+			runOnPlayers(targ,
+				Status$kill(targ);
+			)
 			multiTimer(["WIPE", "", 20, FALSE]);
 			
 		}
@@ -151,7 +191,8 @@ default
 				needed+= llGetOwnerKey(targ);
 		)
 		
-		if(needed == [])return;
+		if( needed == [] )
+			return;
 		
 		// All done
         if(PLAYERS_COMPLETED == needed && ~BFL&BFL_COMPLETED){
@@ -161,12 +202,15 @@ default
 			
 			// Tell the _main that the level is finished
 			if((integer)method_arg(1)){
+				
 				Level$raiseEvent(LevelEvt$levelCompleted, []);
 				return;
+				
 			}
             
 			// Actually send the completecell command, but only once
 			if( llGetStartParameter() ){
+				
 				BFL = BFL|BFL_COMPLETED;
 
 				Bridge$completeCell(llGetOwner(), 0, 0, TRUE);
@@ -174,6 +218,7 @@ default
 				
 				qd("Loading next stage.");
 				return;
+				
             }
             llOwnerSay("Cell test completed!");
 			return;
@@ -237,8 +282,15 @@ default
 		
 	}
 	
-    if( METHOD == gotLevelDataMethod$enableWipeTracker && method$byOwner )
+    if( METHOD == gotLevelDataMethod$enableWipeTracker && method$byOwner ){
+		
 		BFL = BFL|BFL_WIPE_TRACKER;
+		runOnPlayers(targ,
+			GUI$setWipes(targ, wipesRemaining());
+		)
+			
+		
+	}
 
     if( METHOD == gotLevelDataMethod$cellDesc && method$byOwner ){
 	
