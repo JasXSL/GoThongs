@@ -42,6 +42,8 @@ rotation W_MAINHAND_ROT;
 rotation W_OFFHAND_ROT;
 rotation W_BACK_MAINHAND_ROT;
 rotation W_BACK_OFFHAND_ROT;
+int W_MAINHAND_BACK_SLOT;
+int W_OFFHAND_BACK_SLOT;
 
 string CLASS_STANCE;
 list SPELL_STANCES = ["","","","",""];		// Stance overrides after casting spells
@@ -191,7 +193,12 @@ loadWeapon( list data ){
     W_MAINHAND_SLOT = l2i(wdata, 6);
     W_OFFHAND_SLOT = l2i(wdata, 7);
 	
+	
 	W_SOUNDS = llJson2List(l2s(wdata, 12));
+	
+	W_MAINHAND_BACK_SLOT = l2i(wdata, 14);
+    W_OFFHAND_BACK_SLOT = l2i(wdata, 15);
+	
     
     // Main hand offsets default to ZERO_VECTOR/ZERO_ROTATION, so we can just use the stuff from the avatar
     W_MAINHAND_POS = mainhand_offset;
@@ -205,18 +212,19 @@ loadWeapon( list data ){
 	
 	CUSTOM_BACK_DEFAULT_POS = BACK_DEFAULT_POS;
 	CUSTOM_BACK_OH_DEFAULT_POS = BACK_OH_DEFAULT_POS;
-
+	
     if( (vector)l2s(wdata, 10) )
         CUSTOM_BACK_DEFAULT_POS = (vector)l2s(wdata, 10);
     if( (vector)l2s(wdata, 11) )
         CUSTOM_BACK_OH_DEFAULT_POS = (vector)l2s(wdata, 11);
-		
+	
 	W_BACK_MAINHAND_POS = mainhand_back_offset+CUSTOM_BACK_DEFAULT_POS;
     W_BACK_OFFHAND_POS = offhand_back_offset+CUSTOM_BACK_OH_DEFAULT_POS;
     
     // Rotations are fixed, set to default
     W_BACK_MAINHAND_ROT = BACK_DEFAULT_ROT;
     W_BACK_OFFHAND_ROT = BACK_OH_DEFAULT_ROT;
+	
     
     // Check if custom exists for this particular weapon
     if( (rotation)l2s(wdata, 8) )
@@ -252,8 +260,11 @@ reloadWeapon(){
 
 // Returns an attachment slot
 integer getAttachSlot(integer rhand){
-    if(BFL&BFL_SHEATHED || unsheatable)
-        return ATTACH_BACK;
+    if(BFL&BFL_SHEATHED || unsheatable){
+		if(rhand)
+			return W_MAINHAND_BACK_SLOT;
+        return W_OFFHAND_BACK_SLOT;
+	}
     if(rhand)
         return W_MAINHAND_SLOT;
     return W_OFFHAND_SLOT;

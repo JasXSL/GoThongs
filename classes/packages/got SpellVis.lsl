@@ -261,7 +261,7 @@ onEvt(string script, integer evt, list data){
 
 			if( l2s(p, 1) )
 				gotClassAtt$spellEnd(l2s(p, 1), 1);
-			if( l2s(p, 2) != "" && !WEAPON_SHEATHED )
+			if( l2s(p, 2) != "" )
 				Weapon$trail(l2s(p,2));
 			
 		}
