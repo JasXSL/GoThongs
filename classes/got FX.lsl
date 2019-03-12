@@ -46,6 +46,7 @@
 #define FXEvt$effectRemoved 3			// [(key)caster, (int)stacks, (arr)package, (int)id, (bool)overwrite]
 #define FXEvt$effectStacksChanged 4		// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
 #define FXEvt$wrapperSuccess 5			// [(key)caster, (int)detrimental] - A wrapper was successfully added
+#define FXEvt$dodge 6					// [(key)caster] - You dodged an attack
 
 
 #define FX$send(target, sender, wrapper, team) runMethod(target, "got FX", FXMethod$run, ([sender, wrapper, 0, team]), TNN)

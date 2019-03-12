@@ -58,7 +58,8 @@ integer fxFlags = 0;
 	$SELF$	Script owner
 	$otI$	Integered version of original target
 	$tI$	Same but for wrapper target
-	$sI$	Same but for sender
+	$sI$	Same but for sender HUD
+	$soI$	Same but for sender agent
 */
 string t0;	// First target of a targeted spell
 
@@ -72,6 +73,7 @@ string runMath( string FX, integer index, key targ ){
 	FX = implode((str)((int)("0x"+t0)), explode("$otI$", FX));
 	FX = implode((str)((int)("0x"+(str)targ)), explode("$tI$", FX));
 	FX = implode((str)((int)("0x"+(str)llGetKey())), explode("$sI$", FX));
+	FX = implode((str)((int)("0x"+(str)llGetOwner())), explode("$soI$", FX));
 
 	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
     list split = llParseString2List(FX, ["$MATH$","$M$"], []);
@@ -244,71 +246,83 @@ onEvt(string script, integer evt, list data){
         
     }
 	*/
-    else if(script == "got SpellMan" && evt == SpellManEvt$complete){
+    else if( script == "got SpellMan" && evt == SpellManEvt$complete ){
 		
 		integer SPELL_CASTED = l2i(data, 0);                    // Spell casted index 0-4
         list SPELL_TARGS = llJson2List(l2s(data, 3));                    // Targets casted at
 		
-		
 		integer flags = spellFlags(SPELL_CASTED);
-		
-		cCR = 1;
-		if(llFrand(1)<cmod && ~flags&SpellMan$NO_CRITS){
-		
-			cCR = 2;
-			llTriggerSound("e713ffed-c518-b1ed-fcde-166581c6ad17", .25);
-			raiseEvent(SpellAuxEvt$crit, (str)SPELL_CASTED);
-			
-		}
+		float r = spellRange(SPELL_CASTED);
+		rollCrit(~flags&SpellMan$NO_CRITS, SPELL_CASTED);
 		
 		// RunMath should be done against certain targets for backstab to work
-		string wrapper = spellWrapper(SPELL_CASTED);
+		applyWrapper(spellWrapper(SPELL_CASTED), SPELL_CASTED, SPELL_TARGS, r);
 		
-		// Handle AOE
-		if((string)SPELL_TARGS == "AOE"){
-			FX$aoe(spellRange(SPELL_CASTED), llGetKey(), runMath(wrapper, SPELL_CASTED, ""), TEAM);  
-			SPELL_TARGS = [LINK_ROOT];
-			
-		}
-		
-		else if( llFrand(1) < befuddle-1 ){
-		
-			float r = spellRange(SPELL_CASTED);
-			string targ = randElem(PLAYERS);
-			if(targ == llGetOwner())
-				SPELL_TARGS = [LINK_ROOT];
-			else if(llVecDist(llGetRootPosition(), prPos(targ)) < r)
-				SPELL_TARGS = [targ];
-			
-		}
-		
-		// Send effects and rez visuals
-		if( (string)SPELL_TARGS != "AOE" ){
-		
-			integer i;
-			for( ; i<count(SPELL_TARGS); ++i ){ 
-				
-				string val = l2s(SPELL_TARGS, i);
-				t0 = val;
-				if( val == llGetKey() || val == llGetOwner() )
-					val = (str)LINK_ROOT;
-				
-				FX$send(val, llGetKey(), runMath(wrapper,SPELL_CASTED, val), TEAM);
-
-			}
-			
-		}
-		
+		// Self cast
 		if( llStringLength(spellSelfcast(SPELL_CASTED)) > 2 ){
-			wrapper = spellSelfcast(SPELL_CASTED);
-			FX$run(llGetOwner(), runMath(wrapper, SPELL_CASTED, l2s(SPELL_TARGS, 0)));
+			applyWrapper( spellSelfcast(SPELL_CASTED), SPELL_CASTED, (list)l2s(SPELL_TARGS, 0), r);
+			//FX$run(llGetOwner(), runMath(wrapper, SPELL_CASTED, l2s(SPELL_TARGS, 0)));
 		}
+
     }
 	/*
     else if(script == "got SpellMan" && evt == SpellManEvt$interrupted){
         
     }
 	*/
+}
+
+rollCrit( int allow, int spell ){
+
+	cCR = 1;
+	if( llFrand(1)<cmod ){
+	
+		cCR = 2;
+		llTriggerSound("e713ffed-c518-b1ed-fcde-166581c6ad17", .25);
+		raiseEvent(SpellAuxEvt$crit, (str)spell);
+		
+	}
+	
+}
+
+applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
+
+	// Handle AOE
+	if( (string)SPELL_TARGS == "AOE" ){
+	
+		FX$aoe(range, llGetKey(), runMath(wrapper, index, ""), TEAM);  
+		SPELL_TARGS = (list)LINK_ROOT;
+		
+	}
+	
+	else if( llFrand(1) < befuddle-1 ){
+
+		string targ = randElem(PLAYERS);
+		if( targ == llGetOwner() )
+			SPELL_TARGS = [LINK_ROOT];
+		else if( llVecDist(llGetRootPosition(), prPos(targ)) < range )
+			SPELL_TARGS = [targ];
+		
+	}
+	
+	// Send effects and rez visuals
+	if( (string)SPELL_TARGS != "AOE" ){
+	
+		integer i;
+		for( ; i<count(SPELL_TARGS); ++i ){ 
+			
+			string val = l2s(SPELL_TARGS, i);
+			t0 = val;
+			if( val == llGetKey() || val == llGetOwner() )
+				val = (str)LINK_ROOT;
+			
+			FX$send(val, llGetKey(), runMath(wrapper,index, val), TEAM);
+
+		}
+		
+	}
+	
+	
 }
 
 
@@ -340,13 +354,16 @@ default
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */  
+
+	if( METHOD == SpellAuxMethod$tunnel  && method$internal ){
+		
+		rollCrit( l2i(PARAMS, 3)&SpellAux$tfAllowCrit, -1 );
+		//wrapper, (arr)targets, (float)range
+		applyWrapper(method_arg(0), -1, llJson2List(method_arg(1)), l2f(PARAMS, 2));
+		
+	}
+    
+	
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"  
 }

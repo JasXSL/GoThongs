@@ -528,6 +528,7 @@ default{
 				#endif
 				llTriggerSound("2cd691be-46dc-ba05-9a08-ed4a8f48a976", .5);
 				onEvt("", INTEVENT_DODGE, []);
+				raiseEvent(FXEvt$dodge, sender);
 				CB_DATA = [FALSE];
 				
 			}

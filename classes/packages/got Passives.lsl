@@ -404,8 +404,10 @@ onEvt(string script, integer evt, list data){
 		float proc_chance = l2f(EVT_LISTENERS, x+3)*CPC;
 		float cooldown = l2f(EVT_LISTENERS, x+4);
 		integer flags = l2i(EVT_LISTENERS, x+5);
-		// wrapper = l2s(EVT_LISTENERS, x+6);
 		
+		list targsOut;
+		string wrapper;
+		float range;
 		
 		float proc = llFrand(1);
 
@@ -418,6 +420,8 @@ onEvt(string script, integer evt, list data){
 
 		// Scan the next target
 		@targNext;
+		
+		
 		
 		// Scan for all valid targets
 		list_shift_each(targs, val,
@@ -485,27 +489,32 @@ onEvt(string script, integer evt, list data){
 				
 			}
 					
-			// We have validated that this event should be accepted, let's extract the wrapper
-			string wrapper = llList2String(EVT_LISTENERS, x+6);
+			// We have validated that this event should be accepted, let's extract the wrapper if it hasn't already been extracted for this event
+			if( wrapper == "" ){
 				
-			// We can use <index> and <-index> tags to replace with data from the event
-			for( y=0; y<llGetListLength(data); ++y ){
-			
-				wrapper = implode((str)(-llList2Float(data, y)), explode("<-"+(str)y+">", wrapper));
-				wrapper = implode(llList2String(data, y), explode("<"+(str)y+">", wrapper));
+				wrapper = llList2String(EVT_LISTENERS, x+6);
+				// We can use <index> and <-index> tags to replace with data from the event
+				for( y=0; y<llGetListLength(data); ++y ){
 				
-			}
+					wrapper = implode((str)(-llList2Float(data, y)), explode("<-"+(str)y+">", wrapper));
+					wrapper = implode(llList2String(data, y), explode("<"+(str)y+">", wrapper));
 					
-			// Find the target and send
-			integer targFlag = l2i(t, 0);
-			float range = l2f(t, 4);
+				}
+				
+				range = l2f(t, 4);
+				
+			}
+
 			
-			if(targFlag < 0 && llAbs(targFlag) & llAbs(Passives$TARG_SELF)){
-				FX$run("", wrapper);
-			}
-			if(targFlag < 0 && llAbs(targFlag) & llAbs(Passives$TARG_AOE)){
-				FX$aoe(max_targs/10., llGetKey(), wrapper, TEAM_PC);
-			}
+			// Find the targets
+			integer targFlag = l2i(t, 0);
+			if( targFlag < 0 && llAbs(targFlag) & llAbs(Passives$TARG_SELF) )
+				targsOut += SpellMan$CASTER;
+
+			if( targFlag < 0 && llAbs(targFlag) & llAbs(Passives$TARG_AOE) )
+				targsOut = (list)"AOE";
+				//FX$aoe(max_targs/10., llGetKey(), wrapper, TEAM_PC);
+			//}
 			
 			// Use target from event
 			if( targFlag > -1 ){
@@ -515,19 +524,11 @@ onEvt(string script, integer evt, list data){
 				if( strlen(t) != 36 )
 					t = llGetKey();
 
-				if( llVecDist(llGetRootPosition(), prPos(t))< range || range <= 0 ){
-				
-					if( t == llGetKey() )
-						FX$run("", wrapper);
-					else
-						FX$send(l2s(data, targFlag), llGetKey(), wrapper, TEAM_PC);
-						
-				}
+				if( llVecDist(llGetRootPosition(), prPos(t))< range || range <= 0 )
+					targsOut += (list)t;
 			
 			}
-			
-			
-					
+
 			// If we have sent to max targs, leave this event and go to the next
 			if(max_targs > 0){
 				--max_targs;
@@ -536,8 +537,12 @@ onEvt(string script, integer evt, list data){
 			}
 		)
 		
-		// Go to next event
+		// Send and continue to the next bound event
 		@evtBreak;
+		
+		if( count(targsOut) )
+			SpellAux$tunnel( wrapper, targsOut, range, 0 );
+		
 	}
 
 
