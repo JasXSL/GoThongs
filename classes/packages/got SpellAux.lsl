@@ -255,12 +255,23 @@ onEvt(string script, integer evt, list data){
 		float r = spellRange(SPELL_CASTED);
 		rollCrit(~flags&SpellMan$NO_CRITS, SPELL_CASTED);
 		
+		// Befuddle
+		if( llFrand(1) < befuddle-1 && (str)SPELL_TARGS != "AOE" ){
+
+			string targ = randElem(PLAYERS);
+			if( targ == llGetOwner() )
+				SPELL_TARGS = [LINK_ROOT];
+			else if( llVecDist(llGetRootPosition(), prPos(targ)) < r )
+				SPELL_TARGS = [targ];
+			
+		}
+		
 		// RunMath should be done against certain targets for backstab to work
 		applyWrapper(spellWrapper(SPELL_CASTED), SPELL_CASTED, SPELL_TARGS, r);
 		
 		// Self cast
 		if( llStringLength(spellSelfcast(SPELL_CASTED)) > 2 ){
-			applyWrapper( spellSelfcast(SPELL_CASTED), SPELL_CASTED, (list)l2s(SPELL_TARGS, 0), r);
+			applyWrapper( spellSelfcast(SPELL_CASTED), SPELL_CASTED, [llGetOwner()], r);
 			//FX$run(llGetOwner(), runMath(wrapper, SPELL_CASTED, l2s(SPELL_TARGS, 0)));
 		}
 
@@ -292,35 +303,24 @@ applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 	
 		FX$aoe(range, llGetKey(), runMath(wrapper, index, ""), TEAM);  
 		SPELL_TARGS = (list)LINK_ROOT;
+		return ;
 		
 	}
-	
-	else if( llFrand(1) < befuddle-1 ){
 
-		string targ = randElem(PLAYERS);
-		if( targ == llGetOwner() )
-			SPELL_TARGS = [LINK_ROOT];
-		else if( llVecDist(llGetRootPosition(), prPos(targ)) < range )
-			SPELL_TARGS = [targ];
-		
-	}
-	
 	// Send effects and rez visuals
-	if( (string)SPELL_TARGS != "AOE" ){
-	
-		integer i;
-		for( ; i<count(SPELL_TARGS); ++i ){ 
-			
-			string val = l2s(SPELL_TARGS, i);
-			t0 = val;
-			if( val == llGetKey() || val == llGetOwner() )
-				val = (str)LINK_ROOT;
-			
-			FX$send(val, llGetKey(), runMath(wrapper,index, val), TEAM);
-
-		}
+	integer i;
+	for( ; i<count(SPELL_TARGS); ++i ){ 
 		
+		string val = l2s(SPELL_TARGS, i);
+		t0 = val;
+		if( val == llGetKey() || val == llGetOwner() )
+			val = (str)LINK_ROOT;
+		
+		FX$send(val, llGetKey(), runMath(wrapper,index, val), TEAM);
+
 	}
+	
+
 	
 	
 }

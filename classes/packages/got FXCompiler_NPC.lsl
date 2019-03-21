@@ -80,9 +80,8 @@ onEvt( string sc, int evt, list data ){
 
 integer current_visual;
 
-runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster){ 
+runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster, int stacks){ 
     
-	integer stacks = getStacks(pid, FALSE);
 	list resource_updates; // Updates for HP/Mana etc
 	list fxs = llJson2List(fxobjs);
     fxobjs = "";

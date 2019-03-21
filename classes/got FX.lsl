@@ -38,7 +38,7 @@
 #define FXMethod$setPCs 4				// (arr)pc_keys - Set PC keys on send to PC events
 #define FXMethod$setNPCs 5				// (arr)pc_keys - Set NPC keys to send to on NPC events
 #define FXMethod$hasTags 6				// (var)tag(s) - Callbacks TRUE/FALSE if the player has ANY of these tags
-#define FXMethod$addStacks 7			// (int)stacks, name, tag, sender, pid, runOnRem, flags, maxNR, isDispel, duration - Adds x stacks to spells that match the filter. If duration is non-zero, it is also updated.
+#define FXMethod$addStacks 7			// (int)stacks, name, tag, sender, pid, runOnRem, flags, maxNR, isDispel, duration, (int)trig - Adds x stacks to spells that match the filter. If duration is non-zero, it is also updated.
 
 
 #define FXEvt$runEffect 1				// [(key)caster, (int)stacks, (arr)package, (int)id, (int)flags]
@@ -57,7 +57,7 @@
 #define FX$aoe(range, sender, wrapper, team) runLimitMethod((str)AOE_CHAN, "got FX", FXMethod$run, ([sender, wrapper, range, team]), TNN, range) 
 // Tags can be a JSON array or a single tag
 #define FX$hasTags(targ, tags, cb) runMethod(targ, "got FX", FXMethod$hasTags, [tags], cb)
-#define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration]), TNN)
+#define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig]), TNN)
 
 #ifndef fx$COND_HAS_PACKAGE_NAME
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names
@@ -73,8 +73,7 @@
 // If saved, shared will be the strided array [(int)pid, (key)caster, (arr)package, (int)stacks]
 
 
-	
-	
+
 // Note, you'll probably want a sheet to keep track of FX types
 
 // Wrapper is an array that contains the entire fx object
@@ -100,6 +99,8 @@ string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs,
 #define WF_NO_DODGE 0x8
 #define WF_ALLOW_WHEN_RAPED 0x20
 #define WF_REQUIRE_LOS 0x40
+#define WF_ENEMY_ONLY 0x80			// 128 - Allow other team only
+
 
 // Events are used to run additional wrappers on a target based on script events
 // For internal events use "" as evscript

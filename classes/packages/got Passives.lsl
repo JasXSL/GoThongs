@@ -520,6 +520,7 @@ onEvt(string script, integer evt, list data){
 			if( targFlag > -1 ){
 				
 				string t = l2s(data, targFlag);
+				
 				// Target is a link, so it is us
 				if( strlen(t) != 36 )
 					t = llGetKey();

@@ -471,7 +471,7 @@ default{
 			
 			
 			// Convert sender to "s" if self
-			if( sender == (str)llGetOwner() || sender == "" )
+			if( sender == llGetOwner() || sender == "" || sender == llGetKey() )
 				sender = "s";
 
 			
@@ -483,6 +483,9 @@ default{
 				team = TEAM;
 			
 			integer flags = llList2Integer(packages, 0);		// Wrapper flags
+			if( flags&WF_ENEMY_ONLY && team == TEAM )
+				return;
+			
 			integer min_objs = llList2Integer(packages,1);		// Min packages to add
             integer max_objs = llList2Integer(packages,2);		// Max packages to add
 			packages = llDeleteSubList(packages, 0, 2);			// Now packages contain a stride of 2: (int)stacks_to_add, (arr)package
@@ -501,7 +504,7 @@ default{
 						RC = FALSE;
 				}
 			#endif
-
+			
 			// Quick flag check on the wrapper
 			if(
 				(~flags&WF_ALLOW_WHEN_DEAD && STATUS&StatusFlag$dead) || 
@@ -520,7 +523,7 @@ default{
 				CB_DATA = [FALSE];
 			#endif
 			// Check dodge
-			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != llGetOwner() && llFrand(1)<DOD ){
+			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != "s" && llFrand(1)<DOD ){
 				
 				// If not NPC we should animate when we dodge
 				#ifndef IS_NPC
@@ -670,15 +673,7 @@ default{
 							}
 							else{
 							
-								FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE, dur);
-							
-								// If trigger immediate, we still need to run it
-								if(flags&PF_TRIGGER_IMMEDIATE){
-								
-									send += getRunPackage(slice);
-									onEvt("", INTEVENT_PACKAGE_RAN, [pName(slice)]);
-									
-								}
+								FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE, dur, flags&PF_TRIGGER_IMMEDIATE);
 								jump reloop;
 							
 							}
@@ -757,8 +752,10 @@ default{
 					
 					
 					// Send the packages to FXCompiler
-					if(sender == "s")sender = llGetOwner();
+					if( sender == "s" )
+						sender = llGetOwner();
 					llMessageLinked(LINK_THIS, TASK_FXC_PARSE, llList2Json(JSON_ARRAY, send), sender);
+					
 				}
 			}
         }
@@ -778,6 +775,7 @@ default{
 				amount = -1;					// Set to -1 for all
 			integer is_dispel = l2i(PARAMS, 8);			// Dispel event will be raised
 			float dur = l2f(PARAMS, 9);
+			int trig = l2i(PARAMS, 10);
 
 			// Owner is always S
 			integer pos = llListFindList(senders, [(str)llGetOwner()]);
@@ -816,7 +814,9 @@ default{
 					// Update stacks
 					// Edit the stacknr
 					integer max = pMaxStacks(slice);
-					if(stacks>max)stacks = max;
+					if(stacks>max)
+						stacks = max;
+						
 					// Update the index
 					PACKAGES = llListReplaceList(PACKAGES, [stacks], i+2,i+2);
 					
@@ -830,9 +830,16 @@ default{
 					
 					// Re-fetch slice with updated data
 					slice = pSlice(i);
-					// Send to FXCompiler
-					llMessageLinked(LINK_THIS, TASK_FXC_PARSE, llList2Json(JSON_ARRAY, [
-						FXCPARSE$ACTION_STACKS, 
+					
+					int task = FXCPARSE$ACTION_STACKS;
+					if( trig ){
+					
+						task = task|FXCPARSE$ACTION_RUN;
+						onEvt("", INTEVENT_PACKAGE_RAN, (list)pName(slice));
+						
+					}
+					list send = [
+						task, 
 						pID(slice), 
 						pStacks(slice), 
 						pFlags(slice), 
@@ -840,7 +847,12 @@ default{
 						pFxobjs(slice), 
 						pTimesnap(slice), 
 						f2i(pDur(slice))
-					]), "");
+					];
+					// Send to FXCompiler
+					llMessageLinked(LINK_THIS, TASK_FXC_PARSE, mkarr(send), "");
+					
+					// If trigger immediate, we still need to run it
+								
 					
 					onEvt("", INTEVENT_ONSTACKS, [pID(slice), stacks]);
 					

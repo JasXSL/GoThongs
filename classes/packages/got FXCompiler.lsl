@@ -157,7 +157,7 @@ default
 			input = llDeleteSubList(input, 0, FXCPARSE$STRIDE-1); 
 			
 			if( action&FXCPARSE$ACTION_RUN ) 
-				runEffect(PID, pflags, pname, fx_objs, timesnap, id); 
+				runEffect(PID, pflags, pname, fx_objs, timesnap, id, stacks); 
 			
 			if( action&FXCPARSE$ACTION_ADD ){ 
 			

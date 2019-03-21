@@ -7,10 +7,8 @@ integer TEAM = TEAM_PC;
 // ID tag is the first 8 characters of the UUID
 integer current_visual;
 
-runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster){
+runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster, int stacks){
 
-	integer stacks = getStacks(pid, FALSE);
-	
 	list resource_updates; // Updates for HP/Mana etc
 	
 	if(pflags&PF_DETRIMENTAL)

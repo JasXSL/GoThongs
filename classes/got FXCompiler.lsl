@@ -139,7 +139,12 @@
 		FX$rem(llList2String(fx, 1), llList2String(fx, 2), llList2String(fx, 3), llList2String(fx, 4), llList2String(fx, 5), llList2String(fx, 6), llList2String(fx, 7), llList2String(fx, 8), llList2String(fx, 9)); \
 	} \
 	else if(t == fx$REGION_SAY){ \
-		llRegionSay(l2i(fx,1), llList2String(fx,2)); \
+		int flags = l2i(fx, 3); \
+		str msg = implode((str)stacks, explode(fx$RSConst$stacks,l2s(fx,2))); \
+		if( flags&fx$RSFlag$to_owner ) \
+			llRegionSayTo(llGetOwner(), l2i(fx, 1), msg); \
+		else \
+			llRegionSay(l2i(fx,1), msg); \
 	} \
 	else if(t == fx$ADD_FX){ \
 		int targs = l2i(fx,2); \
@@ -175,7 +180,7 @@
 		} \
 	}\
 	else if(t == fx$ADD_STACKS){ \
-		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9), l2f(fx,10)); \
+		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9), l2f(fx,10), false); \
 	} \
 	else if(t == fx$SPAWN_MONSTER){ \
 			\

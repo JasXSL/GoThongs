@@ -178,11 +178,11 @@ integer resources; integer status; integer fx; integer team; integer sex; intege
 {\
 list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-resources = l2i(_split,2); \
-status = l2i(_split,5); \
+resources = l2i(_split,3); \
+status = l2i(_split,6); \
 fx = l2i(_split,7); \
-team = l2i(_split,1); \
-monsterflags = l2i(_split, 6); \
+team = l2i(_split,2); \
+monsterflags = l2i(_split, 7); \
 if(l2i(_data, 0)){ /* HUD */ \
 	resources = l2i(_split, 0); \
 	status = l2i(_split, 1); \
@@ -217,7 +217,7 @@ if(l2i(_data, 0)) \
 #define parseFlags(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-integer var = l2i(_split, 5); \
+integer var = l2i(_split, 6); \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 1);
 	
@@ -225,7 +225,7 @@ if(l2i(_data, 0)) \
 #define parseTeam(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-integer var = l2i(_split, 1); \
+integer var = l2i(_split, 2); \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 4);
 	
@@ -233,14 +233,14 @@ if(l2i(_data, 0)) \
 #define parseFxFlags(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-integer var = l2i(_split, 7); \
+integer var = l2i(_split, 8); \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 2);
 	
 #define parseResources(targ, hp, mp, ars, pain) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-integer _n = l2i(_split,2); \
+integer _n = l2i(_split,3); \
 if( l2i(_data, 0) ) \
 	_n = l2i(_split, 0); \
 _split = splitResources(_n); \
