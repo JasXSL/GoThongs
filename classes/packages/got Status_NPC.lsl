@@ -392,8 +392,9 @@ outputStats( integer f ){
             llTriggerSound(randElem(atSnd), 1); \
         } \
     } \
-	else if( evt == evt$TOUCH_START && initialized() && ~RF&Monster$RF_NO_TARGET ){ \
-        Root$targetMe(l2s(data, 1), icon, TRUE, TEAM); \
+	else if( evt == evt$TOUCH_START ){ \
+		if( initialized() && ~RF&Monster$RF_NO_TARGET ) \
+			Root$targetMe(l2s(data, 1), icon, TRUE, TEAM); \
 	} \
 
 	

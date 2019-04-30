@@ -1,0 +1,254 @@
+/*
+	Dependencies:
+	#define USE_EVENTS
+	#include "got/_core.lsl"
+	
+	// NPC Config defaults:
+	#define cf$FLAGS 0
+	#define cf$SPEED 1
+	#define cf$HITBOX 0
+	#define cf$ATKSPEED 2
+	#define cf$DMG 4
+	#define cf$WANDER 0
+	#define cf$HP 100
+	#define cf$AGGRO_RANGE 15
+	#define cf$SOUND_AGGRO ""
+	#define cf$SOUND_AGGRO_LOST ""
+	#define cf$SOUND_TAKEHIT ""	(Can be a JSON array also)
+	#define cf$SOUND_ATTACK "" (Can also be array)
+	#define cf$SOUND_DEATH ""
+	#define cf$ICON ""
+	#define cf$SCENE_ALIAS "" (Use if you want to use a different name for punishments, ex "Cock Goblin" for a Cock Goblin Flailer
+	#define cf$DROPS "" (JSON array of [[(str)item, (float)chance]...]
+	#define cf$TEAM 0 (Default team, can be overridden)
+	#define cf$RANGE_ADD 0	(How far away a player can hit this, but not vice versa. Good for large bosses)
+	#define cf$HEIGHT_ADD 0 (Used for calculating line of sight, mostly used for very large bosses)
+	#define cf$MELEE_HEIGHT 0 (Used for roleplay. 0 = groin level, 1 = chest level, -1 = anything else)
+	#define cf$HOVER_HEIGHT 0 (Used for levitating monsters and animesh. Offsets the bottom of the monster)
+
+
+	Events (these are preprocessor macros:
+	#define onInit( int live ) | Raised on state entry and when portal initializes
+	#define onSpellSetup() | Add spells. Use:
+		LocalConf$npc$addSpell( int flags, float casttime, float recast, float range, string name, float minrange, int targSex);
+	#define onAggroChange( key pre, key new ) | Aggro has changed
+	#define onDeath() | NPC has died
+	
+	#define onSpellStart( int spell, key targ )
+	#define onSpellInterrupt( int spell, key targ )
+	#define onSpellFinish( int spell, key targ )
+	#define timerEvent( str id, str data )
+	#define onEvent(string script, integer evt, list data)
+	#define onCallback(str sender_script, int method, list params, string CB, key id)	// Callback received
+	#define onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
+	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
+
+	Globals:
+	PLAYERS | list | List of player UUIDs
+	PLAYER_HUDS | list | List of player HUDs corresponding to above players
+	TEAM | int | Player team
+	SPELLS | list | List of spells
+	AGGRO | key | Currently aggroed player
+	P_FX | int | (Optional) Searches for a prim named "FX" and maps that to global P_FX. Requires #define FX_PRIM
+	
+*/
+
+
+// Setup defaults
+#ifndef cf$FLAGS
+	#define cf$FLAGS 0
+#endif
+#ifndef cf$SPEED
+	#define cf$SPEED 1
+#endif
+#ifndef cf$HITBOX
+	#define cf$HITBOX 0
+#endif
+#ifndef cf$ATKSPEED
+	#define cf$ATKSPEED 2
+#endif
+#ifndef cf$DMG
+	#define cf$DMG 4
+#endif
+#ifndef cf$WANDER
+	#define cf$WANDER 0
+#endif
+#ifndef cf$HP
+	#define cf$HP 100
+#endif	
+#ifndef cf$AGGRO_RANGE
+	#define cf$AGGRO_RANGE 15
+#endif
+#ifndef cf$SOUND_AGGRO
+	#define cf$SOUND_AGGRO ""
+#endif	
+#ifndef cf$SOUND_AGGRO_LOST
+	#define cf$SOUND_AGGRO_LOST ""
+#endif
+#ifndef cf$SOUND_TAKEHIT
+	#define cf$SOUND_TAKEHIT ""
+#endif
+#ifndef cf$SOUND_ATTACK
+	#define cf$SOUND_ATTACK ""
+#endif
+#ifndef cf$SOUND_DEATH
+	#define cf$SOUND_DEATH ""
+#endif
+#ifndef cf$ICON
+	#define cf$ICON ""
+#endif
+#ifndef cf$SCENE_ALIAS
+	#define cf$SCENE_ALIAS ""
+#endif
+#ifndef cf$DROPS
+	#define cf$DROPS ""
+#endif
+#ifndef cf$TEAM
+	#define cf$TEAM 0
+#endif
+#ifndef cf$RANGE_ADD
+	#define cf$RANGE_ADD 0
+#endif
+#ifndef cf$HEIGHT_ADD
+	#define cf$HEIGHT_ADD 0
+#endif
+#ifndef cf$MELEE_HEIGHT
+	#define cf$MELEE_HEIGHT -1
+#endif
+#ifndef cf$HOVER_HEIGHT
+	#define cf$HOVER_HEIGHT 0
+#endif
+
+list PLAYERS;
+list PLAYER_HUDS;
+integer TEAM;
+list SPELLS = [];
+key AGGRO;
+list INI_DATA = [cf$FLAGS,cf$SPEED,cf$HITBOX,cf$ATKSPEED,cf$DMG,cf$WANDER,cf$HP,cf$AGGRO_RANGE,cf$SOUND_AGGRO,cf$SOUND_AGGRO_LOST,cf$SOUND_TAKEHIT,cf$SOUND_ATTACK,cf$SOUND_DEATH,cf$ICON,cf$SCENE_ALIAS,cf$DROPS,cf$TEAM,cf$RANGE_ADD,cf$HEIGHT_ADD,cf$MELEE_HEIGHT,cf$HOVER_HEIGHT];
+#ifdef FX_PRIM
+	int P_FX;
+#endif
+
+ini(){
+    
+	llStopSound();		
+    integer i;
+    for(; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i){
+        string n = llGetInventoryName(INVENTORY_ANIMATION, i);
+        if( startsWith(n, "idle") )
+            llStartObjectAnimation(n);
+        else
+            llStopObjectAnimation(n);
+    }
+	
+	#ifdef onInit
+		onInit(portalConf$live);
+	#endif
+    
+}
+
+
+onEvt(string script, integer evt, list data){
+    
+	#ifdef onEvent
+		onEvent( script, evt, data );
+	#endif
+	
+    if( Portal$isPlayerListIfStatement )
+        PLAYERS = data;
+        
+    if( Portal$hif )
+        PLAYER_HUDS = data;
+    
+    if(script == "got Portal" && evt == evt$SCRIPT_INIT){
+        
+        ini();
+        NPCSpells$setSpells(SPELLS);
+        
+    }
+
+    else if(script == "got Status" && evt == StatusEvt$team)
+        TEAM = l2i(data, 0);
+        
+    else if( script == "got Status" && evt == StatusEvt$monster_gotTarget ){
+		
+		key pre = AGGRO;
+        AGGRO = l2s(data, 0);
+		#ifdef onAggroChange
+		if( AGGRO != pre ){
+			onAggroChange( pre, AGGRO );
+		}
+		#endif
+		
+	}
+    #ifdef onDeath    
+    else if( script == "got Status" && evt == StatusEvt$dead && l2i(data, 0) ){
+		onDeath();
+	}
+	#endif
+	
+	else if( script == "got NPCSpells" ){
+        
+		#ifdef onSpellStart
+        if( evt == NPCSpellsEvt$SPELL_CAST_START )
+            onSpellStart(l2i(data, 0), l2s(data, 2));
+		#endif
+        #ifdef onSpellFinish
+		if( evt == NPCSpellsEvt$SPELL_CAST_FINISH )
+            onSpellFinish(l2i(data, 0), l2s(data, 2));
+		#endif
+		#ifdef onSpellInterrupt
+        if( evt == NPCSpellsEvt$SPELL_CAST_INTERRUPT )
+            onSpellInterrupt(l2i(data, 0), l2s(data, 2));
+		#endif
+    }
+        
+        
+}
+
+
+default{
+    on_rez(integer mew){llResetScript();}
+    state_entry(){
+        
+        PLAYERS = [llGetOwner()];
+        memLim(1.5);
+		#ifdef onSpellSetup
+		onSpellSetup();
+		#endif
+		#ifdef FX_PRIM
+		links_each(nr, name,
+			if( name == "FX" )
+				P_FX = nr;
+		)
+		#endif
+		ini();
+    }
+    
+	#ifdef timerEvent
+    timer(){ multiTimer([]); }
+	#endif
+
+    #include "xobj_core/_LM.lsl"
+    if(method$isCallback){
+		#ifdef onCallback
+			onCallback(SENDER_SCRIPT, METHOD, PARAMS, CB, id);
+		#endif
+        return;
+	}
+    	
+    if(method$internal){
+		#ifdef onInternalMethod
+			onInternalMethod( SENDER_SCRIPT, METHOD, PARAMS, id );
+		#endif
+        if(METHOD == LocalConfMethod$ini)
+            raiseEvent(LocalConfEvt$iniData, mkarr(INI_DATA));
+    }
+	
+	#ifdef onMethod
+		onMethod( SENDER_SCRIPT, METHOD, PARAMS, id );
+	#endif
+		
+    #define LM_BOTTOM  
+    #include "xobj_core/_LM.lsl"  
+}

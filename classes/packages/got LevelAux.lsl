@@ -8,6 +8,7 @@ integer assets_saved;
 integer points_saved;
 integer custom_saved;
 key backup_restore;
+key backup;
 
 #define HUD_TABLES Level$HUD_TABLES
 #define CUSTOM_TABLES Level$CUSTOM_TABLES
@@ -16,43 +17,40 @@ key backup_restore;
 list MONSTERS_KILLED;
 
 
-onEvt(string script, integer evt, list data){
-	
-	if(script == "got Level" && evt == LevelEvt$idDied){
-		
-		key id = l2s(data, 0);
-		vector pos = prPos(id);
-		list arr = [llKey2Name(id), "<"+roundTo(pos.x,2)+","+roundTo(pos.y,2)+","+roundTo(pos.z,2)+">"];
-		MONSTERS_KILLED += [mkarr(arr)];
-		
-	}
-	else if(script == "got Level" && evt == LevelEvt$players)
-		PLAYERS = data;
+#define onEvt(script, evt, data) \
+	 \
+	if(script == "got Level" && evt == LevelEvt$idDied){ \
+		 \
+		key id = l2s(data, 0); \
+		vector pos = prPos(id); \
+		list arr = [llKey2Name(id), "<"+roundTo(pos.x,2)+","+roundTo(pos.y,2)+","+roundTo(pos.z,2)+">"]; \
+		MONSTERS_KILLED += [mkarr(arr)]; \
+		 \
+	} \
+	else if(script == "got Level" && evt == LevelEvt$players) \
+		PLAYERS = data; \
 
-}
 
-timerEvent(string id, string data){
-    if(id == "SAVE"){
-        qd("Save: \n"+(string)assets_saved+" HUD assets\n"+(string)points_saved+" spawnpoints\n"+(string)custom_saved+" custom assets");
-    }
+ptEvt(str id){
+    if(id == "SAVE")
+        llOwnerSay((string)assets_saved+" HUD\n"+(string)points_saved+" spawns\n"+(string)custom_saved+" assets saved");
     else if(id == "S"){
         // Start save
         Portal$save();
-        multiTimer(["SAVE", "", 10, FALSE]);
+        ptSet("SAVE", 10, FALSE);
     }
 	else if(id == "KILLQUE" && MONSTERS_KILLED != []){
 		runOnPlayers(targ,
 			Bridge$monstersKilled(targ, MONSTERS_KILLED);
 		)
 		MONSTERS_KILLED = [];
-	}
-	
+	}	
 }
 
 list trimVecRot(list vec_or_rot, integer places, integer returnString){
     integer type = llGetListEntryType(vec_or_rot, 0);
-    if(type != TYPE_ROTATION && type != TYPE_VECTOR)return vec_or_rot;
-    
+    if(type != TYPE_ROTATION && type != TYPE_VECTOR)
+		return vec_or_rot;
     list expl = llCSV2List(llGetSubString(llList2String(vec_or_rot, 0), 1, -2));
     integer i;
     for(i=0; i<llGetListLength(expl); i++){
@@ -66,7 +64,6 @@ list trimVecRot(list vec_or_rot, integer places, integer returnString){
         if(llStringLength(f)>1 && llGetSubString(f, 0, 0) == "0")f = llDeleteSubString(f, 0, 0);
         expl = llListReplaceList(expl, [f], i, i);
     }
-    
     string out = "<"+llDumpList2String(expl, ",")+">";
     if(returnString)return [out];
     if(type == TYPE_ROTATION)return [(rotation)out];
@@ -76,7 +73,7 @@ list trimVecRot(list vec_or_rot, integer places, integer returnString){
 // Returns [(str)table, (int)internal_index, (str)data] or [] if not found
 list getAssetByIndex(integer customAsset, integer globalIndex){
 	if(globalIndex<0){
-		qd("Negative indexes are no longer allowed");
+		llOwnerSay("Negative indexes are no longer allowed");
 		return [];
 	}
 	// Tables
@@ -106,21 +103,20 @@ list getAssetByIndex(integer customAsset, integer globalIndex){
 	return [];
 }
 
+default{
 
-default
-{
-    state_entry()
-    {
-		raiseEvent(evt$SCRIPT_INIT, "");
-		multiTimer(["KILLQUE", "", 2, TRUE]);
-    }
+    state_entry(){ 
+		raiseEvent(evt$SCRIPT_INIT, ""); 
+		ptSet("KILLQUE", 2, TRUE); 
+	}
     
-    timer(){
-        multiTimer([]);
-    }
+    timer(){ ptRefresh(); }
     
 	
 	http_response(key id, integer status, list meat, string body){
+		
+		if( id == backup )
+			llOwnerSay(body);
 		
 		if( id != backup_restore )
 			return;
@@ -132,7 +128,7 @@ default
 			return llOwnerSay(llJsonGetValue(body, ["jsonapi", 0, "errors", 0, "title"]));
 		
 		if(llJsonValueType(body, ["jsonapi", 0, "data"]) == JSON_INVALID){
-			llOwnerSay("Load failed because data was invalid, body was ("+(str)llStringLength(body)+"):");
+			llOwnerSay("Load failed, data was invalid: ("+(str)llStringLength(body)+"):");
 			integer n;
 			while(n<llStringLength(body)){
 				llOwnerSay(llGetSubString(body, n, n+999));
@@ -150,7 +146,7 @@ default
 		body = "";
 		integer i;
 		for(i=0; i<count(split); i = i+2){
-			qd("Restoring "+l2s(split, i));
+			llOwnerSay("Restoring "+l2s(split, i));
 			db3$setOther(l2s(split, i), [], l2s(split, i+1));
 		}
 		llOwnerSay("Backup load complete");
@@ -158,20 +154,12 @@ default
 	}
 	
     #include "xobj_core/_LM.lsl"
-    /*
-        Included in all these calls:
-        METHOD - (int)method
-        PARAMS - (var)parameters
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task
-    */
-    
     if(!method$byOwner)return;
     if(method$isCallback){
 	
         if(CB == "SV"){
 		
-            multiTimer(["SAVE", "", 5, FALSE]);
+            ptSet("SAVE", 5, FALSE);
             
             
             list data = llGetObjectDetails(id, [OBJECT_NAME, OBJECT_DESC, OBJECT_POS, OBJECT_ROT, OBJECT_ATTACHED_POINT]);
@@ -246,7 +234,7 @@ default
 		
 		llOwnerSay("Adding...");
 
-        multiTimer(["S", "", 3, FALSE]);
+        ptSet("S", 3, FALSE);
     }
     
     else if(METHOD == LevelAuxMethod$stats){
@@ -317,20 +305,20 @@ default
         
 		list asset = getAssetByIndex(!HUD, index);
 		if(asset == [])
-			return qd("Item not found: "+(str)index);
+			return llOwnerSay("Not found: "+(str)index);
 		
 		list parse = llJson2List(l2s(asset, 2));
 		if(HUD){
-			qd("Spawning from HUD: "+llList2String(parse, 0));
+			llOwnerSay("From HUD: "+llList2String(parse, 0));
 			Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetRootPosition(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}else{
-			qd("Spawning from INV: "+llList2String(parse, 0));
+			llOwnerSay("From INV: "+llList2String(parse, 0));
 			Spawner$spawnInt(llList2String(parse, 0), (vector)llList2String(parse,1)+llGetRootPosition(), (rotation)llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
 		}
     }
     
     else if(METHOD == LevelAuxMethod$list){
-		qd("Listing "+method_arg(0)+" ["+SENDER_SCRIPT+"]");
+		//llOwnerSay("Listing "+method_arg(0)+" ["+SENDER_SCRIPT+"]");
         list data = [];
         if((integer)method_arg(0))
 			data = HUD_TABLES;
@@ -342,7 +330,7 @@ default
 			string s = db3$get(l2s(data, i), []);
 			list spawns = llJson2List(s);
 			list_shift_each(spawns, val,
-				qd("["+(string)n+"] "+val);
+				llOwnerSay("["+(string)n+"] "+val);
 				++n;
 			)
         }
@@ -369,6 +357,73 @@ default
 		
 	}
 	
+	else if( METHOD == LevelAuxMethod$backup ){
+		
+		string api_key = method_arg(0);
+		string save_token = method_arg(1);
+		
+		integer dbPrim;
+		links_each(nr, name,
+			if( name == "DB0" ){
+				dbPrim = nr;
+			}
+		)
+		
+
+		llOwnerSay("Beginning dump");
+		list out = [];
+		integer i;
+		for(i=0; i<llGetLinkNumberOfSides(dbPrim); ++i){
+				
+			list tables = llGetLinkMedia(dbPrim, i, [
+				PRIM_MEDIA_HOME_URL, PRIM_MEDIA_CURRENT_URL, PRIM_MEDIA_WHITELIST
+			]);
+			string text;
+			list_shift_each(tables, val,
+				int pos = llSubStringIndex(val, "://");
+				text += llDeleteSubString(val, 0, pos+2);
+			)
+			
+			integer pos = llSubStringIndex(text, "|");
+			string a = llGetSubString(text, 0, pos-1);
+			if(
+				llStringLength(text) && 
+				llGetListLength(
+					llJson2List(llGetSubString(text, pos+1, -1))
+				) &&
+				llListFindList(out, (list)a) == -1
+			){
+				text = llGetSubString(text, pos+1, -1);
+				
+				if(llStringLength(text) > 2034)
+					llOwnerSay("WARNING! Table "+a+" is too big to fit on the new prim DB. Can splice it in MYSQL.");
+				out += [
+					a, text
+				];
+			}
+			
+		}
+		
+		backup = llHTTPRequest(
+			"http://jasx.org/lsl/got/app/mod_api/", 
+			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],
+			"tasks="+llEscapeURL(llList2Json(JSON_ARRAY, [
+				llList2Json(JSON_OBJECT, [
+					"type", "BackupCell",
+					"target", llGetObjectName(),
+					"data", llList2Json(JSON_OBJECT, [
+						"backup_token", save_token,
+						"data", llList2Json(JSON_OBJECT, out)
+					])
+				])
+			]))
+		);
+		
+	}
+        
+		
+	
+	
 	// Set a property of a spawn
 	else if(METHOD == LevelAuxMethod$assetVar){
 		integer HUD = l2i(PARAMS, 0);
@@ -379,7 +434,7 @@ default
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
 		if(asset == [])
-			return qd("Error: Item not found.");
+			return llOwnerSay("Error: Item not found.");
 		
 		list data = llJson2List(l2s(asset, 2));
 		
@@ -396,14 +451,13 @@ default
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
 		if(asset == [])
-			return qd("Error: Item not found.");
+			return llOwnerSay("Error: Item not found.");
 		string table = l2s(asset, 0);
 		integer localIndex = l2i(asset, 1);
-		
 		list out = llJson2List(db3$get(table, []));
 		out = llDeleteSubList(out, localIndex, localIndex);
 		db3$setOther(table, [], mkarr(out));
-        qd("Asset removed. Say 'listAssets' or 'listSpawns' for updated index");
+        llOwnerSay("Removed. Index list changed.");
     }
     
     #define LM_BOTTOM  

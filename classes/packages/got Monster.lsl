@@ -274,7 +274,9 @@ timerEvent(string id, string data){
 				if(~BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$inRange, chasetarg);
                 }
-
+	
+				list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()-hoverHeight>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+				
 				// This is where we request an attack
 				if(
 					atkspeed>0 && 
@@ -284,7 +286,7 @@ timerEvent(string id, string data){
 					~FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED) && 
 					~getRF()&Monster$RF_PACIFIED && 
 					// Attack LOS, hAdd() IS added
-					llList2Integer(llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]), -1) == 0
+					llList2Integer(ray, -1) == 0
 				){
 					
 					parseDesc(chasetarg, resources, status, fx, sex, team, mf);

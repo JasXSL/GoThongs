@@ -11,6 +11,7 @@
 #define LevelAuxMethod$spawn 13		// (str)prim, (vec)pos, (rot)rotation, (int)debug, (str)description
 #define LevelAuxMethod$restoreFromBackup 14		// (str)api_key, (str)backup_token  - Overwrites spawner data with data from the server
 #define LevelAuxMethod$ping 15					// void - Does nothing, but can callback
+#define LevelAuxMethod$backup 16
 
 #define LevelAux$ping(callback) runOmniMethod("got LevelAux", LevelAuxMethod$ping, [], callback)
 #define LevelAux$save(group) runOmniMethod("got LevelAux", LevelAuxMethod$save, [TRUE, group], TNN)
@@ -23,10 +24,10 @@
 #define LevelAux$assetVar(isHUD, id, index, val) runOmniMethod("got LevelAux", LevelAuxMethod$assetVar, [isHUD, id, index, val], TNN)
 #define LevelAux$getOffset(pos, cb) runOmniMethod("got LevelAux", LevelAuxMethod$getOffset, [pos], cb)
 #define LevelAux$restoreFromBackup(targ, api_key, token) runMethod(targ, "got LevelAux", LevelAuxMethod$restoreFromBackup, [api_key, token], TNN)
-
+#define LevelAux$backup(targ, api_key, token) runMethod(targ, "got LevelAux", LevelAuxMethod$backup, [api_key, token], TNN)
 
 #define LevelAux$spawnAsset(asset) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, llGetRootPosition()+llRot2Fwd(llGetRot()), 0, TRUE], TNN)
-#define LevelAux$spawnNPC(asset) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, llGetRootPosition()+llRot2Fwd(llGetRot()), llEuler2Rot(<0,PI_BY_TWO,0>), TRUE], TNN)
+#define LevelAux$spawnNPC(asset, rot) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, llGetRootPosition()+llRot2Fwd(llGetRot()), rot, TRUE], TNN)
 #define LevelAux$spawnLive(asset, pos, rot) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, pos, rot, FALSE], TNN)
 #define LevelAux$spawnLiveTarg(targ, asset, pos, rot) runMethod((string)(targ), "got LevelAux", LevelAuxMethod$spawn, [asset, pos, rot, FALSE], TNN)
 // SAYs

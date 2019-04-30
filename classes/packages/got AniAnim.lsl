@@ -11,9 +11,10 @@ animKit( string base, integer start ){
     for(; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i ){
         string n = llGetInventoryName(INVENTORY_ANIMATION, i);
         list expl = explode("_",n);
-        if( l2s(expl, 0) == base && count(expl) < 3 )
+        if( n == base || (l2s(expl, 0) == base && count(expl) < 3 ))
             viable += n;
     }
+	
     
     if( !count(viable) )
         return;
@@ -31,6 +32,7 @@ animKit( string base, integer start ){
 	#ifdef MaskAnimConf$animStartEvent
 	raiseEvent(MaskAnimEvt$onAnimStart, base);
 	#endif
+	
     
 }
 

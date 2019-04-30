@@ -206,8 +206,8 @@ default {
 			
 				list data = llGetObjectDetails(t, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
 				list split = explode("$", l2s(data, 1));
-				n = l2i(split, 2); // Resource block
-				s = l2i(split, 5);
+				n = l2i(split, 3); // Resource block
+				s = l2i(split, 6);
 				
 				// PC
 				if( l2i(data, 0) ){ // Attached

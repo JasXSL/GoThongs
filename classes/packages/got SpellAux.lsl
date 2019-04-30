@@ -286,7 +286,7 @@ onEvt(string script, integer evt, list data){
 rollCrit( int allow, int spell ){
 
 	cCR = 1;
-	if( llFrand(1)<cmod ){
+	if( llFrand(1)<cmod && allow ){
 	
 		cCR = 2;
 		llTriggerSound("e713ffed-c518-b1ed-fcde-166581c6ad17", .25);
@@ -301,7 +301,9 @@ applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 	// Handle AOE
 	if( (string)SPELL_TARGS == "AOE" ){
 	
-		FX$aoe(range, llGetKey(), runMath(wrapper, index, ""), TEAM);  
+		wrapper = runMath(wrapper, index, "");
+		FX$aoe(range, llGetKey(),  wrapper, TEAM);  
+		FX$run("", wrapper);
 		SPELL_TARGS = (list)LINK_ROOT;
 		return ;
 		
@@ -355,7 +357,7 @@ default
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
 
-	if( METHOD == SpellAuxMethod$tunnel  && method$internal ){
+	if( METHOD == SpellAuxMethod$tunnel && method$internal ){
 		
 		rollCrit( l2i(PARAMS, 3)&SpellAux$tfAllowCrit, -1 );
 		//wrapper, (arr)targets, (float)range

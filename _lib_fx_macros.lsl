@@ -9,6 +9,7 @@
 
 #define fxlib$dealDamageOn(target, damage, color, team, hfxFlags) FX$send(target, llGetKey(), "[9,0,0,0,[0,1,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\","+(str)(hfxFlags)+"]],[],[],[],0,0,0]]", team)
 
+
 #define fxlib$dealDamageOnAllowQuickrape(target, damage, color, team, hfxFlags) FX$send(target, llGetKey(), "[13,0,0,0,[0,17,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\","+(str)(hfxFlags)+"]],[],[],[],0,0,0]]", team)
 #define fxlib$hitFX(target, color, flags) FX$send(target, "", "[0,0,0,0,[0,0,\"\",[[6,\""+(str)color+"\", "+(str)(flags)+"]],[],[],[],0,0,0]]", TEAM_PC)
 #define fxlib$blind(target, duration) FX$send(target, "", "[0,0,0,0,["+(str)duration+",0,\"_blind\",[[13,64]],[],[],[],0,0,0]]", TEAM_PC)

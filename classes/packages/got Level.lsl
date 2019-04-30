@@ -82,9 +82,8 @@ list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
 timerEvent(string id, string data){
 
 	if(id == "INI"){
-		if(~BFL&BFL_INI){
-			qd("ERROR: Could not update. Make sure you are wearing the GoT HUD.");
-		}
+		if(~BFL&BFL_INI)
+			llOwnerSay("got Level: ERROR: Could not update. Make sure you are wearing the GoT HUD.");
 		Root$setLevel();
 	}
 	
@@ -420,7 +419,7 @@ default
 		pin = floor(llFrand(0xFFFFFFF));
 		llSetRemoteScriptAccessPin(pin);
         Remoteloader$load(cls$name, pin, 2);
-		qd("Updating level code...");
+		llOwnerSay("Updating level code...");
 		
 	}
 

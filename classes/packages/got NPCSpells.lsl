@@ -77,7 +77,7 @@ updateText(){
 			
 				string o = "🡺 "+llToUpper(n)+"\n";
 				// Focus
-				if( ~f&StatusTargetFlag$targeting )
+				if( ~f&NPCInt$targeting )
 					o = "👁️ "+llToLower(n)+"\n";
 				names+= o;
 				
@@ -233,10 +233,8 @@ startCast(integer spid, key targ, integer isCustom){
 	
 	key real = targ;
 	// If attached, use the owner key
-	if( l2i(_data, 0) )
+	if( prAttachPoint(targ) )
 		targ = llGetOwnerKey(targ);
-	
-
 
 	BFL = BFL|BFL_RECENT_CAST;
 	ptSet("SPS", spells_per_sec_limit, FALSE);
@@ -359,13 +357,14 @@ ptEvt(string id){
                 integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
                 float range = llList2Float(d, NPCS$SPELL_RANGE);
                 float minrange = llList2Float(d, NPCS$SPELL_MIN_RANGE);
+                integer sexReq = llList2Integer(d, NPCS$SPELL_TARG_SEX);
                 
                 // Default to aggro_target
                 list p = [aggro_target];
 				// Randomize all aggroed targets
                 if(flags&NPCS$FLAG_CAST_AT_RANDOM)
 					p = llListRandomize(AGGROED, 1);
-				
+					
 				// Loop through the players
                 while( count(p) ){
 				
@@ -385,7 +384,8 @@ ptEvt(string id){
 						dist>=minrange && 
 						llList2Integer(ray, -1) == 0 && 
 						!(status&StatusFlags$NON_VIABLE) && 
-						~fx&fx$UNVIABLE
+						~fx&fx$UNVIABLE &&
+						(!sexReq || (sex&sexReq) == sexReq)
 					){
                         
 						if( flags&NPCS$FLAG_REQUEST_CASTSTART ){
@@ -455,8 +455,8 @@ onSettings(list settings){
 	
 }
 
-default 
-{
+default {
+
     state_entry(){
         if(llGetStartParameter())
             raiseEvent(evt$SCRIPT_INIT, "");
