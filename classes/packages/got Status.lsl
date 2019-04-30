@@ -100,6 +100,8 @@ list OST; 				// Output status to
 list PLAYERS;
 list TG; 		// Targeting: (key)id, (int)flags
 
+int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
+
 integer DIF = 1;	// 
 #define difMod() ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.4)
 
@@ -585,8 +587,10 @@ onEvt( string script, integer evt, list data ){
 		
     }
 	
-	else if( script == "got Bridge" && evt == BridgeEvt$userDataChanged )
-		Status$setDifficulty(l2i(data, 4));
+	else if( script == "got Bridge" && evt == BridgeEvt$userDataChanged ){
+		Status$setDifficulty(l2i(data, BSUD$DIFFICULTY));
+		US = l2i(data, BSUD$SETTING_FLAGS);
+	}
 		
 	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" )
 		dArm(-1000);
@@ -719,7 +723,7 @@ OS( int ic ){
 		(llRound(AROUSAL/maxArousal()*127)<<7) |
 		llRound(PAIN/maxPain()*127)
 	);
-	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)GF+"$"+(str)t);
+	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)GF+"$"+(str)t+"$"+(str)US);
 	
 	// Team change goes after because we need to update description first
 	if(pre != t){
@@ -843,8 +847,8 @@ ptEvt(string id){
 }
 
 
-default 
-{
+default {
+
     state_entry(){
 	
 		PLAYERS = [(string)llGetOwner()];
