@@ -21,7 +21,7 @@
 
 #define BridgeMethod$addEnchant 21		// (str)token, (int)amount - Adds an enchant to your inventory. Token can be obtained from the mod panel.
 #define BridgeMethod$addThong 22		// (str)token - Adds a thong to your inventory. Token can be obtained from the mod panel. This only works if the user does not have this thong already.
-
+#define BridgeMethod$getPVPScene 23		// (arr)[[uuid,flags]...], placeholder
 
 
 #define Bridge$refreshThong() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$refreshThong, [], TNN)
@@ -53,6 +53,8 @@
 
 #define Bridge$setBook(book) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$setBook, [book], TNN)
 #define Bridge$monstersKilled(targ, data) runMethod((str)targ, "got Bridge", BridgeMethod$monstersKilled, data, TNN)
+
+#define Bridge$getPVPScene(players) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$getPVPScene, (list)mkarr((list)players), TNN)
 
 
 #define BridgeEvt$data_change 1			// Thong data changed:
@@ -96,7 +98,7 @@
 	#define BSUD$DEFAULT_STANCE 13		// Default stance of thong, overrides all weapon stances
 	#define BSUD$SETTING_FLAGS 14		// user Setting flags
 		#define BSUD$SFLAG_BREAST_ANIMS 0x1		// enable breast anims
-		
+		#define BSUD$SFLAG_PVP_SEX 0x2			// Enable player on player sex scenes
 	
 #define Bridge$userData() db3$get("got Bridge", [BridgeShared$userData])
 
