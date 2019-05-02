@@ -1,3 +1,6 @@
+// Custom definitions
+// #define onEvtCustom( script, evt, data)
+
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -9,7 +12,7 @@
 key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
 
 string CURRENT_ASSET;
-
+ 
 // Inputs:
 // 1. Items to spawn are added into the queue
 list queue;			// [(str)objectName, (vec)objectRezPos, (rot)objectRezRot, (str)objectDesc, (bool)debug, (bool)temp_on_rez, (str)spawnround, (key)sender]
@@ -160,6 +163,10 @@ timerEvent(string id, string data){
 }
 
 onEvt(string script, integer evt, list data){
+
+	#ifdef onEvtCustom
+		onEvtCustom( script, evt, data);
+	#endif
 	// Gets the key of the level.
 	if(script == "#ROOT" && evt == RootEvt$level){
 		ROOT_LEVEL = llList2String(data, 0);

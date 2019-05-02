@@ -127,13 +127,14 @@ default
         
         integer s = (
             check(-1, llJson2List(llList2String(MANIFEST, 1)), TRUE) && // Attachments
-            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 2)), FALSE) && // Levels
+            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 2)), FALSE) && 	// Levels
             check(INVENTORY_ANIMATION, llJson2List(llList2String(MANIFEST, 3)), FALSE) && // Animations
-            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 4)), FALSE) && // SpellFX
-            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 5)), FALSE) && // Monsters
-            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 6)), FALSE) && // Rapes
-			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 7)), FALSE) && // Weapons
-			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 8)), FALSE) 	// LTB
+            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 4)), FALSE) && 	// SpellFX
+            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 5)), FALSE) && 	// Monsters
+            check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 6)), FALSE) && 	// Rapes
+			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 7)), FALSE) && 	// Weapons
+			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 8)), FALSE) &&	// LTB
+			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 9)), FALSE)		// PVP Poses
         );
         if(!s){
 			text("Error found.\nTouch to override.");

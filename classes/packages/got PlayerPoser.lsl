@@ -1,24 +1,3 @@
-/*
-	Anim syntax:
-		Base = animName_a / animName_t
-		Steps = animName_1_a / animName_1_t, for multiple animations increase 1 to 2, 3 etc
-	
-	Pose instigator animations _a are always on the root prim
-	
-	Links:
-		Root prim is always seat #0
-		After that you make prims and name them POSEBALL with description being the index of the seat. Such as 1 or 2
-		
-	Scripts:
-		Make a copy of the number script and name it the same as the player index, root prim is 0. For two players you need a "1" script. For three a "2" script etc
-		
-	Description:
-		When spawned the description is a JSON array with the following indexes:
-		0 : (array)player_keys | UUIDs of players in order to put on this
-		1 : (float)anim_min_time | Min time between animation triggers
-		2 : (float)anim_max_time | Max time between animation triggers
-		3 : (float)duration | Total duration of scene. Min 5
-*/
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -31,9 +10,15 @@ float ANIM_MAX_TIME = 1.2;		// Max time between animation trigger
 float ANIM_DURATION = 20;		// Total seconds to animate
 integer LIVE;					// Spawned through a portal
 
+list TARGETS;
 list PLAYERS;
 list PLAYER_HUDS;
 list CACHE_SEATED;
+list PLAYER_FLAGS;
+int FLAGS;
+
+int BFL;
+#define BFL_PUBLIC 0x1		// Allow anyone to sit
 
 #define setAnimTimer() ptSet("anim", llFrand(ANIM_MAX_TIME-ANIM_MIN_TIME)+ANIM_MIN_TIME, FALSE)
 onEvt(string script, integer evt, list data){
@@ -48,43 +33,85 @@ onEvt(string script, integer evt, list data){
 		
 		LIVE = TRUE;
 	
+		list player_flags;
+		float anim_min_time = 0.6;
+		float anim_max_time = 1.2;
+		float anim_duration = 20;
+		int flags = l2i(data, 4);
+		
+		if( llJsonValueType(l2s(data, 5), []) == JSON_ARRAY )
+			player_flags = llJson2List(l2s(data, 5));
+	
 		// Config
 		if( isset(l2s(data, 1)) )
-			ANIM_MIN_TIME = l2f(data, 1);
+			anim_min_time = l2f(data, 1);
 		if( isset(l2s(data, 2)) )
-			ANIM_MAX_TIME = l2f(data, 2);
-			
-		if( ANIM_MIN_TIME < 0.1 )
-			ANIM_MIN_TIME = 0.1;
-		if( ANIM_MAX_TIME < ANIM_MIN_TIME )
-			ANIM_MAX_TIME = ANIM_MIN_TIME;
-		
-		if( l2f(data, 3) > 5 )
-			ANIM_DURATION = l2f(data, 3);
-        
-		// Players that should sit on this. Root prim is always 0 and 
-        list players = llJson2List(l2s(data, 0));
-        list order = [1,0,0,0,0,0,0,0];
-        links_each( nr, name,
-		
-            int desc = l2i(llGetLinkPrimitiveParams(nr, (list)PRIM_DESC), 0);
-            if( nr != 1 && name == "POSEBALL" )
-                order = llListReplaceList(order, (list)nr, desc, desc);
-				
-        )
-		
-		// Assign players to their prims
-        integer pl = 0;
-        list_shift_each(players, targ,
+			anim_max_time = l2f(data, 2);
 
-			FX$send(targ, "", "["+(string)WF_ALLOW_WHEN_DEAD+",0,0,0,["+(str)ANIM_DURATION+","+(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE)+",\"forceSat\",[[13,16],[31,\""+(str)llGetLinkKey(l2i(order, pl))+"\",0]]]]", 0);
-            ++pl;
+		if( l2f(data, 3) > 5 )
+			anim_duration = l2f(data, 3);
 			
-        )
+		// Players that should sit on this. Root prim is always 0 and 
+		list players = llJson2List(l2s(data, 0));
 		
-        ptSet("fail", 5, FALSE);
-        
+
+		startAnim(
+			players,
+			player_flags,
+			anim_duration,
+			anim_min_time,
+			anim_max_time,
+			flags
+		);
+
     }
+	
+}
+
+startAnim( list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags ){
+
+
+	if( anim_duration < 5.0 )
+		anim_duration = 5.0;
+	if( anim_min_time < 0.1 )
+		anim_min_time = 0.1;
+	if( anim_max_time < anim_min_time )
+		anim_max_time = anim_max_time;
+	
+	
+	PLAYER_FLAGS = player_flags;
+	ANIM_MIN_TIME = anim_min_time;		// Min time between animation triggers
+	ANIM_MAX_TIME = anim_max_time;		// Max time between animation trigger
+	ANIM_DURATION = anim_duration;		// Total seconds to animate
+	FLAGS = flags;
+	TARGETS = players;
+	
+	// Prim order, root is always the first player
+	list order = [1,0,0,0,0,0,0,0];
+	links_each( nr, name,
+	
+		int desc = l2i(llGetLinkPrimitiveParams(nr, (list)PRIM_DESC), 0);
+		if( nr != 1 && name == "POSEBALL" ){
+			order = llListReplaceList(order, (list)nr, desc, desc);
+		}
+	)
+	
+	// Assign players to their prims
+	integer pl = 0;
+	list_shift_each(players, targ,
+
+		int f = fx$F_QUICKRAPE;
+		if( l2i(player_flags, pl)&1 )
+			f = f|fx$F_SHOW_GENITALS;
+		
+		qd(llKey2Name(llGetLinkKey(l2i(order, pl)))+" "+llKey2Name(targ));
+		
+		FX$send(targ, "", "["+(string)WF_ALLOW_WHEN_DEAD+",0,0,0,["+(str)anim_duration+","+(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE)+",\"forceSat\",[[13,"+(str)f+"],[31,\""+(str)llGetLinkKey(l2i(order, pl))+"\",0]]]]", 0);
+		++pl;
+		
+	)
+	
+	ptSet("fail", 5, FALSE);
 	
 }
 
@@ -104,7 +131,7 @@ integer allSeated(){
     links_each(nr, name,
 		
 		string t = llAvatarOnLinkSitTarget(nr);
-		if( llListFindList(PLAYERS, (list)t) == -1 && t != NULL_KEY ){
+		if( llListFindList(TARGETS, (list)t) == -1 && t != NULL_KEY ){
 			llUnSit(t);
 			success = FALSE;
 		}
@@ -194,9 +221,9 @@ ptEvt( string id ){
 
 
 default{
-	on_rez( integer bap ){
-		llResetScript();
-	}
+
+	on_rez( integer bap ){ llResetScript(); }
+	
     state_entry(){
         
         PLAYERS = [(string)llGetOwner()];
@@ -244,6 +271,30 @@ default{
     }
     
     #include "xobj_core/_LM.lsl"
+	
+	if( method$byOwner ){
+			
+		if( METHOD == gotPlayerPoserMethod$test ){
+			list players = llJson2List(method_arg(0)); 
+			list player_flags = llJson2List(method_arg(1));
+			float anim_duration = l2f(PARAMS, 2);
+			float anim_min_time = l2f(PARAMS, 3); 
+			float anim_max_time = l2f(PARAMS, 4);
+			int flags = l2i(PARAMS, 5);
+			
+			startAnim( 
+				players, 
+				player_flags, 
+				anim_duration, 
+				anim_min_time, 
+				anim_max_time, 
+				flags
+			);
+			
+		}
+		
+	}
+	
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"  
 

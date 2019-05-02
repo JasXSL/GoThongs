@@ -142,6 +142,10 @@ if(l2i(_data, 0)) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
 integer var = l2i(_split, 7); 
+
+#define parsePCSettingFlags(targ, var) \
+list _split = explode("$", l2s(llGetObjectDetails(targ, (list)OBJECT_DESC), 0)); \
+integer var = l2i(_split, 5); 
 	
 #define parseResources(targ, hp, mp, ars, pain) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \

@@ -9,6 +9,7 @@
 #define RootMethod$manageAdditionalPlayer 8		// (key)player, (int)rem - Adds or removes a player to be able to interact with the HUD and any monsters you spawn
 #define RootMethod$attached 9					// Sent as omni com on HUD attach - Also used to get the coop player's HUD
 #define RootMethod$refreshTarget 10				// (key)id, Force a target refresh command if id is "" or we are currently targeting ID
+#define RootMethod$refreshPlayers 69			// void - Sends the players and coop_hud event. Good for debugging.
 
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed

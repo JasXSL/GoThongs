@@ -121,12 +121,15 @@ default{
 		if( id != backup_restore )
 			return;
 		
-		if(llJsonValueType(body, []) != JSON_OBJECT )
-			return llOwnerSay(body);
+		if(llJsonValueType(body, []) != JSON_OBJECT ){
+			llOwnerSay(body);
+			return;
+		}
 		
-		if(llJsonValueType(body, ["jsonapi", 0, "errors"]) != JSON_INVALID)
-			return llOwnerSay(llJsonGetValue(body, ["jsonapi", 0, "errors", 0, "title"]));
-		
+		if(llJsonValueType(body, ["jsonapi", 0, "errors"]) != JSON_INVALID){
+			llOwnerSay(llJsonGetValue(body, ["jsonapi", 0, "errors", 0, "title"]));
+			return;
+		}
 		if(llJsonValueType(body, ["jsonapi", 0, "data"]) == JSON_INVALID){
 			llOwnerSay("Load failed, data was invalid: ("+(str)llStringLength(body)+"):");
 			integer n;
@@ -304,9 +307,10 @@ default{
         integer live = (integer)method_arg(2);
         
 		list asset = getAssetByIndex(!HUD, index);
-		if(asset == [])
-			return llOwnerSay("Not found: "+(str)index);
-		
+		if(asset == []){
+			llOwnerSay("Not found: "+(str)index);
+			return;
+		}
 		list parse = llJson2List(l2s(asset, 2));
 		if(HUD){
 			llOwnerSay("From HUD: "+llList2String(parse, 0));
@@ -340,7 +344,9 @@ default{
 	else if( METHOD == LevelAuxMethod$restoreFromBackup ){
 		
 		string api_key = method_arg(0);
-		string save_token = method_arg(1);
+		string save_token = trim(method_arg(1));
+		if( save_token == "" )
+			save_token = "backup";
 		backup_restore = llHTTPRequest(
 			"http://jasx.org/lsl/got/app/mod_api/", 
 			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],
@@ -433,9 +439,10 @@ default{
 		
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
-		if(asset == [])
-			return llOwnerSay("Error: Item not found.");
-		
+		if(asset == []){
+			llOwnerSay("Error: Item not found.");
+			return;
+		}
 		list data = llJson2List(l2s(asset, 2));
 		
 		data = llListReplaceList(data, [newVal], field, field);
@@ -450,8 +457,10 @@ default{
 		integer globalIndex = l2i(PARAMS, 1);
 		
 		list asset = getAssetByIndex(!HUD, globalIndex);
-		if(asset == [])
-			return llOwnerSay("Error: Item not found.");
+		if(asset == []){
+			llOwnerSay("Error: Item not found.");
+			return;
+		}
 		string table = l2s(asset, 0);
 		integer localIndex = l2i(asset, 1);
 		list out = llJson2List(db3$get(table, []));
