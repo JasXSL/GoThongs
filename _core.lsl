@@ -40,6 +40,8 @@
 // Include the XOBJ framework
 #include "xobj_core/_ROOT.lsl"
 #include "xobj_core/libraries/XLS.lsl"
+#include "./lib_sounds.lsl"
+#include "./lib_particles.lsl"
 
 // Here you can also include xobj headers like:
 #include "xobj_core/classes/jas Supportcube.lsl"

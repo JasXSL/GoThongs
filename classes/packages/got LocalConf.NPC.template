@@ -2,7 +2,7 @@
 	Dependencies:
 	#define USE_EVENTS
 	#include "got/_core.lsl"
-	
+
 	// NPC Config defaults:
 	#define cf$FLAGS 0
 	#define cf$SPEED 1
@@ -33,7 +33,7 @@
 		LocalConf$npc$addSpell( int flags, float casttime, float recast, float range, string name, float minrange, int targSex);
 	#define onAggroChange( key pre, key new ) | Aggro has changed
 	#define onDeath() | NPC has died
-	
+
 	#define onSpellStart( int spell, key targ )
 	#define onSpellInterrupt( int spell, key targ )
 	#define onSpellFinish( int spell, key targ )
@@ -50,7 +50,7 @@
 	SPELLS | list | List of spells
 	AGGRO | key | Currently aggroed player
 	P_FX | int | (Optional) Searches for a prim named "FX" and maps that to global P_FX. Requires #define FX_PRIM
-	
+
 */
 
 
@@ -75,13 +75,13 @@
 #endif
 #ifndef cf$HP
 	#define cf$HP 100
-#endif	
+#endif
 #ifndef cf$AGGRO_RANGE
 	#define cf$AGGRO_RANGE 15
 #endif
 #ifndef cf$SOUND_AGGRO
 	#define cf$SOUND_AGGRO ""
-#endif	
+#endif
 #ifndef cf$SOUND_AGGRO_LOST
 	#define cf$SOUND_AGGRO_LOST ""
 #endif
@@ -130,8 +130,8 @@ list INI_DATA = [cf$FLAGS,cf$SPEED,cf$HITBOX,cf$ATKSPEED,cf$DMG,cf$WANDER,cf$HP,
 #endif
 
 ini(){
-    
-	llStopSound();		
+
+	llStopSound();
     integer i;
     for(; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i){
         string n = llGetInventoryName(INVENTORY_ANIMATION, i);
@@ -140,38 +140,38 @@ ini(){
         else
             llStopObjectAnimation(n);
     }
-	
+
 	#ifdef onInit
 		onInit(portalConf$live);
 	#endif
-    
+
 }
 
 
 onEvt(string script, integer evt, list data){
-    
+
 	#ifdef onEvent
 		onEvent( script, evt, data );
 	#endif
-	
+
     if( Portal$isPlayerListIfStatement )
         PLAYERS = data;
-        
+
     if( Portal$hif )
         PLAYER_HUDS = data;
-    
+
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
-        
+
         ini();
         NPCSpells$setSpells(SPELLS);
-        
+
     }
 
     else if(script == "got Status" && evt == StatusEvt$team)
         TEAM = l2i(data, 0);
-        
+
     else if( script == "got Status" && evt == StatusEvt$monster_gotTarget ){
-		
+
 		key pre = AGGRO;
         AGGRO = l2s(data, 0);
 		#ifdef onAggroChange
@@ -179,16 +179,16 @@ onEvt(string script, integer evt, list data){
 			onAggroChange( pre, AGGRO );
 		}
 		#endif
-		
+
 	}
-    #ifdef onDeath    
+    #ifdef onDeath
     else if( script == "got Status" && evt == StatusEvt$dead && l2i(data, 0) ){
 		onDeath();
 	}
 	#endif
-	
+
 	else if( script == "got NPCSpells" ){
-        
+
 		#ifdef onSpellStart
         if( evt == NPCSpellsEvt$SPELL_CAST_START )
             onSpellStart(l2i(data, 0), l2s(data, 2));
@@ -202,15 +202,15 @@ onEvt(string script, integer evt, list data){
             onSpellInterrupt(l2i(data, 0), l2s(data, 2));
 		#endif
     }
-        
-        
+
+
 }
 
 
 default{
     on_rez(integer mew){llResetScript();}
     state_entry(){
-        
+
         PLAYERS = [llGetOwner()];
         memLim(1.5);
 		#ifdef onSpellSetup
@@ -224,7 +224,7 @@ default{
 		#endif
 		ini();
     }
-    
+
 	#ifdef timerEvent
     timer(){ multiTimer([]); }
 	#endif
@@ -236,7 +236,7 @@ default{
 		#endif
         return;
 	}
-    	
+
     if(method$internal){
 		#ifdef onInternalMethod
 			onInternalMethod( SENDER_SCRIPT, METHOD, PARAMS, id );
@@ -244,11 +244,11 @@ default{
         if(METHOD == LocalConfMethod$ini)
             raiseEvent(LocalConfEvt$iniData, mkarr(INI_DATA));
     }
-	
+
 	#ifdef onMethod
 		onMethod( SENDER_SCRIPT, METHOD, PARAMS, id );
 	#endif
-		
-    #define LM_BOTTOM  
-    #include "xobj_core/_LM.lsl"  
+
+    #define LM_BOTTOM
+    #include "xobj_core/_LM.lsl"
 }

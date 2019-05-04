@@ -52,6 +52,8 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 	if( METHOD == gotPiSpawnerMethod$generateInteraction && method$byOwner ){
 		
 		list pl = llJson2List(method_arg(0));
+		
+		
 		_DUR = l2f(PARAMS, 1);
 		if( _DUR < 5 )
 			_DUR = 5;
@@ -60,11 +62,12 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 			
 		_POS = (vector)method_arg(2);
 		_ROT = (rotation)method_arg(3);
-		
+		int no_instigator = l2i(PARAMS, 4);
 		
 		list viable = [];	// HUDs found
 		integer i;
 		for( ; i<count(pl); ++i ){
+		
 			integer pos = llListFindList(PLAYER_HUDS, (list)l2s(pl, i));
 			if( ~pos ){
 				viable += (list)l2s(PLAYER_HUDS, i);
@@ -72,7 +75,7 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 			else{
 				pos = llListFindList(PLAYERS, (list)l2s(pl, i));
 				if( ~pos )
-					viable += (list)l2s(PLAYER_HUDS, i);
+					viable += (list)l2s(PLAYER_HUDS, pos);
 			}
 			// Instigator missing
 			if( i == 0 && !count(viable) )
@@ -118,7 +121,8 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 			parseSex(l2s(adult, i), sex);
 			out += mkarr((list)l2s(adult, i)+sex);
 		}
-		Bridge$getPVPScene(out);
+		
+		Bridge$getPVPScene(out, no_instigator);
 		
 	}
 	

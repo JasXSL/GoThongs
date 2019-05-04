@@ -13,9 +13,10 @@ integer LIVE;					// Spawned through a portal
 list TARGETS;
 list PLAYERS;
 list PLAYER_HUDS;
-list CACHE_SEATED;
 list PLAYER_FLAGS;
 int FLAGS;
+
+list TO_PLAY;					// (key)id, (str)anim
 
 int BFL;
 #define BFL_PUBLIC 0x1		// Allow anyone to sit
@@ -104,9 +105,7 @@ startAnim( list players, list player_flags, float anim_duration, float anim_min_
 		if( l2i(player_flags, pl)&1 )
 			f = f|fx$F_SHOW_GENITALS;
 		
-		qd(llKey2Name(llGetLinkKey(l2i(order, pl)))+" "+llKey2Name(targ));
-		
-		FX$send(targ, "", "["+(string)WF_ALLOW_WHEN_DEAD+",0,0,0,["+(str)anim_duration+","+(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE)+",\"forceSat\",[[13,"+(str)f+"],[31,\""+(str)llGetLinkKey(l2i(order, pl))+"\",0]]]]", 0);
+		FX$send(targ, "", "["+(string)(WF_ALLOW_WHEN_DEAD|WF_ALLOW_WHEN_QUICKRAPE)+",0,0,0,["+(str)anim_duration+","+(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE)+",\"forceSat\",[[13,"+(str)f+"],[31,\""+(str)llGetLinkKey(l2i(order, pl))+"\",0]]]]", 0);
 		++pl;
 		
 	)
@@ -115,57 +114,81 @@ startAnim( list players, list player_flags, float anim_duration, float anim_min_
 	
 }
 
+// Requests permissions for and shifts off the next animation
+reqNextAnim(){
+	
+	if( !count(TO_PLAY) )
+		return;
+	str player = l2s(TO_PLAY, 0);
+	while( count(TO_PLAY) && prRoot(player) != llGetKey() ){
+		player = l2s(TO_PLAY, 2);
+		TO_PLAY = llDeleteSubList(TO_PLAY, 0, 1);
+	}
+	
+	TO_PLAY = llDeleteSubList(TO_PLAY, 0, 0);
+	llRequestPermissions(player, PERMISSION_TRIGGER_ANIMATION);
+	
+}
+
 // Starts an anim set on all players
 anim( string anim ){
-    
-    llMessageLinked(LINK_THIS, 0, "aN"+anim+"_t", "");
-    if( llGetPermissions()&PERMISSION_TRIGGER_ANIMATION )
-        llStartAnimation(anim+"_a");
+
+	TO_PLAY = [];
+	integer i;
+	for(; i<count(TARGETS); ++i ){
+		TO_PLAY += l2s(TARGETS, i);
+		str suffix = "_a";
+		if( i == 1 )
+			suffix = "_t";
+		else if( i )
+			suffix = "_t"+(str)i;
+		TO_PLAY += (anim+suffix);
+	}
+	
+    reqNextAnim();
     
 }
 
 // Checks if all poseballs are seated and unsits non players
 integer allSeated(){
 
-	integer success = TRUE;
-    links_each(nr, name,
+
+	// Unsit unauthorized avatars
+	links_each(nr, name,
 		
 		string t = llAvatarOnLinkSitTarget(nr);
-		if( llListFindList(TARGETS, (list)t) == -1 && t != NULL_KEY ){
+		int pos = llListFindList(TARGETS, (list)t);
+		
+		if( pos == -1 )
 			llUnSit(t);
-			success = FALSE;
-		}
-        else if( (nr == 1 || name == "POSEBALL") && t == NULL_KEY ){
-			success = FALSE;
-		}
+
     )
-    return success;
+	
+	if( !count(TARGETS) )
+		return FALSE;
+	
+	// See if all targets are present
+	int i;
+	for(; i<count(TARGETS); ++i ){
+		if( prRoot(l2k(TARGETS, i)) != llGetKey() )
+			return FALSE;
+	}
+    
+    return true;
 	
 }
 
 // Requests permissions and checks if all players are seated
-reqPerm(){
+onSeatChange(){
     
-	// Request permissions if needed
-    if( llAvatarOnSitTarget() != NULL_KEY && ~llGetPermissions()&PERMISSION_TRIGGER_ANIMATION )
-        llRequestPermissions(llAvatarOnSitTarget(), PERMISSION_TRIGGER_ANIMATION);
-
 	// All players are seated
     if( allSeated() ){
         
-        llSleep(.1);					// Needed because the other scripts must reqest permissions
         anim(ANIM_BASE);				// Start the idle animations
         setAnimTimer();					// Set timer for active animations
         ptUnset("fail");				// Success, do not fail
         ANIM_STARTED = TRUE;					// It has started
         raiseEvent(gotPlayerPoserEvt$start, "");
-		CACHE_SEATED = [];
-		integer i;
-		links_each(nr, name,
-			key t = llAvatarOnLinkSitTarget(nr);
-			if( t )
-				CACHE_SEATED += t;
-		)
 		
     }
 	// Not all players are seated
@@ -183,11 +206,11 @@ reqPerm(){
 end(){
 
 	runOnPlayers(targ,
-		Level$playerSceneDone(targ, ANIM_STARTED, CACHE_SEATED);
+		Level$playerSceneDone(targ, ANIM_STARTED, TARGETS);
 	)
 	raiseEvent(gotPlayerPoserEvt$end, "");
 	
-	list_shift_each(CACHE_SEATED, targ,
+	list_shift_each(TARGETS, targ,
 		fxlib$remForceSit(targ);
 		Status$playerSceneDone(targ);
 	)
@@ -195,6 +218,8 @@ end(){
     llSleep(1);
 	if( LIVE )
 		llDie();
+	
+	ANIM_STARTED = false;
 	
 }
 
@@ -255,7 +280,7 @@ default{
         
         memLim(1.5);
 		// Get permissions if somebody is sitting on this
-        reqPerm();
+        onSeatChange();
         
 		raiseEvent(evt$SCRIPT_INIT, "");
 		
@@ -266,10 +291,21 @@ default{
     changed(integer change){
         
         if( change & CHANGED_LINK )
-            reqPerm();
+            onSeatChange();
             
     }
     
+	run_time_permissions( integer perm ){
+		if( perm & PERMISSION_TRIGGER_ANIMATION ){
+			
+			str anim = l2s(TO_PLAY, 0);
+			llStartAnimation(anim);
+			TO_PLAY = llDeleteSubList(TO_PLAY, 0, 0);
+			reqNextAnim();
+			
+		}
+	}
+	
     #include "xobj_core/_LM.lsl"
 	
 	if( method$byOwner ){

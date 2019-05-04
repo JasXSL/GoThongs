@@ -1,3 +1,5 @@
+#ifndef _gotTools
+#define _gotTools
 
 // trigger random squish
 #define squishSound() llTriggerSound(randElem((list)"72d65db8-31fe-375b-8716-89e3963fbf7d"+"90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd"+"f9194db3-9606-2264-3cde-765430179069"), llFrand(0.25)+0.25)
@@ -240,4 +242,6 @@ string statsToText(list stats){
 	}
 	return ret;
 }
+
+#endif
 

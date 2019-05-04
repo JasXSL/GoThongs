@@ -199,6 +199,7 @@ timerEvent(string id, string data){
 		list rapes = llJson2List(llList2String(MANIFEST, 6));
 		list weapons = llJson2List(llList2String(MANIFEST, 7));
 		list LTB = llJson2List(l2s(MANIFEST, 8));
+		list pvpScenes = llJson2List(l2s(MANIFEST, 9));
 		
 		if(
 			!check(0, attachments, TRUE) ||
@@ -208,7 +209,8 @@ timerEvent(string id, string data){
 			!check(INVENTORY_OBJECT, monsters, FALSE) ||
 			!check(INVENTORY_OBJECT, rapes, FALSE) ||
 			!check(INVENTORY_OBJECT, weapons, FALSE) ||
-			!check(INVENTORY_OBJECT, LTB, FALSE)
+			!check(INVENTORY_OBJECT, LTB, FALSE) ||
+			!check(INVENTORY_OBJECT, pvpScenes, FALSE)
 		){
 			// Something failed, stop
 			return purge();
@@ -221,6 +223,8 @@ timerEvent(string id, string data){
 		LevelSpawner$remInventory(levels); 
 		WeaponLoader$remInventory(weapons);
 		BuffVis$remInventory(LTB);
+		gotPISpawner$remInventory(pvpScenes);
+		
 		
 		
 		llOwnerSay("Mod integrity checked! Finalizing install...");
@@ -240,6 +244,7 @@ timerEvent(string id, string data){
 		list rapes = llJson2List(llList2String(MANIFEST, 6));
 		list weapons = llJson2List(llList2String(MANIFEST, 7));
 		list LTB = llJson2List(l2s(MANIFEST, 8));
+		list pvpScenes = llJson2List(l2s(MANIFEST, 9));
 		MANIFEST = [];
 		
 		links_each(nr, name,
@@ -258,7 +263,8 @@ timerEvent(string id, string data){
 				llGiveInventoryList(lk, "", weapons);
 			else if(name == "LTB" && LTB != [])
 				llGiveInventoryList(lk, "", LTB);
-			
+			else if( name == "PlayerInteractions" )
+				llGiveInventoryList(lk, "", pvpScenes);
 		)
 		multiTimer(["C", "", 3, FALSE]);
 	}
@@ -404,11 +410,14 @@ default{
 		assets = llJson2List(llList2String(MANIFEST, 5));
 		if(assets)features+= (string)llGetListLength(assets)+" Monsters";
 		assets = llJson2List(llList2String(MANIFEST, 6));
-		if(assets)features+= (string)llGetListLength(assets)+" Rapes";
+		if(assets)features+= (string)llGetListLength(assets)+" NPC Scenes";
 		assets = llJson2List(llList2String(MANIFEST, 7));
 		if(assets)features+= (string)llGetListLength(assets)+" Weapons";
 		assets = llJson2List(llList2String(MANIFEST, 8));
 		if(assets)features+= (string)llGetListLength(assets)+" LTB Visuals";
+		assets = llJson2List(llList2String(MANIFEST, 9));
+		if(assets)features+= (string)llGetListLength(assets)+" PVP Scenes";
+		
 		
 		
 		if(features == []){

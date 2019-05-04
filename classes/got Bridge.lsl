@@ -54,7 +54,7 @@
 #define Bridge$setBook(book) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$setBook, [book], TNN)
 #define Bridge$monstersKilled(targ, data) runMethod((str)targ, "got Bridge", BridgeMethod$monstersKilled, data, TNN)
 
-#define Bridge$getPVPScene(players) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$getPVPScene, (list)mkarr((list)players), TNN)
+#define Bridge$getPVPScene(players, no_instigator) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$getPVPScene, (list)mkarr((list)players)+no_instigator, TNN)
 
 
 #define BridgeEvt$data_change 1			// Thong data changed:

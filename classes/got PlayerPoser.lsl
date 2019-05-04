@@ -33,7 +33,7 @@
 */
 
 
-// ex: debugj got PlayerPoser, [["cf2625ff-b1e9-4478-8e6b-b954abde056b","984845e6-1d42-471f-8234-12883eaf8c7a"],[1,1],10,1.0,1.2]
+// ex: debugj got PlayerPoser, 1, [["cf2625ff-b1e9-4478-8e6b-b954abde056b","984845e6-1d42-471f-8234-12883eaf8c7a"],[0,0],10,0.6,1]
 #define gotPlayerPoserMethod$test 1			// list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags
 
 

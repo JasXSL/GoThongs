@@ -1,0 +1,118 @@
+/*
+	
+	Events and definitions:
+	#define SOUNDS (list)sounds				- Auto play a random sound each thrust
+	#define particles (void func)			- Triggers the particles() function. You can use l2i(PARTS, 0-3) alongside prims named PARTS, PARTS1, PARTS2, PARTS3 to get the link number of the particle prims.
+	#define PART_DELAY (float)=0.2			- Delay after a thrust to call function above
+	#define onThrust (void func)			- Triggered when an animStep is raised
+	#define onStart (void func)				- Raised when all players are seated
+	#define onEnd (void func)				- Raised when the scene ends
+	#define ptEvent (void func)				- str id - Raised when a timer ends. You can use ptSet (see libJasPre.lsl in XOBJ)
+	#define stateEntry (optional)			- This is injected into state entry
+	
+	Globals:
+	PLAYERS - List of players
+	PLAYER_HUDS - List of player HUDs
+	PARTS - List of particle prims
+	
+
+*/
+
+#define USE_EVENTS
+#include "got/_core.lsl"
+
+
+#ifdef particles
+list PARTS = [0,0,0,0];
+#endif
+
+#ifndef PART_DELAY
+	#define PART_DELAY 0.2
+#endif
+
+list PLAYERS;
+list PLAYER_HUDS;
+onEvt(string script, integer evt, list data){
+    
+    if( script == "got Portal" && evt == PortalEvt$playerHUDs )
+        PLAYER_HUDS = data;
+    
+    if(Portal$isPlayerListIfStatement)
+        PLAYERS = data;
+    
+    
+    if( script == "got PlayerPoser" ){
+        
+        if( evt == gotPlayerPoserEvt$animStep ){
+	
+			#ifdef onThrust
+				onThrust();
+			#endif
+
+			#ifdef SOUNDS
+            list sounds = SOUNDS;
+            llTriggerSound(randElem(sounds), llFrand(.5)+.5);
+            #endif
+			
+			#ifdef particles
+			ptSet("part", PART_DELAY, FALSE);
+			#endif
+        }
+		#ifdef onStart
+        else if( evt == gotPlayerPoserEvt$start )
+			onStart();
+		#endif
+		#ifdef onEnd
+        else if( evt == gotPlayerPoserEvt$end )
+			onEnd();
+		#endif
+		
+    }
+}
+
+ptEvt( string id ){
+
+	#ifdef particles
+    if( id == "part" )
+        particles();
+    #endif
+	#ifdef ptEvent
+		ptEvent(id);
+	#endif
+	
+}
+
+
+default{
+    
+    state_entry(){
+        
+        PLAYERS = [(string)llGetOwner()];
+        
+		#ifdef particles
+        links_each(nr, name,
+            if( llGetSubString(name, 0, 4) == "PARTS" ){
+                integer n = (int)llGetSubString(name, 5, -1);
+                PARTS = llListReplaceList(PARTS, (list)nr, n, n);
+            }
+        )
+		#endif
+		
+		llLinkParticleSystem(LINK_SET, []);
+        llStopSound();
+		
+        memLim(1.5);
+        #ifdef stateEntry
+			stateEntry
+		#endif
+        
+    }
+    
+    timer(){ ptRefresh(); }
+    
+    
+    #include "xobj_core/_LM.lsl"
+    #define LM_BOTTOM  
+    #include "xobj_core/_LM.lsl"  
+
+}

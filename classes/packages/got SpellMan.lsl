@@ -180,10 +180,12 @@ onEvt(string script, integer evt, list data){
 			RANGE_ADD = 0;
 			list data = llGetObjectDetails(CACHE_ROOT_TARGET, [OBJECT_DESC, OBJECT_ATTACHED_POINT]);
 			if(!llList2Integer(data, 1)){
+			
 				// This is an NPC, add range add
 				list split = explode("$", l2s(data, 0));
-				RANGE_ADD = l2f(split, 3)/10;
-				HEIGHT_ADD = l2f(split, 4)/10;
+				RANGE_ADD = l2f(split, 4)/10;
+				HEIGHT_ADD = l2f(split, 5)/10;
+				
 			}
 
 		}
@@ -351,7 +353,7 @@ integer castSpell(integer nr){
     
 	// Check spell range
     float range = spellRange(data)+RANGE_ADD;
-	
+
 	// Max range is 10m for single target. AoE distance is handled by SpellAux
 	if(range > 10)
 		range = 10;

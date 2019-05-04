@@ -74,11 +74,12 @@ integer check(integer type, list items, integer disregard_modperms){
 
 key VALIDATE;
 
-default
-{
+default{
+
     on_rez(integer mew){llResetScript();}
-    state_entry()
-    {
+    
+	state_entry(){
+	
 		if(llGetStartParameter()){
 		
 			text("Validating");
