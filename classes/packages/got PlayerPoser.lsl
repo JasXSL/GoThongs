@@ -105,7 +105,21 @@ startAnim( list players, list player_flags, float anim_duration, float anim_min_
 		if( l2i(player_flags, pl)&1 )
 			f = f|fx$F_SHOW_GENITALS;
 		
-		FX$send(targ, "", "["+(string)(WF_ALLOW_WHEN_DEAD|WF_ALLOW_WHEN_QUICKRAPE)+",0,0,0,["+(str)anim_duration+","+(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE)+",\"forceSat\",[[13,"+(str)f+"],[31,\""+(str)llGetLinkKey(l2i(order, pl))+"\",0]]]]", 0);
+		FX$send(targ, "", "["+
+			(string)(WF_ALLOW_WHEN_DEAD|WF_ALLOW_WHEN_QUICKRAPE)+","+
+			"0,0,"+
+			"0,"+
+			"["+
+				(str)anim_duration+","+
+				(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE|PF_TRIGGER_IMMEDIATE)+","+
+				"\"forceSat\","+
+				"["+
+					"[13,"+(str)f+"],"+
+					"[31,\""+(str)llGetLinkKey(l2i(order, pl))+"\",0]"+
+				"]"+
+			"],"+
+			"[],[],[],0,0,1"+
+		"]", 0);
 		++pl;
 		
 	)
@@ -300,7 +314,8 @@ default{
 		if( perm & PERMISSION_TRIGGER_ANIMATION ){
 			
 			str anim = l2s(TO_PLAY, 0);
-			llStartAnimation(anim);
+			if( anim )
+				llStartAnimation(anim);
 			TO_PLAY = llDeleteSubList(TO_PLAY, 0, 0);
 			reqNextAnim();
 			

@@ -294,14 +294,14 @@ integer preCheck(key sender, list package, integer team){
 	if(~flags&PF_ALLOW_WHEN_DEAD && isDead()){
 		return FALSE;
 	}
-	
 	// Conditions from the package
     list conds = llJson2List(l2s(package, PACKAGE_CONDS));
     
 	// Min conditions that have to be met
 	integer min = l2i(package, PACKAGE_MIN_CONDITIONS);
     // Require ALL if min is 0
-	if(min == 0)min = count(conds);
+	if( min == 0 )
+		min = count(conds);
 	
 	// Nr conditions met, this value has to be at least min to validate
     integer successes;
@@ -331,7 +331,9 @@ integer preCheck(key sender, list package, integer team){
             if(c == fx$COND_HAS_PACKAGE_NAME){
                 integer i;
                 for(i=0; i<llGetListLength(PACKAGES) && !found; i+=PSTRIDE){
-                    if(~llListFindList(dta, [pName(pSlice(i))]))found = TRUE;
+                    if( ~llListFindList(dta, [pName(pSlice(i))]) ){
+						found = TRUE;
+					}
                 }
             }
 			// See if we have a tag stored in dta

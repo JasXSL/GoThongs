@@ -114,8 +114,9 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		}
 		else if(t == fx$ALERT)
 			Alert$freetext(LINK_ROOT, l2s(fx,1), llList2Integer(fx,2), llList2Integer(fx, 3));
-		else if(t == fx$CUBETASKS)
+		else if(t == fx$CUBETASKS){
 			RLV$cubeTask(llDeleteSubList(fx, 0, 0));
+		}
 		else if(t == fx$REFRESH_SPRINT)
 			RLV$setSprintPercent(LINK_ROOT, 1);
 		
