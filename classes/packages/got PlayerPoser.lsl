@@ -117,14 +117,15 @@ startAnim( list players, list player_flags, float anim_duration, float anim_min_
 // Requests permissions for and shifts off the next animation
 reqNextAnim(){
 	
-	if( !count(TO_PLAY) )
-		return;
+
 	str player = l2s(TO_PLAY, 0);
 	while( count(TO_PLAY) && prRoot(player) != llGetKey() ){
 		player = l2s(TO_PLAY, 2);
 		TO_PLAY = llDeleteSubList(TO_PLAY, 0, 1);
 	}
 	
+	if( !count(TO_PLAY) )
+		return;
 	TO_PLAY = llDeleteSubList(TO_PLAY, 0, 0);
 	llRequestPermissions(player, PERMISSION_TRIGGER_ANIMATION);
 	

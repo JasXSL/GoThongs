@@ -24,8 +24,6 @@
 	
 		The index used for the passives/actives is detailed in got FXCompiler (the FXC$flags)
 	
-	
-	
 */
 
 #define FXMethod$run 1					// (key)sender, (obj)wrapper[, (float)range, (int)team] - Runs a package on a player - Callbacks nr of successful packages accepted

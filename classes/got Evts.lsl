@@ -22,3 +22,25 @@
 #define Evts$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
 #define Evts$getTextureDesc(player, pid) runMethod((str)player, "got Evts", EvtsMethod$getTextureDesc, (list)pid, TNN)
 #define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)
+
+string evtsStringitizeDesc( string desc, int stacks ){
+	
+	list out = llParseString2List(desc, [], ["<|", "|>"]);
+	integer i;
+	for( ;i<count(out); ++i ){
+	
+		string s = l2s(out, i);
+		if( s == "<|" ){
+			
+			s = l2s(out, i+1);
+			if( llGetSubString(s, 0,0) == "s" )
+				s = (string)llRound((float)llGetSubString(s, 1, -1)*stacks);
+				
+			out = llListReplaceList(out, (list)s, i, i+2);
+		
+		}
+	
+	}
+	return (string)out;
+
+}

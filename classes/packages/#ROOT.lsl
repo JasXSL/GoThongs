@@ -492,7 +492,7 @@ default
 			llOwnerSay(mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0)));
 			
 		else if( METHOD == RootMethod$refreshPlayers ){
-			llOwnerSay("Raising player events");
+			//llOwnerSay("Raising player events");
 			savePlayers();
 			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
 		}

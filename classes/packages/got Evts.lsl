@@ -430,26 +430,10 @@ default
         if( pos == -1 )
 			return;
 		
-		list out = llParseString2List(llList2String(SPELL_ICONS, pos*SPSTRIDE+2), [], ["<|", "|>"]);
-		integer stacks = l2i(SPELL_ICONS, pos*SPSTRIDE+5);
-		
-		integer i;
-		for( ;i<count(out); ++i ){
-		
-			string s = l2s(out, i);
-			if( s == "<|" ){
-				
-				s = l2s(out, i+1);
-				if( startsWith(s, "s") )
-					s = (string)llRound((float)llGetSubString(s, 1, -1)*stacks);
-					
-				out = llListReplaceList(out, (list)s, i, i+2);
-			
-			}
-		
-		}
-		
-		llRegionSayTo(llGetOwnerKey(id), 0, implode("", out));
+		llRegionSayTo(llGetOwnerKey(id), 0, evtsStringitizeDesc(
+			llList2String(SPELL_ICONS, pos*SPSTRIDE+2),
+			l2i(SPELL_ICONS, pos*SPSTRIDE+5)
+		));
 		
     }
 

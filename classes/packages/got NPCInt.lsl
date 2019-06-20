@@ -256,8 +256,12 @@ default{
         integer pos = llListFindList(SPI, [pid]);
         if( pos == -1 )
             return;
-        
-        llRegionSayTo(llGetOwnerKey(id), 0, llList2String(SPI, pos+2));
+		
+		int stacks = l2i(llCSV2List(l2s(SPI, pos+1)), 3);
+        llRegionSayTo(llGetOwnerKey(id), 0, evtsStringitizeDesc(
+			l2s(SPI, pos+2),
+			stacks
+		));
         
     }
     

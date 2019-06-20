@@ -521,9 +521,10 @@ onDeath( string customAnim ){
 	}
 	
 	// If customAnim is set, use that
-	if( customAnim )
-		return Bridge$fetchRape((str)LINK_ROOT, customAnim);
-	
+	if( customAnim ){
+		Bridge$fetchRape((str)LINK_ROOT, customAnim);
+		return;
+	}
 	// Otherwise fetch one
 	NPCInt$rapeMe();
 	Rape$activateTemplate();
@@ -1117,8 +1118,11 @@ default {
 		raiseEvent(StatusEvt$loading_level, id);
 		
 	}
+	
 	else if( METHOD == StatusMethod$playerSceneDone && SF&StatusFlag$dead )
 		AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
+		
+		
 	else if( METHOD == StatusMethod$toggleBossFight ){
 		
 		integer on = (int)method_arg(0);
@@ -1139,6 +1143,7 @@ default {
 		}
 		saveFlags();
 	}
+	
     else if(METHOD == StatusMethod$setTeam){
 	
 		TEAM_D = llList2Integer(PARAMS, 0);

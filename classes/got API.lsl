@@ -34,6 +34,9 @@
 
 */
 
+#ifndef _gotAPI
+#define _gotAPI
+
 #define GotAPIEvt$bound 1			// Reply once an API listener has been bound
 #define GotAPIEvt$unbound 2	
 
@@ -63,3 +66,6 @@
 #define GotAPI$unbind(targ, recipient) GotAPI$sendCommand(targ, GotAPI$cmdUnbind, [recipient])
 #define GotAPI$unbindThis(targ) GotAPI$unbind(targ, "")
 #define GotAPI$emulateEvent(targ, script, evt, data) GotAPI$sendCommand(targ, GotAPI$cmdEmulateEvent, ([script, evt, mkarr(data)]))
+
+#endif
+
