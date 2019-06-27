@@ -11,10 +11,10 @@
 // * = not implemented yet
 	// The flags in the top 2 are the SMAFlags defined in got Status
 	// Note: These MUST be positive! And can only range between 0 and 255
-	#define fx$DAMAGE_DURABILITY 1				// [(int)amount_to_rem[, (int)flags]]
-	#define fx$AROUSE 2							// [(int)amount_to_add[, (int)flags]]
-	#define fx$PAIN 3							// [(int)amount_to_add[, (int)flags]]
-	#define fx$MANA 4							// [(int)amount_to_add[, (int)flags]]
+	#define fx$DAMAGE_DURABILITY 1				// [(float)amount_to_rem[, (int)flags, (float)life_steal]] - Life steal is generally "$M$h" For 100% multiplied by healing done multi
+	#define fx$AROUSE 2							// [(float)amount_to_add[, (int)flags]]
+	#define fx$PAIN 3							// [(float)amount_to_add[, (int)flags]]
+	#define fx$MANA 4							// [(float)amount_to_add[, (int)flags]]
 	#define fx$TRIGGER_SOUND 5					// [(key)uuid, (float)vol, (bool)self_only] - UUID can also be a JSON array of random sounds
 	#define fx$HITFX 6							// [(vec)color, (int)flags]
 		#define fxhfFlag$NOANIM 1					// Don't use standard takehit anim

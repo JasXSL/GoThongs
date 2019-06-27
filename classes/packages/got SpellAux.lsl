@@ -127,6 +127,8 @@ string runMath( string FX, integer index, key targ ){
 		"h", hdmod,
 		"T", TEAM,
 		
+		// random int between 0 and 2
+		"nc", (int)llFrand(3),
 		// HP/MP percent. Faster than using a formula
 		"hpp", cHP/cMHP,
 		"mpp", cMP/cMMP,

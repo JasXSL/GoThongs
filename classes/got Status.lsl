@@ -2,17 +2,19 @@
 
 // debug got Status, 1, 0, 0, 1, -2000 - damage self 20 HP
 #define StatusMethod$batchUpdateResources 1 	// (str)attacker, (int)type, (int)numArgs, (var)arg1, arg2... - Attacker is prepended and not strided. Strided list of resources to add or subtract. Number of args should match numArgs. Floats are auto converted to int with f2i. Use the SMBUR$build* functions to make sure the syntax matches
-	#define SMBUR$durability 0						// (float)durability, (str)spellName, (int)flags[, (key)attacker(NPC_ONLY)]
+	#define SMBUR$durability 0						// (float)durability, (str)spellName, (int)flags, (float)life_steal - Life steal is multiplied against damage on receiving and returned to the caster
 	#define SMBUR$mana 1							// (float)mana, (str)spellName, (int)flags
 	#define SMBUR$arousal 2							// (float)arousal, (str)spellName, (int)flags
 	#define SMBUR$pain 3							// (float)pain, (str)spellName, (int)flags
 	
+		
 	#define SMAFlag$IS_PERCENTAGE 0x1			// multiply durability by total HP	
 	#define SMAFlag$OVERRIDE_CINEMATIC 0x2		// Allow this effect even during cinematics
 	#define SMAFlag$SOFTLOCK 0x4				// Use with pain or arousal to prevent regeneration from kicking in for a few seconds
-	
-	#define SMBUR$buildDurability(durability, spellName, flags) [SMBUR$durability, 3, f2i(durability), spellName, flags]
-	#define SMBUR$buildDurabilityNPC(durability, spellName, flags, attacker) [SMBUR$durability, 4, f2i(durability), spellName, flags, attacker]
+
+		
+	#define SMBUR$buildDurability(durability, spellName, flags, life_steal) [SMBUR$durability, 4, f2i(durability), spellName, flags, life_steal]
+	//#define SMBUR$buildDurabilityNPC(durability, spellName, flags, life_steal, attacker) [SMBUR$durability, 4, f2i(durability), spellName, flags, life_steal, attacker]
 	#define SMBUR$buildMana(mana, spellName, flags) [SMBUR$mana, 3, f2i(mana), spellName, flags]
 	#define SMBUR$buildArousal(arousal, spellName, flags) [SMBUR$arousal, 3, f2i(arousal), spellName, flags]
 	#define SMBUR$buildPain(pain, spellName, flags) [SMBUR$pain, 3, f2i(pain), spellName, flags]
@@ -121,6 +123,12 @@
 	} \
 }} 
 
+// Takes a lifesteal value from SMBUR$durability and heals the caster if needed
+#define Status$handleLifeSteal(amount, var, caster) \
+if( var*amount != 0.0 ){ \
+	Status$addDurabilityTo(caster, caster, (-var*amount), "", 0, 0); \
+}
+
 
 #define StatusConst$COMBAT_DURATION 10
 
@@ -158,11 +166,13 @@
 // This is only for PC. NPC uses got NPCInt instead
 #define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
 
-#define Status$batchUpdateResources(attacker, SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, (list)llGetSubString((str)attacker, 0, 7)+SMBUR, TNN)
+#define Status$batchUpdateResources(attacker, SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, (list)attacker+SMBUR, TNN)
+#define Status$batchUpdateResourcesTarg(target, attacker, SMBUR) runMethod((str)target, "got Status", StatusMethod$batchUpdateResources, (list)attacker+SMBUR, TNN)
 // NPC
-#define Status$addHP(amt, spellName, flags, attacker) Status$batchUpdateResources(0, SMBUR$buildDurabilityNPC(amt, spellName, flags, attacker))
+//#define Status$addHP(amt, spellName, flags, attacker) Status$batchUpdateResources(0, SMBUR$buildDurabilityNPC(amt, spellName, flags, attacker))
 // PC
-#define Status$addDurability(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildDurability(amt, spellName, flags))
+#define Status$addDurability(attacker, amt, spellName, flags, lifeSteal) Status$batchUpdateResources(attacker, SMBUR$buildDurability(amt, spellName, flags, lifeSteal))
+#define Status$addDurabilityTo(target, attacker, amt, spellName, flags, lifeSteal) Status$batchUpdateResourcesTarg(target, attacker, SMBUR$buildDurability(amt, spellName, flags, lifeSteal))
 #define Status$addMana(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildMana(amt, spellName, flags))
 #define Status$addArousal(attacker,amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildArousal(amt, spellName, flags))
 #define Status$addPain(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildPain(amt, spellName, flags))

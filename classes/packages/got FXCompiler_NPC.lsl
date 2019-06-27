@@ -98,9 +98,9 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		
 		// NPC Specific
         // Don't forget toMultiply by stacks
-		else if(t == fx$DAMAGE_DURABILITY)
-			resource_updates += SMBUR$buildDurabilityNPC(-l2f(fx,1)*stacks, pname, l2i(fx,2), caster);
-        
+		else if(t == fx$DAMAGE_DURABILITY){
+			resource_updates += SMBUR$buildDurability(-l2f(fx,1)*stacks, pname, l2i(fx,2), l2f(fx, 3));
+        }
 		else if(t == fx$ANIM){
 			
 			if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT )

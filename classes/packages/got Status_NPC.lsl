@@ -582,10 +582,10 @@ default
 	
 	if( METHOD == StatusMethod$batchUpdateResources && ~SF&StatusFlag$dead ){
 	
-		// First part is a tokenized attacker, we remove it because we need the full attacker in NPC
-		if( llGetListEntryType(PARAMS, 0) == TYPE_STRING )
-			PARAMS = llDeleteSubList(PARAMS, 0, 0);
+		key attacker = l2s(PARAMS, 0);	// Attacker is prepended
+		PARAMS = llDeleteSubList(PARAMS, 0, 0);
 		
+		// First part is a tokenized attacker, we remove it because we need the full attacker in NPC
 		while(PARAMS){
 			integer type = l2i(PARAMS, 0);
 			integer len = l2i(PARAMS, 1);
@@ -594,17 +594,13 @@ default
 			float amount = i2f(llList2Float(data, 0));	
 			string spellName = l2s(data, 1);					// Spell name
 			integer flags = l2i(data, 2);				// Spell flags
-			key attacker = l2s(data, 3);
-			
-			
+			float steal = l2f(data, 3);					// Life steal
 			
 			// Apply
 			if(type == SMBUR$durability){
 			
 				float pre = HP;
-				
 				float spdmtm = 1;
-
 				integer cn = key2int(attacker);
 	
 				integer i;
@@ -663,9 +659,13 @@ default
 				}
 				
 				raiseEvent(StatusEvt$hurt, llList2Json(JSON_ARRAY, [(str)amount, attacker]));
-				if(amount<0 && RF&Monster$RF_INVUL)return;
+				if( amount<0 && RF&Monster$RF_INVUL )
+					return;
 				
 				HP += amount;
+				
+				Status$handleLifeSteal(amount, steal, attacker)
+				
 				if(HP<=0 && HP != pre){
 					HP = 0;
 					Status$kill(LINK_THIS);

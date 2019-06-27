@@ -147,7 +147,7 @@ float rCnv( integer ty, float am ){
 	}
 	
 	if(l2f(resources, 0))
-		aHP(l2f(resources,0), "", 0, FALSE, TRUE, "");
+		aHP(l2f(resources,0), "", 0, FALSE, TRUE, "", 0);
 	if(l2f(resources, 1))
 		aMP(l2f(resources, 1), "", 0, TRUE, "");
 	if(l2f(resources, 2))
@@ -242,7 +242,7 @@ dArm( int amount ){
 
 // Returns TRUE if changed
 // Adds HP: amount, spellName, flags, isRegen, is conversion
-aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr ){
+aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float stl ){
 
     if( 
 		SF&StatusFlag$dead || 
@@ -300,6 +300,9 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr ){
 		dArm(aDmg);
 	
     HP += am;
+	
+	Status$handleLifeSteal(am, stl, atkr)
+	
     if( HP <= 0 ){
 	
 		HP = 0;
@@ -785,7 +788,7 @@ ptEvt(string id){
 		if( !inCombat ){
 
 			if(DEF_HP_REGEN*fmHR>0)
-				aHP(fmHR*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, FALSE, llGetOwner());
+				aHP(fmHR*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, FALSE, llGetOwner(), 0);
 			if( DEF_PAIN_REGEN*fmPR>0 && ~BFL&BFL_SOFTLOCK_PAIN )
 				aPP(-fmPR*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, FALSE, llGetOwner());
 			if( DEF_AROUSAL_REGEN*fmAR>0 && ~BFL&BFL_SOFTLOCK_AROUSAL )
@@ -976,7 +979,6 @@ default {
 	
 	if(METHOD == StatusMethod$batchUpdateResources){
 	
-		// note: Attacker is trimmed to the first 8 bytes of your key
 		string attacker = method_arg(0);
 		PARAMS = llDeleteSubList(PARAMS, 0, 0);
 	
@@ -990,10 +992,11 @@ default {
 			float am = i2f(llList2Float(data, 0));	
 			string name = l2s(data, 1);					// Spell name
 			integer flags = l2i(data, 2);				// Spell flags
+			float steal = l2f(data, 3);					// Life steal
 
 			// Apply
 			if(type == SMBUR$durability)
-				aHP(am, name, flags, FALSE, FALSE, attacker);
+				aHP(am, name, flags, FALSE, FALSE, attacker, steal);
 			else if(type == SMBUR$mana)
 				aMP(am, name, flags, FALSE, attacker);
 			else if(type == SMBUR$arousal)

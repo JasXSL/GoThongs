@@ -27,7 +27,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		dumpFxInstants()
 		
         else if(t == fx$DAMAGE_DURABILITY){
-			resource_updates += SMBUR$buildDurability(-l2f(fx,1)*stacks, pname, l2i(fx,2));
+			resource_updates += SMBUR$buildDurability(-l2f(fx,1)*stacks, pname, l2i(fx,2), l2f(fx, 3));
 		}
         else if(t == fx$AROUSE){
 			resource_updates += SMBUR$buildArousal(l2f(fx,1)*stacks, pname, l2i(fx,2));
