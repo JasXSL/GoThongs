@@ -207,9 +207,12 @@ default{
 			
                 // Spawn from HUD
                 list names = HUD_TABLES;
-				for(i=0; i<3 && db3$setOther(l2s(names, i), [-1], mkarr(out)) == "0"; ++i){}
-                assets_saved++;
-				
+				for(i=0; i<3; ++i){
+					if( db3$setOther(l2s(names, i), [-1], mkarr(out)) != "0" ){
+						++assets_saved;
+						return;
+					}
+				}
             }
 			
         }
@@ -410,6 +413,7 @@ default{
 			
 		}
 		
+		llOwnerSay("Backing up "+llGetObjectName());
 		backup = llHTTPRequest(
 			"http://jasx.org/lsl/got/app/mod_api/", 
 			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],

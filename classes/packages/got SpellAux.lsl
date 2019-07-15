@@ -84,7 +84,11 @@ string runMath( string FX, integer index, key targ ){
 	
 	float bsMul = 1;
 	integer B = 0;
-	myAngZ(targ, ang)
+	rotation axis = llEuler2Rot(<0,PI_BY_TWO,0>);
+	if( monsterflags & Monster$RF_ANIMESH )
+		axis = ZERO_ROTATION;
+	prAngle(targ, ang, axis)
+		
 	if((llFabs(ang)>PI_BY_TWO || fxFlags&fx$F_ALWAYS_BEHIND) && targ != ""){
 		B = 1;
 		bsMul = bsMul;

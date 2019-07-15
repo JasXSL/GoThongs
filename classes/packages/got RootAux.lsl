@@ -263,7 +263,7 @@ timerEvent(string id, string data){
 				llGiveInventoryList(lk, "", weapons);
 			else if(name == "LTB" && LTB != [])
 				llGiveInventoryList(lk, "", LTB);
-			else if( name == "PlayerInteractions" )
+			else if( name == "PlayerInteractions" && pvpScenes != [] )
 				llGiveInventoryList(lk, "", pvpScenes);
 		)
 		multiTimer(["C", "", 3, FALSE]);
