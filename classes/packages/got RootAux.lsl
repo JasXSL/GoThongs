@@ -453,7 +453,7 @@ default{
 			MOD_TO_ACCEPT = id;
 			
 			// Fetch manifest by pubkey
-			VALIDATE = llHTTPRequest("http://jasx.org/lsl/got/app/manifest/?PUBKEY="+method_arg(0), [HTTP_BODY_MAXLENGTH, 0x2000], "");
+			VALIDATE = llHTTPRequest("https://jasx.org/lsl/got/app/manifest/?PUBKEY="+method_arg(0), [HTTP_BODY_MAXLENGTH, 0x2000], "");
 			
 		}
     }

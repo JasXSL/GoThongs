@@ -125,7 +125,7 @@
 #define gotMethod$setHuds -1000 		// Updates party HUDs
 
 
-#define SITE_URL "http://jasx.org/lsl/got/hud2/index.php"
+#define SITE_URL "https://jasx.org/lsl/got/hud2/index.php"
 
 #define DEFAULT_DURABILITY 100.
 #define DEFAULT_MANA 50.

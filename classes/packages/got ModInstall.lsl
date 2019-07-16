@@ -83,7 +83,7 @@ default{
 		if(llGetStartParameter()){
 		
 			text("Validating");
-			VALIDATE = llHTTPRequest("http://jasx.org/lsl/got/app/manifest/?PUBKEY="+PUBKEY, [HTTP_BODY_MAXLENGTH, 8192], "");
+			VALIDATE = llHTTPRequest("https://jasx.org/lsl/got/app/manifest/?PUBKEY="+PUBKEY, [HTTP_BODY_MAXLENGTH, 8192], "");
 			initiateListen();
 			
 		}

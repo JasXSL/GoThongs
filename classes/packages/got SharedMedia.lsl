@@ -1,7 +1,7 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
-#define BOOK_URL "http://jasx.org/lsl/got/hud2/book2.php"
+#define BOOK_URL "https://jasx.org/lsl/got/hud2/book2.php"
 
 integer BFL;
 #define BFL_BROWSER_SHOWN 0x1

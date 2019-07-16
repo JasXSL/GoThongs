@@ -351,7 +351,7 @@ default{
 		if( save_token == "" )
 			save_token = "backup";
 		backup_restore = llHTTPRequest(
-			"http://jasx.org/lsl/got/app/mod_api/", 
+			"https://jasx.org/lsl/got/app/mod_api/", 
 			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],
 			"tasks="+llEscapeURL(llList2Json(JSON_ARRAY, [
 				llList2Json(JSON_OBJECT, [
@@ -415,7 +415,7 @@ default{
 		
 		llOwnerSay("Backing up "+llGetObjectName());
 		backup = llHTTPRequest(
-			"http://jasx.org/lsl/got/app/mod_api/", 
+			"https://jasx.org/lsl/got/app/mod_api/", 
 			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],
 			"tasks="+llEscapeURL(llList2Json(JSON_ARRAY, [
 				llList2Json(JSON_OBJECT, [
