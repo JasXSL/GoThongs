@@ -778,6 +778,8 @@ default{
 			integer is_dispel = l2i(PARAMS, 8);			// Dispel event will be raised
 			float dur = l2f(PARAMS, 9);
 			int trig = l2i(PARAMS, 10);
+			
+			int nr_affected = 0;
 
 			// Owner is always S
 			integer pos = llListFindList(senders, [(str)llGetOwner()]);
@@ -857,6 +859,7 @@ default{
 								
 					
 					onEvt("", INTEVENT_ONSTACKS, [pID(slice), stacks]);
+					++nr_affected;
 					
 				}
 				
@@ -938,10 +941,11 @@ default{
 					
 					// Delete from packages
 					PACKAGES = llDeleteSubList(PACKAGES, i, i+PSTRIDE-1);
-					
+					++nr_affected;
 
 				}
 			}
+			CB_DATA = (list)nr_affected;
         }
 		
         if(METHOD == FXMethod$hasTags){

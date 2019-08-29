@@ -11,7 +11,7 @@
 	#define SMAFlag$IS_PERCENTAGE 0x1			// multiply durability by total HP	
 	#define SMAFlag$OVERRIDE_CINEMATIC 0x2		// Allow this effect even during cinematics
 	#define SMAFlag$SOFTLOCK 0x4				// Use with pain or arousal to prevent regeneration from kicking in for a few seconds
-
+	#define SMAFlag$NO_STACK_MULTI 0x8			// Can be used if you don't want stack multi on only a resource, but the rest can be multiplied
 		
 	#define SMBUR$buildDurability(durability, spellName, flags, life_steal) [SMBUR$durability, 4, f2i(durability), spellName, flags, life_steal]
 	//#define SMBUR$buildDurabilityNPC(durability, spellName, flags, life_steal, attacker) [SMBUR$durability, 4, f2i(durability), spellName, flags, life_steal, attacker]
@@ -191,6 +191,7 @@ if( var*amount != 0.0 ){ \
 #define Status$toggleBossFight(on) runMethod((str)LINK_ROOT, "got Status", StatusMethod$toggleBossFight, [on], TNN)
 #define Status$coopInteract(targ) runMethod((str)targ, "got Status", StatusMethod$coopInteract, [], TNN)
 #define Status$kill(targ) runMethod((str)targ, "got Status", StatusMethod$kill, [], TNN)
+#define Status$killAndPunish(targ, punishGroup) runMethod((str)targ, "got Status", StatusMethod$kill, (list)(punishGroup), TNN)
 #define Status$damageArmor(targ, damage) runMethod((str)targ, "got Status", StatusMethod$damageArmor, (list)damage, TNN)
 
 

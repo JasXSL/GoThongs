@@ -3,7 +3,7 @@
 
 list OST; // Output status to (key)id, (int)flags
 #define SPSTRIDE 5
-list SPI;   // Spell Icons [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc, (str)senderKey[0-8], (int)detrimental]
+list SPI;   // Spell Icons [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc, (str)senderKey[0-8], (int)flags]
 integer T_CHAN;
 list PLAYERS;
 integer BFL;
@@ -44,8 +44,8 @@ sendTextures( string target ){
 	string out = "";
 	integer i;
     for( ; i<count(SPI); i+=SPSTRIDE ){
-		if( !l2i(SPI, i+4) || l2s(SPI, i+3) == t )		// Show beneficial effects and sender effects
-			out+= l2s(SPI, i)+","+l2s(SPI,i+1)+",";
+		if( ~l2i(SPI, i+4)&PF_DETRIMENTAL || l2s(SPI, i+3) == t )		// Show beneficial effects and sender effects
+			out+= l2s(SPI, i)+","+l2s(SPI,i+1)+","+l2s(SPI,i+4)+",";
 	}
 	out = llDeleteSubString(out, -1, -1);	// Remove trailing comma
 	GUI$setSpellTextures(target, out);

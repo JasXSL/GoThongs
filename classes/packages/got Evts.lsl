@@ -18,8 +18,8 @@ key cache_targ;
 
 integer P_BUTTONS;
 
-#define SPSTRIDE 6
-list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
+#define SPSTRIDE 7
+list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)flags]
 
 
 list TARGETED_BY;	// Players currently actively targeting you
@@ -344,7 +344,7 @@ default
 		){
 			
 			if( METHOD == EvtsMethod$addTextureDesc ){
-				// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks]
+				// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)pflags]
 				SPELL_ICONS += 
 					// PID
 					(list)l2i(PARAMS, 0) + 
@@ -357,7 +357,9 @@ default
 					// Duration
 					l2i(PARAMS, 4) + 
 					// Stacks
-					l2i(PARAMS, 5)
+					l2i(PARAMS, 5) +
+					// Flags
+					l2i(PARAMS, 6)
 				;
 			}
 			else if(METHOD == EvtsMethod$remTextureDesc){

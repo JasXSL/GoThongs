@@ -555,7 +555,7 @@ default {
 	}
 	
 	else if( METHOD == NPCSpellsMethod$interrupt )
-		endCast(FALSE, FALSE);
+		endCast(FALSE, l2i(PARAMS, 0));
 	
 	else if( METHOD == NPCSpellsMethod$setOutputStatusTo ){
 	

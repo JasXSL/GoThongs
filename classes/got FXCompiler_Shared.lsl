@@ -48,13 +48,18 @@ recacheFlags(){
 	integer pre = CACHE_FLAGS;
 	integer i; CACHE_FLAGS = 0;
 	list data = getDFXSlice(fx$SET_FLAG, 1);
-    for(i=0; i<count(data); i+=2)
+
+	for( ; i<count(data); i+=2 )
 		CACHE_FLAGS = CACHE_FLAGS|l2i(data,i+1);
+	
 	data = getDFXSlice(fx$UNSET_FLAG, 1);
-    for(i=0; i<count(data); i+=2)
+    
+	for(i=0; i<count(data); i+=2)
 		CACHE_FLAGS = CACHE_FLAGS&~l2i(data,i+1);
+	
 	#ifndef IS_NPC
-	if(~pre&fx$F_NO_PULL && CACHE_FLAGS&fx$F_NO_PULL)llStopMoveToTarget();
+	if( ~pre&fx$F_NO_PULL && CACHE_FLAGS&fx$F_NO_PULL )
+		llStopMoveToTarget();
 	#endif
 	
 }

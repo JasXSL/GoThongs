@@ -250,8 +250,9 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 	)return;
 		
     float pre = HP;
-    am*=spdmtm(sn, atkr);
+	am*=spdmtm(sn, atkr);
 		
+	
 	if(fl&SMAFlag$IS_PERCENTAGE)
 		am*=maxHP();
 	
@@ -476,7 +477,7 @@ float spdmtm( string sn, key c ){
 			float nr = llList2Float(SDTM, i+2);
             if( nr <0 )
 				return 0;
-            out*= (1+nr);
+            out*= nr;
 			
         }
 		
@@ -888,8 +889,6 @@ default {
 		}\
 		if((pre&fx$F_FORCE_MOUSELOOK) != (FXF&fx$F_FORCE_MOUSELOOK)){\
 			ptSet(TIMER_MOUSELOOK, (float)((FXF&fx$F_FORCE_MOUSELOOK)>0)/10, TRUE); \
-			if(~FXF&fx$F_FORCE_MOUSELOOK) \
-				llOwnerSay("@"); \
 		}\
         paDT = i2f(l2f(data, FXCUpd$DAMAGE_TAKEN)); \
         fmMR = i2f(l2f(data, FXCUpd$MANA_REGEN)); \

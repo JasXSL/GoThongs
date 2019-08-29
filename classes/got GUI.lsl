@@ -1,10 +1,13 @@
+#ifndef _gotGUI
+#define _gotGUI
+
 #define GUIMethod$toggleObjectives 1	// (bool)on - Shows or hides the objectives 
 //#define GUIMethod$status 2				// [(float)hp_perc, (float)mana_perc, (float)arousal_perc, (float)pain_perc, (int)flags, (int)fxflags]
 #define GUIMethod$toggleLoadingBar 3	// (int)on, (float)time - Turns the loading bar on or off
 #define GUIMethod$toggleSpinner 4		// (int)on, (str)loadingText - Sets a spinner
 //#define GUIMethod$togglePotion 5		// (key)texture || "", (int)stacks - Toggles a potion. If texture is not a key, it hides instead
 //#define GUIMethod$potionCD 7			// (float)cooldown || 0 - Sets cooldown overlay over potion
-#define GUIMethod$setSpellTextures 6	// (arr)textures - Targ: 0 = self, 1 = friend, 2 = target - Sets little spell icons. Data is [(int)PID, (key)texture, (int)time_added_ms, (int)duration_ms, (int)stacks]
+#define GUIMethod$setSpellTextures 6	// (arr)textures - Targ: 0 = self, 1 = friend, 2 = target - Sets little spell icons. Data is [(int)PID, (key)texture, (int)time_added_ms, (int)duration_ms, (int)stacks, (int)flags]
 #define GUIMethod$toggleQuit 8			// (bool)show
 #define GUIMethod$toggle 10				// (bool)show - opens or Closes the GUI
 #define GUIMethod$toggleBoss 11			// (key)texture OR "" to clear, (bool)manual_hp OR (key)boss - Toggles the boss portrait. If manual_hp is set, only bossHP calls will update the HP
@@ -40,3 +43,6 @@
 
 #define GUI$setChallenge(challenge) runMethod((str)LINK_THIS, "got GUI", GUIMethod$setChallenge, (list)challenge, TNN)
 #define GUI$setWipes(targ, wipes) runMethod((str)targ, "got GUI", GUIMethod$setWipes, (list)wipes, TNN)
+
+
+#endif

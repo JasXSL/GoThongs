@@ -17,7 +17,8 @@ list TEXTURES = [
 	"10a121c0-6296-749e-090c-67800975873b",	// Climbing rope
 	"683ed954-20f6-8026-1f42-b32bbfce5479",	// Riding the elevator
 	"ff0e1b2e-d9e4-0f78-7a81-4bca426cf6b9",	// Imp lair entrance
-	"042d3ef6-a923-adcf-67e1-085f444c1fe7" // Sun in PanRi
+	"042d3ef6-a923-adcf-67e1-085f444c1fe7", // Sun in PanRi
+	"451eff51-5fdb-4430-06ea-c6405538eab6"	// Kitsu & tiger
 ];
 
 toggleLoadingScreen( int visible ){

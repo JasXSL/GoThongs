@@ -42,6 +42,7 @@ tClt(){
 		
 	}
 
+
 	integer lostArmor;
 	list slots = ["head", "chest", "arms", "boots", "crotch"];
 	int i;

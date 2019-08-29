@@ -80,11 +80,13 @@ onEvt( string sc, int evt, list data ){
 
 integer current_visual;
 
-runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster, int stacks){ 
+runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster){ 
     
 	list resource_updates; // Updates for HP/Mana etc
 	list fxs = llJson2List(fxobjs);
     fxobjs = "";
+	
+	int stacks = getStacks(pid, FALSE);
 	
 	while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
@@ -99,6 +101,9 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		// NPC Specific
         // Don't forget toMultiply by stacks
 		else if(t == fx$DAMAGE_DURABILITY){
+			int st = stacks;
+			if( l2i(fx,2)&SMAFlag$NO_STACK_MULTI )
+				st = 1;
 			resource_updates += SMBUR$buildDurability(-l2f(fx,1)*stacks, pname, l2i(fx,2), l2f(fx, 3));
         }
 		else if(t == fx$ANIM){
@@ -110,7 +115,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
         }
         
         else if(t == fx$INTERRUPT)
-            NPCSpells$interrupt();
+            NPCSpells$interrupt(l2i(fx, 1));
 			
         else if(t == fx$AGGRO)
             Status$monster_aggro(caster, l2f(fx,1));

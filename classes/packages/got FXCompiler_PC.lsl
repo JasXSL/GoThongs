@@ -7,13 +7,16 @@ integer TEAM = TEAM_PC;
 // ID tag is the first 8 characters of the UUID
 integer current_visual;
 
-runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster, int stacks){
+runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster ){
 
 	list resource_updates; // Updates for HP/Mana etc
 	
 	if(pflags&PF_DETRIMENTAL)
 		Status$refreshCombat();
 		
+	int stacks = getStacks(pid, FALSE);
+	
+	
 
 	list fxs = llJson2List(fxobjs);
     while(llGetListLength(fxs)){
@@ -23,19 +26,32 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		// Type
 		integer t = llList2Integer(fx, 0);
 		
+		
+		
         // Shared between PC/NPC, defined in got FXCompiler header file
 		dumpFxInstants()
 		
-        else if(t == fx$DAMAGE_DURABILITY){
-			resource_updates += SMBUR$buildDurability(-l2f(fx,1)*stacks, pname, l2i(fx,2), l2f(fx, 3));
+		else if( 
+			(t == fx$DAMAGE_DURABILITY ||
+			t == fx$AROUSE ||
+			t == fx$PAIN ||
+			t == fx$MANA)
+		){
+			int st = stacks;
+			if( l2i(fx,2)&SMAFlag$NO_STACK_MULTI )
+				st = 1;
+			if(t == fx$DAMAGE_DURABILITY){
+				resource_updates += SMBUR$buildDurability(-l2f(fx,1)*st, pname, l2i(fx,2), l2f(fx, 3));
+			}
+			else if(t == fx$AROUSE){
+				resource_updates += SMBUR$buildArousal(l2f(fx,1)*st, pname, l2i(fx,2));
+			}
+			else if(t == fx$PAIN)
+				resource_updates += SMBUR$buildPain(l2f(fx,1)*st, pname, l2i(fx,2));
+			else if(t == fx$MANA)
+				resource_updates += SMBUR$buildMana(l2f(fx,1)*st, pname, l2i(fx,2));
 		}
-        else if(t == fx$AROUSE){
-			resource_updates += SMBUR$buildArousal(l2f(fx,1)*stacks, pname, l2i(fx,2));
-		}
-        else if(t == fx$PAIN)
-			resource_updates += SMBUR$buildPain(l2f(fx,1)*stacks, pname, l2i(fx,2));
-        else if(t == fx$MANA)
-			resource_updates += SMBUR$buildMana(l2f(fx,1)*stacks, pname, l2i(fx,2));
+        
 		
 		else if( t == fx$CLASS_VIS )
 			gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2));

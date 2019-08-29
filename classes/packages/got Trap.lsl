@@ -212,7 +212,7 @@ default
 			integer strip = 0;
 			if(l2i(PARAMS, 3))strip = fx$F_SHOW_GENITALS;
 		
-        FX$send(method_arg(0), llGetKey(), "[9,0,0,0,["+(string)dur+",65,\"_Q\",[[13,"+(str)(16|strip)+"],[31,"+(string)seat+",1]],[],[],[],0,0,0]]", TEAM_NPC);
+        FX$send(method_arg(0), llGetKey(), "[0,0,0,0,["+(string)dur+",65,\"_Q\",[[13,"+(str)(16|strip)+"],[31,"+(string)seat+",1]],[],[],[],0,0,0]]", TEAM_NPC);
         raiseEvent(TrapEvent$triggered, "");
 		
     }

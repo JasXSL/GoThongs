@@ -162,19 +162,26 @@ compilePassives(){
     list vals = [];         // Stores the attribute values
     integer i;
 	
+	int set_flags;
+	int unset_flags;
+	
+		
 	@continueCompilePassives;
-    while(i<llGetListLength(PASSIVES)){
+    while( i < llGetListLength(PASSIVES) ){
 	
         // Get the effects
 		integer n = l2i(PASSIVES, i+2);
         list block = subarr(PASSIVES, i+PASSIVES_PRESTRIDE, n);
         i+=n+PASSIVES_PRESTRIDE;
         
-		if(!n)
+		// No data. Not sure why.
+		if( !n )
 			jump continueCompilePassives;
 		
+		// Key value pairs of passives
         integer x;
-        for( ; x<llGetListLength(block); x+=2){
+        for( ; x<llGetListLength(block); x+=2 ){
+		
             integer id = llList2Integer(block, x);
             float val = llList2Float(block, x+1);
             
@@ -183,40 +190,53 @@ compilePassives(){
 
             integer pos = llListFindList(keys, [id]);
             // The key already exists, add!
-            if(~pos){
+            if( ~pos ){
 			
 				float n = llList2Float(vals, pos);
-				if(array){
+				if( array ){
+				
 					vals = llListReplaceList(vals, [mkarr(
 						llJson2List(l2s(block, x+1))+llJson2List(l2s(vals, pos))
 					)], pos, pos);
+					
 				}
 				else{
 				
-					if(add)
-						n+= val;
+					if( id == FXCUpd$UNSET_FLAGS )
+						unset_flags = unset_flags|(int)val;
+					else if( id == FXCUpd$FLAGS )
+						set_flags = set_flags|(int)val;
+					else if( add )
+						n += val;
 					else
-						n*= (1+val);
+						n *= (1+val);
+					
 					
 					vals = llListReplaceList(vals, [n], pos, pos);
+					
 				}
 				
 			}
             else{
+			
 				keys += id;
 				// Type is an array, merge
-				if(array){
+				if(array)
 					vals+= [mkarr(llJson2List(l2s(block, x+1)))];
-				}else{
+					
+				else{
 					if(!add)val+=1;	// If something is a multiplier it should always start at 1
 					vals += val;
 				}
+				
             }
         }
     }
 	
     // These need to match compilation stride
-    compiled_passives = [];
+    compiled_passives = [
+		FXCUpd$FLAGS, set_flags&~unset_flags
+	];
     for( i=0; i<llGetListLength(keys); ++i ){
 	
         list v = llList2List(vals, i, i);

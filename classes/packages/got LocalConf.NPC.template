@@ -42,6 +42,8 @@
 	#define onCallback(str sender_script, int method, list params, string CB, key id)	// Callback received
 	#define onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
 	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
+	
+	#define body // put into default
 
 	Globals:
 	PLAYERS | list | List of player UUIDs
@@ -227,6 +229,10 @@ default{
 
 	#ifdef timerEvent
     timer(){ multiTimer([]); }
+	#endif
+	
+	#ifdef body
+	body
 	#endif
 
     #include "xobj_core/_LM.lsl"

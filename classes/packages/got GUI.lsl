@@ -297,31 +297,38 @@ default {
 			out+= data_out;
 					
 		}
-	//}
+
 	
 		PP(0,out);
 		out = [];
+		
 		// Updates spell icons
 		integer snap = timeSnap();
 		@execIconUpdateContinue;
-		while(SPELL_UPDATE_QUEUE){
+		while(count(SPELL_UPDATE_QUEUE)){
 			
 			key id = l2k(SPELL_UPDATE_QUEUE, 0);										// User ID
-			list data = [];						// Strided data of [(int)pid, (key)texture, (int)added_ms, (int)duration_ms, (int)stacks]
-			if(l2s(SPELL_UPDATE_QUEUE, 1))data = llCSV2List(l2s(SPELL_UPDATE_QUEUE, 1));
+			list data = [];		// CSV stringified strided list of [pid, sender_key, time_added_ms, duration_ms, stacks, flags]
+			// Data exists
+			if( l2s(SPELL_UPDATE_QUEUE, 1) )
+				data = llCSV2List(l2s(SPELL_UPDATE_QUEUE, 1));
 			SPELL_UPDATE_QUEUE = llDeleteSubList(SPELL_UPDATE_QUEUE, 0, SUQSTRIDE-1);
-			
+
+			// Select the bars that must be updated
 			list bars; 																	// Offset for linknumbers
-			integer stride = 5;															// Stride of data
+			integer stride = 6;															// Stride of data
 			
-			if(id == "")id = llGetKey();
+			if( id == "" )
+				id = llGetKey();
+				
 			// These aren't bars so we can't use id2bars
-			if(id == llGetKey())
+			if( id == llGetKey() )
 				bars+=0;
-			if(id == TARG)
+				
+			if( id == TARG )
 				bars += 1;
 				
-			if(bars == [])
+			if( !count(bars) )
 				jump execIconUpdateContinue;
 
 			//integer n = (integer)val;
@@ -333,20 +340,33 @@ default {
 			
 			// Cycle over the icons 
 			integer i;
-			for(i=0; i<llGetListLength(data); i+=stride){
+			for( ; i<llGetListLength(data); i+=stride ){
+				
 				key texture = llList2Key(data, i+1);
 				integer added = llList2Integer(data, i+2);
 				integer duration = llList2Integer(data, i+3);
 				float dur = (float)duration/10;
 				integer stacks = llList2Integer(data, i+4);
-				string description = llList2String(data, i);
+				string description = llList2String(data, i);		// PID
+				int flags = l2i(data, i+5);
 				
 				// Make sure the effect hasn't already expired
-				if(duration+added > timeSnap()){
+				if( duration+added > timeSnap() ){
+				
+					vector border = <0.5,1,0.5>;
+					if( flags & PF_DETRIMENTAL ){
+					
+						border = <1,0.5,0.5>;
+						if( flags&PF_NO_DISPEL )
+							border = <0.5,0,1>;
+						
+						
+					}
+				
 					float percentage = ((float)(snap-added)/dur)/10;
 					block=[
 						PRIM_COLOR, ALL_SIDES, <1,1,1>,0,
-						PRIM_COLOR, 0, <0,0,0>, 0.5,
+						PRIM_COLOR, 0, border, 1,
 						PRIM_COLOR, 1, <1,1,1>, 1,
 						PRIM_COLOR, 2, ZERO_VECTOR, 0.8,
 						
@@ -374,6 +394,7 @@ default {
 					
 					slot++;
 				}
+				
 			}
 			
 			

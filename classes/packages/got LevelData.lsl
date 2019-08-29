@@ -317,6 +317,7 @@ default
                 llMessageLinked(LINK_THIS, slave, llList2Json(JSON_ARRAY, [id, v, pin, 2]), "rm_slave");
             }
             else if(llGetInventoryType(v) != INVENTORY_NONE) llGiveInventory(id, v);
+			else llOwnerSay("Trying to load script '"+v+"', but not in level");
         )
 		
     }

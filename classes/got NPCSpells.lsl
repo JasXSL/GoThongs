@@ -1,5 +1,5 @@
 #define NPCSpellsMethod$setSpells 1			// Array of spell objects, see below
-#define NPCSpellsMethod$interrupt 2			
+#define NPCSpellsMethod$interrupt 2			// (int)force
 #define NPCSpellsMethod$startCast 3			// (int)id - Returns true/false
 #define NPCSpellsMethod$wipeCooldown 4		// (int)id - -1 is all
 #define NPCSpellsMethod$setOutputStatusTo 5	// Sets players that are currently targeting this monster
@@ -43,7 +43,7 @@
 
 #define NPCSpells$setSpells(data) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setSpells, data, TNN)
 #define NPCSpells$setConf(conf)	runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setConf, conf, TNN)
-#define NPCSpells$interrupt() runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$interrupt, [], TNN)
+#define NPCSpells$interrupt( force ) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$interrupt, (list)(force), TNN)
 #define NPCSpells$startCast(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$startCast, [id], TNN)
 #define NPCSpells$wipeCooldown(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$wipeCooldown, [id], TNN)
 #define NPCSpells$setOutputStatusTo(targs) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setOutputStatusTo, targs, TNN)

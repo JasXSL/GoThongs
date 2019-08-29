@@ -1,3 +1,6 @@
+#ifndef _gotPassives
+#define _gotPassives
+
 /*
 	Weaponprocs is the array value of PassivesMethod$set consisting of a 2-strided list of [(int)id, (var)val]
 	see got FXCompiler header file for a list of attribute IDs
@@ -75,3 +78,6 @@ string Passives_buildProc(list triggers, integer max_targets, float proc_chance,
         wrapper
     ]);
 }
+
+
+#endif

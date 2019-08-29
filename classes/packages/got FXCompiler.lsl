@@ -33,7 +33,7 @@ float CPD = 1.0;
 list STACKS;
 #define sGetStacks( n ) (n&0x3FFF);
 #define sGetPid( n ) ((n>>14)&0xFFFF)
-#define sGetIgnoreStacks( n ) ((n>>30)&1)
+#define sGetIgnoreStacks( n ) ((n>>30)&1)	// Returns if stacks should be ignored
 #define addStacks( stacks, pid, no_stack_multiply ) \
 	STACKS += (stacks&0x3FFF|((pid&0xFFFF)<<14)|((no_stack_multiply>0)<<30));
 
@@ -75,7 +75,6 @@ integer getStacks( integer pid, integer absolute ){
 				absolute
 			)
 		)return sGetStacks(n);
-		
 	}
 
 	return 1;
@@ -156,16 +155,19 @@ default
 			string additional = l2s(input, 7); 
 			input = llDeleteSubList(input, 0, FXCPARSE$STRIDE-1); 
 			
-			if( action&FXCPARSE$ACTION_RUN ) 
-				runEffect(PID, pflags, pname, fx_objs, timesnap, id, stacks); 
-			
-			if( action&FXCPARSE$ACTION_ADD ){ 
-			
+			// Stacks first
+			if( action&FXCPARSE$ACTION_ADD ){
 				integer s = stacks; 
 				if( stacks < 1 )
 					stacks=1;
-				
 				addStacks(stacks, PID, (pflags&PF_NO_STACK_MULTIPLY));
+			}
+			
+			if( action&FXCPARSE$ACTION_RUN ) 
+				runEffect(PID, pflags, pname, fx_objs, timesnap, id); 
+			
+			if( action&FXCPARSE$ACTION_ADD ){ 
+			
 				addEffect(PID, pflags, pname, fx_objs, timesnap, i2f((int)additional), id); 
 				onStackUpdate(); 
 				

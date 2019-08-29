@@ -113,15 +113,18 @@ integer setTarget(key t, key icon, integer force, integer team){
 	}
 	
 	// Clear previous target targeting flag
-	TARG_IS_PC = l2i(llGetObjectDetails(t, [OBJECT_ATTACHED_POINT]), 0);
-	if( TARG_IS_PC )
+	TARG_IS_PC = l2i(llGetObjectDetails(TARG, [OBJECT_ATTACHED_POINT]), 0);
+	if( TARG_IS_PC ){
+		if( TARG == llGetKey() )
+			TARG = (str)LINK_ROOT;
 		Status$setTargeting(TARG, -NPCInt$targeting);
-	else
+	}else{
 		NPCInt$setTargeting(TARG, -NPCInt$targeting);
-	
+	}
 	TARG_ICON = icon;
 	TARG = t;
-	
+	// Check if new targ is PC
+	TARG_IS_PC = l2i(llGetObjectDetails(TARG, [OBJECT_ATTACHED_POINT]), 0);
 	
 	// Clear current target if it has changed
 	
@@ -153,6 +156,7 @@ integer setTarget(key t, key icon, integer force, integer team){
 	string ta = TARG;
 	if( ta == llGetKey() )
 		ta = (string)LINK_THIS;
+		
 	if( TARG_IS_PC )
 		Status$setTargeting(ta, tflags);
     else

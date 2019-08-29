@@ -104,7 +104,7 @@ ag( key pl, float ag ){
 		return;
     
 	list pre = AG;
-	
+
     if( pl ){
 	
         integer pre = count(AG);
@@ -386,7 +386,7 @@ outputStats( integer f ){
 					llInsertString((str)dmg,llStringLength((str)dmg)-1,".")+ \
 				"],[3,"+ \
 					llInsertString((str)pain, llStringLength((str)pain)-1, ".")+ \
-				"],"+hitfx+"],[],[],[],0,0,0]]", TEAM); \
+				"],"+hitfx+"]]]", TEAM); \
         } \
 		else if( evt == MonsterEvt$attackStart && count(atSnd) ){ \
             llTriggerSound(randElem(atSnd), 1); \
@@ -587,6 +587,7 @@ default
 		
 		// First part is a tokenized attacker, we remove it because we need the full attacker in NPC
 		while(PARAMS){
+		
 			integer type = l2i(PARAMS, 0);
 			integer len = l2i(PARAMS, 1);
 			list data = llList2List(PARAMS, 2, 2+len-1);		// See SMBUR$* at got Status
@@ -596,7 +597,7 @@ default
 			integer flags = l2i(data, 2);				// Spell flags
 			float steal = l2f(data, 3);					// Life steal
 			
-			// Apply
+			// HP Damage
 			if(type == SMBUR$durability){
 			
 				float pre = HP;
@@ -639,9 +640,9 @@ default
 							
 					amount*=fmdt;
 					parseDesc(attacker, _r, _s, _f, _st, team, _mo)
-					if(attacker != "" && team != TEAM){
+					if( attacker != "" && team != TEAM )
 						ag(attacker, llFabs(amount));
-					}
+					
 				}
 				else{
 				
