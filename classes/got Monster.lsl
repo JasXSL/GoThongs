@@ -62,9 +62,8 @@
 
 // Sends a custom command that updates settings
 // Unlike LocalConfEvt$iniData this is a strided list consisting of [(int)index, (var)value]
-// Str is a JSON array of the params. 
 // See the MLC$ index below
-#define Monster$updateSettings(settings) llMessageLinked(LINK_ROOT, TASK_MONSTER_SETTINGS, mkarr(settings), "")
+#define Monster$updateSettings(settings) llMessageLinked(LINK_ROOT, TASK_MONSTER_SETTINGS, mkarr((list)settings), "")
 
 
 // LocalConf INI data:
