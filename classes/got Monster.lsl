@@ -1,3 +1,6 @@
+#ifndef __Monster
+#define __Monster
+
 #define MonsterMethod$toggleFlags 1		// [(int)flags_to_set, (int)flags_to_remove[, (int)is_spellflags]] - set will be ORed, remove will be and NOT ed
 #define MonsterMethod$lookOverride 2	// (key)id or "" - Forces the monster to look at this ID instead of aggro target
 #define MonsterMethod$KFM 3				// (arr)kfm_a, (arr)kfm_b - Runs a keyframed motion on an npc
@@ -24,7 +27,7 @@
 
 #define MonsterEvt$inRange 1 			// (key)target
 #define MonsterEvt$lostRange 2			// (key)target
-#define MonsterEvt$attack 3				// (key)targe - Raised on "_a" frame received
+#define MonsterEvt$attack 3				// (key)target
 #define MonsterEvt$rapeStart 4			// (key)target
 #define MonsterEvt$rapeEnd 5			// (key)target
 #define MonsterEvt$players 6			// (arr)players
@@ -51,6 +54,7 @@
 #define Monster$RF_FOLLOWER 0x1000		// Follower mode enabled
 #define Monster$RF_ANIMESH 0x2000		// This is an animesh monster
 #define Monster$RF_HUMANOID 0x4000		// This is a humanoid (allow certain monster interactions)
+#define Monster$RF_MINOR 0x8000			// This monster should not drop loot
 
 #define Monster$atkFrame "_a"
 
@@ -90,4 +94,17 @@
 #define MLC$height_add 18			// (int)decimeters - Offset the Z center used for LOS calculations
 #define MLC$melee_height 19			// Int signifying the point of the avatar to hit. 0 = groin/butt, 1 = chest, -1 = none
 #define MLC$hover_height 20			// Offsets the monster's Z from the ground
+#define MLC$aptitude 21				// (float)sec to track track a player after losing visibility. Default = 3
+#define MLC$sex 22					// Uses GENITALS_* flags. Pair with Monster$RF_HUMANOID
+
+// Returns a multiplier rotation that can be multiplied against vectors for use in height offsets
+rotation Monster_RotOffset( key monster, int monsterFlags ){
+	rotation r = prRot(monster);
+	if( monsterFlags & Monster$RF_ANIMESH || llGetAgentSize(monster) != ZERO_VECTOR )
+		return r;
+	return r*llEuler2Rot(<0,PI_BY_TWO,0>);
+}
+
+
+#endif
 

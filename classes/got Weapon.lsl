@@ -1,3 +1,6 @@
+#ifndef _Weapon
+#define _Weapon
+
 #define WeaponMethod$remove 1		// (str)objName+(int)HAND || "*" || "" (internal only) - Removes a weapon
 #define WeaponMethod$ini 2			// (int)attach_slot, (vec)pos, (rot)rotation
 // Sent on custom channel for speed
@@ -26,3 +29,7 @@
 #define gotWeapon$ctask$toggle 0x1	// 0b00 mainhand, offhand | Example: 0b10 000001 = show main hand, hide offhand
 
 #define gotWeapon$ctask$setData(n, data) n = n|(data<<6);
+
+#endif
+
+

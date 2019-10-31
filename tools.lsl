@@ -1,6 +1,9 @@
 #ifndef _gotTools
 #define _gotTools
 
+// Default reject types for raycast
+#define RC_DEFAULT (list)RC_REJECT_TYPES + (RC_REJECT_AGENTS|RC_REJECT_PHYSICAL)
+
 // trigger random squish
 #define squishSound() llTriggerSound(randElem((list)"72d65db8-31fe-375b-8716-89e3963fbf7d"+"90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd"+"f9194db3-9606-2264-3cde-765430179069"), llFrand(0.25)+0.25)
 
@@ -76,23 +79,27 @@ rotation got_n2r( rotation Q ){
 // Parses a description into resources, status, fx, sex, team - Currently only supports resources for NPCs
 // The if statement checks if this is a HUD which has a slightly different syntax
 // _data[0] is the attached point, if attached, the syntax is a bit different
-#define parseDesc(aggroTarg, resources, status, fx, sex, team, monsterflags) \
-integer resources; integer status; integer fx; integer team; integer sex; integer monsterflags; \
+// monsterFlags is userSettings for PC
+#define parseDesc(aggroTarg, resources, status, fx, sex, team, monsterflags, armor) \
+integer resources; integer status; integer fx; integer team; integer sex; integer monsterflags; int armor; \
 {\
 list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
 resources = l2i(_split,3); \
 status = l2i(_split,6); \
-fx = l2i(_split,7); \
+fx = l2i(_split,8); \
 team = l2i(_split,2); \
 monsterflags = l2i(_split, 7); \
+sex = l2i(_split,9); \
+armor = 0; \
 if(l2i(_data, 0)){ /* HUD */ \
 	resources = l2i(_split, 0); \
 	status = l2i(_split, 1); \
 	fx = l2i(_split, 2); \
 	sex = l2i(_split, 3); \
 	team = l2i(_split, 4); \
-	monsterflags = 0;\
+	monsterflags = l2i(_split,5);\
+	armor = l2i(_split,6); \
 }\
 }
 
@@ -112,9 +119,16 @@ if(l2i(_data, 0)){ /* HUD */ \
 #define parseSex(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-integer var = 0; \
+integer var = l2i(_split, 9); \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 3);
+	
+#define parseArmor(targ, var) \
+list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+list _split = explode("$", l2s(_data, 1)); \
+integer var = 0; \
+if(l2i(_data, 0)) \
+	var = l2i(_split, 6);
 	
 // Same as above but only gets flags
 #define parseFlags(targ, var) \
@@ -183,7 +197,7 @@ float getTargetHeight( key t ){
 		
 	boundsHeight(t, b)
 	
-	parseDesc(t, resources, status, fx, sex, team, monsterflags)
+	parseDesc(t, resources, status, fx, sex, team, monsterflags, armor)
 	if( monsterflags & Monster$RF_ANIMESH  )
 		b /= 2;
 	return b;

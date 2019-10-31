@@ -1,3 +1,6 @@
+#ifndef _PlayerPoser
+#define _PlayerPoser
+
 /*
 	Anim syntax:
 		Base = animName_a / animName_t
@@ -42,3 +45,5 @@
 #define gotPlayerPoserEvt$end 3				// void | The poser is shutting down and deleting itself
 
 //#define gotPlayerPoserFlag$
+
+#endif

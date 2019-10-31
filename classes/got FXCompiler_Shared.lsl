@@ -1,3 +1,5 @@
+#ifndef _FXCompiler_Shared
+#define _FXCompiler_Shared
 // Shared preprocessor definitions for the fxcompilers
 // Duration effects
 /*
@@ -152,5 +154,9 @@ list cMod( int t ){
 	return out;
 
 }
+
+
+
+#endif
 
 

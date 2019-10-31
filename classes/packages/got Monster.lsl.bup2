@@ -1,20 +1,24 @@
+/*
+    Script by toonie
+    Modified by jas
+*/
 #define USE_EVENTS
 #include "got/_core.lsl"
 
 #define TIMER_FRAME "a"
 #define TIMER_ATTACK "b" 
 #define TIMER_EXEC_ATTACK "c"
-#define TIMER_WAYPOINT "d"
 
 #define isAnimesh() (RUNTIME_FLAGS&Monster$RF_ANIMESH)
 
-string chasetarg;       // Currently aggroed player
-string tracktarg;		// Last aggroed player
-list SEEKTARG;			// [(var)targ, (float)range, (str)callback] Target received from MonsterMethod$seek, either a vector or a key
 
+list PLAYERS;           // The players, should always contain owner
+string chasetarg;       // Currently chased player
+
+list SEEKTARG;			// [(var)targ, (float)range, (str)callback] Target received from MonsterMethod$seek, either a vector or a key
+list ctData;            // Contains data about current target, see StatusMethod$get
 vector lastseen;        // Position target was last seen at
 vector rezpos;          // Position this was rezzed at. Used for roaming
-list WPOINTS;			// Vector positions where the NPC heard the target last
 
 integer STATE;          // Current movement state
 
@@ -24,7 +28,6 @@ integer FXFLAGS;
 key look_override = ""; // Key to override looking at from current target
 
 // Conf
-float aptitude = 3.0;	// Nr seconds to track a player after losing sight
 float speed = 1;        // Movement speed, lower is faster
 float hitbox = 3;       // Range of melee attacks
 #define HITBOX_DEFAULT 1.5		// if hitbox is this value, use default
@@ -49,7 +52,7 @@ integer BFL = 0x20;            // Don't roam unless a player is in range
 #define BFL_ATTACK_CD 0x4           // Waiting for attack
 #define BFL_DEAD 0x8                // Monster is dead
 #define BFL_CHASING 0x10            // Chasing a target
-
+#define BFL_PLAYERS_NEARBY 0x20     // LOD
 #define BFL_INITIALIZED 0x40        // Script initialized
 #define BFL_SEEKING 0x80			// Seeking a target received by MonsterMethod$seek
 //#define BFL_ANIMATOR_LOADED 0x80    // 
@@ -101,6 +104,7 @@ integer moveInDir(vector dir){
         list r = llCastRay(rayStart, gpos+dir+b, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]);
         vector hit = l2v(r, 1);
 		
+		//dout(llVecDist(rayStart, hit));
 		if(
 			// Too steep drop
 			(~getRF()&Monster$RF_FLYING && llList2Integer(r, -1) <=0)
@@ -108,7 +112,11 @@ integer moveInDir(vector dir){
             toggleMove(FALSE);
 			return FALSE;
         }
-
+        /*
+		if(~llSubStringIndex(prDesc(llList2Key(r,0)), "$M$"))
+			return FALSE;
+        */
+		
 		vector z = llList2Vector(r, 1);
 		if( getRF()&Monster$RF_FLYING )
 			z = gpos+dir;
@@ -176,8 +184,7 @@ timerEvent(string id, string data){
             
 			//llSetLinkPrimitiveParamsFast(2, [PRIM_TEXT, (str)wander+"\n"+portalConf$desc, <1,1,1>, 1]);
             // Find a random pos to go to maybe
-            if( wander == 0 || llFrand(1)>.1 )
-				return;
+            if(wander == 0 || llFrand(1)>.1 || ~BFL&BFL_PLAYERS_NEARBY)return;
 			
             vector a = llGetRootPosition()+<0,0,.5>;
             vector b = llGetRootPosition()+<0,0,.5>+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
@@ -193,118 +200,50 @@ timerEvent(string id, string data){
         } 
         
         
-		// Seeking a specific position
-        else if( STATE == MONSTER_STATE_SEEKING ){
-		
-            if( getRF()&Monster$RF_FOLLOWER ){
-			
+        else if(STATE == MONSTER_STATE_SEEKING){
+            if(getRF()&Monster$RF_IMMOBILE || FXFLAGS&fx$F_ROOTED)return;
+            if(getRF()&Monster$RF_FOLLOWER){	// Followers can't seek
 				setState(MONSTER_STATE_IDLE);
 				return;
-				
 			}
-
+			
 			vector gpos = llGetRootPosition();
 			
-			float md = 0.25;				// Min dist to be considered at target
+			float md = 0.1;				// Min dist to be considered at target
 			vector t = lastseen;		// Pos to go to
-			if( SEEKTARG ){ // External defined target
-			
+			if(SEEKTARG){ // External defined target
 				t = l2v(SEEKTARG, 0);
 				md = l2f(SEEKTARG, 1);
-				if( llGetListEntryType(SEEKTARG, 0) != TYPE_VECTOR )
+				if(llGetListEntryType(SEEKTARG, 0) != TYPE_VECTOR)
 					t = prPos(l2s(SEEKTARG,0));
-					
 			}
-			else if( count(WPOINTS) ){
-			
-				// Find the closest visible waypoint
-				int i;
-				for( ; i < count(WPOINTS) && count(WPOINTS); ++i ){
 					
-					list ray = llCastRay(llGetPos(), l2v(WPOINTS, i), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
-					
-					int r = l2i(ray, -1);
-					// Stop here
-					if( r != 0 ){
-					
-						if( i ){
-							
-							lastseen = t = l2v(WPOINTS, i-1)-<0,0,1>;
-							WPOINTS = llDeleteSubList(WPOINTS, 0, i-1);
-							
-						}
-						
-						jump found;
-						
-					}
-				
-				}
-				// Nothing found so we can remove everything except the last
-				if( count(WPOINTS) > 1 ){
-					WPOINTS = (list)l2v(WPOINTS, -1);
-				}
-				@found;
-				
-			}
-						
-			
 			float dist = llVecDist(<t.x, t.y, 0>, <gpos.x, gpos.y, 0>);
+            if(BFL & BFL_PLAYERS_NEARBY && dist>md && t != ZERO_VECTOR){
 			
-            if( 
-				dist > md && 
-				t != ZERO_VECTOR &&
-				~getRF()&Monster$RF_IMMOBILE && 
-				~FXFLAGS&fx$F_ROOTED
-			){
-			
-				// Todo: Animesh should have 0.5m above
-                list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, t+<0,0,0.5>, [
-					RC_DATA_FLAGS, RC_GET_ROOT_KEY, 
-					RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL
-				]);
-				                
-                if(
-					llList2Integer(ray, -1)==0 || 
-					l2k(ray, 0) == l2k(SEEKTARG, 0)
-				){
-				
-					// move towards the target
-                    if( moveInDir(t-gpos) ){
-
+				// Movement, hAdd() not added
+                list ray = llCastRay(llGetRootPosition()+<0,0,1>, t+<0,0,1>, [RC_DATA_FLAGS, RC_GET_ROOT_KEY, RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+                
+                if(llList2Integer(ray, -1)==0 || l2k(ray, 0) == l2k(SEEKTARG, 0)){
+                    if(moveInDir(t-gpos))
 						return;
-						
-					}
-						
                 }
-				
-				
             }
-			// We could not move towards the target.
-			
-			// We are seeking towards a scripted target.
-			if( SEEKTARG ){
-			
+			if(SEEKTARG){
 				BFL = BFL&~BFL_SEEKING;
-				if( dist < md )
+				if(dist<md){
 					raiseEvent(MonsterEvt$seekComplete, l2s(SEEKTARG, 2));
-				else
+				}
+				else{
 					raiseEvent(MonsterEvt$seekFail, l2s(SEEKTARG, 2));
-					
+				}
 				SEEKTARG = [];
-				
 			}
 			
-			// Unable to move towards the target so starte deleteing
-			lastseen = l2v(WPOINTS, 0);
-			WPOINTS = llDeleteSubList(WPOINTS, 0, 0);
-			if( lastseen != ZERO_VECTOR )
-				return;
-			
-			// Stop moving
 			integer s = MONSTER_STATE_IDLE;
-			if( chasetarg )
+			if(chasetarg){
 				s = MONSTER_STATE_CHASING;
-			
+			}
 			setState(s);
             
 			toggleMove(FALSE);
@@ -314,15 +253,13 @@ timerEvent(string id, string data){
         }
         
 		// Tracking a player
-        else if( STATE == MONSTER_STATE_CHASING ){
-		
+        else if(STATE == MONSTER_STATE_CHASING){
             BFL = BFL|BFL_CHASING;
 			
             vector ppos = prPos(chasetarg);
             
             // Player left sim or monster target died
-            if( ppos == ZERO_VECTOR ){
-			
+            if(ppos == ZERO_VECTOR){
 				setState(MONSTER_STATE_IDLE);
                 Status$dropAggro(chasetarg);
                 
@@ -330,18 +267,15 @@ timerEvent(string id, string data){
                 chasetarg = "";
                 toggleMove(FALSE);
                 return;
-				
             }
             
-			list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()-hoverHeight>, prPos(chasetarg)+<0,0,.5>, RC_DEFAULT + RC_DATA_FLAGS + RC_GET_ROOT_KEY);
-			
             // Close enough to attack
-			if( llVecDist(ppos, llGetRootPosition()) <= hitbox ){
-			
+			if(llVecDist(ppos, llGetRootPosition())<=hitbox){
 				if(~BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$inRange, chasetarg);
                 }
 	
+				list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()-hoverHeight>, prPos(chasetarg)+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 				
 				// This is where we request an attack
 				if(
@@ -355,7 +289,6 @@ timerEvent(string id, string data){
 					llList2Integer(ray, -1) == 0
 				){
 					
-					// ParseDesc here to save time
 					parseDesc(chasetarg, resources, status, fx, sex, team, mf);
 					
 					// not attackable
@@ -374,64 +307,41 @@ timerEvent(string id, string data){
 				}
 				
                 BFL = BFL|BFL_IN_RANGE;
-				
-			}
-			// Too far away
-			else{
-			
-				// Player moved out of melee range
-				if( BFL&BFL_IN_RANGE ){
-				
+			}else{
+				if(BFL&BFL_IN_RANGE){
                     raiseEvent(MonsterEvt$lostRange, chasetarg);
                     BFL = BFL&~BFL_IN_RANGE;
-					
                 }
-				
 			}
 			
 			// Stop moving at half the hitbox
-            if( llVecDist(ppos, llGetRootPosition()) <= hitbox/2 ){
-                
-				updateLookAt();
+            if(llVecDist(ppos, llGetRootPosition())<=hitbox/2){
+                updateLookAt();
 				toggleMove(FALSE);
-				
             }
             // Might be in range but should move closer
             else{
-				                
-				vector add = <0,0,1+hAdd()-hoverHeight>;	// Meters to raytrace to above us and target
-
-				// Cannot see the target
-                if( llList2Integer(ray, -1) > 0 ){
 				
-					// Wipe waypoints because we can now collect new ones
-					WPOINTS = [
-						lastseen
-					];
-					multiTimer((list)TIMER_WAYPOINT + 0 + .1 + FALSE);
-					setState(MONSTER_STATE_SEEKING);
-					
-                    if( getRF()&Monster$RF_FREEZE_AGGRO )
-						return;
-						
+				// Movement, hAdd() is not added
+                vector add = <0,0,1>;
+                if(llGetAgentInfo(chasetarg)&AGENT_CROUCHING)add = ZERO_VECTOR;
+                
+                list ray = llCastRay(llGetRootPosition()+add, ppos+add, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
+
+                if(llList2Integer(ray, -1)>0){
+                    if(getRF()&Monster$RF_FREEZE_AGGRO)return;
                     string desc = prDesc(llList2Key(ray, 0));
                     Status$dropAggro(chasetarg); 
 
-					
-					
-                }
-				
-				// can see target
-				else{
-				
+					setState(MONSTER_STATE_SEEKING);
+                    // dropAggro()
+                    //raiseEvent(MonsterEvt$lostTarget, chasetarg);
+                }else{
                     lastseen = ppos+add;
                     // move towards player
                     moveInDir(llVecNorm(ppos-llGetRootPosition()));
-					
                 }
-				
             }
-			
         }
         
     }
@@ -447,23 +357,6 @@ timerEvent(string id, string data){
 	else if(id == "INI"){
 		LocalConf$ini();
 	}
-	
-	else if( id == TIMER_WAYPOINT && STATE != MONSTER_STATE_CHASING ){
-		
-		int n = (int)data+1;
-		vector pos = prPos(tracktarg);
-		
-		int NUM_WPOINTS = floor(aptitude*10);
-		
-		if( pos == ZERO_VECTOR || n >= NUM_WPOINTS )
-			return;
-		
-		WPOINTS += pos;
-		setState(MONSTER_STATE_SEEKING);
-		multiTimer([TIMER_WAYPOINT, n, 0.1, FALSE]);
-	
-	}
-	
 }
 
 
@@ -475,8 +368,11 @@ onEvt(string script, integer evt, list data){
 		multiTimer(["INI", "", 5, FALSE]);	// Some times localconf fails, I don't know why
     }
     
+	if(Portal$isPlayerListIfStatement)
+		PLAYERS = data;
+	
 	// Tunnels legacy into the new command
-    if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
+    else if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
 		multiTimer(["INI"]);
 		list out = [];	// Strided list
 		integer i;
@@ -507,64 +403,54 @@ onEvt(string script, integer evt, list data){
 		list split = llParseString2List(llList2String(data,0), [";"], []);
         string task = llList2String(split, 0);
         
-        if( task == FRAME_AUDIO )
-			llPlaySound(llList2String(split,1), llList2Float(split,2));
-        else if( script == "got LocalConf" && evt == LocalConfEvt$emulateAttack )
+        if(task == FRAME_AUDIO)llPlaySound(llList2String(split,1), llList2Float(split,2));
+        else if(script == "got LocalConf" && evt == LocalConfEvt$emulateAttack)
 			attack();
         
     }
     
     else if(script == "got Status"){
-	
         if(evt == StatusEvt$dead){
-		
-            if( ~BFL&BFL_DEAD && llList2Integer(data,0) ){
+            if(~BFL&BFL_DEAD && llList2Integer(data,0)){
                 BFL = BFL|BFL_DEAD;
                 toggleMove(FALSE);
 				setState(MONSTER_STATE_IDLE);
 				chasetarg = "";
             }
-			
-			else if( !l2i(data, 0) )
+			else if(!l2i(data, 0))
 				BFL = BFL&~BFL_DEAD;
-				
-        }
-		
-		else if( evt == StatusEvt$monster_gotTarget ){
-		
+        }else if(evt == StatusEvt$monster_gotTarget){
 			chasetarg = llList2String(data, 0);
-			if( chasetarg )
-				tracktarg = chasetarg;
 			
-            if( BFL&(BFL_STOPON|BFL_SEEKING) )
-				return;
-				
-            if( llList2String(data, 0) != "" )
+            if(BFL&(BFL_STOPON|BFL_SEEKING))return;
+            if(llList2String(data, 0) != ""){    
 				setState(MONSTER_STATE_CHASING);
-            
-			
+            }
         }
-		
     }
     
+    else if(script == "jas MaskAnim" || script == "ton MeshAnim"){
+        if(evt == MeshAnimEvt$agentsInRange)
+            BFL = BFL|BFL_PLAYERS_NEARBY;    
+        else if(evt == MeshAnimEvt$agentsLost)
+            BFL = BFL&~BFL_PLAYERS_NEARBY;
+    }
 
 }
 
 attack(){
-
 	list odata = llGetPrimitiveParams([PRIM_POSITION, PRIM_ROTATION]);
 	list ifdata = llGetObjectDetails(chasetarg, [OBJECT_POS, OBJECT_ROT]);
 	vector pos = llList2Vector(odata,0);
 	vector dpos = llList2Vector(ifdata, 0);
 	
-	if(
-		~getRF()&Monster$RF_NOROT && 
-		chasetarg != "" && 
-		(look_override == "" || look_override == NULL_KEY)
-	)lookAt(<dpos.x, dpos.y, pos.z>);
+	if(~getRF()&Monster$RF_NOROT && chasetarg != "" && (look_override == "" || look_override == NULL_KEY))
+		lookAt(<dpos.x, dpos.y, pos.z>);
 	
-	raiseEvent(MonsterEvt$attack, chasetarg);
+	float dist = llVecDist(pos, dpos);
+	if(dist>hitbox*2)return;
 	
+	raiseEvent(MonsterEvt$attack, mkarr([chasetarg]));
 }
 
 // Settings received
@@ -596,15 +482,11 @@ onSettings(list settings){
 			wander = l2f(dta,0);
 		}
         
-		if( idx == MLC$height_add )
+		if(idx == MLC$height_add)
 			height_add = l2i(dta,0);
 		
 		if( idx == MLC$hover_height )
 			hoverHeight = l2f(dta, 0);
-		
-		if( idx == MLC$aptitude )
-			aptitude = l2f(dta, 0);
-			
 		
 	}
 	
@@ -632,6 +514,7 @@ default
     
     state_entry(){
 		llSetStatus(STATUS_PHANTOM, TRUE);
+        PLAYERS = [(string)llGetOwner()];
         if(llGetStartParameter())raiseEvent(evt$SCRIPT_INIT, "");
     }
 	/*

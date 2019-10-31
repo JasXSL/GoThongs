@@ -19,7 +19,11 @@ integer BFL = 0;
 
 #define isAnimesh() (RF&Monster$RF_ANIMESH)
 
-
+#define startAnim( anim ) \
+	MeshAnim$startAnim(anim); MaskAnim$start(anim)
+	
+#define stopAnim( anim ) \
+	MeshAnim$stopAnim(anim); MaskAnim$stop(anim)
 #define BFL_NOAGGRO (BFL_FRIENDLY|BFL_DEAD)
 
 #define initialized() (BFL&BFL_INITIALIZED)
@@ -38,6 +42,7 @@ list PLAYERS;
 float maxHP = -1;
 
 // Conf stuff
+int sex;
 float dmg = 10;         // Damage of melee attacks
 float HP = 100;
 float preHP = 1;
@@ -92,8 +97,8 @@ list cID;		// Custom ID (str)id, (var)mixed - Used for got Level integration
 #define setTeam(team) tDEF = team; outputStats(FALSE)
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
-// Description is $M$(int)team$(int)HP_BITWISE$(int)rAdd(decimeters)$(int)hAdd$(int)status_flags$(int)monster_flags$(int)fx_flags
-#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)rAdd+"$"+(str)hAdd+"$"+(str)SF+"$"+(str)RF+"$"+(str)FF);}
+// Description is $M$(int)team$(int)HP_BITWISE$(int)rAdd(decimeters)$(int)hAdd$(int)status_flags$(int)monster_flags$(int)fx_flags$sex
+#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)rAdd+"$"+(str)hAdd+"$"+(str)SF+"$"+(str)RF+"$"+(str)FF+"$"+(str)sex);}
 
 #define dropag( player, type ) \
 	runMethod((str)LINK_THIS, cls$name, StatusMethod$monster_dropAggro, [player, type], TNN)
@@ -209,6 +214,7 @@ outputStats( integer f ){
 		raiseEvent(StatusEvt$dead, "0");
 		SF = SF&~StatusFlag$dead;
 		MaskAnim$restartOverride("idle");
+		stopAnim("die");
 		AG = [];
 		AT = "";
 		
@@ -265,11 +271,7 @@ outputStats( integer f ){
 
 
 
-#define startAnim( anim ) \
-	MeshAnim$startAnim(anim); MaskAnim$start(anim)
-	
-#define stopAnim( anim ) \
-	MeshAnim$stopAnim(anim); MaskAnim$stop(anim)
+
 
 
 #define dtaInt l2i(dta,0)
@@ -324,6 +326,8 @@ outputStats( integer f ){
 			drops = dtaStr; \
 		if( idx == MLC$melee_height ) \
 			MH = dtaInt; \
+		if( idx == MLC$sex ) \
+			sex = dtaInt; \
 	} \
 	if(mhp == -1 || HP>maxHP) \
 		HP = maxHP; \
@@ -408,7 +412,7 @@ outputStats( integer f ){
 		} \
 	} \
     else if( id == "A" && ~BFL&BFL_NOAGGRO ){ \
-		parseDesc(AT, resources, status, fx, sex, team, monsterFlags); \
+		parseDesc(AT, resources, status, fx, sex, team, monsterFlags, armor); \
 		if( \
 			AT != "" && \
 			( \
@@ -489,7 +493,7 @@ default
 			integer type = llDetectedType(total);
 			
 			// These can not be relied on for PC
-			parseDesc(k, resources, status, fx, sex, team, mf);
+			parseDesc(k, resources, status, fx, sex, team, mf, armor);
 			vector ppos = prPos(k);
 			float dist =llVecDist(ppos, llGetRootPosition());
 			float range = AR;
@@ -546,14 +550,6 @@ default
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    
     // Here's where you receive callbacks from running methods
 	
 	// Methods that should be allowed even when not initialized
@@ -639,7 +635,7 @@ default
 						fmdt *= l2f(fmDT, pos*2+1);
 							
 					amount*=fmdt;
-					parseDesc(attacker, _r, _s, _f, _st, team, _mo)
+					parseDesc(attacker, _r, _s, _f, _st, team, _mo, _a)
 					if( attacker != "" && team != TEAM )
 						ag(attacker, llFabs(amount));
 					
@@ -683,9 +679,12 @@ default
 	}
 	
 	if(METHOD == StatusMethod$fullregen){
+	
 		BFL = BFL|BFL_INITIALIZED;
 		HP = maxHP;
+		
 		outputStats(TRUE);
+		
 	}
 	else if(METHOD == StatusMethod$setTeam){ setTeam(l2i(PARAMS, 0)); }
 		
@@ -748,25 +747,29 @@ default
 		outputStats(TRUE);
 		
 		// The monster will remove itself
-		if(~RF&Monster$RF_NO_DEATH){
+		if( ~RF&Monster$RF_NO_DEATH ){
 		
-			// Drop loot
-			list d = llListRandomize(llJson2List(drops), 1);
-			list_shift_each(d, val,
-				if(llFrand(1)<(float)j(val, 1)){ 
-					Spawner$spawn(j(val,0), (llGetRootPosition()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
-					d = [];
-				}
-			)
+			if( ~RF & Monster$RF_MINOR ){
 			
-			float rand = llFrand(1);
-			if( maxHP >= 40 && rand < 0.2 ){
-			
-				list ray = llCastRay(llGetPos()+<0,0,1>, llGetPos()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
-				if( l2i(ray, -1) == 1 ){
-					
-					vector pos = l2v(ray, 1)+<0,0,.75>;
-					Spawner$spawn("Armor Scraps", pos, 0, "", FALSE, TRUE, "ARMOR");
+				// Drop loot
+				list d = llListRandomize(llJson2List(drops), 1);
+				list_shift_each(d, val,
+					if(llFrand(1)<(float)j(val, 1)){ 
+						Spawner$spawn(j(val,0), (llGetRootPosition()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
+						d = [];
+					}
+				)
+				
+				float rand = llFrand(1);
+				if( maxHP >= 40 && rand < 0.2 ){
+				
+					list ray = llCastRay(llGetPos()+<0,0,1>, llGetPos()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
+					if( l2i(ray, -1) == 1 ){
+						
+						vector pos = l2v(ray, 1)+<0,0,.75>;
+						Spawner$spawn("Armor Scraps", pos, 0, "", FALSE, TRUE, "ARMOR");
+						
+					}
 					
 				}
 				
@@ -802,7 +805,7 @@ default
 	}
 
 	// Drop aggro from this
-    else if(METHOD == StatusMethod$monster_dropAggro){
+    else if( METHOD == StatusMethod$monster_dropAggro ){
 	
 		key player = method_arg(0);
 		integer complete = l2i(PARAMS, 0);

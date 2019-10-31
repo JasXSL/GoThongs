@@ -1,3 +1,5 @@
+#ifndef _gotLevelData
+#define _gotLevelData
 
 #define gotLevelDataMethod$cellDesc 1	 		// (str)description - Cell Description received from database
 #define gotLevelDataMethod$cellData 2			// (var)questData - QuestData received from database
@@ -9,8 +11,11 @@
 
 #define gotLevelData$cellData(data) runMethod(ROOT_LEVEL, "got LevelData", gotLevelDataMethod$cellData, [data], TNN)
 #define gotLevelData$cellDesc(desc) runMethod(ROOT_LEVEL, "got LevelData", gotLevelDataMethod$cellDesc, [desc], TNN)
-#define gotLevelData$died() runOnPlayers(targ, runOmniMethodOn(targ, "got LevelData", gotLevelDataMethod$died, [], TNN);)
+#define gotLevelData$died( killer ) runOnPlayers(targ, runOmniMethodOn(targ, "got LevelData", gotLevelDataMethod$died, (list)killer, TNN);)
 #define gotLevelData$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got LevelData", gotLevelDataMethod$setFinished, [player, overrideFinish], TNN)
 #define gotLevelData$difficulty(difficulty, challenge) runMethod(ROOT_LEVEL, "got LevelData", gotLevelDataMethod$difficulty, [difficulty, challenge], TNN)
 #define gotLevelData$enableWipeTracker() runMethod((str)LINK_THIS, "got LevelData", gotLevelDataMethod$enableWipeTracker, [], TNN)
 #define gotLevelData$getScripts(targ, pin, scripts) runMethod((str)targ, "got LevelData", gotLevelDataMethod$getScripts, [pin, scripts], TNN)
+
+
+#endif

@@ -97,8 +97,8 @@ default{
 				string anim = l2s(FETCH_REQS, 0);
 				float time = l2f(FETCH_REQS, 1);
 				
-				if( time+5 > llGetTime() )
-					llStartObjectAnimation(anim);
+				if( llGetTime()-time < 5 )
+					anim(anim, TRUE);
 				
 				FETCH_REQS = llDeleteSubList(FETCH_REQS, i, i+1);
 				i -= 2;
@@ -138,24 +138,27 @@ default{
 				}
 			}
 			
-			string anim = method_arg(0);
-			integer start = l2i(PARAMS, 1);
-			integer exists = llGetInventoryType(anim) == INVENTORY_ANIMATION;
-			if( exists ){
-				
-				llStopObjectAnimation(anim);
-				if( start )
-					llStartObjectAnimation(anim);
+			list anims = llJson2List(method_arg(0));
+			list_shift_each( anims, anim, 
+			
+				integer start = l2i(PARAMS, 1);
+				integer exists = llGetInventoryType(anim) == INVENTORY_ANIMATION;
+				if( exists ){
 					
-			}
-			else if( start && llListFindList(FETCH_REQS, (list)anim) == -1 ){
+					anim(anim, FALSE);
+					if( start )
+						anim(anim, TRUE);
+						
+				}
+				else if( start && llListFindList(FETCH_REQS, (list)anim) == -1 ){
+						
+					// Request from owner
+					FETCH_REQS = FETCH_REQS + anim + llGetTime();
+					AnimHandler$get(llGetOwner(), (list)anim);
 					
-				// Request from owner
-				FETCH_REQS = FETCH_REQS + anim + llGetTime();
-				AnimHandler$get(llGetOwner(), (list)anim);
+				}
 				
-			}
-		
+			)
 		}
         
         

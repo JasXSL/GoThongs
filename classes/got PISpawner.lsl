@@ -1,3 +1,6 @@
+#ifndef _PISpawner
+#define _PISpawner
+
 // Player interaction spawner
 
 // Has custom methods above 100
@@ -14,3 +17,6 @@
 #define gotPISpawner$generateInteraction(players, duration, pos, rot, no_instigator) runMethod(llGetOwner(), "got PISpawner", gotPiSpawnerMethod$generateInteraction, (list)mkarr((list)players)+duration+pos+rot+no_instigator, TNN)
 
 #define gotPISpawner$callback(targ, raw_data) runMethod((str)targ, "got PISpawner", gotPiSpawnerMethod$callback, (list)raw_data, TNN)
+
+#endif
+

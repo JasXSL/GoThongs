@@ -1,3 +1,5 @@
+#ifndef _RootAux
+#define _RootAux
 /*
 	
 	Script resides in the cyan library box
@@ -14,3 +16,4 @@
 #define RootAuxEvt$cleanup 1					// (bool)manual - Sent when the user hits the cleanup button. Manual means cleanup was triggered by the user. Non manual was triggered by a script
 
 
+#endif

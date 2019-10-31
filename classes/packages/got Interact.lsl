@@ -98,7 +98,7 @@ onDesc(key obj, string text){
 		else{
 		
 			text = llGetDisplayName(obj);
-			parseDesc(l2k(PLAYER_HUDS, pos), resources, status, fx, sex, team, monsterflags);
+			parseDesc(l2k(PLAYER_HUDS, pos), resources, status, fx, sex, team, monsterflags, armor);
 			if( status&StatusFlag$coopBreakfree )
 				text = "Break Free";
 		}

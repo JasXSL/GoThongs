@@ -1,3 +1,6 @@
+#ifndef _SpellAux
+#define _SpellAux
+
 //#define SpellAuxMethod$cache 1			// void
 //#define SpellAuxMethod$finishCast 2		// (int)spell, (arr)targets, (int)wipe_cooldown
 //#define SpellAuxMethod$startCast 3		// (int)spell
@@ -18,3 +21,5 @@
 #define SpellAuxEvt$crit 1					// (int)index - A critical hit has been scored
 
 #define SpellAux$tunnel( wrapper, targets, range, tunnelFlags ) runMethod((str)LINK_ROOT, "got SpellAux", SpellAuxMethod$tunnel, (list)wrapper + mkarr(targets) + range + tunnelFlags, TNN)
+
+#endif

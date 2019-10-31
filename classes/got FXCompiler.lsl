@@ -1,4 +1,5 @@
-
+#ifndef _gotFXCompiler
+#define _gotFXCompiler
 
 #define FXCFlag$STUNNED 1
 
@@ -84,7 +85,7 @@
 
 // Builds conversion: FXC$buildConversion(20,FX$CONVERSION_HP,FX$CONVERSION_MANA, FX$CF_DONT_REDUCE)
 #define FXC$buildConversion(percent, from, to, flags, multiplier) \
-    (percent|(from<<7)|(to<<9)|(flags<<11)|(multiplier<<14))
+    (percent|(from<<7)|(to<<9)|((flags)<<11)|(multiplier<<14))
 
 #define FXC$conversionPerc(conversion) (conversion&127)
 #define FXC$conversionFrom(conversion) ((conversion>>7)&3)
@@ -248,4 +249,7 @@
 	}\
 
 	
+	
+	
+#endif
 	

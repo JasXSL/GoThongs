@@ -32,36 +32,33 @@ default{
     timer(){multiTimer([]);}
     
     #include "xobj_core/_LM.lsl"
-    /*
-        Included in all these calls:
-        METHOD - (int)method
-        PARAMS - (var)parameters
-        SENDER_SCRIPT - (var)parameters   
-        CB - The callback you specified when you sent a task
-    */ 
     if( method$isCallback || !method$byOwner )
         return;
         
-    if( METHOD == gotClassAttMethod$spellStart ){
-        
-		float timeout = l2f(PARAMS, 1);
-		if( timeout <= 0 )
-			timeout = 1;
+	if( METHOD == gotClassAttMethod$raiseEvent ){
 		
-		raiseEvent(gotClassAttEvt$spellStart, mkarr(PARAMS));
-        multiTimer(["P_"+method_arg(0), "", timeout, FALSE]);
-        
-    }
-    
-    else if( METHOD == gotClassAttMethod$spellEnd ){
-        
-		multiTimer(["P_"+method_arg(0)]);
-		raiseEvent(gotClassAttEvt$spellEnd, mkarr(PARAMS));
+		int evt = l2i(PARAMS, 0);
+		list data = llDeleteSubList(PARAMS, 0, 0);
+		raiseEvent(evt, mkarr(data));
 		
-    }
-	else if( METHOD == gotClassAttMethod$stance )
-		raiseEvent(gotClassAttEvt$stance, mkarr(PARAMS));
-	
+		if( evt == gotClassAttEvt$spellStart ){
+		
+			float timeout = l2f(data, 1);
+			if( timeout <= 0 )
+				timeout = 1;
+			multiTimer(["P_"+l2s(data, 0), "", timeout, FALSE]);
+			
+		}
+		
+		else if( evt == gotClassAttEvt$spellEnd ){
+			
+			multiTimer(["P_"+l2s(data, 0)]);
+			
+		}
+		
+	}
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"  
 }
+
+

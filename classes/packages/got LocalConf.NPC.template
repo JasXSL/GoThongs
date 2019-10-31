@@ -25,7 +25,8 @@
 	#define cf$HEIGHT_ADD 0 (Used for calculating line of sight, mostly used for very large bosses)
 	#define cf$MELEE_HEIGHT 0 (Used for roleplay. 0 = groin level, 1 = chest level, -1 = anything else)
 	#define cf$HOVER_HEIGHT 0 (Used for levitating monsters and animesh. Offsets the bottom of the monster)
-
+	#define cf$APTITUDE 1
+	#define cf$SEX 0 (sex flags)
 
 	Events (these are preprocessor macros:
 	#define onInit( int live ) | Raised on state entry and when portal initializes
@@ -120,13 +121,18 @@
 #ifndef cf$HOVER_HEIGHT
 	#define cf$HOVER_HEIGHT 0
 #endif
+#ifndef cf$APTITUDE
+	#define cf$APTITUDE 3.0
+#endif
+#ifndef cf$SEX
+	#define cf$SEX 0
+#endif
 
 list PLAYERS;
 list PLAYER_HUDS;
 integer TEAM;
 list SPELLS = [];
 key AGGRO;
-list INI_DATA = [cf$FLAGS,cf$SPEED,cf$HITBOX,cf$ATKSPEED,cf$DMG,cf$WANDER,cf$HP,cf$AGGRO_RANGE,cf$SOUND_AGGRO,cf$SOUND_AGGRO_LOST,cf$SOUND_TAKEHIT,cf$SOUND_ATTACK,cf$SOUND_DEATH,cf$ICON,cf$SCENE_ALIAS,cf$DROPS,cf$TEAM,cf$RANGE_ADD,cf$HEIGHT_ADD,cf$MELEE_HEIGHT,cf$HOVER_HEIGHT];
 #ifdef FX_PRIM
 	int P_FX;
 #endif
@@ -247,8 +253,34 @@ default{
 		#ifdef onInternalMethod
 			onInternalMethod( SENDER_SCRIPT, METHOD, PARAMS, id );
 		#endif
-        if(METHOD == LocalConfMethod$ini)
+        if(METHOD == LocalConfMethod$ini){
+			list INI_DATA = [
+				cf$FLAGS,
+				cf$SPEED,
+				cf$HITBOX,
+				cf$ATKSPEED,
+				cf$DMG,
+				cf$WANDER,
+				cf$HP,
+				cf$AGGRO_RANGE,
+				cf$SOUND_AGGRO,
+				cf$SOUND_AGGRO_LOST,
+				cf$SOUND_TAKEHIT,
+				cf$SOUND_ATTACK,
+				cf$SOUND_DEATH,
+				cf$ICON,
+				cf$SCENE_ALIAS,
+				cf$DROPS,
+				cf$TEAM,
+				cf$RANGE_ADD,
+				cf$HEIGHT_ADD,
+				cf$MELEE_HEIGHT,
+				cf$HOVER_HEIGHT,
+				cf$APTITUDE,
+				cf$SEX
+			];
             raiseEvent(LocalConfEvt$iniData, mkarr(INI_DATA));
+		}
     }
 
 	#ifdef onMethod

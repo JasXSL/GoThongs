@@ -219,6 +219,8 @@ default{
                 
         )
 		
+		llSetStatus(STATUS_PHANTOM, TRUE);
+		
 		integer i;
         list names = llGetObjectAnimationNames();
         for(i=0; i<count(names); ++i )
@@ -259,6 +261,11 @@ default{
         
         if( perm & PERMISSION_TRIGGER_ANIMATION ){
             
+			list anims = llGetAnimationList(llGetOwner());
+			list_shift_each(anims, anim,
+				llStopAnimation(anim);
+			)
+			
             if( ANIM )
                 llStartAnimation(ANIM+"_t");
             setThrustTimer();

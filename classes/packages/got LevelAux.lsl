@@ -22,10 +22,12 @@ list MONSTERS_KILLED;
 	if(script == "got Level" && evt == LevelEvt$idDied){ \
 		 \
 		key id = l2s(data, 0); \
-		vector pos = prPos(id); \
-		list arr = [llKey2Name(id), "<"+roundTo(pos.x,2)+","+roundTo(pos.y,2)+","+roundTo(pos.z,2)+">"]; \
-		MONSTERS_KILLED += [mkarr(arr)]; \
-		 \
+		parseMonsterFlags(id, mFlags) \
+		if( ~mFlags&Monster$RF_MINOR ){ \
+			vector pos = prPos(id); \
+			list arr = [llKey2Name(id), "<"+roundTo(pos.x,2)+","+roundTo(pos.y,2)+","+roundTo(pos.z,2)+">"]; \
+			MONSTERS_KILLED += [mkarr(arr)]; \
+		}\
 	} \
 	else if(script == "got Level" && evt == LevelEvt$players) \
 		PLAYERS = data; \

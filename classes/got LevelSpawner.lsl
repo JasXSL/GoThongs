@@ -1,3 +1,6 @@
+#ifndef _gotLevelSpawner
+#define _gotLevelSpawner
+
 /*
 
 	This script loads the levels from the HUD
@@ -11,3 +14,5 @@
 #define LevelSpawner$spawnLevelOwner(level) runMethod((string)llGetOwner(), "got LevelSpawner", LevelSpawnerMethod$spawnLevel, [level], TNN)
 #define LevelSpawner$remInventory(assets) runMethod((string)LINK_ALL_OTHERS, "got LevelSpawner", LevelSpawnerMethod$remInventory, [mkarr(assets)], TNN)
 #define LevelSpawner$setLoading(targ) runMethod((string)targ, "got LevelSpawner", LevelSpawnerMethod$setLoading, [], TNN)
+
+#endif

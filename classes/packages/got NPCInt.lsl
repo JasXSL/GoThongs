@@ -44,7 +44,8 @@ sendTextures( string target ){
 	string out = "";
 	integer i;
     for( ; i<count(SPI); i+=SPSTRIDE ){
-		if( ~l2i(SPI, i+4)&PF_DETRIMENTAL || l2s(SPI, i+3) == t )		// Show beneficial effects and sender effects
+		int f = l2i(SPI, i+4);
+		if( ~f&PF_DETRIMENTAL || l2s(SPI, i+3) == t || f&PF_FULL_VIS )		// Show beneficial effects and sender effects
 			out+= l2s(SPI, i)+","+l2s(SPI,i+1)+","+l2s(SPI,i+4)+",";
 	}
 	out = llDeleteSubString(out, -1, -1);	// Remove trailing comma

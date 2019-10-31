@@ -1,3 +1,6 @@
+#ifndef _Projectile
+#define _Projectile
+
 // Set object description to 1 or [1] (first JSON element of desc) to prevent default behavior
 // Projectile description array index
 #define ProjectileDesc$preventDefault 0			// Prevents default behavior
@@ -13,3 +16,5 @@
 
 // For projectiles using the got Projectile.template template:
 #define Projectile$quickSpawn(obj, targ, startpos, startrot) llRezAtRoot(obj, startpos, ZERO_VECTOR, startrot, (int)("0x"+llGetSubString((string)targ,0,7)))
+
+#endif

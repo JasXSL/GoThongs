@@ -1,3 +1,6 @@
+#ifndef _NPCSpells
+#define _NPCSpells
+
 #define NPCSpellsMethod$setSpells 1			// Array of spell objects, see below
 #define NPCSpellsMethod$interrupt 2			// (int)force
 #define NPCSpellsMethod$startCast 3			// (int)id - Returns true/false
@@ -49,6 +52,7 @@
 #define NPCSpells$setOutputStatusTo(targs) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setOutputStatusTo, targs, TNN)
 #define NPCSpells$silence(silenced) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$silence, [silenced], TNN)
 #define NPCSpells$customCast(flags, casttime, name, targ) runMethod((str)LINK_THIS, "got NPCSpells", NPCSpellsMethod$customCast, [flags, casttime, name, targ], TNN)
-#define NPCSpells$disableSpells(targ, spells) runMethod((str)targ, "got NPCSpells", NPCSpellsMethod$disableSpells, spells, TNN)
+#define NPCSpells$disableSpells(targ, spells) runMethod((str)targ, "got NPCSpells", NPCSpellsMethod$disableSpells, (list)spells, TNN)
 
+#endif
 

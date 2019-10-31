@@ -60,9 +60,21 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			SpellMan$reduceCD(llDeleteSubList(fx, 0, 0));
 		}
 		
-		else if( t == fx$LOOK_AT )
-			llOwnerSay("@setrot:"+l2s(fx, 1)+"=force");
-			
+		else if( t == fx$LOOK_AT ){
+			float r = l2f(fx, 1);
+			vector vec = (vector)l2s(fx, 1);
+			if( vec ){
+				vec = vec-llGetRootPosition();
+				vector fwd = vec * <0.0, 0.0, -llSin(PI_BY_TWO * 0.5), llCos(PI_BY_TWO * 0.5)>;
+				fwd.z = 0.0;
+				fwd = llVecNorm(fwd);
+				vector left = fwd * <0.0, 0.0, llSin(PI_BY_TWO * 0.5), llCos(PI_BY_TWO * 0.5)>;
+				rotation rot = llAxes2Rot(fwd, left, fwd % left);
+				vector euler = -llRot2Euler(rot);
+				r = euler.z;
+			}
+			llOwnerSay("@setrot:"+(string)r+"=force");
+		}
 		
 		else if( t == fx$DAMAGE_ARMOR )
 			Status$damageArmor(LINK_ROOT, l2i(fx, 1));

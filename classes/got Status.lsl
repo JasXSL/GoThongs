@@ -1,3 +1,6 @@
+#ifndef _GotStatus
+#define _GotStatus
+
 #define StatusMethod$debugOut 0				// void - Outputs into chat: [(int)maxHP, (int)maxMana, (int)maxArousal, (int)maxPain]
 
 // debug got Status, 1, 0, 0, 1, -2000 - damage self 20 HP
@@ -55,6 +58,8 @@
 // Climbable items onStart and onEnd events can contain a JSON array: [(int)flags]
 #define StatusClimbFlag$root_at_end 1		// Set onEnd to root for 1.5 sec after dropping off the ladder or thing
 
+
+#endif
  
 
 #define StatusEvt$flags 1					// (int)current_flags, (int)previous_flags - To get newly added flags do current_flags&~previous_flags, to get removed flags do previous_flags&~current_flags
@@ -92,7 +97,13 @@
 		(!!Status$getArmorVal( armor, Status$armorSlot$ARMS))+ \
 		(!!Status$getArmorVal( armor, Status$armorSlot$BOOTS))+ \
 		(!!Status$getArmorVal( armor, Status$armorSlot$GROIN))
-		
+	// Splits an armor integer to a list
+	#define Status$splitArmor( armor ) \
+		(list)Status$getArmorVal(armor, Status$armorSlot$HEAD)+ \
+		Status$getArmorVal(armor, Status$armorSlot$CHEST)+ \
+		Status$getArmorVal(armor, Status$armorSlot$ARMS)+ \
+		Status$getArmorVal(armor, Status$armorSlot$BOOTS)+ \
+		Status$getArmorVal(armor, Status$armorSlot$GROIN)
  
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC
@@ -117,7 +128,7 @@
 
 #define runOnAttackable(huds, targ, run) { integer _i; for(_i=0; _i<count(huds); ++_i){  \
 	key targ = l2k(huds, _i); \
-	parseDesc(targ, resources, status, fx, sex, team, monsterflags) \
+	parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor) \
 	if(_attackableV(status, fx)){ \
 		run \
 	} \

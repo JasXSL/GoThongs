@@ -1,3 +1,6 @@
+#ifndef _GotFX
+#define _GotFX
+
 /*
 
 	You'll need a few functions.
@@ -49,13 +52,13 @@
 
 #define FX$send(target, sender, wrapper, team) runMethod(target, "got FX", FXMethod$run, ([sender, wrapper, 0, team]), TNN)
 #define FX$sendCB(target, sender, wrapper, cb, team) runMethod(target, "got FX", FXMethod$run, ([sender, wrapper, 0, team]), cb)
-#define FX$run(sender, wrapper) runMethod((string)LINK_ROOT, "got FX", FXMethod$run, ([sender, wrapper]), TNN)
+#define FX$run(sender, wrapper) runMethod((string)LINK_ROOT, "got FX", FXMethod$run, (list)(sender)+(wrapper), TNN)
 #define FX$refresh() runMethod((string)LINK_SET, "got FX", FXMethod$refresh, [], TNN)
 #define FX$rem(raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel) runMethod((string)LINK_SET, "got FX", FXMethod$rem, ([raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel]), TNN)
 #define FX$remByNameCB(targ, name, cb) runMethod((string)targ, "got FX", FXMethod$rem, (list)0 + name + "" + "" + "" + "" + 0 + 0 + 0, cb)
 #define FX$aoe(range, sender, wrapper, team) runLimitMethod((str)AOE_CHAN, "got FX", FXMethod$run, ([sender, wrapper, range, team]), TNN, range) 
 // Tags can be a JSON array or a single tag
-#define FX$hasTags(targ, tags, cb) runMethod(targ, "got FX", FXMethod$hasTags, [tags], cb)
+#define FX$hasTags(targ, tags, cb) runMethod(targ, "got FX", FXMethod$hasTags, (list)(tags), cb)
 #define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig]), TNN)
 
 #ifndef fx$COND_HAS_PACKAGE_NAME
@@ -149,6 +152,7 @@ string FX_buildCondition(integer cond, list vars){
 #define PF_TRIGGER_IMMEDIATE 0x80		// 128 Runs as an instant effect once when it's added
 #define PF_NO_DISPEL 0x100				// 256
 #define PF_STACK_TIME 0x200				// Adds time to any existing spell instead of resetting to max time
+#define PF_FULL_VIS 0x400				// Show to all targeters regardless of who added it
 
 // an integer PID gets added on the end when added to FX
 
@@ -174,4 +178,8 @@ list FX_fround(float input){
 }
 
 
+
+
+
+#endif
 

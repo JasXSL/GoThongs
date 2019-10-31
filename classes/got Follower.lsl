@@ -1,3 +1,6 @@
+#ifndef _gotFollower
+#define _gotFollower
+
 /*
 	
 	Script for NPCs in follower mode.
@@ -17,4 +20,4 @@
 #define Follower$disable() runMethod((str)LINK_ROOT, "got Follower", FollowerMethod$disable, [], TNN)
 
 
-
+#endif

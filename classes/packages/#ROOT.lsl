@@ -582,6 +582,8 @@ default
 		setTarget(TARG, TARG_ICON, TRUE, -1);
 		
 	}
+	else if( METHOD == RootMethod$getTarget )
+		CB_DATA = (list)TARG;
 
     // Public code can be put here
 

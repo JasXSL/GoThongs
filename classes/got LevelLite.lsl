@@ -1,3 +1,5 @@
+#ifndef _gotLevelLite
+#define _gotLevelLite
 /*
 	
 	This is a lite implementation of the level script used for sublevels. It should be put in the sublevel root prim.
@@ -26,4 +28,4 @@
 
 #define LevelLite$loadSharp(group) runOmniMethod("got LevelLite", LevelMethod$load, [0,group], TNN)
 
-
+#endif

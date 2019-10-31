@@ -1,3 +1,6 @@
+#ifndef _SpellFX
+#define _SpellFX
+
 #define SpellFXMethod$spawn 1		// [(str)obj, (key)targ]
 #define SpellFXMethod$getTarg 2		// NULL - Returns targ for obj name
 #define SpellFXMethod$sound 3		// (key)sound, (float)vol, (int)loop - If sound is "", stop sound
@@ -20,4 +23,6 @@
 #define SpellFX$remInventory(assets) runMethod((string)LINK_SET, "got SpellFX", SpellFXMethod$remInventory, [mkarr(assets)], TNN)
 #define SpellFX$fetchInventory(assets) runMethod(llGetOwner(), "got SpellFX", SpellFXMethod$fetchInventory, [assets], TNN)
 #define SpellFX$spawnInstantTarg(t, data, targ) runMethod((string)t, "got SpellFX", SpellFXMethod$spawnInstant, [data, targ], TNN)
- 
+
+
+#endif 

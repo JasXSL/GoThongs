@@ -1,3 +1,6 @@
+#ifndef _ThongMan
+#define _ThongMan
+
 #define ThongManMethod$attached 1			// Removes any other thongs
 #define ThongManMethod$reset 2				// (bool)output_debug - Resets thongMan
 //#define ThongManMethod$get 3				// Gets the thong to send a refresh call to #ROOT
@@ -25,3 +28,4 @@
 #define ThongManEvt$getVisuals 3			// void - Get visuals from helper of custom thong
 #define ThongManEvt$death 4					// [(int)dead] - If the player lost their thong or not
 
+#endif

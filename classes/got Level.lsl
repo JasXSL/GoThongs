@@ -1,3 +1,6 @@
+#ifndef _gotLevel
+#define _gotLevel
+
 #define LevelMethod$update 0		// Updates scripts from HUD
 #define LevelMethod$loaded 1		// (int)HUD_loaded - 2 = Scripts from HUD loaded, 1 = Monsters, 0 = Assets Whenever the loader has finished
 //#define LevelMethod$died 2			// MOVED to got LevelData
@@ -57,7 +60,7 @@
 #define LevelEvt$fetchObjectives 9	// [(key)clicker] - Try to fetch objectives if there are any
 #define LevelEvt$potion 10			// [(key)agent, (str)name] Potion used
 
-#define LevelEvt$playerDied 11		// [(key)hud] - Raised when a player dies
+#define LevelEvt$playerDied 11		// [(key)hud, (key)killer] - Raised when a player dies
 #define LevelEvt$difficulty 12		// (int)difficulty, (bool)challenge - This is only raised when a quest starts. Mostly useful for challenge mode since you can't change difficulty.
 
 #define LevelEvt$wipe 13			// All players dead (wipe tracker enabled)
@@ -104,7 +107,7 @@
 #define _lSharp() ((integer)db3$get("got Level", (list)LevelShared$isSharp))
 
 
-
+#endif
 
 
 

@@ -1,3 +1,6 @@
+#ifndef _SpellMan
+#define _SpellMan
+
 #define SpellManMethod$hotkey 1			// (str)text
 #define SpellManMethod$interrupt 2		// NULL
 #define SpellManMethod$rebuildCache 3	// void - rebuilds from shared: BridgeSpells$name
@@ -40,5 +43,5 @@
 
 
 
-
+#endif
 

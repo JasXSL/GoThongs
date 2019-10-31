@@ -1,3 +1,6 @@
+#ifndef _WeaponLoader
+#define _WeaponLoader
+
 #define WeaponLoaderMethod$toggleSheathe 1			// (int)sheathed - Use -1 to toggle
 #define WeaponLoaderMethod$anim 2					// Trigger an animation based on the current weapon. Also unsheathes.
 #define WeaponLoaderMethod$storeOffset 3			// (vector)pos, (rotation)rot
@@ -15,3 +18,5 @@
 #define WeaponLoader$storeScale(scale) runMethod((str)llGetOwner(), "got WeaponLoader", WeaponLoaderMethod$storeScale, [scale], TNN)  
 #define WeaponLoader$remInventory(data) runMethod((str)LINK_SET, "got WeaponLoader", WeaponLoaderMethod$remInventory, data, TNN)
 #define WeaponLoader$fxStance(stance, begin) runMethod((str)LINK_SET, "got WeaponLoader", WeaponLoaderMethod$fxStance, (list)stance+begin, TNN)
+
+#endif

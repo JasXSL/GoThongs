@@ -136,7 +136,7 @@ default
 
 	if( METHOD == gotLevelDataMethod$died && ~BFL&BFL_WIPED ){
 
-		Level$raiseEvent(LevelEvt$playerDied, [id]);
+		Level$raiseEvent(LevelEvt$playerDied, (list)id + method_arg(0));
 		
 		++DEATHS;
 		

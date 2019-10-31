@@ -1,3 +1,6 @@
+#ifndef _Spawner
+#define _Spawner
+
 #define SpawnerMethod$spawn 1				// (str)obj, (vec)pos, (rot)rotation, (str)desc, (str)spawnround - Spawnround is a label that you can remove by
 #define SpawnerMethod$debug 2				// void - Outputs the queue into chat if something gets stuck
 #define SpawnerMethod$remInventory 3		// [(arr)items] - Removes inventory items
@@ -11,4 +14,4 @@
 #define Spawner$getAsset(item) runMethod(llGetOwner(), "got Spawner", SpawnerMethod$getAsset, [item], TNN)
 
 
-
+#endif

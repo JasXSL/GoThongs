@@ -123,11 +123,12 @@ float rCnv( integer ty, float am ){
 	
 	for(i=0; i<count(fxC); ++i){
 		integer conv = l2i(fxC, i);
-		integer d = FXC$conversionNonDetrimental(conv);
-		
+		integer onDetri = !(FXC$conversionNonDetrimental(conv));
+				
+
 		if( 
 			FXC$conversionFrom(conv) == ty && 
-			((!isDetrimental && d) || (isDetrimental && !d))
+			onDetri == isDetrimental
 		){
 			
 			float mag = FXC$conversionPerc(conv)/100.;
@@ -138,7 +139,7 @@ float rCnv( integer ty, float am ){
 			float amt = am*mag*FXC$conversionMultiplier(conv);
 			
 			// Flips amt
-			if(FXC$conversionInverse(conv))
+			if( FXC$conversionInverse(conv) )
 				amt = -amt;
 			
 			integer ndx = llListFindList(conversions, [b]);
@@ -314,7 +315,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 				raiseEvent(StatusEvt$death_hit, "");
 		}
 		else
-			onDeath( "" );
+			onDeath( "", atkr );
 			
 		
     }else{
@@ -332,6 +333,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 			SF = SF&~StatusFlag$coopBreakfree;
 			
             raiseEvent(StatusEvt$dead, 0);
+			gotClassAtt$dead(0);
             Rape$end();
             AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
 			
@@ -488,7 +490,7 @@ float spdmtm( string sn, key c ){
 }
 
 
-onDeath( string customAnim ){
+onDeath( string customAnim, key killer ){
 
 	// Player dead already
 	if(SF&StatusFlag$dead)
@@ -499,10 +501,11 @@ onDeath( string customAnim ){
 	SF = SF|StatusFlag$dead;
 	BFL = BFL&~BFL_AVAILABLE_BREAKFREE;
 	
-	gotLevelData$died();
+	gotLevelData$died(killer);
 	
 	OS( TRUE );
 	raiseEvent(StatusEvt$dead, 1);
+	gotClassAtt$dead(1);
 	AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
 		
 	float dur = 20;
@@ -597,8 +600,10 @@ onEvt( string script, integer evt, list data ){
 		US = l2i(data, BSUD$SETTING_FLAGS);
 	}
 		
-	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" )
+	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" ){
 		dArm(-1000);
+		OS(FALSE);
+	}
 	
     else if( script == "got Rape" ){
 	
@@ -675,18 +680,20 @@ float cH;		// cache Health
 float cM;		// cache Mana
 float cA;		// cache Arousal
 float cP;		// cache Pain
+integer cC;		// cache Clothes (armor)
 
 // output stats
 // ic = ignore cache check
 OS( int ic ){ 
 
-	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN )
+	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR )
 		return;
 	
 	cH = HP;
 	cM = MANA;
 	cA = AROUSAL;
 	cP = PAIN;
+	cC = ARMOR;
 	
 	// Check team
 	integer t = fxT;
@@ -728,7 +735,10 @@ OS( int ic ){
 		(llRound(AROUSAL/maxArousal()*127)<<7) |
 		llRound(PAIN/maxPain()*127)
 	);
-	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)GF+"$"+(str)t+"$"+(str)US);
+	integer a = ARMOR;
+	if( FXF & fx$F_SHOW_GENITALS )
+		a = 0;
+	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)GF+"$"+(str)t+"$"+(str)US+"$"+(str)a);
 	
 	// Team change goes after because we need to update description first
 	if(pre != t){
@@ -783,17 +793,17 @@ ptEvt(string id){
 			
 		float add = (maxMana()*DEF_MANA_REGEN)*fmMR;
         if( add > 0 )
-			aMP(add, "", 0, FALSE, llGetOwner());
+			aMP(add, "", 0, TRUE, llGetOwner());
 		
 		// The following only regenerate out of combat
 		if( !inCombat ){
 
 			if(DEF_HP_REGEN*fmHR>0)
-				aHP(fmHR*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, FALSE, llGetOwner(), 0);
+				aHP(fmHR*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, TRUE, llGetOwner(), 0);
 			if( DEF_PAIN_REGEN*fmPR>0 && ~BFL&BFL_SOFTLOCK_PAIN )
-				aPP(-fmPR*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, FALSE, llGetOwner());
+				aPP(-fmPR*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
 			if( DEF_AROUSAL_REGEN*fmAR>0 && ~BFL&BFL_SOFTLOCK_AROUSAL )
-				aAR(-fmAR*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE, FALSE, llGetOwner());
+				aAR(-fmAR*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
 			
 		}
 		
@@ -972,7 +982,7 @@ default {
 	if( METHOD == StatusMethod$kill && ~SF&StatusFlag$dead ){
 	
 		HP = 0;
-		onDeath( method_arg(0) );
+		onDeath( method_arg(0), id );
 		
 	}
 	
@@ -1075,6 +1085,7 @@ default {
         SF = SF&~StatusFlag$aroused;
 		SF = SF&~StatusFlag$coopBreakfree;
         raiseEvent(StatusEvt$dead, 0);
+		gotClassAtt$dead(0);
         
         AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
         OS(TRUE);
@@ -1153,9 +1164,12 @@ default {
 		
 	} 
 	
-	if( METHOD == StatusMethod$damageArmor )
-		dArm( l2i(PARAMS, 0) );
+	if( METHOD == StatusMethod$damageArmor ){
 	
+		dArm( l2i(PARAMS, 0) );
+		OS(FALSE);
+		
+	}
 	if(METHOD == StatusMethod$coopInteract)
 		raiseEvent(StatusEvt$interacted, (str)id);
 	

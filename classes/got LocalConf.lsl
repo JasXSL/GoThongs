@@ -1,3 +1,6 @@
+#ifndef _LocalConf
+#define _LocalConf
+
 // Monsters
 #define LocalConfMethod$ini 0					// Sends out the LocalConfEvt$iniData event
 
@@ -32,3 +35,8 @@ string localConfIdle;
 #define localConfCacheAnims() integer i; for(i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION); i++){string n = llGetInventoryName(INVENTORY_ANIMATION, i); if(localConfIdle){if(n != localConfIdle && llGetSubString(n, 0, llStringLength(localConfIdle)-1) == localConfIdle){localConfAnims+=n;}}else if(llGetSubString(n, -2, -1) == "_1"){localConfIdle = llGetSubString(n, 0, -3); i=0;}}
 									
 #define LocalConf$npc$addSpell(flags, casttime, recast, range, name, minrange, targSex) SPELLS += NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex)
+
+
+
+
+#endif

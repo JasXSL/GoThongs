@@ -1,3 +1,6 @@
+#ifndef _Portal
+#define _Portal
+
 // Portal sends an evt$SCRIPT_INIT after all dependencies have been loaded with data being a json array of players
 
 #define PortalMethod$resetAll 0				// void - Resets everything
@@ -31,7 +34,6 @@
 #define Portal$persistence(on) runMethod((str)LINK_THIS, "got Portal", PortalMethod$persistence, [on], TNN)
 #define Portal$sendPlayers() runMethod((str)LINK_THIS, "got Portal", PortalMethod$sendPlayers, [], TNN)
 
-#define portalLive() (!(int)j(llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0),1) && llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0)!="")
 // Get spawn desc config
 #define portalConf() llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0)
 // Config is an array:
@@ -51,7 +53,7 @@
 #define Portal$plif Portal$isPlayerListIfStatement
 #define Portal$hif script == "got Portal" && evt == PortalEvt$playerHUDs
 
-#define PortalEvt$desc_updated 1		// Portal has received a custom desc from the level
+#define PortalEvt$desc_updated 1		// (var)desc_from_spawner - Portal has received a custom desc from the level
 #define PortalEvt$spawner 2				// (key)spawner - Spawner is the key of the object that requested the spawn
 #define PortalEvt$playerHUDs 3			// (arr)huds - Player HUDs have changed
 #define PortalEvt$players 4				// (arr)players - Player UUIDs have been updated
@@ -66,4 +68,5 @@ _portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, int
 	llRezAtRoot(name, local+spawnOffset, ZERO_VECTOR, rot, in);
 }
 
+#endif
 

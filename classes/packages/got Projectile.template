@@ -8,6 +8,7 @@ relies on the following functions and definitions
 	#define LOOP_VOLUME 0.5
 	#define IMPACT_SOUNDS (list)"e05be787-dadb-dd29-0846-1c9f9e8143ea"+1	// uuid, volume
 	#define USE_HITFX
+	#define HITFX_FLAGS 0
 	#define ON_LOAD
 
 	// loop particles
@@ -20,7 +21,7 @@ relies on the following functions and definitions
 	
 	description:
 	0 = unused
-	1 = flags
+	1 = flags (not yet used)
 	2 = speed
 	3 = wiggleIntensity
 	4 = height offset
@@ -31,6 +32,9 @@ relies on the following functions and definitions
 */
 #include "got/_core.lsl"
 
+#ifndef HITFX_FLAGS
+	#define HITFX_FLAGS 0
+#endif
 
 #define DeathDebug( text )
 //#define DISREGARD_START_POS
@@ -138,7 +142,7 @@ STEP(){
 			
 		#ifdef USE_HITFX
 		if( l2i(llGetObjectDetails(TARGET, (list)OBJECT_ATTACHED_POINT), 0) || llGetAgentSize(TARGET) != ZERO_VECTOR )
-			fxlib$hitFX(TARGET, "<-1,-1,-1>", 0);
+			fxlib$hitFX(TARGET, "<-1,-1,-1>", HITFX_FLAGS);
         else
 			NPCInt$hitfx(TARGET);
 		#endif

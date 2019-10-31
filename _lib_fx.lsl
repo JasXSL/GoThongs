@@ -137,7 +137,7 @@
 	#define fx$PROC_BEN 68						// (float)multiplier - Affects chances of procs from passives and nondetrimental effects
 	#define fx$PROC_DET 69						// (float)multiplier - Affects chances of detrimental effects
 	#define fx$STANCE 70						// (str)anim - Overrides the stance. PC only. Non instant only.
-	#define fx$LOOK_AT 71						// (vec)pos - PC only. Turns the avatar towards a position
+	#define fx$LOOK_AT 71						// (vec)pos/(float)rotation - PC only. Turns the avatar towards a position
 	#define fx$DAMAGE_ARMOR 72					// (int)points - PC only. 50 per slot. Can be negative to restore
 	
 	

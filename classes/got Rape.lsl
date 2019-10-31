@@ -1,3 +1,6 @@
+#ifndef _Rape
+#define _Rape
+
 #define RapeMethod$start 1				// (arr)data - Data fetched from server
 #define RapeMethod$end 2				// Stop rape
 #define RapeMethod$assetSpawned 3		// void - Raised when rape asset has spawned
@@ -21,3 +24,4 @@
 #define RapeEvt$onEnd 2			//
 
 
+#endif

@@ -238,7 +238,7 @@ default
 			// Build the first config
 			list text = [
 				pos, 						// Spawn pos
-				((BFL&BFL_IS_DEBUG)>0), 	// Is live
+				((~BFL&BFL_IS_DEBUG)>0), 	// Is live
 				"", 						// Custom desc data
 				""							// Spawnround
 			];

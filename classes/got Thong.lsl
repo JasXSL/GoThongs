@@ -1,3 +1,6 @@
+#ifndef _Thong
+#define _Thong
+
 #define ThongEvt$bricked 1			// Raised if you reset the script
 #define ThongEvt$ini 2				// Thong ready to be created
 #define ThongEvt$touchInfo 3		// (int)id, (key)clicker
@@ -11,3 +14,4 @@
 #define Thong$create() runMethod((string)LINK_THIS, "got Thong", ThongMethod$create, [], TNN)
 #define Thong$refresh() runMethod((string)LINK_THIS, "got Thong", ThongMethod$refresh, [], TNN)
 
+#endif

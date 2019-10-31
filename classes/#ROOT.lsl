@@ -1,3 +1,6 @@
+#ifndef _ROOT
+#define _ROOT
+
 #define RootMethod$reset 0						// Reset script
 #define RootMethod$statusControls 1				// (int)controls - Additional controls for root to take
 #define RootMethod$debugHuds 2					// void - Owner-says a JSON array of the coop HUDs
@@ -9,7 +12,9 @@
 #define RootMethod$manageAdditionalPlayer 8		// (key)player, (int)rem - Adds or removes a player to be able to interact with the HUD and any monsters you spawn
 #define RootMethod$attached 9					// Sent as omni com on HUD attach - Also used to get the coop player's HUD
 #define RootMethod$refreshTarget 10				// (key)id, Force a target refresh command if id is "" or we are currently targeting ID
+#define RootMethod$getTarget 11					// void - Callbacks the key of your current target
 #define RootMethod$refreshPlayers 69			// void - Sends the players and coop_hud event. Good for debugging.
+
 
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed
@@ -40,3 +45,7 @@
 #define Root$remPlayer(player) runMethod(llGetOwner(), "#ROOT", RootMethod$manageAdditionalPlayer, [player, TRUE], TNN)
 #define Root$attached() llRegionSay(AOE_CHAN, (string)RUN_METHOD+":#ROOT"+llList2Json(JSON_ARRAY, [RootMethod$attached, "", llGetScriptName(), "ATTACHED"]))
 #define Root$forceRefresh(targ, id) runMethod(targ, "#ROOT", RootMethod$refreshTarget, [id], TNN)
+#define Root$getTarget(targ, cb) runMethod(targ, "#ROOT", RootMethod$getTarget, [], cb)
+
+
+#endif

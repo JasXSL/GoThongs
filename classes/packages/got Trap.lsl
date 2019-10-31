@@ -1,15 +1,17 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
-#define TIMER_CD_RESET "a"
-#define TIMER_TRIGGER_RESET "b"
+#define TIMER_CD_RESET "a"			// Timer between allowing triggers
+#define TIMER_TRIGGER_RESET "b"		// Retrigger timer
 
 integer BFL;
 #define BFL_CD 1
 #define BFL_TRIGGERED 2
 
-float cooldown = 2;             // Time between trigger attempts
-float cooldown_full = 20;        // Delay after trigger is successful
+float cooldown = 2;             	// Time between trigger attempts
+float cooldown_full = 20;        	// Delay after trigger is successful
+list attachments;					// Names of things to attach on the victim
+
 integer P_SEAT;
 key sitter;
 string base_anim;				// Loop
@@ -27,12 +29,21 @@ onEvt(string script, integer evt, list data){
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
 		PLAYERS = data;
         LocalConf$ini();
-    }else if(script == "got LocalConf"){
-        if(evt == LocalConfEvt$iniData){
-            cooldown = llList2Float(data,0);
-            cooldown_full = llList2Float(data,1);
+    }
+	
+	else if( script == "got LocalConf" ){
+	
+        if( evt == LocalConfEvt$iniData ){
+		
+            cooldown = l2f(data,0);
+            cooldown_full = l2f(data,1);
+			attachments = llJson2List(l2s(data, 2));
+			
         }
-    }else if((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame){
+		
+    }
+	
+	else if((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame){
 		list split = llParseString2List(llList2String(data,0), [";"], []);
 		string type = llList2String(split, 0);
 		string val = llList2String(split, 1);
@@ -94,8 +105,20 @@ onEvt(string script, integer evt, list data){
 }
 
 timerEvent(string id, string data){
-    if(id == TIMER_CD_RESET)BFL = BFL&~BFL_CD;
-    else if(id == TIMER_TRIGGER_RESET)BFL = BFL&~BFL_TRIGGERED;
+    
+	if( id == TIMER_CD_RESET ){
+	
+		BFL = BFL&~BFL_CD;
+
+		
+	}
+    else if( id == TIMER_TRIGGER_RESET ){
+		
+		BFL = BFL&~BFL_TRIGGERED;
+		raiseEvent(TrapEvent$reset, "");
+		
+	}
+	
 }
 
 key getSitter(){
@@ -106,8 +129,8 @@ key getSitter(){
 	return NULL_KEY;
 }
 
-default
-{
+default{
+
     state_entry(){
 		PLAYERS = [(str)llGetOwner()];
 		memLim(1.5);
@@ -157,11 +180,14 @@ default
 				if(QTE){
 					Evt$startQuicktimeEvent(sitter, QTE, 2, "a");
 				}
-            }else if(BFL&BFL_TRIGGERED){
+            }else if( BFL&BFL_TRIGGERED ){
+				
 				Evt$startQuicktimeEvent(VICTIM, 0,0, TNN);
                 raiseEvent(TrapEvent$unseated, "[\""+(string)VICTIM+"\"]");
-				if(cooldown_full>0)multiTimer([TIMER_TRIGGER_RESET, "", cooldown_full, FALSE]);
+				if( cooldown_full > 0 )
+					multiTimer([TIMER_TRIGGER_RESET, "", cooldown_full, FALSE]);
 				fxlib$removeSpellByName(VICTIM, "_Q");
+				
             }
         }
     }
@@ -195,25 +221,59 @@ default
 		return;
 	}
 
+	if( METHOD == TrapMethod$anim && llGetPermissions() & PERMISSION_TRIGGER_ANIMATION ){
+		
+		str anim = method_arg(0);
+		if( l2i(PARAMS, 1) )
+			llStartAnimation(anim);
+		else
+			llStopAnimation(anim);
+	
+	}
+
     if( METHOD == TrapMethod$forceSit ){
 	
-            if(BFL&(BFL_CD|BFL_TRIGGERED))return;
-            if(cooldown>0){
-                BFL = BFL|BFL_CD;
-                multiTimer([TIMER_CD_RESET, "", cooldown, FALSE]);
-            }
-			float dur = (float)method_arg(1);
-			key seat = llGetLinkKey(P_SEAT);
-			if((key)method_arg(2))seat = (key)method_arg(2);
-			if(seat == NULL_KEY)
-				seat = llGetKey();
+		if( BFL&(BFL_CD|BFL_TRIGGERED) )
+			return;
 			
-			// Strip
-			integer strip = 0;
-			if(l2i(PARAMS, 3))strip = fx$F_SHOW_GENITALS;
+		if( cooldown>0 ){
 		
-        FX$send(method_arg(0), llGetKey(), "[0,0,0,0,["+(string)dur+",65,\"_Q\",[[13,"+(str)(16|strip)+"],[31,"+(string)seat+",1]],[],[],[],0,0,0]]", TEAM_NPC);
+			BFL = BFL|BFL_CD;
+			multiTimer([TIMER_CD_RESET, "", cooldown, FALSE]);
+			
+		}
+		
+		float dur = (float)method_arg(1);
+		key seat = llGetLinkKey(P_SEAT);
+		if( (key)method_arg(2) )
+			seat = (key)method_arg(2);
+		if( seat == NULL_KEY )
+			seat = llGetKey();
+		
+		// Strip
+		integer strip = 0;
+		if( l2i(PARAMS, 3) )
+			strip = fx$F_SHOW_GENITALS;
+
+		string att = "";
+		if( count(attachments) )
+			att = ","+mkarr((list)fx$ATTACH+attachments);
+		
+        FX$send(
+			method_arg(0), 
+			llGetKey(), 
+			"[0,0,0,0,["+
+				(string)dur+",65,\"_Q\",["+
+					mkarr((list)fx$FORCE_SIT+(16|strip))+","+
+					mkarr((list)fx$FORCE_SIT+seat+1)+
+					att+
+				"]"+
+			"]]", 
+			TEAM_NPC
+		);
+
         raiseEvent(TrapEvent$triggered, "");
+		
 		
     }
     if(METHOD == TrapMethod$useQTE){

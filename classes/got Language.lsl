@@ -1,3 +1,6 @@
+#ifndef _Language
+#define _Language
+
 #define LanguageMethod$text 1		// (int)lang, (str)text, (str)unknownText, (key)sound, (float)vol=1 - 
 
 // Texts can be XLS texts
@@ -11,3 +14,5 @@
 
 // Preset sounds
 #define Language$sounds$skeleton$screech ["acdd0291-505d-b4be-9046-ab2bf847a4cf", "7082161b-06ff-50a1-5b89-d95f1e4e9085"]
+
+#endif

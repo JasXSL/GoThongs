@@ -1,3 +1,6 @@
+#ifndef _gotLevelAux
+#define _gotLevelAux
+
 // This script adds additional dev features
 
 #define LevelAuxMethod$purge 1		// Purge the level data
@@ -36,3 +39,5 @@
 #define LevelAux$spawnTarg(targ, prim, pos, rot, debug, description, group) runMethod((str)targ, "got LevelAux", LevelAuxMethod$spawn, [prim, pos, rot, debug, description, group], TNN)
 
 
+
+#endif

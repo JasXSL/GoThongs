@@ -226,7 +226,7 @@ startCast(integer spid, key targ, integer isCustom){
 		) && !isCustom
 	)return;
 
-	parseDesc(targ, resources, status, fx, sex, team, rf);
+	parseDesc(targ, resources, status, fx, sex, team, rf, arm);
     if( status&StatusFlags$NON_VIABLE && !isCustom )
 		return;
 	// Data comes from parseDesc, 0 is the attach point.
@@ -375,7 +375,7 @@ ptEvt(string id){
                     list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 					
 					// Get some info about the target
-					parseDesc(targ, resources, status, fx, sex, team, rf);
+					parseDesc(targ, resources, status, fx, sex, team, rf, arm);
 					
 					
                     if(
