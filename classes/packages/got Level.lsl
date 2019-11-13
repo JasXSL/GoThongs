@@ -62,7 +62,7 @@ list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
 		} \
 	} \
 	 \
-	if(script == "got LevelLoader" && evt == LevelLoaderEvt$defaultStatus){ \
+	if( script == "got LevelLoader" && evt == LevelLoaderEvt$defaultStatus ){ \
 		integer assets = l2i(data, 0); \
 		integer spawns = l2i(data, 1); \
 		if(!assets){ \
@@ -87,9 +87,11 @@ timerEvent(string id, string data){
 		Root$setLevel();
 	}
 	
-	else if(id == "LOAD_FINISH"){
+	else if( id == "LOAD_FINISH" ){
+	
 		Level$loadFinished();
 		Root$setLevel();
+		
 	}
 	
 	else if(id == "WIPE"){
@@ -221,7 +223,7 @@ default
         raiseEvent(LevelEvt$load, mkarr(([debug, group])));
 
 		// Things to run on level start
-		if(group == ""){
+		if( group == "" ){
 		
 			BFL = BFL&~BFL_MONSTERS_LOADED;
 			BFL = BFL&~BFL_ASSETS_LOADED;
@@ -380,11 +382,13 @@ default
 	
         integer isHUD = (integer)method_arg(0);
 		
-        //if(isHUD == 2)BFL = BFL|BFL_SCRIPTS_LOADED;
-        if(isHUD)BFL = BFL|BFL_MONSTERS_LOADED;
-        else BFL = BFL|BFL_ASSETS_LOADED;
+		//if(isHUD == 2)BFL = BFL|BFL_SCRIPTS_LOADED; Not used, but might still be sent.
+        if( isHUD == 1 )
+			BFL = BFL|BFL_MONSTERS_LOADED;
+        else if( isHUD == 0 )
+			BFL = BFL|BFL_ASSETS_LOADED;
 				
-        if((BFL&BFL_LOAD_REQ) == BFL_LOAD_REQ){
+        if( (BFL&BFL_LOAD_REQ) == BFL_LOAD_REQ ){
             Level$loadFinished();
         }
 		

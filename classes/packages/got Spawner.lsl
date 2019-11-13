@@ -22,12 +22,14 @@ list queue;			// [(str)objectName, (vec)objectRezPos, (rot)objectRezRot, (str)ob
 
 // 2. Before an object is rezzed, it is added to a rez queue
 list queue_rez;		// [(str)desc, (str)spawnround, (key)sender]
+list early_spawn;	// Items requesting a description before they've been spawned
 
 // 3. Upon rezzing, the object gets added to a description que. This can hold up to CONCURRENCY assets
 // Number of objects rezzed and currently awaiting descriptions.
 #define processing (count(queue_desc)/QUEUEDESCSTRIDE)	
 list queue_desc;	// [(key)idOfObject, (str)desc, (str)spawnround, (key)sender]
 #define QUEUEDESCSTRIDE 4
+
 
 // Timestamp when the last spawn took place
 float SPAWN_START;
@@ -94,12 +96,12 @@ next() {
 		
 	}
 	
+	
 	// Set/reset clean up timer
 	multiTimer(["FORCE_NEXT", 1, 30, FALSE]);
 	
 	CURRENT_ASSET = asset;
 	// Spawn it
-	_portal_spawn_std(asset, llList2Vector(queue, 1), llList2Rot(queue, 2), -<0,0,8>, llList2Integer(queue, 4), TRUE, llList2Integer(queue, 5));
 	
 	// Store the data in a separate array which is also used to check if we're currently rezzing
 	queue_rez = [
@@ -109,7 +111,9 @@ next() {
 	];
 	
 	// Remove from the main queue
+	_portal_spawn_std(asset, llList2Vector(queue, 1), llList2Rot(queue, 2), -<0,0,8>, llList2Integer(queue, 4), TRUE, llList2Integer(queue, 5));
 	queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
+	
 	
 }
 
@@ -139,10 +143,10 @@ timerEvent(string id, string data){
 		SPAWN_START = 0;
 		// If this spawner is inside the HUD, send to ROOT_LEVEL
 		#ifdef IS_HUD
-		Level$loaded(ROOT_LEVEL, TRUE);
+		Level$loaded(ROOT_LEVEL, 1);
 		#else
 		// Otherwise it's in the level itself, so it can send to self
-		Level$loaded(LINK_ROOT, FALSE);
+		Level$loaded(LINK_ROOT, 0);
 		#endif
 		
 	}
@@ -173,8 +177,23 @@ onEvt(string script, integer evt, list data){
 	}
 }
 
-default
-{
+int onObjectRez( key id ){
+	
+	if( 
+		llKey2Name(id) != CURRENT_ASSET || 		// This is not the current asset being rezzed
+		!count(queue_rez) || 					// There is no asset queued
+		~llListFindList(queue_desc, (list)id) 	// It's already noted as rezzed
+	)return FALSE;
+		
+	// move it from queue_rez to queue_desc
+	queue_desc += [id] + queue_rez;
+	queue_rez = [];
+	return TRUE;
+
+}
+
+default{
+
 	state_entry(){
 		raiseEvent(evt$SCRIPT_INIT, "");
 		// Listens to the prim playerChan, NOT owner
@@ -183,14 +202,10 @@ default
 	
 	// An item was spawned
 	object_rez(key id){
-		// Memory leak here when not spawning with standard
-		if(llKey2Name(id) != CURRENT_ASSET)
-			return;
+	
+		if( onObjectRez(id) )
+			next(); // Spawn the next if possible
 		
-		// move it from queue_rez to queue_desc
-		queue_desc += [id] + queue_rez;
-		queue_rez = [];
-		next(); // Spawn the next if possible
 	}
 	
 	// The script listens to it's own object key chan
@@ -201,7 +216,9 @@ default
 		
 		if( message == "SP" ){
 		
-			integer pos = llListFindList(queue_desc, [id]);
+			// Object was rezzed and finalized before object_rez was called
+			int spawnNext = onObjectRez(id);		
+			integer pos = llListFindList(queue_desc, (list)id);
 			
 			// Send the ini data
 			if(~pos){
@@ -209,12 +226,16 @@ default
 			}
 			// HAX: Send something to shut up the object
 			else{
-				qd("Error. Got unexpected description request from object '"+llKey2Name(id)+"' "+(string)id+".");
+				qd("Unexpected desc req from '"+name+"' "+(string)id+". Queue_rez: "+mkarr(queue_rez));
 				Portal$iniData(id, "", "", llGetKey());
 			}
 			
+			if( spawnNext )
+				next();
+			
 		}
 		else if(message == "DN"){
+			onObjectRez(id);
 			done(id);
 		}
 	}

@@ -5,45 +5,46 @@ integer BFL;
 #define BFL_HAS_ASSETS 0x1
 #define BFL_HAS_SPAWNS 0x2
 
-timerEvent(string id, string data){
-	if(id == "INI"){
+timerEvent( string id, string data ){
+
+	if( id == "INI" ){
+	
 		list d = [BFL&BFL_HAS_ASSETS, BFL&BFL_HAS_SPAWNS];
 		raiseEvent(LevelLoaderEvt$defaultStatus, mkarr(d));
+		
 	}
+	
 }
 
-default
-{
-    state_entry()
-    {
-		if(llGetStartParameter() == 2){
+default{
+
+    state_entry(){
+	
+		if(llGetStartParameter() == 2)
 			raiseEvent(evt$SCRIPT_INIT, "");
-		}
+		
     }
     
 	
 	timer(){multiTimer([]);}
 
     #include "xobj_core/_LM.lsl"
-    /*
-        Included in all these calls:
-        METHOD - (int)method
-        PARAMS - (var)parameters
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task
-    */
 	if(method$isCallback){
+	
 		if(SENDER_SCRIPT == "got Spawner" && (METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn)){
-			list parse = llJson2List(CB);
+		
+			//list parse = llJson2List(CB);
 			//if(l2s(parse, 0) == "HUD" || l2s(parse, 0) == "CUSTOM"){
 			raiseEvent(LevelLoaderEvt$queueFinished, CB);
 			//}
+			
 		}
 		return;
+		
 	}
 	
 
-// Spawn the level, this goes first as it's fucking memory intensive
+	// Spawn the level, this goes first as it's fucking memory intensive
     if(METHOD == LevelLoaderMethod$load && method$internal){
 	
         integer debug = (integer)method_arg(0);
@@ -52,12 +53,15 @@ default
 		if(llJsonValueType(method_arg(1), []) == JSON_ARRAY)
 			groups = llJson2List(method_arg(1));
 		
-		if(l2s(groups, 0) == ""){
+		// Spawning the whole thing if the first group is "" (IE. load live)
+		if( l2s(groups, 0) == "" ){
+		
 			BFL = BFL&~BFL_HAS_ASSETS;
 			BFL = BFL&~BFL_HAS_SPAWNS;
-			multiTimer(["INI", "", 10, FALSE]);
+			multiTimer(["INI", "", 10, FALSE]);	// 10 sec grace period in case there are no spawns or assets received
+			
 		}
-				
+		
 		list out;					// Data to push to spawners
 		list data;					// Asset data
 		integer spawned;			// Nr spawned
@@ -78,7 +82,7 @@ default
 				
 				if(~pos){ 
 				
-					spawned++;
+					++spawned;
 					string chunk = llList2Json(JSON_ARRAY, [
 						llList2String(val, 0), 
 						(vector)llList2String(val, 1)+llGetRootPosition(), 
@@ -111,8 +115,9 @@ default
 		])];
 		Spawner$spawnThese(llGetOwner(), out);
 		
-		
-		BFL = BFL|BFL_HAS_SPAWNS;
+		// Spawns are needed
+		if( !spawned )
+			BFL = BFL|BFL_HAS_SPAWNS;
 		
 
 			
@@ -129,12 +134,14 @@ default
 				list val = llJson2List(v);
 				
 				list l = llList2List(val, 4, 4);
-				if(l == [])l = [""];
+				if( l == [] )
+					l = [""];
 				integer pos = llListFindList(groups, l);
 				string group = llList2String(groups, pos);
 				
-				if(~pos){
-					spawned++;
+				if( ~pos ){
+				
+					++spawned;
 					// No limit on link messages, just send all of the things
 					string add = llList2Json(JSON_ARRAY, [
 						llList2String(val, 0), 
@@ -155,7 +162,7 @@ default
 			)
 		)
 		
-		if(out)
+		if( out )
 			Spawner$spawnThese(LINK_THIS, out);
 			
 		out = [llList2Json(JSON_ARRAY, [
@@ -163,7 +170,9 @@ default
 		])];
 		Spawner$spawnThese(LINK_THIS, out);
 
-		BFL = BFL|BFL_HAS_ASSETS;
+		// assets are needed
+		if( spawned )
+			BFL = BFL|BFL_HAS_ASSETS;
 
 		out = [];
 		
