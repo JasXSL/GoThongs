@@ -107,11 +107,11 @@ integer setTarget(key t, key icon, integer force, integer team){
 	// Try to fetch from description
 	if( team == -1 ){
 	
-		parseDesc(t, resources, status, fx, sex, te, junk);
+		parseDesc(t, resources, status, fx, sex, te, junk, _a);
 		team = te;
 		
 	}
-	
+		
 	// Clear previous target targeting flag
 	TARG_IS_PC = l2i(llGetObjectDetails(TARG, [OBJECT_ATTACHED_POINT]), 0);
 	if( TARG_IS_PC ){
@@ -270,6 +270,7 @@ default
 				return;
 			
 			setTarget(l2s(COOP_HUDS, n), l2s(PLAYER_TEXTURES, n), TRUE, -1);    // Add player default texture
+
 			
 		}
 		
@@ -277,8 +278,9 @@ default
         else if(
 			ln == "FRB1" || 
 			ln == "FR1"
-		)setTarget("", "", TRUE, 0);
-		
+		){
+			setTarget("", "", TRUE, 0);
+		}
 		// Boss
 		else if(llGetSubString(ln, 0,4) == "BOSS_"){
 		
@@ -290,11 +292,13 @@ default
 			if( pos == -1 )
 				pos = llListFindList(COOP_HUDS, [(key)boss]);
 
-			if( ~pos )
+			if( ~pos ){
 				setTarget(l2s(COOP_HUDS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
-			else
-				Status$monster_attemptTarget(boss, TRUE);
-				
+			}
+			else{
+				Status$monster_attemptTarget(boss, TRUE);	
+			}
+			
 		}
 			
 		

@@ -61,6 +61,10 @@ vector BACK_OH_DEFAULT_POS = <0.11448, -0.37465, -0.04116>;
 vector CUSTOM_BACK_DEFAULT_POS;
 vector CUSTOM_BACK_OH_DEFAULT_POS;
 
+string IDLE_ANIM;	// Active idle anim
+
+#define animExists( anim ) llGetInventoryType(anim) == INVENTORY_ANIMATION
+
 updateStance(){
 
 	string anim = "stance_fists";
@@ -77,9 +81,34 @@ updateStance(){
 		
 	//if( BFL&BFL_STANCE )
 	//	anim = "";
-	
-	if( ~STATUS&StatusFlag$combat )
+	if( ~STATUS&StatusFlag$combat ){
+		
 		anim = "";
+		
+		
+	}
+	
+	if( ~STATUS&StatusFlag$combat && llGetInventoryType(STANCE+"_idle") && ~BFL&BFL_SHEATHED && ~FX_FLAGS&fx$F_DISARM ){
+		
+		string an = STANCE+"_idle";
+		if( IDLE_ANIM != an ){
+		
+			if( IDLE_ANIM != "" && animExists(IDLE_ANIM) )
+				llStopAnimation(IDLE_ANIM);
+			IDLE_ANIM = an;
+			if( animExists(IDLE_ANIM) )
+				llStartAnimation(an);
+		
+		}
+					
+	}
+	else if( IDLE_ANIM ){
+		
+		if( animExists(IDLE_ANIM) )
+			llStopAnimation(IDLE_ANIM);
+		IDLE_ANIM = "";
+		
+	}
 		
 	gotClassAtt$stance(anim);
 
@@ -253,6 +282,7 @@ reloadWeapon(){
 	if(unsheatable && ~BFL&BFL_SHEATHED){ 
 		spawnWeapons();	
         BFL = BFL|BFL_SHEATHED;
+		updateStance();
     }
 	
     raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
@@ -352,7 +382,7 @@ default{
         */
         
 		// Uncomment for debug
-        //loadWeapon(llJson2List(Bridge$userData()));
+        loadWeapon(llJson2List(Bridge$userData()));
             
         if(llGetAttached()){
             llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION|PERMISSION_OVERRIDE_ANIMATIONS);
@@ -513,7 +543,8 @@ default{
 					spawnWeapons();
 
 				raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
-
+				updateStance();
+				
 			}
             
         }

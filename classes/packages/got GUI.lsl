@@ -206,18 +206,20 @@ default {
 			
 				list data = llGetObjectDetails(t, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
 				list split = explode("$", l2s(data, 1));
-				n = l2i(split, 3); // Resource block
-				s = l2i(split, 6);
+				n = l2i(split, StatusDesc$npc$RESOURCES); // Resource block
+				s = l2i(split, StatusDesc$npc$STATUS);
+				int mf = l2i(split, StatusDesc$npc$MONSTERFLAGS);
 				
 				// PC
 				if( l2i(data, 0) ){ // Attached
 					
-					n = l2i(split, 0); // HP block is in a different position of the description for PC
-					s = l2i(split, 1); // Same with status
+					n = l2i(split, StatusDesc$pc$RESOURCES); // HP block is in a different position of the description for PC
+					s = l2i(split, StatusDesc$pc$STATUS); // Same with status
+					mf = 0;
 					
 				}
 				
-				if( i == 0 && (l2i(split, 6)&Monster$RF_NO_TARGET || s&StatusFlag$dead) )
+				if( i == 0 && (mf&Monster$RF_NO_TARGET || s&StatusFlag$dead) )
 					Root$clearTargetIfIs(LINK_THIS, TARG);
 				
 			}
@@ -506,8 +508,8 @@ default {
 	
 
 	// Toggles the boss portrait
-	if(METHOD == GUIMethod$toggleBoss){
-		if(~BFL&BFL_TOGGLED)return;
+	if(METHOD == GUIMethod$toggleBoss && BFL&BFL_TOGGLED ){
+		
 		list out = [
 			PRIM_LINK_TARGET, P_BOSS_PORTRAIT,
 			PRIM_POSITION, ZERO_VECTOR,
@@ -518,10 +520,10 @@ default {
 		boss = "";
 		
 		integer exists = FALSE;
-		if((key)method_arg(0)){
+		if( (key)method_arg(0) ){
 			
 			// If not forcing manual HP updates
-			if(llStringLength(l2s(PARAMS, 1)) == 36){
+			if( llStringLength(l2s(PARAMS, 1)) == 36 ){
 				boss = l2k(PARAMS, 1);
 			}
 			else if(!l2i(PARAMS, 1))
@@ -549,6 +551,7 @@ default {
 		}
 		PP(0,out);
 		Status$toggleBossFight(exists);
+		
 	}
 	// Sets boss bar HP
 	else if(METHOD == GUIMethod$bossHP){

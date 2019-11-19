@@ -59,8 +59,30 @@
 #define StatusClimbFlag$root_at_end 1		// Set onEnd to root for 1.5 sec after dropping off the ladder or thing
 
 
-#endif
- 
+
+// HUD DESCRIPTION
+#define StatusDesc$pc$RESOURCES 0
+#define StatusDesc$pc$STATUS 1
+#define StatusDesc$pc$FX 2
+#define StatusDesc$pc$SEX 3
+#define StatusDesc$pc$TEAM 4
+#define StatusDesc$pc$SETTINGS 5
+#define StatusDesc$pc$ARMOR 6
+
+#define StatusDesc$npc$TEAM 2
+#define StatusDesc$npc$RESOURCES 3
+#define StatusDesc$npc$RANGE_ADD 4
+#define StatusDesc$npc$HEIGHT_ADD 5
+#define StatusDesc$npc$STATUS 6
+#define StatusDesc$npc$MONSTERFLAGS 7
+#define StatusDesc$npc$FX 8
+#define StatusDesc$npc$SEX 9
+
+
+
+
+
+
 
 #define StatusEvt$flags 1					// (int)current_flags, (int)previous_flags - To get newly added flags do current_flags&~previous_flags, to get removed flags do previous_flags&~current_flags
 #define StatusEvt$monster_gotTarget 2		// [(key)id], Monster only
@@ -218,3 +240,5 @@ if( var*amount != 0.0 ){ \
 
 
 
+
+#endif
