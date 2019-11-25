@@ -102,6 +102,7 @@ next() {
 	
 	CURRENT_ASSET = asset;
 	// Spawn it
+	//llOwnerSay(":: spawn :: "+CURRENT_ASSET);
 	
 	// Store the data in a separate array which is also used to check if we're currently rezzing
 	queue_rez = [
@@ -117,23 +118,6 @@ next() {
 	
 }
 
-// An item has received description, continue rezzing
-done(key id){
-
-	// Find the ID in the description queue
-	integer pos = llListFindList(queue_desc, [id]);
-	if( ~pos ){
-	
-		// Remove it from desc queue
-		queue_desc = llDeleteSubList(queue_desc, pos, pos+QUEUEDESCSTRIDE-1);
-		// Spawn another asset if possible
-		next();
-		
-	}
-	else
-		qd("done() was run on an unknown UUID: "+(str)id+"\nqueue_desc was: "+mkarr(queue_desc));
-	
-}
 
 timerEvent(string id, string data){
 
@@ -185,6 +169,9 @@ int onObjectRez( key id ){
 		~llListFindList(queue_desc, (list)id) 	// It's already noted as rezzed
 	)return FALSE;
 		
+	CURRENT_ASSET = "";
+	
+	//llOwnerSay(":: STOR DESC :: "+(str)id+" :: "+llKey2Name(id));
 	// move it from queue_rez to queue_desc
 	queue_desc += [id] + queue_rez;
 	queue_rez = [];
@@ -200,7 +187,7 @@ default{
 		llListen(playerChan(llGetKey()), "", "", "");
 	}
 	
-	// An item was spawned
+	// An item was spawned. This allows parallel spawning
 	object_rez(key id){
 	
 		if( onObjectRez(id) )
@@ -214,11 +201,13 @@ default{
 	listen(integer chan, string name, key id, string message){
 		idOwnerCheck
 		
+		// Send from a portal requesting a description
 		if( message == "SP" ){
 		
-			// Object was rezzed and finalized before object_rez was called
+			// Object was rezzed and got scripts before object_rez was called
 			int spawnNext = onObjectRez(id);		
 			integer pos = llListFindList(queue_desc, (list)id);
+			
 			
 			// Send the ini data
 			if(~pos){
@@ -226,7 +215,7 @@ default{
 			}
 			// HAX: Send something to shut up the object
 			else{
-				qd("Unexpected desc req from '"+name+"' "+(string)id+". Queue_rez: "+mkarr(queue_rez));
+				qd("Unexpected desc req from '"+name+"' "+(string)id+". Should have been in: "+mkarr(queue_rez));
 				Portal$iniData(id, "", "", llGetKey());
 			}
 			
@@ -234,9 +223,26 @@ default{
 				next();
 			
 		}
-		else if(message == "DN"){
+		
+		else if( message == "DN" ){
+		
+			// Portals can send DONE immediately if they do not have descriptions. This can happen before object_rez
 			onObjectRez(id);
-			done(id);
+			
+			// Find the ID in the description queue
+			integer pos = llListFindList(queue_desc, [id]);
+			if( ~pos ){
+			
+				// Remove it from desc queue
+				//llOwnerSay(":: DONE :: "+llKey2Name(id)+" :: "+(str)id);
+				queue_desc = llDeleteSubList(queue_desc, pos, pos+QUEUEDESCSTRIDE-1);
+				// Spawn another asset if possible
+				next();
+				
+			}
+			else
+				qd("done() was run on an unknown UUID: "+(str)id+"\nqueue_desc was: "+mkarr(queue_desc));
+			
 		}
 	}
 	

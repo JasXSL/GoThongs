@@ -139,6 +139,7 @@ key AGGRO;
 
 ini(){
 
+	stopAllObjectAnimations();
 	llStopSound();
     integer i;
     for(; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i){
@@ -182,12 +183,22 @@ onEvt(string script, integer evt, list data){
 
 		key pre = AGGRO;
         AGGRO = l2s(data, 0);
-		#ifdef onAggroChange
+		
 		if( AGGRO != pre ){
-			onAggroChange( pre, AGGRO );
+			
+			// Optional combat stance
+			if( llGetInventoryType("combat") == INVENTORY_ANIMATION ){
+				if( AGGRO )
+					llStartObjectAnimation("combat");
+				else
+					llStopObjectAnimation("combat");
+			}
+			#ifdef onAggroChange
+				onAggroChange( pre, AGGRO );
+			#endif
 		}
-		#endif
-
+		
+		
 	}
     #ifdef onDeath
     else if( script == "got Status" && evt == StatusEvt$dead && l2i(data, 0) ){

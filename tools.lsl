@@ -64,7 +64,10 @@ string toGSCReadable( integer copper ){
 
 
 // Converts a Z forward rotation to an X forward rotation for old monster scripts to new monster scripts
-// #define NormRot got_n2r
+/* 
+	#define NormRot got_n2r
+	#define llLookAt(a,b,c) xLookAt(a)
+*/
 rotation got_n2r( rotation Q ){
 
 	vector v = llRot2Euler(Q);
@@ -85,24 +88,23 @@ integer resources; integer status; integer fx; integer team; integer sex; intege
 {\
 list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
-resources = l2i(_split,3); \
-status = l2i(_split,6); \
-fx = l2i(_split,8); \
-team = l2i(_split,2); \
-monsterflags = l2i(_split, 7); \
-sex = l2i(_split,9); \
+resources = l2i(_split,StatusDesc$npc$RESOURCES); \
+status = l2i(_split,StatusDesc$npc$STATUS); \
+fx = l2i(_split,StatusDesc$npc$FX); \
+team = l2i(_split,StatusDesc$npc$TEAM); \
+monsterflags = l2i(_split, StatusDesc$npc$MONSTERFLAGS); \
+sex = l2i(_split,StatusDesc$npc$SEX); \
 armor = 0; \
 if(l2i(_data, 0)){ /* HUD */ \
-	resources = l2i(_split, 0); \
-	status = l2i(_split, 1); \
-	fx = l2i(_split, 2); \
-	sex = l2i(_split, 3); \
-	team = l2i(_split, 4); \
-	monsterflags = l2i(_split,5);\
-	armor = l2i(_split,6); \
+	resources = l2i(_split, StatusDesc$pc$RESOURCES); \
+	status = l2i(_split, StatusDesc$pc$STATUS); \
+	fx = l2i(_split, StatusDesc$pc$FX); \
+	sex = l2i(_split, StatusDesc$pc$SEX); \
+	team = l2i(_split, StatusDesc$pc$TEAM); \
+	monsterflags = l2i(_split,StatusDesc$pc$SETTINGS);\
+	armor = l2i(_split,StatusDesc$pc$ARMOR); \
 }\
 }
-
 
 // For got FXCompiler.lsl
 #define smartHealDescParse(targ, resources, status, fx, team) \

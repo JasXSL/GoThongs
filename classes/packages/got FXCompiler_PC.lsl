@@ -60,9 +60,14 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			SpellMan$reduceCD(llDeleteSubList(fx, 0, 0));
 		}
 		
-		else if( t == fx$LOOK_AT ){
+		else if( t == fx$LOOK_AT || t == fx$ROT_TOWARDS ){
+
 			float r = l2f(fx, 1);
 			vector vec = (vector)l2s(fx, 1);
+			if( l2k(fx, 1) ){
+				vec = prPos(l2k(fx, 1));
+			}
+			
 			if( vec ){
 				vec = vec-llGetRootPosition();
 				vector fwd = vec * <0.0, 0.0, -llSin(PI_BY_TWO * 0.5), llCos(PI_BY_TWO * 0.5)>;
@@ -74,6 +79,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 				r = euler.z;
 			}
 			llOwnerSay("@setrot:"+(string)r+"=force");
+			
 		}
 		
 		else if( t == fx$DAMAGE_ARMOR )
@@ -120,9 +126,6 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
             if(llList2Integer(fx, 2))out+=",unsit=n";
             llOwnerSay(out);
         }
-        else if(t == fx$ROT_TOWARDS){
-			RLV$turnTowards(l2s(fx,1));
-		}
 		else if(t == fx$PARTICLES){
 			ThongMan$particles(l2f(fx,1), llList2Integer(fx,2), llList2String(fx,3));
 		}

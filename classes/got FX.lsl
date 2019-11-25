@@ -120,7 +120,11 @@ string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs,
 	Some notes on events:
 	Currently the first param will be compared to the entire JSON data string of the event. This could be improved.
 	JSON_INVALID or "" indexes in params will be treated as wild cards
-	Wrappers can use <0> <1> etc to be replaced with the event value of that index. If it's numerical you can also use <-0> <-1> etc to inverse
+	
+	Wrapper constants:
+		<0> <1>... are replaced with the event value of that index. If the argument is numerical you can also use <-0> <-1> etc to inverse that argument.
+		<V> Key of the object that contains the FX that processes the event
+		
 	You can use a target less or equal to 0 to use a parameter from the event as target
 	You can add || in a param for OR, ex: FX_buildEvent(SpellManEvt$complete, "got SpellMan", TARG_VICTIM, 1, wrap, ["2||3"]) spell 2 OR 3 cast
 */

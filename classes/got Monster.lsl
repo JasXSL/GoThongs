@@ -93,6 +93,10 @@
 #define MLC$range_add 17			// (int)decimeters - Range increase in decimeters players players can hit this monster 
 #define MLC$height_add 18			// (int)decimeters - Offset the Z center used for LOS calculations
 #define MLC$melee_height 19			// Int signifying the point of the avatar to hit. 0 = groin/butt, 1 = chest, -1 = none
+	#define MLC$melee_height$groin 0
+	#define MLC$melee_height$chest 1
+	#define MLC$melee_height$none -1
+	
 #define MLC$hover_height 20			// Offsets the monster's Z from the ground
 #define MLC$aptitude 21				// (float)sec to track track a player after losing visibility. Default = 3
 #define MLC$sex 22					// Uses GENITALS_* flags. Pair with Monster$RF_HUMANOID

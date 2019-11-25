@@ -38,13 +38,16 @@ onEvt(string script, integer evt, list data){
 	}
 }
 
-default 
-{
+default {
+
     // Timer event
     //timer(){multiTimer([]);}
     state_entry(){
+	
 		multiTimer(["ATC", "", 5, TRUE]);
+		
 	}
+	
 	timer(){multiTimer([]);}
 	
 	object_rez(key id){
@@ -123,9 +126,7 @@ default
 				SupportcubeBuildTask(Supportcube$tForceSit, [!count(RAPE_REZZED)])
 			]));
 		
-            
-
-            raiseEvent(RapeEvt$onStart, "");
+            raiseEvent(RapeEvt$onStart, mkarr(PARAMS));
 			
             
         }else if(METHOD == RapeMethod$remInventory){

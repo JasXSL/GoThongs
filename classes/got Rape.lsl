@@ -20,7 +20,7 @@
 #define Rape$remFXAttachments(attachments) runMethod((str)LINK_ALL_OTHERS, "got Rape", RapeMethod$remFXAttachments, attachments, TNN)
 
 
-#define RapeEvt$onStart 1		//
+#define RapeEvt$onStart 1		// (arr)animations, (arr)attached, (arr)rezzed
 #define RapeEvt$onEnd 2			//
 
 

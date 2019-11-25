@@ -264,7 +264,7 @@ default{
 			llGetKey(), 
 			"[0,0,0,0,["+
 				(string)dur+",65,\"_Q\",["+
-					mkarr((list)fx$FORCE_SIT+(16|strip))+","+
+					mkarr((list)fx$SET_FLAG+(16|strip))+","+
 					mkarr((list)fx$FORCE_SIT+seat+1)+
 					att+
 				"]"+

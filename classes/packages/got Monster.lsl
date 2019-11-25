@@ -356,8 +356,7 @@ timerEvent(string id, string data){
 				){
 					
 					// ParseDesc here to save time
-					parseDesc(chasetarg, resources, status, fx, sex, team, mf);
-					
+					parseDesc(chasetarg, resources, status, fx, sex, team, mf, arm);					
 					// not attackable
 					if(
 						status&StatusFlags$NON_VIABLE ||
@@ -427,6 +426,7 @@ timerEvent(string id, string data){
                     lastseen = ppos+add;
                     // move towards player
                     moveInDir(llVecNorm(ppos-llGetRootPosition()));
+					//qd("Move, dist is "+(str)llVecDist(ppos, llGetRootPosition())+" hitbox is "+(str)hitbox);
 					
                 }
 				

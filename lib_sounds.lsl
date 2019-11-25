@@ -7,6 +7,11 @@
 #define gotSoundLib$goblin$attack "b55d7cc0-a37a-4e96-0b53-2773ff7fe5aa"
 #define gotSoundLib$goblin$death "7bceac87-fc92-ce91-8918-80d949c968e8"
 
+#define gotSoundLib$gnoll$aggro "d588dc90-8be9-c3df-582d-dcdae7f661c2"
+#define gotSoundLib$gnoll$takehit "def51018-d4a0-a6af-492b-b34e25c04ee5"
+#define gotSoundLib$gnoll$attack "be42c330-f776-325a-059d-7edcf1328b8c"
+#define gotSoundLib$gnoll$death "86c3ac10-bbd1-51ee-0bcf-660190b020e9"
+
 #define gotSoundLib$imp$aggro "e3143506-1cc1-f457-aee9-5ab1b6501f1b"
 #define gotSoundLib$imp$takehit "ed8b781b-36ae-b5bc-da8c-112d9dbf23bc"
 #define gotSoundLib$imp$attack "774d8b4a-375c-de30-6948-0235d5f43e93"
@@ -37,6 +42,23 @@
 #define gotSoundLib$witch$takehit "731f8784-90e0-2e8e-cc3a-267201595d93"
 #define gotSoundLib$witch$attack "89171a60-49b7-ba22-bbcb-97d61bc13464"
 #define gotSoundLib$witch$death "80d441b4-243b-6036-df46-45a1254be9f4"
+
+#define gotSoundLib$golem$aggro "923f364d-72df-bf95-5027-aaaaa9253fe5"
+#define gotSoundLib$golem$takehit "cdf1ad10-7768-87c7-0ee3-2b978bef597e"
+#define gotSoundLib$golem$attack "ab6b782b-a0c6-45f9-63b3-05c9025ddac4"
+#define gotSoundLib$golem$death "ac8389b3-80a9-2164-fcde-df33e18c130b"
+
+
+#define gotSoundLib$humanMale$aggro "cbbf5234-24d4-692d-3470-47a2f3e8bc42"
+#define gotSoundLib$humanMale$takehit "ea2cf924-1ad9-2421-013f-a916205eba95"
+#define gotSoundLib$humanMale$attack "aec5cd63-1756-9c7c-671f-018976e53989"
+#define gotSoundLib$humanMale$death "c1047f61-db16-2224-8c9c-c7aa610bac0c"
+
+#define gotSoundLib$humanTiger$aggro "104853d3-3efb-d543-105e-e2427ce7b805"
+#define gotSoundLib$humanTiger$aggro_lost "0de57c59-cb6f-7c59-55dc-e26cf25779cb"
+#define gotSoundLib$humanTiger$takehit "d10cfa51-699d-2ce8-9ce5-4ed9dd4f1843"
+#define gotSoundLib$humanTiger$attack "13f825a1-3ba7-a49d-9986-f4a8fb5c37b1"
+#define gotSoundLib$humanTiger$death "48422e50-f207-1973-0ea4-7ce8fabb6eb6"
 
 
 #define gotSoundLib$phantom$aggro "a78af3a7-a841-0a5d-0d7d-f75e268ed235"

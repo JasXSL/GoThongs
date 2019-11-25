@@ -227,10 +227,12 @@ default
 			else
 				multiTimer(["POSTQUERY", "", 30, FALSE]);
 				
-			if(mew&BIT_GET_DESC){
+			if( mew&BIT_GET_DESC ){
+			
 				// Needs to fetch data from the spawner
 				fetchDesc();
 				multiTimer(["A", "", 2, TRUE]);
+				
 			}
 			else 
 				BFL = BFL|BFL_HAS_DESC;
@@ -390,6 +392,7 @@ default
 		}
 		
 		else if(METHOD == PortalMethod$iniData && ~BFL&BFL_HAS_DESC && llGetStartParameter() == 2){
+		
 			INI_DATA = method_arg(0);
 			SPAWNROUND = method_arg(1);
 			requester = method_arg(2);

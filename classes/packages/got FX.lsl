@@ -231,11 +231,17 @@ onEvt(string script, integer evt, list data){
 				// We have validated that this event should be accepted, let's extract the wrapper
 				string wrapper = llList2String(evdata, 4);
 
+				// CONSTANTS
 				// We can use <index> and <-index> tags to replace with data from the event
 				for(i=0; i<llGetListLength(data); i++){
+				
 					wrapper = implode((str)(-llList2Float(data, i)), explode("<-"+(str)i+">", wrapper));
 					wrapper = implode(llList2String(data, i), explode("<"+(str)i+">", wrapper));
+					
 				}
+				// Additional constants
+				// <V> = Victim (llGetKey())
+				wrapper = implode((str)llGetKey(), explode("<V>", wrapper));
 				
 				// Target flags
 				integer targ = llList2Integer(evdata, 2);
@@ -263,10 +269,15 @@ onEvt(string script, integer evt, list data){
 					FX$run(sender, wrapper); maxtargs--;
 				}
 				// Run on dispeller (if dispel event)
-				if(targ&TARG_DISPELLER && dispeller != "" && maxtargs != 0){
-					if(dispeller == "s" || dispeller == "")FX$run(sender, wrapper);
-					else FX$send(dispeller, sender, wrapper, TEAM);
+				if( targ&TARG_DISPELLER && dispeller != "" && maxtargs != 0 ){
+				
+					if( dispeller == "s" || dispeller == "" )
+						FX$run(sender, wrapper);
+					else 
+						FX$send(dispeller, sender, wrapper, TEAM);
+					
 					maxtargs--;
+					
 				}
 				
 				// Run on caster last
@@ -756,6 +767,7 @@ default{
 					// Send the packages to FXCompiler
 					if( sender == "s" )
 						sender = llGetOwner();
+						
 					llMessageLinked(LINK_THIS, TASK_FXC_PARSE, llList2Json(JSON_ARRAY, send), sender);
 					
 				}
