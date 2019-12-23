@@ -22,7 +22,7 @@ list queue;			// [(str)objectName, (vec)objectRezPos, (rot)objectRezRot, (str)ob
 
 // 2. Before an object is rezzed, it is added to a rez queue
 list queue_rez;		// [(str)desc, (str)spawnround, (key)sender]
-list early_spawn;	// Items requesting a description before they've been spawned
+list spawns;		// Integerized spawns to prevent lagbugs
 
 // 3. Upon rezzing, the object gets added to a description que. This can hold up to CONCURRENCY assets
 // Number of objects rezzed and currently awaiting descriptions.
@@ -124,6 +124,7 @@ timerEvent(string id, string data){
 	// B is sent once all objects have been spawned
 	if( id == "B" ){
 	
+		spawns = [];	// prune spawn cache
 		SPAWN_START = 0;
 		// If this spawner is inside the HUD, send to ROOT_LEVEL
 		#ifdef IS_HUD
@@ -161,18 +162,32 @@ onEvt(string script, integer evt, list data){
 	}
 }
 
+// returns -1 if the item has already been spawned and should be disregarded
+// FALSE if it was not added
+// TRUE if it was accepted
 int onObjectRez( key id ){
 	
+	int iid = (int)("0x"+(str)id);
+	if( ~llListFindList(spawns, (list)iid) ){
+		//qd("!! Ignoring already spawned "+llKey2Name(id)+" "+(str)id);
+		return -1;
+	}
+	
 	if( 
-		llKey2Name(id) != CURRENT_ASSET || 		// This is not the current asset being rezzed
-		!count(queue_rez) || 					// There is no asset queued
-		~llListFindList(queue_desc, (list)id) 	// It's already noted as rezzed
-	)return FALSE;
-		
+		llKey2Name(id) != CURRENT_ASSET || 			// This is not the current asset being rezzed
+		!count(queue_rez) || 						// There is no asset queued
+		~llListFindList(queue_desc, (list)id)		// It's already noted as rezzed
+	){
+		//qd("!! Ignored "+llKey2Name(id)+" "+(str)id);
+		return FALSE;
+	}
+	
 	CURRENT_ASSET = "";
 	
+	//qd(">> Accepted "+llKey2Name(id)+" "+(str)id);
 	//llOwnerSay(":: STOR DESC :: "+(str)id+" :: "+llKey2Name(id));
 	// move it from queue_rez to queue_desc
+	
 	queue_desc += [id] + queue_rez;
 	queue_rez = [];
 	return TRUE;
@@ -190,7 +205,7 @@ default{
 	// An item was spawned. This allows parallel spawning
 	object_rez(key id){
 	
-		if( onObjectRez(id) )
+		if( onObjectRez(id) == TRUE )
 			next(); // Spawn the next if possible
 		
 	}
@@ -206,6 +221,9 @@ default{
 		
 			// Object was rezzed and got scripts before object_rez was called
 			int spawnNext = onObjectRez(id);		
+			if( spawnNext == -1 )	// Ignore if -1
+				return;
+				
 			integer pos = llListFindList(queue_desc, (list)id);
 			
 			
@@ -215,7 +233,6 @@ default{
 			}
 			// HAX: Send something to shut up the object
 			else{
-				qd("Unexpected desc req from '"+name+"' "+(string)id+". Should have been in: "+mkarr(queue_rez));
 				Portal$iniData(id, "", "", llGetKey());
 			}
 			
@@ -227,14 +244,16 @@ default{
 		else if( message == "DN" ){
 		
 			// Portals can send DONE immediately if they do not have descriptions. This can happen before object_rez
-			onObjectRez(id);
+			if( onObjectRez(id) == -1 )
+				return;
 			
 			// Find the ID in the description queue
 			integer pos = llListFindList(queue_desc, [id]);
 			if( ~pos ){
 			
+				spawns += (int)("0x"+(str)id);
 				// Remove it from desc queue
-				//llOwnerSay(":: DONE :: "+llKey2Name(id)+" :: "+(str)id);
+				//qd(":: DONE :: "+llKey2Name(id)+" :: "+(str)id);
 				queue_desc = llDeleteSubList(queue_desc, pos, pos+QUEUEDESCSTRIDE-1);
 				// Spawn another asset if possible
 				next();

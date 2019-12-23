@@ -4,3 +4,11 @@ CASTER ANIMATION PRIORITIES:
 - cast finish: 2
 - cast loop ub: 3
 - cast finish ub: 4
+
+ANIMESH MONSTER PRIORITIES:
+- Idle: 1
+- Attack: 2
+- Walk: 3
+- Hurt: 3 (only upper body)
+- Attack upper body: 4
+- Death: 5

@@ -159,6 +159,10 @@ toggleMove(integer on){
 		lookAt(<pp.x, pp.y, gpos.z>); \
 	}\
 
+#define setAttackCooldown() \
+	BFL = BFL|BFL_ATTACK_CD; \
+	multiTimer([TIMER_ATTACK, 0, atkspeed*fxCooldownMod, FALSE]); \
+	multiTimer([TIMER_EXEC_ATTACK])
 
 timerEvent(string id, string data){
 
@@ -365,11 +369,12 @@ timerEvent(string id, string data){
 						return;
 					}
 					
-					multiTimer([TIMER_ATTACK, 0, atkspeed*fxCooldownMod, FALSE]);
-					raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));
-					BFL = BFL|BFL_ATTACK_CD;
+					setAttackCooldown();
+					raiseEvent(MonsterEvt$attackStart, mkarr([chasetarg]));					
 					anim("attack", TRUE);
 					multiTimer([TIMER_EXEC_ATTACK, 0, 0.1, FALSE]);
+					
+					
 				}
 				
                 BFL = BFL|BFL_IN_RANGE;
@@ -468,6 +473,11 @@ timerEvent(string id, string data){
 
 
 onEvt(string script, integer evt, list data){
+	
+	if( script == "got SpellMan" && evt == SpellManEvt$complete ){
+		setAttackCooldown();
+	}
+
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
         rezpos = llGetRootPosition();
         

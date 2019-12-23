@@ -51,8 +51,11 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 
 	if( METHOD == gotPiSpawnerMethod$generateInteraction && method$byOwner ){
 		
-		list pl = llJson2List(method_arg(0));
-		
+		list pl = [];
+		list _temp = llJson2List(method_arg(0));
+		list_shift_each(_temp, val,
+			pl += llGetOwnerKey(val);
+		)
 		
 		_DUR = l2f(PARAMS, 1);
 		if( _DUR < 5 )
@@ -68,18 +71,15 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 		integer i;
 		for( ; i<count(pl); ++i ){
 		
-			integer pos = llListFindList(PLAYER_HUDS, (list)l2s(pl, i));
-			if( ~pos ){
+			
+			integer pos = llListFindList(PLAYERS, (list)l2s(pl, i));
+			if( ~pos )
 				viable += (list)l2s(PLAYER_HUDS, i);
-			}
-			else{
-				pos = llListFindList(PLAYERS, (list)l2s(pl, i));
-				if( ~pos )
-					viable += (list)l2s(PLAYER_HUDS, pos);
-			}
+			
 			// Instigator missing
 			if( i == 0 && !count(viable) )
 				return;
+			
 		}
 		
 		// Not enough players

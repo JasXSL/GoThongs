@@ -17,10 +17,24 @@
 #define gotSoundLib$imp$attack "774d8b4a-375c-de30-6948-0235d5f43e93"
 #define gotSoundLib$imp$death "654506d2-1a40-f82c-8ec4-bcf01aebf4a4"
 
+#define gotSoundLib$iceElemental$aggro "060281ff-771e-8e80-46dd-300db65bccf6"
+#define gotSoundLib$iceElemental$takehit "d1e62b67-758f-71a1-bffe-a3fe5ffc07cf"
+#define gotSoundLib$iceElemental$die "b4c90c98-20b8-85b5-a0e3-7129141246cd"
+
+#define gotSoundLib$legbot$aggro "35c275ae-66a3-0b42-3a4c-f9efa049de5e"
+#define gotSoundLib$legbot$takehit "a354f1db-dfdf-42fa-1e41-d915367d22e4"
+#define gotSoundLib$legbot$attack "5aaaa1a3-aa19-08b8-5ec1-10bca09b0cc3"
+#define gotSoundLib$legbot$death "2cba8867-f1b9-a657-a12d-3629b7906314"
+
 #define gotSoundLib$slime$aggro "1c5e3d99-4ca4-a041-baa9-933c217d996c"
 #define gotSoundLib$slime$takehit "7b6af76a-e644-1714-62b9-eabbb6491cac"
 #define gotSoundLib$slime$attack "0c06e072-5a90-ff5c-e993-9983f2fd08bd"
 #define gotSoundLib$slime$death "ad798ead-8267-e52c-f082-e0c30f9528ca"
+
+#define gotSoundLib$icecrawler$aggro "9b092f60-7ca9-711f-96a7-7fa031ec521e"
+#define gotSoundLib$icecrawler$takehit "f86f719d-8dff-1271-e56d-ae5b55128c8a"
+#define gotSoundLib$icecrawler$attack "c26de718-785c-f9c1-54ed-5e6f85a2fc07"
+#define gotSoundLib$icecrawler$death "b1b6e908-e1e0-90b4-88d6-5450b5c92977"
 
 #define gotSoundLib$eelHorror$aggro "b9efb85e-b0bf-403a-a2be-fc962db477b4"
 #define gotSoundLib$eelHorror$takehit "7966f7b6-40cb-9e56-e085-d886dd1ae73d"
@@ -60,6 +74,19 @@
 #define gotSoundLib$humanTiger$attack "13f825a1-3ba7-a49d-9986-f4a8fb5c37b1"
 #define gotSoundLib$humanTiger$death "48422e50-f207-1973-0ea4-7ce8fabb6eb6"
 
+#define gotSoundLib$tentacleTiger$aggro "80dfd548-1f14-f04f-4f61-0d26c90a19bf"
+#define gotSoundLib$tentacleTiger$takehit "5834444b-8d12-0a91-bf1b-435b184088eb"
+#define gotSoundLib$tentacleTiger$attack "a721e5cf-42b6-1060-7dd4-65d69584e9c6"
+#define gotSoundLib$tentacleTiger$death "0dd26453-4148-bbc1-7403-3da726914723"
+
+
+#define gotSoundLib$worm$aggro "cc1c23d6-9931-67be-3aaa-0fe8c4bc3c3f"
+#define gotSoundLib$worm$takehit "f12d384c-4c15-a34d-3962-964968a32ff3"
+#define gotSoundLib$worm$attack "d67886aa-6ea8-0409-2742-aeca3eb31d21"
+
+#define gotSoundLib$shocktacle$takehit "f12d384c-4c15-a34d-3962-964968a32ff3"
+#define gotSoundLib$shocktacle$attack "d67886aa-6ea8-0409-2742-aeca3eb31d21"
+#define gotSoundLib$shocktacle$death "398f13d5-c14a-d917-f7fa-6742970ed20c"
 
 #define gotSoundLib$phantom$aggro "a78af3a7-a841-0a5d-0d7d-f75e268ed235"
 #define gotSoundLib$phantom$takehit "cad61af4-a1cd-2221-1bef-9cec88cf0078"

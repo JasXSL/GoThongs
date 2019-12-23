@@ -181,7 +181,7 @@ float pain = l2f(_split, 3);
 integer targetIsHumanoid( key targ ){
 	list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
 	// Attachments always count as humanoid
-	if( l2i(_data, 0) )
+	if( l2i(_data, 0) || llGetAgentSize(targ) != ZERO_VECTOR )
 		return TRUE;
 	list _split = explode("$", l2s(_data, 1));
 	if( l2i(_split, 6) & Monster$RF_HUMANOID )

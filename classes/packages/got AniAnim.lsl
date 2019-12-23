@@ -30,7 +30,7 @@ animKit( string base, integer start ){
     anim(anim, FALSE);
     anim(anim, TRUE);
 	#ifdef MaskAnimConf$animStartEvent
-	raiseEvent(MaskAnimEvt$onAnimStart, base);
+	raiseEvent(MaskAnimEvt$onAnimStart, mkarr((list)base+anim));
 	#endif
 	
     

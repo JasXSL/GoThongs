@@ -26,7 +26,6 @@ if(SFp != SF){ \
 #define updateCombatTimer() ptSet(TIMER_COMBAT, StatusConst$COMBAT_DURATION, FALSE)
 
 integer BFL = 1;
-#define BFL_NAKED 1				// 
 #define BFL_CLIMB_ROOT 4		// Ended climb, root for a bit
 #define BFL_STATUS_QUEUE 0x10		// Send status on timeout
 #define BFL_STATUS_SENT 0x20		// Status sent
@@ -270,6 +269,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		am*= 
 			(1+((SF&StatusFlag$pained)/StatusFlag$pained)*.1)*
 			(1+((SF&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
+			(1+((FXF&fx$F_SHOW_GENITALS)/fx$F_SHOW_GENITALS)*.2)*
 			fmdt*paDT*
 			difMod()
 		;
@@ -296,8 +296,11 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 	if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
 		am *= rCnv(FXC$CONVERSION_HP, am);
 	
-	// Every 2 points of damage hurts armor
-	int aDmg = llFloor(llFabs(am)/4) + (llFrand(1) < llFabs((am-llFloor(am/4))/4));
+	int ARMOR_PER_DMG = 10;	// every 10 points of damage reduces armor by 1
+	int aDmg = 
+		llFloor(llFabs(am)/ARMOR_PER_DMG) + 
+		(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))
+	;
 	if( am < 0 && aDmg )
 		dArm(aDmg);
 	

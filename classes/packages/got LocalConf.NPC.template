@@ -139,13 +139,14 @@ key AGGRO;
 
 ini(){
 
-	stopAllObjectAnimations();
+	stopAllObjectAnimations()
 	llStopSound();
     integer i;
     for(; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i){
         string n = llGetInventoryName(INVENTORY_ANIMATION, i);
-        if( startsWith(n, "idle") )
+        if( startsWith(n, "idle") ){
             llStartObjectAnimation(n);
+		}
         else
             llStopObjectAnimation(n);
     }
@@ -230,7 +231,7 @@ default{
     on_rez(integer mew){llResetScript();}
     state_entry(){
 
-        PLAYERS = [llGetOwner()];
+        PLAYERS = [(string)llGetOwner()];
         memLim(1.5);
 		#ifdef onSpellSetup
 		onSpellSetup();

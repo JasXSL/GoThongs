@@ -13,10 +13,6 @@ integer START_PARAM;
 //#define sqd(text) qd(text)
 #define sqd(text) 
 
-// These are generally only relevant in challenge mode
-integer DIFFICULTY;  			
-integer CHALLENGE;
-
 integer pin;
 
 integer BFL;

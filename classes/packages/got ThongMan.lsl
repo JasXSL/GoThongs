@@ -163,12 +163,12 @@ setColorOnInvolved(vector col){
 	//llSetLinkPrimitiveParamsFast(0, out);
 }
 
-setOnInvolved(list params){ // Also sets on prims that aren't involved in jiggling
+setOnInvolved( list params ){ // Also sets on prims that aren't involved in jiggling
 
 	// Sets primitive params on all the main prims
 	integer i; list out;
 	list all = jiggles+colorMe;
-	for(i=0; i<llGetListLength(all); i++)
+	for(; i<llGetListLength(all); i++ )
 		out+=[PRIM_LINK_TARGET, llList2Integer(all, i)]+params;
 	llSetLinkPrimitiveParamsFast(0, out);
 	debugUncommon("Setting on involved: "+mkarr(params));
@@ -194,31 +194,14 @@ default
     
     timer(){multiTimer([]);}
     
-    state_entry()
-    {
+    state_entry(){
 	
 		llStopSound();
         llListen(239186, "", llGetOwner(), "");
         initiateListen();
-        
-        if(!llGetStartParameter()){
-            integer pin = llCeil(llFrand(0xFFFFFFF));
-            llSetRemoteScriptAccessPin(pin);
-            Remoteloader$load(cls$name, pin, 2);
-            return;
-        }
-        
-        
-        
-        
-        
-        if(llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT){
-            integer pin = llCeil(llFrand(0xFFFFFFF));
-            llSetRemoteScriptAccessPin(pin);
-            Remoteloader$load("ton MeshAnim", pin, 2);
-        }
-        
-        links_each(nr, name, 
+
+		// Do this first so you can debug your custom code
+		links_each(nr, name, 
 		
 			string s = (string)llGetLinkPrimitiveParams(nr, [PRIM_DESC]);
 			string m = llToLower(llGetSubString(name, 0, 3));
@@ -238,11 +221,27 @@ default
 			
 			
         )
+		raiseEvent(ThongManEvt$getVisuals, "");
+		
+        if(!llGetStartParameter()){
+		
+            integer pin = llCeil(llFrand(0xFFFFFFF));
+            llSetRemoteScriptAccessPin(pin);
+            Remoteloader$load(cls$name, pin, 2);
+            return;
+			
+        }
+        
+        if(llGetInventoryType("ton MeshAnim") == INVENTORY_SCRIPT){
+            integer pin = llCeil(llFrand(0xFFFFFFF));
+            llSetRemoteScriptAccessPin(pin);
+            Remoteloader$load("ton MeshAnim", pin, 2);
+        }
         
         raiseEvent(evt$SCRIPT_INIT, "");
         BFL = BFL|BFL_INITIALIZED;
         
-		raiseEvent(ThongManEvt$getVisuals, "");
+		
     }
     
     
@@ -292,15 +291,14 @@ default
 		
 		// Resets the script
         else if(METHOD == ThongManMethod$reset){
-            if((int)method_arg(0))
-				qd(xme(XLS(([
-					XLS_EN, "Resetting"
-				]))));
+            if( (int)method_arg(0) )
+				llOwnerSay("Resetting script");
             llResetScript();
         }
 		
 		// Set config
-        else if(METHOD == ThongManMethod$set){
+        else if( METHOD == ThongManMethod$set ){
+		
             PARAMS = llJson2List(method_arg(0));
 			
 			if(method_arg(0) != "")
@@ -325,6 +323,7 @@ default
             DEFAULT_SPECULAR = specular;
             updateDefaults();
 			restore();
+			
         }
 		
 		// Hit effect

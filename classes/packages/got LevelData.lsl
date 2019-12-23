@@ -73,6 +73,7 @@ timerEvent(string id, string data){
 		multiTimer(["RESTART", "", 2, FALSE]);
 		runOnPlayers(targ,
 			Status$fullregenTarget(targ);
+			Status$damageArmor(targ, -0xFFFFFFF);
 		)
 		
 		

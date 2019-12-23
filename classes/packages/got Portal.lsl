@@ -231,7 +231,7 @@ default
 			
 				// Needs to fetch data from the spawner
 				fetchDesc();
-				multiTimer(["A", "", 2, TRUE]);
+				multiTimer(["A", "", 10, TRUE]);	// re-fetching too much might cause problems
 				
 			}
 			else 

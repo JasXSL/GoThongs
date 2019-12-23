@@ -21,6 +21,7 @@ integer BFL;
 #define BFL_DEAD 4
 #define BFL_RECENT_CAST 0x8			// Used to limit spells from casting too often
 #define BFL_SILENCED 0x10
+#define BFL_CC 0x20					// Waiting for clearCast
 
 float spells_per_sec_limit = 0.5;			// Max spells per sec that can be cast
 
@@ -168,6 +169,15 @@ onEvt(string script, integer evt, list data){
     }
 }
 
+clearCast(){
+
+	if( monster_flags )
+		Monster$unsetSpellFlags(monster_flags);
+	Monster$lookOverride("");
+	BFL = BFL&~BFL_CC;
+	
+}
+
 endCast(integer success, integer force){
     
 	if( ~BFL&BFL_CASTING )
@@ -204,16 +214,22 @@ endCast(integer success, integer force){
     }
     raiseEvent(evt, mkarr(([spell_id, spell_targ, spell_targ_real, l2s(d, NPCS$SPELL_NAME)])));
     
-	if( monster_flags )
-		Monster$unsetSpellFlags(monster_flags);
-
-    
-    ptUnset("CB");
-    ptUnset("CAST");
-    BFL = BFL&~BFL_CASTING;
 	
-    Monster$lookOverride("");
-	updateText();
+	
+	
+	ptUnset("CB");
+	ptUnset("CAST");
+	BFL = BFL&~BFL_CASTING;
+
+    if( CAST_END_TIME-CAST_START_TIME > 0.1 && success ){
+		updateText();
+		BFL = BFL|BFL_CC;
+		ptSet("CC", 1, FALSE);
+	}
+	else
+		clearCast();
+		
+    
 	
 }
 
@@ -221,7 +237,7 @@ startCast(integer spid, key targ, integer isCustom){
 
 	if(
 		(
-			BFL&(BFL_RECENT_CAST|BFL_CASTING) || 
+			BFL&(BFL_RECENT_CAST|BFL_CASTING|BFL_CC) || 
 			RUNTIME_FLAGS&Monster$RF_NO_SPELLS
 		) && !isCustom
 	)return;
@@ -333,7 +349,7 @@ ptEvt(string id){
 		// Find a spell to cast here
         if( 
 			aggro_target == "" || 
-			BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST|BFL_SILENCED) || 
+			BFL&(BFL_CASTING|BFL_DEAD|BFL_INTERRUPTED|BFL_RECENT_CAST|BFL_SILENCED|BFL_CC) || 
 			RUNTIME_FLAGS&Monster$RF_NO_SPELLS ||
 			FXFLAGS & fx$NOCAST
 		)return;
@@ -430,7 +446,9 @@ ptEvt(string id){
     else if( id == "CB" )
 		updateText();
 	
-	
+	else if( id == "CC" ){
+		clearCast();
+	}
 	// llOwnerSay("DD ptEvt "+id+" = "+(str)(llGetTime()-DSTART));
 	
 }

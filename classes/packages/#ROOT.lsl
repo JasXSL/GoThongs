@@ -364,8 +364,11 @@ default
     
     
     // This is the listener
-    #define LISTEN_LIMIT_FREETEXT if(llListFindList(getPlayers(), [(str)llGetOwnerKey(id)]) == -1 && ~BFL&BFL_WILDCARD)return; 
-   
+    #define LISTEN_LIMIT_FREETEXT \
+		if( llListFindList(getPlayers(), [(str)llGetOwnerKey(id)]) == -1 && ~BFL&BFL_WILDCARD ) \
+			return; \
+		if( message == "GHD" ) \
+			llRegionSayTo(id, chan, "GHD"+mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0)));
     
     #include "xobj_core/_LISTEN.lsl" 
     

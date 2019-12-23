@@ -149,6 +149,7 @@ STEP(){
 		llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
         llSleep(2);
         llDie();
+		llSleep(2);
     }
     
 	
