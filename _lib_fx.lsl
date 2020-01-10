@@ -170,7 +170,7 @@
 	#define fx$COND_CASTER_RANGE 16				// (float)range - Caster range must be less or equal than range
 	#define fx$COND_NAME 17						// (str)name - Recipient has name
 	#define fx$COND_SAME_OWNER 18				// void - Recipient has the same owner as the sender
-	
+	#define fx$COND_RANDOM 19					// (float)chance between 0 and 1
 	
 	
 // Reserved names:

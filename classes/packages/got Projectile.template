@@ -200,8 +200,7 @@ timerEvent(string id, string data){
 
 
 
-default
-{
+default{
     
     on_rez( integer total ){
         SCAN = total;
@@ -214,8 +213,8 @@ default
         }
     }
     
-    state_entry()
-    {
+    state_entry(){
+	
         llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_POINT_LIGHT, FALSE, <1.000, 0.980, 0.502>, 1,3,2]);
         llStopSound();
         //llLoopSound("12869766-b7d1-21ee-b773-447b2b11ae1f", .3);
@@ -257,17 +256,5 @@ default
 		}
         
     }
-
-    
-    #include "xobj_core/_LM.lsl" 
-    /*
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    // End link message code
-    #define LM_BOTTOM  
-    #include "xobj_core/_LM.lsl"  
 
 }

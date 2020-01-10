@@ -18,6 +18,7 @@
 #define BuffSpawnChan(targ) playerChan(targ)+0x69
 
 #define BuffSpawnEvt$meta 1					// (arr)metadata
+#define BuffSpawnEvt$target 2				// (key)target
 
 #define BuffSpawn$purge() runOmniMethod("got BuffSpawn", BuffSpawnMethod$purge, [], TNN)
 #define BuffSpawn$purgeTarg(targ) runMethod(targ, "got BuffSpawn", BuffSpawnMethod$purge, [], TNN)

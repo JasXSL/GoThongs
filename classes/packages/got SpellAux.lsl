@@ -77,7 +77,7 @@ string runMath( string FX, integer index, key targ ){
 
 	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
     list split = llParseString2List(FX, ["$MATH$","$M$"], []);
-	parseDesc(targ, resources, status, fxf, sex, team, monsterflags)
+	parseDesc(targ, resources, status, fxf, sex, team, monsterflags, _a)
 	list res = splitResources(resources);
 	int ehp = (int)(l2f(res, 0)*100);
 	
@@ -109,6 +109,7 @@ string runMath( string FX, integer index, key targ ){
 	float targRange = llVecDist(llGetRootPosition(), prPos(targ));
 	if( fxFlags&fx$F_SPELLS_MAX_RANGE )
 		targRange = 10;
+
 
 	_C = [
 		// Damage done multiplier
@@ -177,8 +178,11 @@ string runMath( string FX, integer index, key targ ){
 		// Run the math
 		string out = l2s(pandaMath(math),0);
 		
+		// Not sure why below is needed, gonna test without /Jas
 		// Don't remove the point, since output should always be a float
 		while( llGetSubString(out, -1, -1) == "0" )
+			out = llDeleteSubString(out, -1, -1);
+		if( llGetSubString(out, -1, -1) == "." )
 			out = llDeleteSubString(out, -1, -1);
 			
 		// Remove the end char
@@ -188,7 +192,7 @@ string runMath( string FX, integer index, key targ ){
     }
 
 	_C = [];
-    return llDumpList2String(split, "");
+    return implode("", split);
 }
 
 
@@ -200,8 +204,6 @@ onEvt(string script, integer evt, list data){
 		
 	else if( script == "#ROOT" && evt == RootEvt$targ )
         HUD_TARG = l2s(data,0);
-		
-	
 
 	else if(script == "got Status" && evt == StatusEvt$flags)
         SF = llList2Integer(data,0);

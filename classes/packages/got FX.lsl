@@ -333,19 +333,18 @@ integer preCheck(key sender, list package, integer team){
         integer inverse = (c<0);				// Should return TRUE if validation fails, otherwise false
         c = llAbs(c);
         
-		
-        // Built in conditions
-        if(c == fx$COND_HAS_PACKAGE_NAME || c == fx$COND_HAS_PACKAGE_TAG){
-            integer found;
+		// Built in conditions
+        if( c == fx$COND_RANDOM )
+			add = l2f(dta, 0) > llFrand(1.0);
 			
+        else if( c == fx$COND_HAS_PACKAGE_NAME || c == fx$COND_HAS_PACKAGE_TAG ){
+		
+            integer found;			
 			// See if we have one of the package names stored in dta
             if(c == fx$COND_HAS_PACKAGE_NAME){
                 integer i;
-                for(i=0; i<llGetListLength(PACKAGES) && !found; i+=PSTRIDE){
-                    if( ~llListFindList(dta, [pName(pSlice(i))]) ){
-						found = TRUE;
-					}
-                }
+                for(; i<count(PACKAGES) && !found; i += PSTRIDE )
+                    found = ~llListFindList(dta, [pName(pSlice(i))]);
             }
 			// See if we have a tag stored in dta
 			else{
@@ -358,9 +357,9 @@ integer preCheck(key sender, list package, integer team){
             }
 			
             // Not found, so add should be false
-            if(!found){
+            if( !found )
 				add = FALSE;
-			}     
+ 
         }
 		else if(c == fx$COND_SAME_TEAM){
 			inverse = l2i(dta,0);
@@ -391,7 +390,7 @@ integer preCheck(key sender, list package, integer team){
 		
 		else if( c == fx$COND_CASTER_RANGE )
 			add = llVecDist(llGetRootPosition(), prPos(sender)) < l2f(dta, 0);
-		
+
 		// User defined conditions
         else
 			add = checkCondition(sender, c, dta, flags, team);
@@ -405,7 +404,8 @@ integer preCheck(key sender, list package, integer team){
         successes+=(add != FALSE);
 		
 		// We have reached the minimum
-        if(successes>=min)return TRUE;
+        if( successes >= min )
+			return TRUE;
 		
 		// Increase nr parsed
         parsed++;
