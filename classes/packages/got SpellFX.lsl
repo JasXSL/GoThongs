@@ -108,7 +108,7 @@ default
 				
 			}
 			else{
-				parseDesc(t, resources, status, fx, sex, team, monsterflags)
+				parseDesc(t, resources, status, fx, sex, team, monsterflags, _a)
 				if( monsterflags & Monster$RF_ANIMESH  )
 					b /= 2;
 				pos_offset.z *= b;

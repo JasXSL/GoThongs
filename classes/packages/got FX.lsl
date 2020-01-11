@@ -383,8 +383,7 @@ integer preCheck(key sender, list package, integer team){
 		
 		}
 		else if( c == fx$COND_TEAM )
-			add = ~llListFindList(dta, (list)((float)TEAM));
-
+			add = ~llListFindList(dta, (list)TEAM);
 		else if(c == fx$COND_SELF)
 			add = (sender == "s");
 		
@@ -399,7 +398,7 @@ integer preCheck(key sender, list package, integer team){
 		// If we're inverse, then flip add
         if(inverse)
 			add = !add;
-		
+				
 		// Store successes
         successes+=(add != FALSE);
 		
@@ -494,8 +493,10 @@ default{
 			// Internal commands are always same team
 			if( method$internal )
 				team = TEAM;
+				
 			
 			integer flags = llList2Integer(packages, 0);		// Wrapper flags
+			
 			if( flags&WF_ENEMY_ONLY && team == TEAM )
 				return;
 			
