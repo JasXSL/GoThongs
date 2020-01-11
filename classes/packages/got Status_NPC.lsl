@@ -761,7 +761,7 @@ default
 				)
 				
 				float rand = llFrand(1);
-				if( maxHP >= 40 && rand < 0.2 ){
+				if( maxHP >= 40 && rand < 0.1 ){
 				
 					list ray = llCastRay(llGetPos()+<0,0,1>, llGetPos()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 					if( l2i(ray, -1) == 1 ){

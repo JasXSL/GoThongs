@@ -68,7 +68,7 @@ list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
 			Level$loaded(LINK_THIS, 1); \
 		} \
 		if(assets || spawns){ \
-			multiTimer(["LOAD_FINISH", "", 60, FALSE]); \
+			multiTimer(["LOAD_FINISH", "", 90, FALSE]); \
 		} \
 	}
 	
@@ -185,6 +185,8 @@ default
         }
 		multiTimer(["INI", "", 5, FALSE]);
 		
+		
+		
     }
     
     timer(){
@@ -203,13 +205,6 @@ default
     
 	
     #include "xobj_core/_LM.lsl"
-    /*
-        Included in all these calls:
-        METHOD - (int)method
-        PARAMS - (var)parameters
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task
-    */
 	// Spawn the level, this goes first as it's fucking memory intensive
     if(METHOD == LevelMethod$load && method$byOwner){
 	
@@ -225,7 +220,8 @@ default
 			BFL = BFL&~BFL_ASSETS_LOADED;
 			BFL = BFL|BFL_LOADING;
 			
-			multiTimer(["LOAD_FINISH", "", 20, FALSE]);
+			// Load timeout is set by an event from LevelLoader
+			//multiTimer(["LOAD_FINISH", "", 90, FALSE]);	// 90 second timeout
 			
 			Bridge$getCellData();
 			
@@ -377,7 +373,6 @@ default
     if(METHOD == LevelMethod$loaded && BFL&BFL_LOADING && method$byOwner){
 	
         integer isHUD = (integer)method_arg(0);
-		
 		//if(isHUD == 2)BFL = BFL|BFL_SCRIPTS_LOADED; Not used, but might still be sent.
         if( isHUD == 1 )
 			BFL = BFL|BFL_MONSTERS_LOADED;

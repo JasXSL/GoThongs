@@ -1,5 +1,7 @@
 #define USE_EVENTS
 
+#include "got/_core.lsl"
+
 integer BFL;
 #define BFL_SENT 0x1				// Recently sent
 #define BFL_QUEUE_SEND 0x2			// Update on send cooldown finish
@@ -94,62 +96,73 @@ outputDebug(string task){
 */
 // Needs to remove procs and cache
 integer removePassiveByName(string name){
+
     integer pos = findPassiveByName(name);
-    if(~pos){
-		// Remove event bindings
-		list binds = llJson2List(l2s(PASSIVES, pos+1));
-		
-		list_shift_each(binds, id,
-			integer n = (int)id;
-			integer i;
-			
-			// Remove from storage
-			// The ID will only occur once in this array
-			for( ; i<count(EVT_LISTENERS); i+=EVTSTRIDE){
-				if(l2i(EVT_LISTENERS, 0) == n){
-					EVT_LISTENERS = subarrDel(EVT_LISTENERS, i, EVTSTRIDE);
-				}
-			}
-			
-			// Remove from index
-			for(i=0; i<count(EVT_CACHE) && EVT_CACHE != []; i+=CACHESTRIDE){
-				list p = llJson2List(l2s(EVT_CACHE, i+2));
-				integer ps = llListFindList(p, [n]);
-				if(~ps){
-					p = llDeleteSubList(p, ps, ps);
-					// There are still events bound to this
-					if(p)
-						EVT_CACHE = llListReplaceList(EVT_CACHE, [mkarr(p)], i+2, i+2);
-					else{
-						// There are no more events bound to this
-						EVT_CACHE = subarrDel(EVT_CACHE, i, CACHESTRIDE);
-						i-= CACHESTRIDE;
-					}
-				}
-			}
-			
-		)
-		
-		// Remove attachments
+    if( pos == -1 )
+		return false;
+	
+	// Remove event bindings
+	list binds = llJson2List(l2s(PASSIVES, pos+1)); // Event bindings to remove
+	
+	list_shift_each(binds, id,
+	
+		integer n = (int)id;
 		integer i;
-		for(; i<count(ATTACHMENTS) && ATTACHMENTS != []; i+= 2){
-			if(l2s(ATTACHMENTS, i) == name){
-				ATTACHMENTS = llDeleteSubList(ATTACHMENTS, i, i+1);
-				i-= 2;
+		
+		// Remove from storage
+		// The ID will only occur once in this array
+		for( ; i<count(EVT_LISTENERS) && count(EVT_LISTENERS); i+=EVTSTRIDE ){
+		
+			if( l2i(EVT_LISTENERS, i) == n ){
+			
+				EVT_LISTENERS = subarrDel(EVT_LISTENERS, i, EVTSTRIDE);
+				i -= EVTSTRIDE;
+				
 			}
+			
 		}
 		
+		// Remove from index
+		for(i=0; i<count(EVT_CACHE) && EVT_CACHE != []; i+=CACHESTRIDE){
 		
+			list p = llJson2List(l2s(EVT_CACHE, i+2));
+			integer ps = llListFindList(p, [n]);
+			if(~ps){
+			
+				p = llDeleteSubList(p, ps, ps);
+				// There are still events bound to this
+				if(p)
+					EVT_CACHE = llListReplaceList(EVT_CACHE, [mkarr(p)], i+2, i+2);
+				else{
+					// There are no more events bound to this
+					EVT_CACHE = subarrDel(EVT_CACHE, i, CACHESTRIDE);
+					i-= CACHESTRIDE;
+				}
+				
+			}
+			
+		}
 		
-        integer ln = llList2Integer(PASSIVES, pos+2);
-        PASSIVES = subarrDel(PASSIVES, pos, ln+PASSIVES_PRESTRIDE);
-		
-		outputDebug("REM");
-		
-		return TRUE;
-    }
+	)
 	
-	return FALSE;
+	// Remove attachments
+	integer i;
+	for(; i<count(ATTACHMENTS) && ATTACHMENTS != []; i+= 2){
+		if(l2s(ATTACHMENTS, i) == name){
+			ATTACHMENTS = llDeleteSubList(ATTACHMENTS, i, i+1);
+			i-= 2;
+		}
+	}
+	
+	
+	
+	integer ln = llList2Integer(PASSIVES, pos+2);
+	PASSIVES = subarrDel(PASSIVES, pos, ln+PASSIVES_PRESTRIDE);
+	
+	outputDebug("REM");
+	
+	return TRUE;
+
 }
 
 compilePassives(){
@@ -267,7 +280,7 @@ output(){
 	
     // Output the same event as FXCEvt$update
     list output = compiled_actives;
-   
+	   
     integer set_flags = llList2Integer(output, FXCUpd$FLAGS);
 	integer unset_flags;
 	
@@ -625,8 +638,8 @@ default{
 		list set = llJson2List(s); \
         compiled_actives = [ \
 			l2i(set, FXCUpd$FLAGS),			\
-			i2f(l2f(set, 1)),		\
-			i2f(l2f(set, 2)),		\
+			i2f(l2f(set, FXCUpd$MANA_REGEN)),		\
+			i2f(l2f(set, FXCUpd$DAMAGE_DONE)),		\
 			i2f(l2f(set, 3)),		\
 			i2f(l2f(set, 4)),		\
 			i2f(l2f(set, 5)),		\

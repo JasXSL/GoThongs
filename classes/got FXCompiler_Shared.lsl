@@ -141,7 +141,7 @@ list cMod( int t ){
 		int pos = llListFindList(llList2ListStrided(out, 0, -1, 2), (list)caster);
 		float v = 1;
 		if( ~pos )
-			v = l2f(check, pos*2+1);
+			v = l2f(out, pos*2+1);
 		v *= (1+l2f(check, i+1)*stacks);
 
 		if( ~pos )

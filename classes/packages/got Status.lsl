@@ -296,7 +296,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 	if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
 		am *= rCnv(FXC$CONVERSION_HP, am);
 	
-	int ARMOR_PER_DMG = 10;	// every 10 points of damage reduces armor by 1
+	int ARMOR_PER_DMG = 5;	// every 5 points of damage reduces armor by 1
 	int aDmg = 
 		llFloor(llFabs(am)/ARMOR_PER_DMG) + 
 		(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))
