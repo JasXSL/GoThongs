@@ -257,14 +257,14 @@ onEvt(string script, integer evt, list data){
     else if( script == "got SpellMan" && evt == SpellManEvt$complete ){
 		
 		integer SPELL_CASTED = l2i(data, 0);                    // Spell casted index 0-4
-        list SPELL_TARGS = llJson2List(l2s(data, 3));                    // Targets casted at
+        list SPELL_TARGS = llJson2List(l2s(data, 3));           // Targets casted at
 		
 		integer flags = spellFlags(SPELL_CASTED);
 		float r = spellRange(SPELL_CASTED);
 		rollCrit(~flags&SpellMan$NO_CRITS, SPELL_CASTED);
 		
 		// Befuddle
-		if( llFrand(1) < befuddle-1 && (str)SPELL_TARGS != "AOE" ){
+		if( llFrand(1) < befuddle-1 && (str)SPELL_TARGS != "AOE" && (count(SPELL_TARGS) > 1 || l2s(SPELL_TARGS, 0) != "1") ){
 
 			string targ = randElem(PLAYERS);
 			if( targ == llGetOwner() )
