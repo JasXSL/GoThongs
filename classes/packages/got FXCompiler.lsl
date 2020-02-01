@@ -141,11 +141,13 @@ default
 			return;
 				
 		
+		integer actions;
 		list input = llJson2List(s);
 		if(input == [])return;
 		while(input){
 		
 			integer action = l2i(input,0); 
+			actions = actions|action;
 			integer PID = l2i(input,1); 
 			integer stacks = l2i(input, 2); 
 			integer pflags = l2i(input,3); 
@@ -198,7 +200,8 @@ default
 			} 
 		}
 		
-		updateGame(); 
+		if( actions&(FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_REM|FXCPARSE$ACTION_STACKS))
+			updateGame(); 
 	}
 	
 
