@@ -346,6 +346,7 @@ ptEvt(string id){
     
 	else if( id == "F" ){
 		
+
 		// Find a spell to cast here
         if( 
 			aggro_target == "" || 
@@ -497,6 +498,9 @@ default {
 	if(nr == TASK_FX){ \
 		list data = llJson2List(s); \
 		FXFLAGS = l2i(data, FXCUpd$FLAGS); \
+		if( RUNTIME_FLAGS & Monster$RF_IS_BOSS ){ \
+			FXFLAGS = FXFLAGS&~(fx$F_STUNNED|fx$F_SILENCED); \
+		} \
         fxModDmgDone = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
         fxCTM = i2f(l2f(data, FXCUpd$CASTTIME));  \
         fxCDM = i2f(l2f(data, FXCUpd$COOLDOWN)); \
