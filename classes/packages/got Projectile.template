@@ -128,17 +128,24 @@ STEP(){
 	}
 	
     if(to == ZERO_VECTOR){
+	
 		DeathDebug("Dying because target lost");
 		llDie();
+		
 	}
+	
     if(dist<.3){
+	
         llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
 		boom();
 		llStopSound();
+		
+		#ifdef IMPACT_SOUNDS
 		list sounds = IMPACT_SOUNDS;
 		int i;
 		for(; i<count(sounds); i+= 2 )
 			llTriggerSound(l2s(sounds, i), l2f(sounds, i+1));
+		#endif
 			
 		#ifdef USE_HITFX
 		if( l2i(llGetObjectDetails(TARGET, (list)OBJECT_ATTACHED_POINT), 0) || llGetAgentSize(TARGET) != ZERO_VECTOR )
@@ -150,6 +157,7 @@ STEP(){
         llSleep(2);
         llDie();
 		llSleep(2);
+		
     }
     
 	

@@ -8,6 +8,7 @@
 #define SpawnerMethod$getAsset 5			// (str)item - Has the spawner give the object to the sender
 
 #define Spawner$spawn(obj, pos, rot, desc, debug, temp, spawnround) runMethod(llGetOwner(), "got Spawner", SpawnerMethod$spawn, [obj, pos, rot, desc, debug, temp, spawnround], TNN)
+#define Spawner$spawnTarg(targ, obj, pos, rot, desc, debug, temp, spawnround) runMethod((str)targ, "got Spawner", SpawnerMethod$spawn, [obj, pos, rot, desc, debug, temp, spawnround], TNN)
 #define Spawner$spawnInt(obj, pos, rot, desc, debug, temp, spawnround) runMethod((string)LINK_SET, "got Spawner", SpawnerMethod$spawn, [obj, pos, rot, desc, debug, temp, spawnround], TNN)
 #define Spawner$remInventory(assets) runMethod((string)LINK_SET, "got Spawner", SpawnerMethod$remInventory, [mkarr(assets)], TNN)
 #define Spawner$spawnThese(targ, data) runMethod((string)targ, "got Spawner", SpawnerMethod$spawnThese, data, TNN)

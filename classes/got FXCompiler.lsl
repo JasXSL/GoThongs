@@ -35,9 +35,9 @@
 	#define FXCUpd$PAIN_REGEN 20		// (float)multiplier - Default 1
 	#define FXCUpd$AROUSAL_REGEN 21		// (float)multiplier - Default 1
 	#define FXCUpd$SPELL_HIGHLIGHTS 22	// (int)bitwise - A bitwise combination of 0x1 = rest, 0x2 abil1... to highlight
-	#define FXCUpd$HEAL_MOD 23			// (float)multiplier - Default 1 
+	#define FXCUpd$HEAL_MOD 23			// (float)multiplier - Default 1. Increases healing received.
 	#define FXCUpd$MOVESPEED 24			// (NPC)(float)multiplier - Default 1
-	#define FXCUpd$HEAL_DONE_MOD 25		// (PC)
+	#define FXCUpd$HEAL_DONE_MOD 25		// (PC) Increases healing done
 	#define FXCUpd$TEAM 26				// (int)team
 	#define FXCUpd$BEFUDDLE 27			// (float)multiplier
 	#define FXCUpd$CONVERSION 28		// (arr)conversions - Converts damage types into another. See below
@@ -50,7 +50,15 @@
 	
 	
 // Settings that are are not multiplicative
-#define FXCUpd$non_multi (list)FXCUpd$FLAGS + FXCUpd$UNSET_FLAGS + FXCUpd$HP_ADD + FXCUpd$MANA_ADD + FXCUpd$AROUSAL_ADD + FXCUpd$PAIN_ADD + FXCUpd$TEAM
+#define FXCUpd$non_multi (list) \
+	FXCUpd$FLAGS + \
+	FXCUpd$UNSET_FLAGS + \
+	FXCUpd$HP_ADD + \
+	FXCUpd$MANA_ADD + \
+	FXCUpd$AROUSAL_ADD + \
+	FXCUpd$PAIN_ADD + \
+	FXCUpd$TEAM
+
 // Settings that are arrays that should be appended
 #define FXCUpd$arrays (list)FXCUpd$CONVERSION
 // Settings that are floats that should be overwritten
@@ -194,7 +202,27 @@
 			pos = llGetRootPosition()-<0,0,ascale.z/2>;\
 		}\
 		\
-		spawn(l2s(fx, 1), pos+((vector)l2s(fx, 2)*r), llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,3)*r, l2s(fx,4), FALSE, TRUE, "");\
+		if( l2i(fx, 5) ) \
+			Spawner$spawnTarg( \
+				caster, \
+				l2s(fx, 1),  \
+				pos+((vector)l2s(fx, 2)*r),  \
+				llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,3)*r,  \
+				l2s(fx,4),  \
+				FALSE,  \
+				TRUE,  \
+				"" \
+			);\
+		else \
+			spawn( \
+				l2s(fx, 1),  \
+				pos+((vector)l2s(fx, 2)*r),  \
+				llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,3)*r,  \
+				l2s(fx,4),  \
+				FALSE,  \
+				TRUE,  \
+				"" \
+			);\
 		\
 	}\
 	

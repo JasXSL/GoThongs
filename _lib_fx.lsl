@@ -119,7 +119,7 @@
 	#define fx$SPELL_HIGHLIGHT 50				// (int)index, (int)min_stacks - PC Only - Draws a yellow border around a spell. 0 is the bottom ability, then 1-4 for the upper row. If min_stacks is set, then you need a minimum of that amount of stacks for it to proc
 	#define fx$HEALING_TAKEN_MULTI 51			// (float)add, (bool)by_caster - Increases or decreases healing received
 	#define fx$HEALING_DONE_MULTI 52			// (float)add - Increases or decreases healing done
-	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc - Spawns a monster from HUD
+	#define fx$SPAWN_MONSTER 53					// (str)name, (vec)foot_offset, (rot)rot_offset, (str)desc, (bool)from_sender - Spawns a monster from HUD
 	#define fx$SET_TEAM 54						// (int)team - (PC ONLY for now)Overrides the current team
 	#define fx$CUBETASKS 55						// (arr)tasks - PC ONLY Sends cubetasks to the owner
 	#define fx$BEFUDDLE 56						// (float)perc - PC ONLY - Adds a chance on spell cast to target a random player
@@ -139,7 +139,8 @@
 	#define fx$STANCE 70						// (str)anim - Overrides the stance. PC only. Non instant only.
 	#define fx$LOOK_AT 71						// (vec)pos/(float)rotation/"SENDER" - PC only. Turns the avatar towards a position
 	#define fx$DAMAGE_ARMOR 72					// (int)points - PC only. 50 per slot. Can be negative to restore
-	
+	#define fx$MAX_PAIN_MULTI 73				// (float)amount - Adds or lowers max pain/arousal
+	#define fx$MAX_AROUSAL_MULTI 74				// (float)amount - Adds or lowers max pain/arousal
 	
 	
 // conditions

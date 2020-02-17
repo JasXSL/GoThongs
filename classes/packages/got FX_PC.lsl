@@ -19,10 +19,13 @@ integer TEAM = TEAM_PC;
 #define evtListener(script, evt, data) \
 if(script == "got Status"){ \
 	integer n = llList2Integer(data, 0); \
-    if(evt == StatusEvt$flags)STATUS = n; \
-    else if(evt == StatusEvt$dead && n)FX$rem(FALSE, "", "", "", 0, FALSE, PF_DETRIMENTAL, 0, 0); \
-	else if(evt == StatusEvt$genitals)GENITALS = n; \
-	else if(evt == StatusEvt$resources){ \
+    if(evt == StatusEvt$flags) \
+		STATUS = n; \
+    else if(evt == StatusEvt$dead && n) \
+		FX$rem(FALSE, "", "", "", 0, FALSE, PF_DETRIMENTAL, 0, 0); \
+	else if(evt == StatusEvt$genitals) \
+		GENITALS = n; \
+	else if(evt == StatusEvt$resources && l2i(data, 1)){ \
 		hp_perc = llList2Float(data,0)/llList2Float(data,1); \
 		mana_perc = llList2Float(data,2)/llList2Float(data,3); \
 		arousal_perc = llList2Float(data,4)/llList2Float(data,5); \

@@ -686,7 +686,7 @@ default{
 								
 							}
 							else{
-							
+
 								FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE, dur, flags&PF_TRIGGER_IMMEDIATE);
 								jump reloop;
 							
@@ -736,7 +736,7 @@ default{
 								EVT_INDEX += [find, 1, PID];
 							}
 														
-						} 
+						}
 						
 						
 						// Add to PACKAGES
@@ -769,7 +769,8 @@ default{
 					if( sender == "s" )
 						sender = llGetOwner();
 						
-					llMessageLinked(LINK_THIS, TASK_FXC_PARSE, llList2Json(JSON_ARRAY, send), sender);
+					if( send )
+						llMessageLinked(LINK_THIS, TASK_FXC_PARSE, llList2Json(JSON_ARRAY, send), sender);
 					
 				}
 			}
@@ -799,8 +800,6 @@ default{
             if(~pos)
 				senders = llListReplaceList(senders, ["s"], pos, pos);
 			
-			key sender = id;
-			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
 			list find = llListSort(find(names, senders, tags, pids, flags, TRUE), 1, FALSE);	
 			
@@ -818,6 +817,9 @@ default{
 				if( METHOD == FXMethod$addStacks ){
 				
 					integer stacks = pStacks(slice);			// Current stacks
+					string pSender = pSender(slice);
+					if( pSender == "s" )
+						pSender = llGetOwner();
 					stacks+= rEvent; 							// rEvent is num stacks to add or subtract in addStacks
 					
 					if(stacks<=0){								// No stacks left, schedule a remove
@@ -866,7 +868,7 @@ default{
 						f2i(pDur(slice))
 					];
 					// Send to FXCompiler
-					llMessageLinked(LINK_THIS, TASK_FXC_PARSE, mkarr(send), "");
+					llMessageLinked(LINK_THIS, TASK_FXC_PARSE, mkarr(send), pSender);
 					
 					// If trigger immediate, we still need to run it
 								
@@ -890,7 +892,7 @@ default{
 						if(f&PF_NO_DISPEL)
 							jump delContinue;
 						
-						onEvt("", INTEVENT_DISPEL, [pid_rem, sender]);
+						onEvt("", INTEVENT_DISPEL, [pid_rem, id]);
 					}
 					
 					// Raise remove int-event if not a remove
@@ -957,8 +959,11 @@ default{
 					++nr_affected;
 
 				}
+				
 			}
+			
 			CB_DATA = (list)nr_affected;
+			
         }
 		
         if(METHOD == FXMethod$hasTags){

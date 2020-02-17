@@ -16,6 +16,8 @@
 #define GUIMethod$setWipes 14			// (int)wipes_remaining - -1 to hide
 #define GUIMethod$setChallenge 15		// (bool)on - Shows or hides the skull
 
+#define GUIEvt$toggle 0					// (bool)visible
+
 //#define GUI$myStatus(hp, mana, arousal, pain, flags, fxflags) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$status, [hp, mana, arousal, pain, flags, fxflags], TNN)
 #define GUI$setMySpellTextures(data) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$setSpellTextures, data, TNN)
 

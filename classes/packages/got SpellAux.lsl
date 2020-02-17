@@ -274,6 +274,8 @@ onEvt(string script, integer evt, list data){
 			
 		}
 		
+		t0 = l2s(SPELL_TARGS, 0);	// original target is always the victim of the main spell, it's not overridden by self cast
+		
 		// RunMath should be done against certain targets for backstab to work
 		applyWrapper(spellWrapper(SPELL_CASTED), SPELL_CASTED, SPELL_TARGS, r);
 		
@@ -322,7 +324,6 @@ applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 	for( ; i<count(SPELL_TARGS); ++i ){ 
 		
 		string val = l2s(SPELL_TARGS, i);
-		t0 = val;
 		if( val == llGetKey() || val == llGetOwner() )
 			val = (str)LINK_ROOT;
 		
@@ -365,11 +366,14 @@ default
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
 
+	// Tunnel from passives. You're probably looking for an event trigger instead of method
 	if( METHOD == SpellAuxMethod$tunnel && method$internal ){
 		
 		rollCrit( l2i(PARAMS, 3)&SpellAux$tfAllowCrit, -1 );
+		list targs = llJson2List(method_arg(1));
+		t0 = l2s(targs, 0);
 		//wrapper, (arr)targets, (float)range
-		applyWrapper(method_arg(0), -1, llJson2List(method_arg(1)), l2f(PARAMS, 2));
+		applyWrapper(method_arg(0), -1, targs, l2f(PARAMS, 2));
 		
 	}
     

@@ -379,14 +379,14 @@ updateGame(){
 		stat( fx$PAIN_MULTI ), 			// 09 PAIN_MULTI
 		stat( fx$AROUSAL_MULTI ),			// 10 AROUSAL_MULTI
 		// These don't use f2i for now since these have no active effects, but if you add active effects at some point you should f2i them here and then i2f them in got Passives
-		stat( fx$HP_ADD ),		// 11 HP_ADD
+		statAdditive( fx$HP_ADD ),		// 11 HP_ADD
 		stat( fx$HP_MULTI ),	// 12 HP_MULTI
 		0,					// 13 MANA_ADD
 		stat( fx$MANA_MULTI ),					// 14 MANA_MULTI
 		0,					// 15 AROUSAL_ADD
-		1,					// 16 AROUSAL_MULTI
-		1,					// 17 PAIN_ADD
-		1,					// 18 PAIN_MULTI
+		stat( fx$MAX_AROUSAL_MULTI ),					// 16 AROUSAL_MULTI
+		0,					// 17 PAIN_ADD
+		stat( fx$MAX_PAIN_MULTI),					// 18 PAIN_MULTI
 		1,					// 19 HP_REGEN
 		1,					// 20 PAIN_REGEN
 		1,					// 21 AROUSAL_REGEN

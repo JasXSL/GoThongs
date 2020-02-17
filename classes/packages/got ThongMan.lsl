@@ -73,7 +73,7 @@ updateDefaults(){
 // Hides all jiggles except root
 restore(){ 
 
-	if(BFL&BFL_DEAD)
+	if( BFL&BFL_DEAD )
 		return;
 	
     list set = [];
@@ -84,7 +84,9 @@ restore(){
     }
     
 	for( i=0; i<count(colorMe); ++i)
-		set+=[linkAlpha(llList2Integer(colorMe,i), 1, ALL_SIDES)];
+		set += [
+			linkAlpha(llList2Integer(colorMe,i), 1, ALL_SIDES)
+		];
 		
 	if(set)
 		llSetLinkPrimitiveParamsFast(0, set); 

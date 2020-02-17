@@ -691,7 +691,7 @@ OS( int ic ){
 
 	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR )
 		return;
-	
+			
 	cH = HP;
 	cM = MANA;
 	cA = AROUSAL;
@@ -705,6 +705,10 @@ OS( int ic ){
 		t = TEAM_D;
 		
 	integer pre = TEAM;
+	
+	
+	
+	
 
 	// GUI
 	// Status is on cooldown and team has not changed
@@ -713,6 +717,7 @@ OS( int ic ){
 		BFL = BFL|BFL_STATUS_QUEUE;
 	}
 	else{
+	
 		raiseEvent(StatusEvt$resources, llList2Json(JSON_ARRAY,[
 			(int)HP, (int)maxHP(), 
 			(int)MANA, (int)maxMana(), 
@@ -725,11 +730,7 @@ OS( int ic ){
 		ptSet("_", 0.25, FALSE);
 	}
 	
-	// Always keep description up to date
-	if(HP>maxHP())
-		HP = maxHP();
-	if(MANA>maxMana())
-		MANA = maxMana();
+	
 		
 	// int is 0000000 << 21 hp_perc, 0000000 << 14 mana_perc, 0000000 << 7 arousal_perc, 0000000 pain_perc 
 	string data = (string)(
@@ -870,13 +871,13 @@ default {
     state_entry(){
 	
 		PLAYERS = [(string)llGetOwner()];
-        OS( TRUE );
         Status$fullregen();
         ptSet(TIMER_REGEN, 1, TRUE);
         llRegionSayTo(llGetOwner(), 1, "jasx.settings");
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
 		A_ARM = floor(llFrand(4));	// 0-3
-		
+		OS( TRUE );
+        
     }
     
     timer(){

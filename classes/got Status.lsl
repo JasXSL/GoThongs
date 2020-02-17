@@ -227,6 +227,7 @@ if( var*amount != 0.0 ){ \
 #define Status$killAndPunish(targ, punishGroup) runMethod((str)targ, "got Status", StatusMethod$kill, (list)(punishGroup), TNN)
 #define Status$damageArmor(targ, damage) runMethod((str)targ, "got Status", StatusMethod$damageArmor, (list)damage, TNN)
 
+#define Status$outputStats() runMethod((str)LINK_ROOT, "got Status", StatusMethod$outputStats, [], TNN)
 
 // Monster
 #define Status$dropAggro(targ) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ], TNN)

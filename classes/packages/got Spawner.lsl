@@ -9,6 +9,8 @@
 #define CONCURRENCY 5
 #endif
 
+#define qdb(text) //qd(text)
+
 key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
 
 string CURRENT_ASSET;
@@ -102,7 +104,7 @@ next() {
 	
 	CURRENT_ASSET = asset;
 	// Spawn it
-	//llOwnerSay(":: spawn :: "+CURRENT_ASSET);
+	qdb(":: spawn :: "+CURRENT_ASSET);
 	
 	// Store the data in a separate array which is also used to check if we're currently rezzing
 	queue_rez = [
@@ -148,6 +150,8 @@ timerEvent(string id, string data){
 		next();
 		
 	}
+	else if( id == "NXT" )
+		next();
 	
 }
 
@@ -165,11 +169,11 @@ onEvt(string script, integer evt, list data){
 // returns -1 if the item has already been spawned and should be disregarded
 // FALSE if it was not added
 // TRUE if it was accepted
-int onObjectRez( key id ){
+int onObjectRez( key id, integer from ){
 	
 	int iid = (int)("0x"+(str)id);
 	if( ~llListFindList(spawns, (list)iid) ){
-		//qd("!! Ignoring already spawned "+llKey2Name(id)+" "+(str)id);
+		qdb("!! Ignoring already spawned "+llKey2Name(id)+" "+(str)id+ " "+(str)from);
 		return -1;
 	}
 	
@@ -178,13 +182,13 @@ int onObjectRez( key id ){
 		!count(queue_rez) || 						// There is no asset queued
 		~llListFindList(queue_desc, (list)id)		// It's already noted as rezzed
 	){
-		//qd("!! Ignored "+llKey2Name(id)+" "+(str)id);
+		qdb("!! Ignored "+llKey2Name(id)+" "+(str)id + " "+(str)from);
 		return FALSE;
 	}
 	
 	CURRENT_ASSET = "";
 	
-	//qd(">> Accepted "+llKey2Name(id)+" "+(str)id);
+	qdb(">> Accepted "+llKey2Name(id)+" "+(str)id+ " "+(str)from);
 	//llOwnerSay(":: STOR DESC :: "+(str)id+" :: "+llKey2Name(id));
 	// move it from queue_rez to queue_desc
 	
@@ -193,6 +197,8 @@ int onObjectRez( key id ){
 	return TRUE;
 
 }
+
+#define scheduleNext() multiTimer(["NXT", 0, .1, FALSE])
 
 default{
 
@@ -203,10 +209,10 @@ default{
 	}
 	
 	// An item was spawned. This allows parallel spawning
-	object_rez(key id){
+	object_rez( key id ){
 	
-		if( onObjectRez(id) == TRUE )
-			next(); // Spawn the next if possible
+		if( onObjectRez(id, 0) == TRUE )
+			scheduleNext(); // Spawn the next if possible
 		
 	}
 	
@@ -220,7 +226,7 @@ default{
 		if( message == "SP" ){
 		
 			// Object was rezzed and got scripts before object_rez was called
-			int spawnNext = onObjectRez(id);		
+			int spawnNext = onObjectRez(id, 1);		
 			if( spawnNext == -1 )	// Ignore if -1
 				return;
 				
@@ -237,14 +243,14 @@ default{
 			}
 			
 			if( spawnNext )
-				next();
+				scheduleNext();
 			
 		}
 		
 		else if( message == "DN" ){
 		
 			// Portals can send DONE immediately if they do not have descriptions. This can happen before object_rez
-			if( onObjectRez(id) == -1 )
+			if( onObjectRez(id, 2) == -1 )
 				return;
 			
 			// Find the ID in the description queue
@@ -253,14 +259,14 @@ default{
 			
 				spawns += (int)("0x"+(str)id);
 				// Remove it from desc queue
-				//qd(":: DONE :: "+llKey2Name(id)+" :: "+(str)id);
+				qdb(":: DONE :: "+llKey2Name(id)+" :: "+(str)id);
 				queue_desc = llDeleteSubList(queue_desc, pos, pos+QUEUEDESCSTRIDE-1);
 				// Spawn another asset if possible
-				next();
+				scheduleNext();
 				
 			}
 			else
-				qd("done() was run on an unknown UUID: "+(str)id+"\nqueue_desc was: "+mkarr(queue_desc));
+				qd("done() was run on an unknown UUID: "+(str)id+" ("+name+")"+"\nqueue_desc was: "+mkarr(queue_desc));
 			
 		}
 	}
@@ -299,58 +305,7 @@ default{
 			llResetScript();
 		}
 		
-        if( METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn ){
-			
-			key requester = id;
-			if( requester == "" )
-				requester = llGetLinkKey(LINK_THIS);
-			
-			list data = PARAMS;
-			if( METHOD == SpawnerMethod$spawn )
-				data = [mkarr(PARAMS)];
-			
-			
-			integer i;
-			for( i=0; i<llGetListLength(data); i++ ){
-			
-				string s = llList2String(data, i);
-				if( llJsonValueType(s, []) == JSON_ARRAY ){
-					
-					list dta = llJson2List(s);
-					string asset = llList2String(dta,0);
-					if( asset == "_CB_" )
-						queue += [
-							asset,
-							id,
-							SENDER_SCRIPT,
-							METHOD,
-							llList2String(dta, 1),
-							0,
-							0,
-							0
-						];
-					
-					else if( llGetInventoryType(asset) == INVENTORY_OBJECT )
-						queue += [
-							asset,								// Obj name
-							(vector)llList2String(dta, 1),		// Position
-							(rotation)llList2String(dta, 2),	// Rotation
-							llList2String(dta, 3),				// Description
-							llList2Integer(dta, 4),				// Debug
-							llList2Integer(dta, 5),				// Temp
-							llList2String(dta, 6),				// spawnround
-							requester							// sender
-						];
-					
-					else 
-						qd("Inventory missing: '"+llList2String(dta, 0)+"'\n"+mkarr(PARAMS));
-				}
-			}
-			
-			next();
-		}
-		
-		else if(METHOD == SpawnerMethod$debug){
+        else if(METHOD == SpawnerMethod$debug){
 			qd("Dumping queue");
 			integer i;
 			for(i=0; i<llGetListLength(queue); i+= QUEUESTRIDE){
@@ -368,6 +323,57 @@ default{
 		}
 		
     }
+	
+	if( METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn ){
+		
+		key requester = id;
+		if( requester == "" )
+			requester = llGetLinkKey(LINK_THIS);
+		
+		list data = PARAMS;
+		if( METHOD == SpawnerMethod$spawn )
+			data = [mkarr(PARAMS)];
+		
+		
+		integer i;
+		for( i=0; i<llGetListLength(data); i++ ){
+		
+			string s = llList2String(data, i);
+			if( llJsonValueType(s, []) == JSON_ARRAY ){
+				
+				list dta = llJson2List(s);
+				string asset = llList2String(dta,0);
+				if( asset == "_CB_" )
+					queue += [
+						asset,
+						id,
+						SENDER_SCRIPT,
+						METHOD,
+						llList2String(dta, 1),
+						0,
+						0,
+						0
+					];
+				
+				else if( llGetInventoryType(asset) == INVENTORY_OBJECT )
+					queue += [
+						asset,								// Obj name
+						(vector)llList2String(dta, 1),		// Position
+						(rotation)llList2String(dta, 2),	// Rotation
+						llList2String(dta, 3),				// Description
+						llList2Integer(dta, 4),				// Debug
+						llList2Integer(dta, 5),				// Temp
+						llList2String(dta, 6),				// spawnround
+						requester							// sender
+					];
+				
+				else 
+					qd("Inventory missing: '"+llList2String(dta, 0)+"'\n"+mkarr(PARAMS));
+			}
+		}
+		
+		scheduleNext();
+	}
     
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"  

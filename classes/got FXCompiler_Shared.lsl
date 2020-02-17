@@ -105,18 +105,24 @@ list getDFXSlice( integer type, integer numElements ){
 	
 }
 
+#define stat( type ) _st(type, FALSE)
+#define statAdditive( type ) _st(type, TRUE)
 
-int stat( integer type ){
+// compiles a stat for output and returns it as a compressed integer
+int _st( integer type, integer additive ){
 	
 	// The value we want to add should be the first value
-	float out = 1;
+	float out = !additive;		
 	list check = getDFXSlice( type, 1 );
 	
 	integer i;
 	for( ; i<count(check); i+=2 ){
 		
 		int stacks = getStacks(dPid(l2i(check, i)), FALSE);
-		out *= (1+l2f(check, i+1)*stacks);
+		if( additive )
+			out += l2f(check, i+1)*stacks;
+		else
+			out *= (1+l2f(check, i+1)*stacks);
 		
 	}	
 	

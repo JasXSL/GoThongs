@@ -649,14 +649,14 @@ default{
 			i2f(l2f(set, 9)),		\
 			i2f(l2f(set, 10)),		\
 			\
-			i2f(l2f(set, 11)),		\
-			i2f(l2f(set, FXCUpd$HP_MULTIPLIER)),			\
-			l2i(set, 13),			\
-			i2f(l2f(set, FXCUpd$MANA_MULTIPLIER)),			\
-			l2i(set, 15),			\
-			l2f(set, 16),			\
-			l2i(set, 17),			\
-			l2f(set, 18),			\
+			i2f(l2i(set, FXCUpd$HP_ADD)),		\
+			i2f(l2i(set, FXCUpd$HP_MULTIPLIER)),			\
+			i2f(l2i(set, FXCUpd$MANA_ADD)),			\
+			i2f(l2i(set, FXCUpd$MANA_MULTIPLIER)),			\
+			i2f(l2i(set, FXCUpd$AROUSAL_ADD)),			\
+			i2f(l2i(set, FXCUpd$AROUSAL_MULTIPLIER)),			\
+			i2f(l2i(set, FXCUpd$PAIN_ADD)),			\
+			i2f(l2i(set, FXCUpd$PAIN_MULTIPLIER)),			\
 			\
 			l2f(set, 19),			\
 			l2f(set, 20),			\
