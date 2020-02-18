@@ -7,6 +7,7 @@
 // trigger random squish
 #define squishSound() llTriggerSound(randElem((list)"72d65db8-31fe-375b-8716-89e3963fbf7d"+"90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd"+"f9194db3-9606-2264-3cde-765430179069"), llFrand(0.25)+0.25)
 
+// List of built in breast jiggle animations
 #define got$BREAST_JIGGLES (list)\
 	"breast_double_slap_slower" + \
 	"breast_right_slap" + \
@@ -15,16 +16,20 @@
 	"breast_left_slap" + \
 	"breast_double_slap"
 
+// Gets a random from above
 #define getRandomBreastJiggle() \
 	l2s(got$BREAST_JIGGLES, llFloor(llFrand(6)))
 
+// Triggers a breast jiggle on a target
 #define triggerBreastJiggle( targ ) AnimHandler$targAnim(targ, l2s((list)got$BREAST_JIGGLES, llFloor(llFrand(6))), true)
 
+// Trigger a breast jiggle on a target but only for one breast
 #define triggerBreastJiggleSided( targ ) AnimHandler$targAnim(targ, l2s((list)\
 	"breast_right_slap" + \
 	"breast_left_slap" \
 , llFloor(llFrand(2))), true)
 
+// Trigger a breast jiggle on a target but only for both breasts
 #define triggerBreastJiggleDouble( targ ) AnimHandler$targAnim(targ, l2s((list)\
 	"breast_double_slap_slower" + \
 	"breast_double_slap_long" + \
@@ -32,6 +37,7 @@
 	"breast_double_slap" \
 , llFloor(llFrand(4))), true)
 
+// Trigger a breast "stretch" animation
 #define triggerBreastStretch( targ ) AnimHandler$targAnim(targ, l2s((list) \
 	"breast_stretch_left" + \
 	"breast_stretch_right" \
@@ -46,7 +52,7 @@
 	copper-floor((float)copper/10)*10 \
 ]
 
-
+// Turns a value in copper to a readable text of gold/silver/copper
 string toGSCReadable( integer copper ){
 	
 	list gsc = toGSC(copper);
@@ -79,14 +85,23 @@ rotation got_n2r( rotation Q ){
 
 
 
-// Parses a description into resources, status, fx, sex, team - Currently only supports resources for NPCs
+// Parses a HUD/Monster description into resources, status, fx, sex, team - Currently only supports resources for NPCs
 // The if statement checks if this is a HUD which has a slightly different syntax
 // _data[0] is the attached point, if attached, the syntax is a bit different
 // monsterFlags is userSettings for PC
-#define parseDesc(aggroTarg, resources, status, fx, sex, team, monsterflags, armor) \
+/*
+	targ : key UUID of HUD or NPCs you want to get info about
+	resources : int variable name to create and store resources data in (use parseResources to turn it into a list of floats)
+	status : int variable name to create and store status flags
+	team : int variable name to create and store team in
+	sex : int variable name to create and store sex flags in (see GENITALS_* in _core.lsl)
+	monsterflags : int variable name to create and store monster runtime flags in. When used on a PC, these are the settings flags from got Bridge.lsl
+	armor : int variable name to create and store armor data in (use Status$splitArmor, see got Status.lsl for more info)
+*/
+#define parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor) \
 integer resources; integer status; integer fx; integer team; integer sex; integer monsterflags; int armor; \
 {\
-list _data = llGetObjectDetails(aggroTarg, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \
 resources = l2i(_split,StatusDesc$npc$RESOURCES); \
 status = l2i(_split,StatusDesc$npc$STATUS); \
@@ -107,6 +122,7 @@ if(l2i(_data, 0)){ /* HUD */ \
 }
 
 // For got FXCompiler.lsl
+// Parses the data needed to compare players for a smart heal
 #define smartHealDescParse(targ, resources, status, fx, team) \
 	integer resources; integer status; integer fx; integer team;  \
 	list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
@@ -189,6 +205,7 @@ integer targetIsHumanoid( key targ ){
 	return FALSE;
 }
 
+// Attempts to get height of a target regardless of if it's an NPC or PC
 float getTargetHeight( key t ){
 	
 	if( prAttachPoint(t) )
@@ -206,9 +223,11 @@ float getTargetHeight( key t ){
 	
 }
 
+// Takes in status/fx flags (generally pulled from one of the desc functions above) and checks if it can be attacked
 #define _attackableData( status, fx ) \
 		(!(fx&fx$UNVIABLE) && !(status&StatusFlags$NON_VIABLE))
 
+// Same as above but checks by UUID. Should work on monsters as well
 int _attackableHUD(key HUD){
 	list _data = llGetObjectDetails(HUD, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); 
 	list _split = explode("$", l2s(_data, 1)); 
@@ -225,6 +244,7 @@ int _attackableHUD(key HUD){
 // Returns an array of hp, mana, arousal, pain
 #define splitResources(n) [(n>>21&127) / 127.0, (n>>14&127) / 127.0, (n>>7&127) / 127.0, (n&127) / 127.0]
 
+// I think this is legacy code, I don't think it's used anywhere.
 string rarityToName(integer rarity){
 	list r = [RARITY_LEGENDARY, "Legendary", RARITY_VERY_RARE, "Very Rare", RARITY_RARE, "Rare", RARITY_UNCOMMON, "Uncommon"];
 	integer i;
@@ -234,12 +254,13 @@ string rarityToName(integer rarity){
 	return "Common";
 }
 
-rotation NormRot(rotation Q)
-{
+// Normalizes a rotation
+rotation NormRot(rotation Q){
     float MagQ = llSqrt(Q.x*Q.x + Q.y*Q.y +Q.z*Q.z + Q.s*Q.s);
     return <Q.x/MagQ, Q.y/MagQ, Q.z/MagQ, Q.s/MagQ>;
 }
 
+// Might be legacy, not sure if it's used anywhere.
 string statsToText(list stats){
 	list out = [];
 	list n = STAT_NAMES;
