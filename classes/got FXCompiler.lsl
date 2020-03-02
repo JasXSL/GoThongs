@@ -47,6 +47,9 @@
 	#define FXCUpd$FOV 32				// (float)field_of_view - 0 resets
 	#define FXCUpd$PROC_BEN 33			// (float)multi - Beneficial effect proc chance multiplier
 	#define FXCUpd$PROC_DET 34			// (float)multi - Detrimental effect proc chance multiplier
+	#define FXCUpd$HP_ARMOR_DMG_MULTI 35	// (float)multi - Increases or decreases the chance of taking armor damage from HP damage
+	#define FXCUpd$ARMOR_DMG_MULTI 36	// (float)multi - Increases or decreases armor damage taken in general
+	
 	
 	
 // Settings that are are not multiplicative

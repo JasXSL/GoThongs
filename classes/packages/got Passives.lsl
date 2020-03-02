@@ -64,7 +64,9 @@ list compiled_actives = [
 	1,	// 31 FXCUpd$SWIM_SPEED_MULTI
 	0,	// 32 FXCUpd$FOV
 	1,	// 33 FXCUpd$PROC_BEN
-	1	// 34 FXCUpd$PROC_DET
+	1,	// 34 FXCUpd$PROC_DET
+	1,	// 35 FXCUpd$HP_ARMOR_DMG_MULTI
+	1	// 36 FXCUpd$ARMOR_DMG_MULTI
 ];      // Compiled actives defaults
 
 /*
@@ -673,7 +675,9 @@ default{
 			i2f(l2i(set,FXCUpd$SWIM_SPEED_MULTI)), \
 			i2f(l2i(set,FXCUpd$FOV)), \
 			i2f(l2i(set,FXCUpd$PROC_BEN)), \
-			i2f(l2i(set,FXCUpd$PROC_DET)) \
+			i2f(l2i(set,FXCUpd$PROC_DET)), \
+			i2f(l2i(set,FXCUpd$HP_ARMOR_DMG_MULTI)), \
+			i2f(l2i(set,FXCUpd$ARMOR_DMG_MULTI)) \
 		]; \
         output(); \
 	}

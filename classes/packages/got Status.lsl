@@ -69,6 +69,8 @@ list fmHT;						// healing taken from actives [int playerID, float amount] From 
 float fmHR = 1;					// HP regen
 float fmPR = 1;					// Pain regen
 float fmAR = 1;					// Arousal regen
+float fmAC = 1;					// Armor damage taken from damage multiplier
+float fmA = 1;					// Armor damage taken multiplier
 
 float fmMH = 1;					// max health multiplier
 integer fmMHn = 0;				// Max health adder
@@ -251,7 +253,6 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		
     float pre = HP;
 	am*=spdmtm(sn, atkr);
-		
 	
 	if(fl&SMAFlag$IS_PERCENTAGE)
 		am*=maxHP();
@@ -296,14 +297,16 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 	if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
 		am *= rCnv(FXC$CONVERSION_HP, am);
 	
-	int ARMOR_PER_DMG = 5;	// every 5 points of damage reduces armor by 1
-	int aDmg = 
-		llFloor(llFabs(am)/ARMOR_PER_DMG) + 
-		(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))
-	;
-	if( am < 0 && aDmg )
-		dArm(aDmg);
-	
+	float mod = fmAC*fmA;
+	if( mod > 0 ){
+		float ARMOR_PER_DMG = 5.0/mod;	// every 5 points of damage reduces armor by 1
+		int aDmg = 
+			llFloor(llFabs(am)/ARMOR_PER_DMG) + 
+			(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))
+		;
+		if( am < 0 && aDmg )
+			dArm(aDmg);
+	}
     HP += am;
 	
 	Status$handleLifeSteal(am, stl, atkr)
@@ -922,6 +925,8 @@ default {
 		fmPR = i2f(l2f(data, FXCUpd$PAIN_REGEN)); \
 		fmAR = i2f(l2f(data, FXCUpd$AROUSAL_REGEN)); \
 		paHT = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
+		fmAC = i2f(l2f(data, FXCUpd$HP_ARMOR_DMG_MULTI)); \
+		fmA = i2f(l2f(data, FXCUpd$ARMOR_DMG_MULTI)); \
 		fxT = l2i(data, FXCUpd$TEAM); \
 		fxC = llJson2List(l2s(data, FXCUpd$CONVERSION)); \
 		HP = maxHP()*perc; \
@@ -1170,7 +1175,17 @@ default {
 	
 	if( METHOD == StatusMethod$damageArmor ){
 	
-		dArm( l2i(PARAMS, 0) );
+		integer a = (int)l2i(PARAMS, 0);
+		// Modifier
+		if( a > 0 ){
+			float amt = a*fmA;
+			a = floor(amt);
+			if( llFrand(1) < amt-a)
+				++a;
+		}
+		
+		
+		dArm( a );
 		OS(FALSE);
 		
 	}

@@ -141,6 +141,8 @@
 	#define fx$DAMAGE_ARMOR 72					// (int)points - PC only. 50 per slot. Can be negative to restore
 	#define fx$MAX_PAIN_MULTI 73				// (float)amount - Adds or lowers max pain/arousal
 	#define fx$MAX_AROUSAL_MULTI 74				// (float)amount - Adds or lowers max pain/arousal
+	#define fx$HP_ARMOR_DMG_MULTI 75			// (float)amount - Adds or lowers armor damage taken from HP damage
+	#define fx$ARMOR_DMG_MULTI 76				// (float)amount - Adds or lowers armor damage taken
 	
 	
 // conditions

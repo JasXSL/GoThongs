@@ -402,7 +402,9 @@ updateGame(){
 		100,					// 31 Swim speed (f2i)
 		f2i(l2f(getDFXSlice( fx$FOV, 1), -1)), // 32, FoV (f2i)
 		stat( fx$PROC_BEN ),	// Beneficial proc chance
-		stat( fx$PROC_DET )		// Detrimental proc chance
+		stat( fx$PROC_DET ),		// Detrimental proc chance
+		stat( fx$HP_ARMOR_DMG_MULTI ),
+		stat( fx$ARMOR_DMG_MULTI )
 	])); 
 }
 #include "got/classes/packages/got FXCompiler.lsl"

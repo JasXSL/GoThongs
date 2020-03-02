@@ -285,7 +285,8 @@ updateGame(){
 		0,					// (unsupported)swimspeed
 		0,					// (unsupported)fov
 		stat( fx$PROC_BEN ),	// Beneficial proc chance
-		stat( fx$PROC_DET )		// Detrimental proc chance
+		stat( fx$PROC_DET ),		// Detrimental proc chance
+		0,0					// (unsupported)armor damage
 	])), "");
 }
 
