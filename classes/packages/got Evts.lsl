@@ -21,6 +21,7 @@ integer P_BUTTONS;
 #define SPSTRIDE 7
 list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)flags]
 
+float fxMod = 1.0;	// Multiplier against nr steps in a QTE
 
 list TARGETED_BY;	// Players currently actively targeting you
 
@@ -234,8 +235,8 @@ ptEvt( string id ){
 	
 }
 
-default
-{
+default{
+
     state_entry(){
         llRegionSayTo(llGetOwner(), 1, "jasx.onattach GoThongs, 1");
         llRegionSayTo(llGetOwner(), 1, "jasx.onattach GoT, 1");
@@ -291,16 +292,13 @@ default
 		ptRefresh();
 	}
 	
-	// This is the standard linkmessages
+	#define LM_PRE \
+	if(nr == TASK_FX){ \
+		list data = llJson2List(s); \
+		fxMod = i2f(l2f(data, FXCUpd$QTE_MOD)); \
+    } \
+	
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    
     // Here's where you receive callbacks from running methods
     if(method$isCallback){
         return;
@@ -395,8 +393,11 @@ default
     }
 	
 	if(METHOD == EvtsMethod$startQuicktimeEvent){
-		QTE_STAGES = l2i(PARAMS, 0);
-		
+	
+		QTE_STAGES = floor(l2i(PARAMS, 0)*fxMod);
+		if( QTE_STAGES < 1 && l2i(PARAMS, 0) > 0 )
+			QTE_STAGES = 1;
+			
 		// Tells any active QTE sender that it has ended, useful if QTE ended by someone other than the one that initiated it
 		if(!QTE_STAGES)
 			onQteEnd(FALSE);

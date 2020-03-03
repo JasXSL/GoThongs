@@ -66,7 +66,8 @@ list compiled_actives = [
 	1,	// 33 FXCUpd$PROC_BEN
 	1,	// 34 FXCUpd$PROC_DET
 	1,	// 35 FXCUpd$HP_ARMOR_DMG_MULTI
-	1	// 36 FXCUpd$ARMOR_DMG_MULTI
+	1,	// 36 FXCUpd$ARMOR_DMG_MULTI
+	1	// 37 FXCUpd$QTE_MOD
 ];      // Compiled actives defaults
 
 /*
@@ -677,7 +678,8 @@ default{
 			i2f(l2i(set,FXCUpd$PROC_BEN)), \
 			i2f(l2i(set,FXCUpd$PROC_DET)), \
 			i2f(l2i(set,FXCUpd$HP_ARMOR_DMG_MULTI)), \
-			i2f(l2i(set,FXCUpd$ARMOR_DMG_MULTI)) \
+			i2f(l2i(set,FXCUpd$ARMOR_DMG_MULTI)), \
+			i2f(l2i(set,FXCUpd$QTE_MOD)) \
 		]; \
         output(); \
 	}

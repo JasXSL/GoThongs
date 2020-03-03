@@ -404,7 +404,8 @@ updateGame(){
 		stat( fx$PROC_BEN ),	// Beneficial proc chance
 		stat( fx$PROC_DET ),		// Detrimental proc chance
 		stat( fx$HP_ARMOR_DMG_MULTI ),
-		stat( fx$ARMOR_DMG_MULTI )
+		stat( fx$ARMOR_DMG_MULTI ),
+		stat( fx$QTE_MOD )
 	])); 
 }
 #include "got/classes/packages/got FXCompiler.lsl"

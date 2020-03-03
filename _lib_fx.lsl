@@ -143,7 +143,7 @@
 	#define fx$MAX_AROUSAL_MULTI 74				// (float)amount - Adds or lowers max pain/arousal
 	#define fx$HP_ARMOR_DMG_MULTI 75			// (float)amount - Adds or lowers armor damage taken from HP damage
 	#define fx$ARMOR_DMG_MULTI 76				// (float)amount - Adds or lowers armor damage taken
-	
+	#define fx$QTE_MOD 77						// (float)amount - Increases or decreases nr of clicks needed in quicktime events
 	
 // conditions
 	// Built in

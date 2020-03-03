@@ -49,7 +49,7 @@
 	#define FXCUpd$PROC_DET 34			// (float)multi - Detrimental effect proc chance multiplier
 	#define FXCUpd$HP_ARMOR_DMG_MULTI 35	// (float)multi - Increases or decreases the chance of taking armor damage from HP damage
 	#define FXCUpd$ARMOR_DMG_MULTI 36	// (float)multi - Increases or decreases armor damage taken in general
-	
+	#define FXCUpd$QTE_MOD 37			// (PC)(float)multi - Increases or decreases nr of clicks you have to do in a quick time event.
 	
 	
 // Settings that are are not multiplicative
