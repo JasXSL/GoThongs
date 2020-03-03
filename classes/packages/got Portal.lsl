@@ -122,9 +122,12 @@ remove(){
     llDie();
 }
 
-default
-{
+default{
+
     on_rez(integer mew){
+	
+		// Let the spawner know it can rez next
+		llRegionSayTo(mySpawner(), playerChan(mySpawner()), "PN");
         if(mew != 0){
 			integer p = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(p);
@@ -138,14 +141,16 @@ default
     }
     state_entry(){
 	
+		requester = spawner = mySpawner();
+		// Let the spawner know it can rez next
+		llRegionSayTo(requester, playerChan(requester), "PN");
 		
-		requester = mySpawner();
+		
 		PLAYERS = [(string)llGetOwner()];
         initiateListen();
 		llListen(AOE_CHAN, "", "", "");
         pin = llCeil(llFrand(0xFFFFFFF));
         llSetRemoteScriptAccessPin(pin);
-		spawner = llList2Key(llGetObjectDetails(llGetKey(), [OBJECT_REZZER_KEY]), 0);
 		
 		
         if(!llGetStartParameter())

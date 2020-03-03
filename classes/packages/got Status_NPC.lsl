@@ -38,6 +38,7 @@ integer BFL = 0;
 
 
 list PLAYERS;
+list PLAYER_HUDS;
 
 float maxHP = -1;
 
@@ -352,6 +353,8 @@ outputStats( integer f ){
 			ptSet("A", 1, TRUE); \
 		} \
     } \
+	else if( script == "got Portal" && evt == PortalEvt$playerHUDs ) \
+		PLAYER_HUDS = data; \
 	else if( script == "got Monster" ){ \
 	    if( evt == MonsterEvt$runtimeFlagsChanged ){\
 			RF = l2i(data, 0); \
@@ -760,8 +763,18 @@ default
 					}
 				)
 				
+				int avg; 
+				runOnHUDs(targ,
+					parseArmor(targ, armor)
+					integer n;
+					for(; n<5; ++n)
+						avg += Status$getArmorVal( armor, n );
+				)
+				float perc = (float)avg/(count(PLAYERS)*50*5);
+				
 				float rand = llFrand(1);
-				if( maxHP >= 40 && rand < 0.1 ){
+				// 0-30% based on missing armor of the party
+				if( maxHP >= 40 && rand < 0.05+(1.0-perc)*0.25 ){
 				
 					list ray = llCastRay(llGetPos()+<0,0,1>, llGetPos()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 					if( l2i(ray, -1) == 1 ){

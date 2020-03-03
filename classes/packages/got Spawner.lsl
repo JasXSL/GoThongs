@@ -100,7 +100,7 @@ next() {
 	
 	
 	// Set/reset clean up timer
-	multiTimer(["FORCE_NEXT", 1, 30, FALSE]);
+	multiTimer(["FORCE_NEXT", 1, 60, FALSE]);
 	
 	CURRENT_ASSET = asset;
 	// Spawn it
@@ -209,12 +209,16 @@ default{
 	}
 	
 	// An item was spawned. This allows parallel spawning
+	// LL has broken object_rez. Some times it fires minutes after later rezzed items have rezzed and the event raised.
+	// It should not be used
+	/*
 	object_rez( key id ){
 	
 		if( onObjectRez(id, 0) == TRUE )
 			scheduleNext(); // Spawn the next if possible
 		
 	}
+	*/
 	
 	// The script listens to it's own object key chan
 	// SP is received when a portal is ready to receive a description
@@ -222,8 +226,16 @@ default{
 	listen(integer chan, string name, key id, string message){
 		idOwnerCheck
 		
+		// Sent from an object letting you know it was spawned, but not remoteloaded yet
+		if( message == "PN" ){
+			int spawnNext = onObjectRez(id, 1);		
+			if( ~spawnNext )	// Ignore if -1
+				scheduleNext();
+			
+		}
+		
 		// Send from a portal requesting a description
-		if( message == "SP" ){
+		else if( message == "SP" ){
 		
 			// Object was rezzed and got scripts before object_rez was called
 			int spawnNext = onObjectRez(id, 1);		
@@ -239,7 +251,8 @@ default{
 			}
 			// HAX: Send something to shut up the object
 			else{
-				Portal$iniData(id, "", "", llGetKey());
+				//Portal$iniData(id, "", "", llGetKey());
+				qd("Unknown object "+llKey2Name(id)+" requested spawn data");
 			}
 			
 			if( spawnNext )
@@ -247,6 +260,7 @@ default{
 			
 		}
 		
+		// Sent from a portal saying it's done
 		else if( message == "DN" ){
 		
 			// Portals can send DONE immediately if they do not have descriptions. This can happen before object_rez
