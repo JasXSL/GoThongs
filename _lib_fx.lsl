@@ -21,14 +21,14 @@
 		#define fxhfFlag$NOSOUND 2					// Don't use a default sound
 		#define fxhfFlag$PAIN_HEAVY 0x4				// Could be used for RP purposes
 		#define fxhfFlag$AROUSAL 0x8				// Could be used for RP purposes
-		#define fxhfFlag$AROUSAL_HEAVY 0x10			// Could be used for RP purposes
-		#define fxhfFlag$IGNORE_TYPE 0x20			// Prevents RP grunts
+		#define fxhfFlag$AROUSAL_HEAVY 0x10			// 16 Could be used for RP purposes
+		#define fxhfFlag$IGNORE_TYPE 0x20			// 32 Prevents RP grunts
 		
 		// New flags for slot specific
-		#define fxhfFlag$SLOT_GROIN 0x40
-		#define fxhfFlag$SLOT_BUTT 0x80
-		#define fxhfFlag$SLOT_BREASTS 0x100
-		#define fxhfFlag$SLOT_STOMACH 0x200
+		#define fxhfFlag$SLOT_GROIN 0x40			// 64
+		#define fxhfFlag$SLOT_BUTT 0x80				// 128
+		#define fxhfFlag$SLOT_BREASTS 0x100			// 256
+		#define fxhfFlag$SLOT_STOMACH 0x200			// 512
 		
 		#define fxhfColor$phys "<1,.5,.5>"
 		#define fxhfColor$arouse "<1,.5,1>"
@@ -66,6 +66,9 @@
 		#define fx$F_STUNNED_IMPORTANT 0x40000		// NPC - Effect stuns bosses as well
 		#define fx$F_FORCE_MOUSELOOK 0x80000		// PC - Makes only mouselook work
 		#define fx$F_SPELLS_MAX_RANGE 0x100000		// PC - Makes all spells cast as if they were done from max range (10m)
+		
+		#define fx$F_NO_NUDE_PENALTY 0x400000		// PC - Ignores nudity penalty
+		
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE|fx$F_NO_TARGET)
@@ -125,7 +128,7 @@
 	#define fx$BEFUDDLE 56						// (float)perc - PC ONLY - Adds a chance on spell cast to target a random player
 	#define fx$CONVERSION 57					// (int)conversion1, (int)conversion2... - PC ONLY - See got FXCompiler.lsl
 	#define fx$LTB 58							// (str)asset, (arr)conf - PC Only - Spawns a long term buff visual which sticks around on the affected player until the spell is removed. For conf, see got BuffSpawn. It's a strided list.
-	#define fx$REFRESH_SPRINT 59				// void - PC Only - Instant only. Refreshes sprint
+	#define fx$REFRESH_SPRINT 59				// (float)amount - PC Only - Instant only. 0 refreshes sprint entirely, higher/lower adds or subtracts a percentage
 	#define fx$HP_ADD 60						// (float)amount - PC only - Increases max HP by amount nr of points.
 	#define fx$GRAVITY 61						// (float)n - PC only - Overrides gravity, the last call is the active one
 	#define fx$PUSH 62							// (vec)dir - PC only - Applies an impulse

@@ -36,7 +36,8 @@ list PLAYER_HUDS;
 key TARG_FOCUS;
 #define FOCUS_BORDER <0.820, 0.820, 0.820>
 
-#define default_tx "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e"
+// Bar textures
+#define default_tx GUI$BAR_TEXTURE
 integer CACHE_FX_FLAGS = 0;
 
 integer P_QUIT;

@@ -270,7 +270,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		am*= 
 			(1+((SF&StatusFlag$pained)/StatusFlag$pained)*.1)*
 			(1+((SF&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
-			(1+((FXF&fx$F_SHOW_GENITALS)/fx$F_SHOW_GENITALS)*.2)*
+			(1+(FXF&fx$F_SHOW_GENITALS && ~FXF&fx$F_NO_NUDE_PENALTY)*.2)*
 			fmdt*paDT*
 			difMod()
 		;
@@ -299,7 +299,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 	
 	float mod = fmAC*fmA;
 	if( mod > 0 ){
-		float ARMOR_PER_DMG = 5.0/mod;	// every 5 points of damage reduces armor by 1
+		float ARMOR_PER_DMG = 10.0/mod;	// every 10 points of damage reduces armor by 1
 		int aDmg = 
 			llFloor(llFabs(am)/ARMOR_PER_DMG) + 
 			(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))

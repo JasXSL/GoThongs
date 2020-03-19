@@ -21,6 +21,8 @@ integer CFLAGS;
 
 #define setThrustTimer() ptSet("thr", llFrand(speed_max-speed_min)+speed_min, FALSE)
 
+#define seat() llOwnerSay("@sit:"+(str)llGetKey()+"=force,unsit=n")
+
 list SOUNDS = ["72d65db8-31fe-375b-8716-89e3963fbf7d","90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd","f9194db3-9606-2264-3cde-765430179069"];
 
 ptEvt( str id ){
@@ -45,13 +47,15 @@ ptEvt( str id ){
         
         
     }
+	if( id == "resit" )
+		seat();
     
 }
 
 begin(){
 	
 	if( BFL&BFL_LIVE && BFL_HAS_CONF ){
-		llOwnerSay("@sit:"+(str)llGetKey()+"=force,unsit=n");
+		seat();
 	}
 }
 
@@ -174,6 +178,7 @@ onEvt(string script, integer evt, list data){
 		PP(0, (list)PRIM_TEMP_ON_REZ + TRUE);
         BFL = BFL|BFL_LIVE;
 		begin();
+		ptSet("resit", 2, TRUE);
         
     }
     
@@ -243,7 +248,8 @@ default{
                 
                 if( t != llGetOwner() )
                     return llUnSit(t);
-                    
+                
+				ptUnset("resit");
                 llRequestPermissions(llAvatarOnSitTarget(), PERMISSION_TRIGGER_ANIMATION);
 				BFL = BFL|BFL_STARTED;
 				

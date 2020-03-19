@@ -114,6 +114,7 @@ timerEvent( string id, string data ){
 
 // Removes this and anything spawned by this if this was a sub level
 remove(){
+
 	// Sub levels should also remove their spawned content
 	if(llGetInventoryType("got LevelLite") != INVENTORY_NONE){
 		Portal$removeSpawnedByThis();
@@ -125,6 +126,7 @@ remove(){
 default{
 
     on_rez(integer mew){
+	
 	
 		// Let the spawner know it can rez next
 		llRegionSayTo(mySpawner(), playerChan(mySpawner()), "PN");
@@ -140,6 +142,7 @@ default{
         llResetScript();
     }
     state_entry(){
+	
 	
 		requester = spawner = mySpawner();
 		// Let the spawner know it can rez next
@@ -408,10 +411,14 @@ default{
 			multiTimer(["A"]);
 			
 			string desc = INI_DATA;
-			if(desc != ""){
-				if(BFL&BFL_IS_DEBUG)desc = "$"+desc;
+			if( desc != "" ){
+			
+				if( BFL&BFL_IS_DEBUG )
+					desc = "$"+desc;
+				
 				llSetObjectDesc(desc);
-				if(llJsonValueType(INI_DATA, []) == JSON_ARRAY){
+				if( llJsonValueType(INI_DATA, []) == JSON_ARRAY ){
+				
 					list ini = llJson2List(INI_DATA);
 					integer i;
 					for(i=0; i<llGetListLength(ini) && ini != []; i++){

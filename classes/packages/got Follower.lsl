@@ -57,7 +57,7 @@ vector targetPos(){
 	point-= <0,0,ascale.z/2>;
 	
 	vector fwd = <0,0,1>;
-	if(l2i(data, 2) || ascale != ZERO_VECTOR)
+	if( l2i(data, 2) || ascale != ZERO_VECTOR )
 		fwd = <1,0,0>;
 	
 	fwd = fwd*rot*multi;
@@ -75,14 +75,16 @@ vector targetPos(){
 warp(){
 	
 	vector pos = targetPos();
-	if(pos == ZERO_VECTOR)		// No need to stop follow here, tick will automatically remove it
+	if( pos == ZERO_VECTOR )		// No need to stop follow here, tick will automatically remove it
 		return;
 	
 	list ray = llCastRay(pos+<0,0,1>, pos-<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
-	if(l2i(ray, -1) == 1 && llVecDist(pos+<0,0,1>, l2v(ray, 1))>.1){
+	if( l2i(ray, -1) == 1 && llVecDist(pos+<0,0,1>, l2v(ray, 1)) > .1 ){
+	
 		llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
 		llSleep(.1);
-		llSetRegionPos(pos);
+		llSetRegionPos(pos+<0,0,hoverHeight>);
+		
 	}
 	
 	// Prevents warp from being spammed

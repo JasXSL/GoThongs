@@ -148,9 +148,14 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		else if(t == fx$CUBETASKS){
 			RLV$cubeTask(llDeleteSubList(fx, 0, 0));
 		}
-		else if(t == fx$REFRESH_SPRINT)
-			RLV$setSprintPercent(LINK_ROOT, 1);
+		else if( t == fx$REFRESH_SPRINT ){
 		
+			if( l2f(fx, 1) == 0.0 )
+				RLV$setSprintPercent(LINK_ROOT, 1);
+			else
+				RLV$addSprint(l2f(fx, 1));
+				
+		}
     }
 	
     // Send updated hp/mana and stuff

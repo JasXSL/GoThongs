@@ -1,13 +1,15 @@
 #define SCRIPT_ALIASES ["jas MaskAnim"]
-#ifdef MaskAnimConf$remoteloadOnAttachedIni
-    #define USE_EVENTS
-#endif
+#define USE_EVENTS
+
+list IDLE_ANIMS;
+
 #include "got/_core.lsl"
 
 animKit( string base, integer start ){
     
     list viable = [];
     integer i;
+	// This lets you do animName_1 animName_2 etc to pick one at random
     for(; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i ){
         string n = llGetInventoryName(INVENTORY_ANIMATION, i);
         list expl = explode("_",n);
@@ -58,15 +60,45 @@ anim( string name, integer start ){
     
 }
 
-#ifdef MaskAnimConf$remoteloadOnAttachedIni
+#define toggleIdleAnims( on ) \
+	AniAnim$customAnim(LINK_THIS, mkarr(IDLE_ANIMS), on)
+
+
 onEvt(string script, integer evt, list data){
+
+	#ifdef MaskAnimConf$remoteloadOnAttachedIni
 	if(script == "jas Attached" && evt == evt$SCRIPT_INIT){
+	
 		integer pin = floor(llFrand(0xFFFFFF));
 		llSetRemoteScriptAccessPin(pin);
 		runMethod(llGetOwner(), "jas Remoteloader", RemoteloaderMethod$load, [cls$name, pin, 2], TNN);
+		
 	}
+	#endif
+	
+	if( script == "got Portal" && evt == PortalEvt$desc_updated ){
+		
+		list_shift_each(data, block,
+			
+			list d = llJson2List(block);
+			if( l2s(d, 0) == "IDL" )
+				IDLE_ANIMS += llDeleteSubList(d, 0, 0);
+		
+		)
+		
+		toggleIdleAnims( TRUE );
+		
+	}
+	
+	if( script == "got Status" && evt == StatusEvt$monster_gotTarget && l2s(data, 0) != "" && IDLE_ANIMS != [] ){
+		
+		toggleIdleAnims( FALSE );
+		IDLE_ANIMS = [];
+		
+	}
+	
 }
-#endif
+
 
 list FETCH_REQS;	// (str)anim, (float)time
 
@@ -112,7 +144,7 @@ default{
 
         if(method$isCallback)return;
         
-        if(METHOD == MaskAnimMethod$start){
+        if( METHOD == MaskAnimMethod$start ){
             
 			string anim = method_arg(0);
             integer restart = l2i(PARAMS, 1);
@@ -121,9 +153,9 @@ default{
             animKit(anim, TRUE);
             
         }
-        else if(METHOD == MaskAnimMethod$stop){ 
+        else if(METHOD == MaskAnimMethod$stop)
             animKit(method_arg(0), FALSE);
-        }
+        
         else if( METHOD == MaskAnimMethod$emulateFrameEvent )
             raiseEvent(MaskAnimEvt$frame, method_arg(0));
 			

@@ -91,7 +91,6 @@ onEvt(string script, integer evt, list data){
 // Draws bar NRs
 list barNrs( integer prim, integer a, integer b){
 
-	string nrSprite = "808bf549-c54a-67c9-4b81-2b680bbe5161";
 	float hz = 0.06250;
 	float hzofs = 0.03125;
 	
@@ -100,30 +99,25 @@ list barNrs( integer prim, integer a, integer b){
 	if( b > 999 )
 		b = 999;
 		
-	string aTxt = (string)a;
-	while( llStringLength(aTxt) < 3 )
-		aTxt = " "+aTxt;
-	string bTxt = (string)b;
-	while( llStringLength(bTxt) < 3 )
-		bTxt += " ";
-		
+	string charset = "0123456789/%!=()";
+	string txt = (str)a+"/"+(str)b;
+	
 	list out = (list)PRIM_LINK_TARGET + prim;
 	integer i;
-	for(i=0; i<7; ++i ){
-		
-		string char = llGetSubString(aTxt, i, i);
-		if( i == 3 )
-			char = "10";
-		if( i > 3 )
-			char = llGetSubString(bTxt, i-4, i-4);
-	
-		if( char == " " )
+	for(i=0; i<8; ++i ){
+
+		if( i >= llStringLength(txt) )
 			out += (list) PRIM_COLOR + i + ONE_VECTOR + 0;
-		else
+		else{
+			
+			string char = llGetSubString(txt, i, i);
+			integer idx = llSubStringIndex(charset, char);
 			out += (list)
-				PRIM_TEXTURE + i + "d72fed9b-e077-6ea1-fd98-9b28d879fd21" + (<0.06250,1,0>) + (<-0.46875+0.06250*(int)char,0,0>) + 0 +
+				PRIM_TEXTURE + i + nrSprite + (<0.06250,1,0>) + (<-0.46875+0.06250*idx,0,0>) + 0 +
 				PRIM_COLOR + i + ONE_VECTOR + 1
 			;
+			
+		}
 	
 	}
 	

@@ -18,10 +18,15 @@ onEvt(string script, integer evt, list data){
 default{
 
     state_entry(){
+	
+		
         CHAN = BuffSpawnChan(llGetOwner());
-        memLim(1.5);
+        llRegionSayTo(mySpawner(), CHAN, "SPN");
+		
+		memLim(1.5);
         llListen(CHAN, "", "", "");
         raiseEvent(evt$SCRIPT_INIT, "");
+		
     }
     
     listen(integer chan, string name, key id, string message){

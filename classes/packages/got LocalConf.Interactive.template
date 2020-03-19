@@ -1,0 +1,60 @@
+/*
+    The asset description should contain LVIN$<AssetName> set
+    Sub-prims can use description "ROOT" to automatically redirect interact to the root prim, alternatively set physics shape to none
+*/
+#define USE_EVENTS
+#include "got/_core.lsl"
+
+int INTERACTIONS;
+list PLAYERS;
+onEvt( string script, integer evt, list data ){
+    
+    if( Portal$isPlayerListIfStatement )
+        PLAYERS = data;
+    
+    
+}
+
+
+
+default{
+    
+    on_rez( integer mew ){ llResetScript(); }
+    
+    state_entry(){
+        
+        PLAYERS = [(string)llGetOwner()];
+        memLim(1.5);
+        
+    }
+	
+	#ifdef body
+		body
+	#endif
+    
+    #include "xobj_core/_LM.lsl"
+    if( method$isCallback )
+        return;
+    
+    if( METHOD == LocalConfMethod$stdInteract ){
+        
+		if( INTERACTIONS >= NR_INTERACTS && ~NR_INTERACTS )
+			return;
+		++INTERACTIONS;
+			
+		#ifdef CHECK_SUCCESS
+        if( (integer)method_arg(1) ){
+		#endif
+            onInteractSuccess(method_arg(0));
+		#ifdef CHECK_SUCCESS
+		}
+        else
+            onInteractFail(method_arg(0));
+		#endif
+		
+    }
+    
+    
+    #define LM_BOTTOM  
+    #include "xobj_core/_LM.lsl"  
+}

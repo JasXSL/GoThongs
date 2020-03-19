@@ -1,0 +1,220 @@
+/*
+    The asset description should contain LVIN$<AssetName> set
+    Sub-prims can use description "ROOT" to automatically redirect interact to the root prim
+	
+	Optional Config:
+	#define pConf$NO_DROP -> Prevents you from dropping it by long pressing
+	#define pConf$RAISE_LEVEL_EVENT_USE -> Raises an event you can capture in _MAIN.lsl of a level when potion is used
+	#define pConf$IS_IN_HUD -> The potion lives in the HUD spawner, try spawning from HUD when dropped!
+	#define pConf$RAISE_LEVEL_EVENT_DROP -> Raises and event  you can capture in _MAIN.lsl of a level when potion is dropped
+	
+	#define pConf$PHYS_ON_REZ -> Go physical when rezzed
+	#define pConf$PHYS_ON_COL -> Go physical when bumped into
+	
+	Requires:
+	#define pName = OBJ_NAME -> (str) Name of the potion
+	#define pTexture -> (key) Texture of the potion
+	#define pCharges = 1 -> (int) Total nr uses before it's emptied
+	#define pCooldown = 0 -> (float) Time in seconds between uess
+	#define pData -> (str) FX Wrapper to apply when using the potion
+	#define pSound = potion_sound -> (key) Sound to play when picking it up
+	#define pSoundVol = 1 -> (float)volume of sound when picking it up
+	#define pDesc -> Description when inspecting potion
+	
+	Optional:
+	#define onEvent( script, evt, data ) onEvent( script, evt, data ) -> Event handler
+	
+*/
+#define USE_EVENTS
+#include "got/_core.lsl"
+
+int INTERACTED;
+string _pName;
+// Potion texture
+key _pTexture;
+// Potion nr uses
+integer _pCharges = 1;
+// Potion flags
+integer _pFlags;
+// Time between uses
+float _pCooldown = 0;
+// Spell wrapper on use
+string _pData;
+string _pDesc;
+
+// Interact was successful
+interactSuccess( key user ){
+    
+	if( INTERACTED )
+		return;
+	
+	#ifdef onPickup
+		if( !onPickup(user) )
+			return;
+	#endif
+	
+		
+	INTERACTED = TRUE;
+	    
+		
+	key sound = "2f9fa739-e03b-43aa-3ae0-72a32cf84b54";
+	float vol = 1.0;
+	#ifdef pSound
+		sound = pSound;
+	#endif
+	#ifdef pSoundVol
+		vol = pSoundVol;
+	#endif
+	if( sound )
+		llTriggerSound( sound, vol );
+	
+    INTERACTED = TRUE;
+	Potions$set(user, _pName, _pTexture, _pCharges, _pFlags, _pCooldown, _pData, _pDesc);
+    llSetLinkPrimitiveParamsFast(LINK_SET, [
+		PRIM_POINT_LIGHT, FALSE, ZERO_VECTOR, 0, 0, 0, 
+		PRIM_COLOR, ALL_SIDES, <1,1,1>, 0, 
+		PRIM_GLOW, ALL_SIDES, 0, 
+		PRIM_PHANTOM, TRUE,
+		PRIM_PHYSICS, FALSE
+	]);
+    llSetObjectDesc("");    
+    llSleep(2);
+    llDie();
+    
+}
+
+
+Portal$playerLists
+onEvt( string script, integer evt, list data ){
+	Portal$handlePlayers();
+	
+	#ifdef onEvent
+	onEvent( script, evt, data );
+	#endif
+	
+	#ifdef pConf$PHYS_ON_REZ
+		#if pConf$PHYS_ON_REZ == 2
+		if( script == "got Portal" && evt == PortalEvt$desc_updated ){
+			
+			if( l2s(data, 0) == "M" ){
+			
+				llSetStatus(STATUS_PHYSICS, TRUE);
+				llSetTimerEvent(10);
+				
+			}
+				
+			
+		}
+		#endif
+		
+		#if pConf == 1
+		if( script == "got Portal" && evt == evt$SCRIPT_INIT ){
+		
+			llSetStatus(STATUS_PHYSICS, TRUE);
+			llSetTimerEvent(10);
+		
+		}
+		#endif
+	#endif
+	
+	if( script == "got Portal" && evt == evt$SCRIPT_INIT )
+		llSetObjectDesc("D$"+_pName+"$$STDIN");
+	
+    
+}
+
+
+
+default{
+    
+    on_rez( integer mew ){ llResetScript(); }
+    
+    state_entry(){
+        
+        PLAYERS = [(string)llGetOwner()];
+        memLim(1.5);
+		
+		#ifndef pName
+			_pName = llGetObjectName();
+		#else
+			_pName = pName;
+		#endif
+		
+		#ifdef pTexture
+			_pTexture = pTexture;
+		#endif
+		
+		#ifdef pCharges
+			_pCharges = pCharges;
+		#endif
+		
+		#ifdef pCooldown
+			_pCooldown = pCooldown;
+		#endif
+		
+		#ifdef pData
+		_pData = pData;
+		#endif
+		
+		#ifdef pSound
+		_pSound = pSound;
+		#endif
+		
+		#ifdef pSoundVol
+		_pSoundVol = pSoundVol;
+		#endif
+		
+		#ifdef pConf$NO_DROP
+			_pFlags = _pFlags|PotionsFlag$no_drop;
+		#endif
+		#ifdef pConf$RAISE_LEVEL_EVENT_USE
+			_pFlags = _pFlags|PotionsFlag$raise_event;
+		#endif
+		#ifdef pConf$IS_IN_HUD
+			_pFlags = _pFlags|PotionsFlag$is_in_hud;
+		#endif
+		#ifdef pConf$RAISE_LEVEL_EVENT_DROP
+			_pFlags = _pFlags|PotionsFlag$raise_drop_event;
+		#endif
+		
+		
+		
+    }
+    
+	#ifdef pConf$PHYS_ON_COL
+    collision_start( integer total ){
+        
+        if( !llGetStatus(STATUS_PHYSICS) ){
+            
+            llSetStatus(STATUS_PHYSICS, TRUE);
+            llSetTimerEvent(10);
+            
+        }
+        
+    }
+	#endif
+    
+    timer(){
+        
+		if( llVecMag(llGetVel()) < .1 ){
+			
+			llSetStatus(STATUS_PHYSICS, FALSE);
+			llSetTimerEvent(0);
+			
+		}
+        
+    }
+    
+    #include "xobj_core/_LM.lsl"
+    if( method$isCallback )
+        return;
+    
+    if( METHOD == LocalConfMethod$stdInteract )
+        interactSuccess(method_arg(0));
+
+    #define LM_BOTTOM  
+    #include "xobj_core/_LM.lsl"  
+}
+
+
+

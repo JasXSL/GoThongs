@@ -7,6 +7,7 @@ integer STATUS; // Flags from got Status
 integer BFL = 0x1;
 #define BFL_SHEATHED 0x1		// Weapon sheathed
 #define BFL_LOADED 0x2
+#define BFL_INIT 0x4			// HUD initialized
 
 integer WFLAGS;
 #define WFLAG_UNSHEATHABLE 0x8
@@ -68,7 +69,7 @@ string IDLE_ANIM;	// Active idle anim
 updateStance(){
 
 	string anim = "stance_fists";
-	if( STANCE != "" && !unsheatable )
+	if( STANCE != "" && !unsheatable && ~BFL&BFL_SHEATHED )
 		anim = STANCE;
 	if( CLASS_STANCE )
 		anim = CLASS_STANCE;
@@ -88,6 +89,7 @@ updateStance(){
 		
 	}
 	
+	// in combat
 	if( ~STATUS&StatusFlag$combat && llGetInventoryType(STANCE+"_idle") && ~BFL&BFL_SHEATHED && ~FX_FLAGS&fx$F_DISARM ){
 		
 		string an = STANCE+"_idle";
@@ -102,6 +104,7 @@ updateStance(){
 		}
 					
 	}
+	// Out of combat
 	else if( IDLE_ANIM ){
 		
 		if( animExists(IDLE_ANIM) )
@@ -138,6 +141,9 @@ onCombatExited(){
 
 onEvt(string script, integer evt, list data){
     
+	if( script == "got Bridge" && evt == BridgeEvt$thong_initialized )
+		multiTimer(["INI", 0, 4, FALSE]);
+		
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged)
         loadWeapon(data);   
     // thong data changed
@@ -339,11 +345,21 @@ timerEvent(string id, string data){
     }
 	else if(id == "SND")
 		llTriggerSound(data, llFrand(.25)+.25);
+		
+	else if( id == "INI" ){
+		
+		BFL = BFL|BFL_INIT;
+		spawnWeapons();
+		
+	}
+		
 }
 
 spawnWeapons(){
+
+	llOwnerSay("@acceptpermission=add");
 	// NO weapons when dead
-	if(STATUS&StatusFlag$dead || FX_FLAGS&fx$F_DISARM)
+	if(STATUS&StatusFlag$dead || FX_FLAGS&fx$F_DISARM || ~BFL&BFL_INIT || ~BFL&BFL_LOADED )
 		return;
     
 	Weapon$removeAll();
@@ -351,7 +367,6 @@ spawnWeapons(){
     // Rhand changed
     // Remove current weapon
     RHAND_ATT = "";
-    
     
     if(RHAND != "" && llGetInventoryType(RHAND) == INVENTORY_OBJECT){
         // Spawn a new weapon
@@ -369,6 +384,12 @@ spawnWeapons(){
 }
 
 default{
+
+	on_rez( integer bap ){
+	
+		BFL = BFL&~BFL_INIT;
+		
+	}
 
     state_entry(){
         memLim(1.5);

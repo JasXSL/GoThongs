@@ -17,31 +17,18 @@ list VIS;
 
 integer CHAN;
 
-default
-{
-    state_entry()
-    {
+default{
+
+    state_entry(){
+	
         BuffSpawn$purge();
         CHAN = BuffSpawnChan(llGetOwner());
         llListen(CHAN, "", "", "");
+		llSetTimerEvent(10);
+		
     }
     
-    object_rez(key id){
-        
-        integer i;
-        string name = llKey2Name(id);
-        
-        for(i=0; i<count(VIS); i+=VIS_STRIDE){
-            if(l2s(VIS, i+visAssetName) == name && l2s(VIS, i+visAssetKey) == ""){
-                VIS = llListReplaceList(VIS, [id], i+visAssetKey, i+visAssetKey);
-                return;
-            }
-        }
-		
-		llSetTimerEvent(10);
-        
-    }
-	
+
 	timer(){
 		// purge deleted every 10 seconds
 		int i;
@@ -60,9 +47,21 @@ default
     
     listen(integer chan, string name, key id, string message){
         idOwnerCheck
+		
+		if( message == "SPN" ){
+		
+			integer i;
+			for(; i<count(VIS); i+=VIS_STRIDE){
+				if(l2s(VIS, i+visAssetName) == name && l2s(VIS, i+visAssetKey) == ""){
+					VIS = llListReplaceList(VIS, [id], i+visAssetKey, i+visAssetKey);
+					i = count(VIS);
+				}
+			}
+			
+		}
         
         if(message == "INI"){
-            
+		
             list keys = getKeys();
             
             integer pos = llListFindList(keys, [id]);

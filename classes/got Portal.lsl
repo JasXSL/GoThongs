@@ -1,6 +1,22 @@
 #ifndef _Portal
 #define _Portal
 
+// Helpful macros to automate
+#define Portal$playerLists \
+	list PLAYERS; \
+	list PLAYER_HUDS;
+
+#define Portal$isPlayerListIfStatement script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players)
+#define Portal$plif Portal$isPlayerListIfStatement
+#define Portal$hif script == "got Portal" && evt == PortalEvt$playerHUDs
+
+// Handles players and HUDs inside onEvt
+#define Portal$handlePlayers() \
+	if( Portal$plif ) \
+		PLAYERS = data; \
+	if( Portal$hif ) \
+		PLAYER_HUDS = data
+
 // Portal sends an evt$SCRIPT_INIT after all dependencies have been loaded with data being a json array of players
 
 #define PortalMethod$resetAll 0				// void - Resets everything
@@ -49,9 +65,7 @@
 #define portalConf$spawnround j(portalConf(), 3)
 
 
-#define Portal$isPlayerListIfStatement script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players)
-#define Portal$plif Portal$isPlayerListIfStatement
-#define Portal$hif script == "got Portal" && evt == PortalEvt$playerHUDs
+
 
 #define PortalEvt$desc_updated 1		// (var)desc_from_spawner - Portal has received a custom desc from the level
 #define PortalEvt$spawner 2				// (key)spawner - Spawner is the key of the object that requested the spawn

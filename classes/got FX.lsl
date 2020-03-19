@@ -150,13 +150,13 @@ string FX_buildCondition(integer cond, list vars){
 #define PF_CANNIBALIZE 0x2				// Removes any matching existing spell and adds its stacks
 #define PF_EVENT_ON_OVERWRITE 0x4		// Raises the removal event even when overwritten. Only works together with PF_UNIQUE
 #define PF_ALLOW_WHEN_DEAD 0x8			// 
-#define PF_ALLOW_WHEN_QUICKRAPE 0x10	// 
+#define PF_ALLOW_WHEN_QUICKRAPE 0x10	// 16
 #define PF_NO_STACK_MULTIPLY 0x20		// 32 Don't multiply the value by nr stacks
 #define PF_FULL_UNIQUE 0x40				// 64 Only allow one no matter the sender. Exclusive with PF_NOT_UNIQUE
 #define PF_TRIGGER_IMMEDIATE 0x80		// 128 Runs as an instant effect once when it's added
 #define PF_NO_DISPEL 0x100				// 256
-#define PF_STACK_TIME 0x200				// Adds time to any existing spell instead of resetting to max time
-#define PF_FULL_VIS 0x400				// Show to all targeters regardless of who added it
+#define PF_STACK_TIME 0x200				// 512 Adds time to any existing spell instead of resetting to max time
+#define PF_FULL_VIS 0x400				// 1024 Show to all targeters regardless of who added it
 
 // an integer PID gets added on the end when added to FX
 

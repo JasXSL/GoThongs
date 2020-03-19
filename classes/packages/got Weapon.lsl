@@ -26,6 +26,7 @@ timerEvent(string id, string data){
         else{
             
             llRequestPermissions(llGetOwner(), PERMISSION_ATTACH);
+			multiTimer([TIMER_CHECK_ATTACH, "", 25, TRUE]);
 			
         }
 		

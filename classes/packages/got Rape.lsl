@@ -5,6 +5,8 @@
 
 integer BFL;
 #define BFL_RAPE_STARTED 1
+#define BFL_INIT 0x2
+#define BFL_CD 0x4
 
 list RAPE_ANIMS;
 list RAPE_ATTACHMENTS;
@@ -16,47 +18,84 @@ integer STATUS_FLAGS;
 list FX_ATTACHMENTS;		// [(str)name, (key)id, (int)nr_attachments]	
 
 updateFxAttachments(){
+
+	if( ~BFL&BFL_INIT || BFL&BFL_CD )
+		return;
+	
+	integer sets;
 	integer i;
-	for(i=0; i<count(FX_ATTACHMENTS); i+=3){
+	for(; i<count(FX_ATTACHMENTS); i+=3){
+		
 		if(llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == "" && llGetInventoryType(l2s(FX_ATTACHMENTS, i)) == INVENTORY_OBJECT ){
+			++sets;
 			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetRootPosition()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
 		}
+		
 	}
+	
+	if( sets ){
+		
+		BFL = BFL|BFL_CD;
+		multiTimer(["CD", 0, 10, FALSE]);
+	
+	}
+	
 }
 
 timerEvent(string id, string data){
-	if(id == "ATC")
+
+	if( id == "CD" ){
+		
+		BFL = BFL&~BFL_CD;
 		updateFxAttachments();
+		
+	}
+	if( id == "ATC" )
+		updateFxAttachments();
+		
 }
 
 
 list TEMPLATES;
 
 onEvt(string script, integer evt, list data){
-	if(script == "got Status" && evt == StatusEvt$flags){
-		STATUS_FLAGS = llList2Integer(data,0);
+
+	if( script == "got Bridge" && evt == BridgeEvt$thong_initialized ){
+	
+		BFL = BFL|BFL_INIT;
+		updateFxAttachments();
+		
 	}
+
+	if( script == "got Status" && evt == StatusEvt$flags )
+		STATUS_FLAGS = llList2Integer(data,0);
+	
+	
 }
 
 default {
+	
+	on_rez( integer bap ){
+		BFL = BFL&~BFL_INIT;
+	}
 
     // Timer event
     //timer(){multiTimer([]);}
     state_entry(){
 	
 		multiTimer(["ATC", "", 5, TRUE]);
+		llListen(jasAttached$INI_CHAN, "", "", "INI");
 		
 	}
 	
 	timer(){multiTimer([]);}
 	
-	object_rez(key id){
+	listen( integer chan, string name, key id, string message ){
+		idOwnerCheck
 	
-		str name = llKey2Name(id);
-		integer pos = llListFindList(FX_ATTACHMENTS, [name]);
-		if(~pos){
+		integer pos = llListFindList(FX_ATTACHMENTS, (list)name);
+		if( ~pos )
 			FX_ATTACHMENTS = llListReplaceList(FX_ATTACHMENTS, [id], pos+1, pos+1);
-		}
 		
 	}
     

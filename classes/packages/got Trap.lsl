@@ -12,6 +12,8 @@ float cooldown = 2;             	// Time between trigger attempts
 float cooldown_full = 20;        	// Delay after trigger is successful
 list attachments;					// Names of things to attach on the victim
 
+integer TRAP_FLAGS;
+
 integer P_SEAT;
 key sitter;
 string base_anim;				// Loop
@@ -55,7 +57,7 @@ onEvt(string script, integer evt, list data){
 				cur_anim++;
 				if(cur_anim>=max_anims)cur_anim = 0;
 			}
-			if(anim != "" && llGetPermissions()&PERMISSION_TRIGGER_ANIMATION){
+			if(anim != "" && llGetPermissions()&PERMISSION_TRIGGER_ANIMATION &&  ~TRAP_FLAGS & Trap$fsFlags$noAnims ){
 				llStartAnimation(anim); 
 			}
 			
@@ -132,6 +134,7 @@ key getSitter(){
 default{
 
     state_entry(){
+	
 		PLAYERS = [(str)llGetOwner()];
 		memLim(1.5);
         raiseEvent(evt$SCRIPT_INIT, "");
@@ -140,11 +143,12 @@ default{
                 P_SEAT = nr;
                 llLinkSitTarget(P_SEAT, <0,0,.01>, ZERO_ROTATION);
             }
-			else if(name == "SPLAT")P_SPLAT = nr;
+			else if(name == "SPLAT")
+				P_SPLAT = nr;
         )
 		string base;
 		integer i;
-		for(i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION) && base_anim == ""; i++){
+		for( i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION) && base_anim == ""; i++ ){
 			string name = llGetInventoryName(INVENTORY_ANIMATION, i);
 			list spl = llParseString2List(name, ["_"], []);
 			if(llList2Integer(spl, -1)>0)base_anim = llDumpList2String(llDeleteSubList(spl, -1, -1), "_");
@@ -153,12 +157,17 @@ default{
 		base_anim = base;
 		
 		if(base_anim){
+		
 			for(i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION); i++){
+			
 				string name = llGetInventoryName(INVENTORY_ANIMATION, i);
-				if(llGetSubString(name, 0, llStringLength(base_anim)-1) == base_anim && name != base_anim)max_anims++;
+				if( llGetSubString(name, 0, llStringLength(base_anim)-1) == base_anim && name != base_anim )
+					max_anims++;
+				
 			}
 				
 		}
+		
     }
     
     timer(){multiTimer([]);}
@@ -166,37 +175,48 @@ default{
     changed(integer change){
 		
         if(change&CHANGED_LINK){
+		
 			key sitter = getSitter();
             if(sitter){
+			
 				if(llListFindList(PLAYERS, [(str)sitter]) == -1){
+				
 					llUnSit(sitter);
 					return;
+					
 				}
 			
                 BFL = BFL|BFL_TRIGGERED;
 				VICTIM = sitter;
                 raiseEvent(TrapEvent$seated, "[\""+(string)sitter+"\"]");
-				llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
-				if(QTE){
-					Evt$startQuicktimeEvent(sitter, QTE, 2, "a");
-				}
-            }else if( BFL&BFL_TRIGGERED ){
 				
-				Evt$startQuicktimeEvent(VICTIM, 0,0, TNN);
+					llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
+				if( QTE )
+					Evt$startQuicktimeEvent(sitter, QTE, 2, "a", 0);
+				
+            }
+			else if( BFL&BFL_TRIGGERED ){
+				
+				Evt$startQuicktimeEvent(VICTIM, 0,0, TNN, 0);
                 raiseEvent(TrapEvent$unseated, "[\""+(string)VICTIM+"\"]");
 				if( cooldown_full > 0 )
 					multiTimer([TIMER_TRIGGER_RESET, "", cooldown_full, FALSE]);
 				fxlib$removeSpellByName(VICTIM, "_Q");
 				
             }
+			
         }
     }
 	
 	run_time_permissions(integer perm){
-		if(base_anim != "" && perm & PERMISSION_TRIGGER_ANIMATION){
+
+		if(base_anim != "" && perm & PERMISSION_TRIGGER_ANIMATION &&  ~TRAP_FLAGS & Trap$fsFlags$noAnims ){
+			
 			llStopAnimation("sit");
 			llStartAnimation(base_anim);
+			
 		}
+		
 	}
     
     #include "xobj_core/_LM.lsl"
@@ -250,10 +270,15 @@ default{
 		if( seat == NULL_KEY )
 			seat = llGetKey();
 		
+		TRAP_FLAGS = l2i(PARAMS, 3);
+
 		// Strip
-		integer strip = 0;
-		if( l2i(PARAMS, 3) )
-			strip = fx$F_SHOW_GENITALS;
+		integer f = fx$F_QUICKRAPE;
+		if( TRAP_FLAGS&Trap$fsFlags$strip )
+			f = f|fx$F_SHOW_GENITALS;
+		if( TRAP_FLAGS&Trap$fsFlags$attackable ){
+			f = f&~fx$F_QUICKRAPE;
+		}
 
 		string att = "";
 		if( count(attachments) )
@@ -264,7 +289,7 @@ default{
 			llGetKey(), 
 			"[0,0,0,0,["+
 				(string)dur+",65,\"_Q\",["+
-					mkarr((list)fx$SET_FLAG+(16|strip))+","+
+					mkarr((list)fx$SET_FLAG+f)+","+
 					mkarr((list)fx$FORCE_SIT+seat+1)+
 					att+
 				"]"+

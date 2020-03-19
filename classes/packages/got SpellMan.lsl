@@ -577,14 +577,16 @@ timerEvent(string id, string data){
 			BFL&BFL_CASTING ||
 			getGlobalCooldown(QUEUE_SPELL) > 0		// Global cooldown is the only one that maaters, use charges instead for normal cd
 		)return;
-		castSpell(QUEUE_SPELL);
+		if( !castSpell(QUEUE_SPELL) ){
+			clearQueue();
+		}
 	}
 }
 
 
 
-default 
-{
+default{
+
     // Timer event
     timer(){multiTimer([]);}
     

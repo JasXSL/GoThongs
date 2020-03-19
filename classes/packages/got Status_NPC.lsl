@@ -758,7 +758,7 @@ default
 				list d = llListRandomize(llJson2List(drops), 1);
 				list_shift_each(d, val,
 					if(llFrand(1)<(float)j(val, 1)){ 
-						Spawner$spawn(j(val,0), (llGetRootPosition()+<0,0,.5>), llGetRot(), "", FALSE, FALSE, "");
+						Spawner$spawn(j(val,0), (llGetRootPosition()+<0,0,.5>), llGetRot(), "[\"M\"]", FALSE, FALSE, "");
 						d = [];
 					}
 				)

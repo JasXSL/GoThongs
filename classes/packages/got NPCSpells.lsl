@@ -40,6 +40,7 @@ integer height_add;		// LOS check height offset from the default 0.5m above root
 
 list cooldowns;
 list OUTPUT_STATUS_TO;			// (str)name, (int)types
+list DISABLED;
 
 float CAST_START_TIME;
 float CAST_END_TIME;
@@ -54,6 +55,7 @@ string spells_set_by_script = "got LocalConf"; 	// Script that set the spells
 list CACHE;				// Spell arrays from localconf
 list CUSTOMCAST;		// Data about a cast triggered from a method
 list AGGROED;			// Keys of players we have aggroed
+
 
 updateText(){
 
@@ -186,6 +188,7 @@ endCast(integer success, integer force){
     integer evt = NPCSpellsEvt$SPELL_CAST_INTERRUPT;
     
 	list d = llJson2List(llList2String(CACHE, spell_id));
+
 	if( spell_id == -1 )
 		d = CUSTOMCAST;
 	
@@ -367,8 +370,9 @@ ptEvt(string id){
 		
             integer spid = llList2Integer(r, i);
 			
+		
 			// Not on cooldown
-            if( llListFindList(cooldowns, [spid]) == -1 ){
+            if( llListFindList(cooldowns, [spid]) == -1 && llListFindList(DISABLED, (list)spid) == -1 ){
 			
                 list d = llJson2List(llList2String(r, i+1));
                 integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
@@ -569,8 +573,23 @@ default {
 		list_shift_each(PARAMS, id,
 			
 			ptUnset("CD_"+id);
+			if( llListFindList(DISABLED, [(int)id]) == -1 )
+				DISABLED += (int)id;
+				
+		)
+		
+	}
+	
+	else if( METHOD == NPCSpellsMethod$triggerCooldown ){
+	
+		list_shift_each(PARAMS, id,
+			
 			if( llListFindList(cooldowns, [(int)id]) == -1 )
 				cooldowns+= (int)id;
+				
+			list d = llJson2List(llList2String(CACHE, (int)id));
+			float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
+			ptSet("CD_"+id, recasttime, FALSE);
 				
 		)
 		
@@ -603,12 +622,16 @@ default {
 			
 	}
 	
+	// Wipes cooldowns and enables spells
 	else if( METHOD == NPCSpellsMethod$wipeCooldown ){
 		
 		integer id = l2i(PARAMS, 0);
 		integer pos = llListFindList(cooldowns, [id]);
-		if(~pos)
+		if( ~pos )
 			cooldowns = llDeleteSubList(cooldowns, pos, pos);
+		pos = llListFindList(DISABLED, (list)id);
+		if( ~pos )
+			DISABLED = llDeleteSubList(DISABLED, pos, pos);
 			
 	}
 	
@@ -631,6 +654,8 @@ default {
 		startCast(-1, method_arg(3), TRUE);
 		
 	}
+	
+	
 		
     
 	//llOwnerSay("DD linkMessage "+(str)METHOD+" = "+(str)(llGetTime()-DSTART));

@@ -144,9 +144,9 @@ timerEvent(string id, string data){
 		qd("Main queue: "+mkarr(queue));
 		qd("Flushing assets awaiting desc: "+mkarr(queue_desc));
 		qd("Asset being spawned: "+mkarr(queue_rez));
-		// Clear post-rez processing queue, anything in it at this point has gotten stuck
-		queue_desc = [];
-		// Try next
+		// Clear queue_rez and try again!
+		queue_rez = [];
+		// Try again
 		next();
 		
 	}
@@ -320,20 +320,32 @@ default{
 		}
 		
         else if(METHOD == SpawnerMethod$debug){
-			qd("Dumping queue");
+			qd("queue");
+			
 			integer i;
-			for(i=0; i<llGetListLength(queue); i+= QUEUESTRIDE){
+			for(i=0; i<llGetListLength(queue); i+= QUEUESTRIDE)
 				qd(mkarr(llList2List(queue, i, i+QUEUESTRIDE-1)));
-			}
+			
+			qd("queue_rez");
+			for(i=0; i<llGetListLength(queue_rez); i+= 3 )
+				qd(mkarr(llList2List(queue, i, i+2)));
+			
+			qd("queue_desc");
+			for(i=0; i<llGetListLength(queue_desc); i+= QUEUEDESCSTRIDE )
+				qd(mkarr(llList2List(queue, i, i+QUEUEDESCSTRIDE-1)));
+			
+			
 		}
 		
-		else if(METHOD == SpawnerMethod$getAsset){
+		else if( METHOD == SpawnerMethod$getAsset ){
+		
 			string asset = method_arg(0);
-			if(llGetInventoryType(asset) == INVENTORY_NONE) {
+			if( llGetInventoryType(asset) == INVENTORY_NONE ){
 				qd("Unable to give asset '"+asset+"', not found in inventory!");
 				return;
 			}
 			llGiveInventory(id, asset);
+			
 		}
 		
     }

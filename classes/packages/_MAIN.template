@@ -1,0 +1,410 @@
+/*
+	Events that can be enabled:
+		
+		#define LISTEN_ON 69 -> Enables a listener on this channel
+		#define onListen( channel, id, message ) onListen( (int)channel, (int)id, (str)message ) -> Requires LISTEN_ON. Raised when a listen is received.
+		
+		#define body <code> // Code gets injected into default
+		
+		#define onCallback(sender_script, method, params, CB, id) onCallback(str sender_script, int method, list params, string CB, key id)	// Callback received
+		#define onInternalMethod( sender_script, method, params, id ) onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
+		#define onMethod( sender_script, method, params, id ) onMethod( str sender_script, int method, list params, key id )				// Any method received
+		#define onTimer( id, data ) onTimer( id, data ) -> Put on top of timerEvent for standard XOBJ multiTimer
+		#define onEvent( (str)script, (int)evt, (list)data ) -> Run before all standard XOBJ events
+		
+		#define getObjective( id ) string getObjective( (string)id ) -> Return a string with an objective for a player. If id is "" it is for ALL players. Enables the objective tracker icon.
+		
+		#define onHUDsChanged() -> Run when PLAYER_HUDS has changed (see below)
+		#define onLevelLoad( (bool)debug ) -> Run when a level is started. Reset state variables here. If debug is TRUE we did not spawn it through the HUD.
+		#define onLevelLoadDone() -> Run when a level has finished loading.
+		#define onIdSpawned( uuid, id, data ) onIdSpawned( (key)uuid, (str)id, (list)data ) -> A monster with the ID parameter in description has spawned.
+		#define onQuestData( data ) onQuestData( (list)data ) -> Quest data set through setRemoteQuestData (see below) has been received. Requires you to have a quest accepted. This is raised when a level starts.
+		#define onLevelCompleted() onLevelCompleted() -> Raised when a level is finished (all players have interacted with exit)
+		#define onPotionUsed( user, potionName ) onPotionUsed( (key)user, (str)potionName ) -> A level maintained potion has been used, such as the shovel
+		#define onPotionDropped( playerHudUUID, potionLabel ) onPotionDropped( (key)playerHudUUID, (str)potionLabel ) -> A level maintained potion has been dropped, such as the shovel
+		#define onInteract( player, object, task, data ) bool onInteract( (key)player, (key)object, (str)task, (list)data ) -> A player has interacted with a LVIN object. Return TRUE if the interaction was successful.
+		#define onIdDied( monsterUUID, monsterLabel, customData ) onIdDied( (key)monsterUUID, (str)monsterLabel, (list)customData ) -> A monster with the "ID" desc setting has died.
+		#define onPlayerDied( playerHudUUID, killerUUID ) onPlayerDied( (key)playerHudUUID, (key)killerUUID ) -> A player has died
+		#define onDifficultyChanged( difficulty, isChallengeMode ) onDifficultyChanged( (int)difficulty, (bool)isChallengeMode ) -> Difficulty has changed. 0 = casual and 4 = brutal
+		#define onWipe() onWipe() <- A wipe has occurred in a challenge dungeon
+		#define onPlayerInteract( senderUUID, targetUUID ) onPlayerInteract( (key)senderUUID, (key)targetUUID ) <- A player has interacted with another player		
+		#define onPlayerSceneDone( poseName, success, HUDs ) onPlayerSceneDone( (str)poseName, (bool)success, (list)HUDs ) <- A PVP scene has ended
+		
+		
+		
+	PanRi Only:
+		#define USE_PM	// Required to use events below
+		
+		#define pmOnQuestPickup( id, name ) pmOnQuestPickup( (int)id, (str)name )
+		#define pmOnQuestFinish( id, name ) pmOnQuestFinish( (int)id, (str)name )
+		#define pmOnPurchase( vendor, user, nr_items, item_id, total_cost ) pmOnPurchase( (key)vendor, (key)user, (int)nr_items, (int)item_id, (int)total_cost )
+		#define pmOnQuestProgress( objectiveID, current, max  ) pmOnQuestProgress( (int)objectiveID, (int)current, (int)max  )
+		#define pmOnFishComplete( waterUUID, waterType, bait, success, lostBait, asset, playerUUID  ) pmOnFishComplete( (key)waterUUID, (int)waterType, (int)bait, (int)success, (bool)lostBait, (int)asset, (key)playerUUID  )
+		#define pmOnFishStart( waterUUID, waterType, bait, playerUUID ) pmOnFishStart( (key)waterUUID, (int)waterType, (int)bait, (key)playerUUID )
+		
+		
+		
+		
+	Global vars:
+		list PLAYERS -> You can use runOnPlayers(player_uuid, <code>)
+		list PLAYER_HUDS -> You can use runOnHUDs(hud_uuid, <code>)
+		int BFL -> You can store custom script state flags here, like if a user has picked up an item or entered a trigger
+		
+	Global functions:
+		sendObjectives( key target ) -> Use "" to send objective updates to all players. Requires a getObjective function defined
+		playMusic( string file, float volume, bool repeat ) -> Plays music on all players
+		playMoment( string file, float volume ) -> Plays an audio moment on all players, this overrides music temporarily
+		stopAudio( string file, float fadeOut ) -> This stops an audio file, regardless of type
+		setRemoteQuestData( list data ) -> Sets list data on the currently accepted quest. This data is fetched whenever you start the quest. It is cleared when a quest is finished or abandoned.
+
+
+*/
+
+
+Portal$playerLists 		// Includes the standard player lists
+integer BFL;			// Local bitflags
+
+
+
+// Handles objective requests
+#ifdef getObjective
+sendObjectives( key id ){
+    
+    // Set TXT to your objective hint
+    string txt = getObjective(id);
+	if( txt == "" )
+		return;
+        
+	list p = PLAYERS;
+	if(id)
+		p = [id];
+		
+	list_shift_each(p, val,
+		Alert$freetext(val, txt, FALSE, TRUE);
+	)    
+    
+}
+#endif
+
+setRemoteQuestdata( list data ){
+	Bridge$setQuestData(llGetOwner(), mkarr(data));
+}
+
+playMusic( string file, float volume, bool repeat ){
+	runOnPlayers(targ,
+		Bridge$audioMusic(targ, file, volume, repeat);
+    )
+}
+playMoment( string file, float volume ){
+	runOnPlayers(targ,
+		Bridge$audioMoment(targ, file, volume);
+    )
+}
+stopAudio( string file, float fadeTime ){
+	runOnPlayers(targ,
+		Bridge$audioStop(targ, file, fadeTime);
+    )
+}
+
+
+// XOBJ Event listener
+onEvt( string script, integer evt, list data ){
+
+	#ifdef onEvent
+	onEvent(script, evt, data);
+	#endif
+    
+    // Most events are from got Level
+    if( script == "got Level" ){
+        
+		// Handle players
+        if( evt == LevelEvt$playerHUDs ){
+            PLAYER_HUDS = data;
+			#ifdef onHUDsChanged
+				onHUDsChanged();
+			#endif
+		}
+		
+        if( evt == LevelEvt$players )
+            PLAYERS = data;
+        
+        
+        // Level is being loaded
+        else if( evt == LevelEvt$load ){
+            
+            integer debug = llList2Integer(data,0);
+            
+            // When the spawn-kit is "", that usually means the level is being initialized
+            if( llList2String(data,1) == "" ){
+                
+                // Reset all variables to default, because the level is about to start
+                BFL = 0;
+				#ifdef onLevelLoad
+					onLevelLoad( debug );
+				#endif
+				
+            }
+            
+        }
+        // Level has finished loading
+        else if( evt == LevelEvt$loaded ){
+            
+            // Enable objective tracker if needed
+			#ifdef getObjective
+            runOnPlayers(targ,
+                GUI$toggleObjectives(targ, TRUE);
+            )
+			#endif
+			#ifdef onLevelLoadDone
+				onLevelLoadDone();
+			#endif
+            
+        }
+        
+        
+
+        // A monster with the ["ID",(str)id] desc has been spawned
+		#ifdef onIdSpawned
+        else if( evt == LevelEvt$idSpawned ){
+            
+            key uuid = l2k(data, 0);
+            string id = l2s(data, 1);
+            list vars = llJson2List(l2s(data, 2));
+			onIdSpawned(uuid, id, vars);
+			
+        }
+		#endif
+        
+        // Quest data has been fetched from DB
+        // Data is a parse of the data you set
+		#ifdef onQuestData
+        else if( evt == LevelEvt$questData )
+			onQuestData(data);
+		#endif
+		
+        // Sent when you use setFinished with evtOnFinish
+        #ifdef onLevelCompleted
+		else if( evt == LevelEvt$levelCompleted )
+			onLevelCompleted();
+		#endif
+		
+        // If you make a potion with the send to level flag
+		#ifdef onPotionUsed
+        else if( evt == LevelEvt$potion )
+			onPotionUsed(l2k(data, 0), l2s(data, 1));
+		#endif
+
+        
+        // Fetches current objectives
+		#ifdef getObjective
+        else if( evt == LevelEvt$fetchObjectives ){
+            
+            sendObjectives(l2s(data, 0));
+            
+        }
+		#endif
+        
+        
+        // If player has interacted with an item that is set to be handled by the level
+        #ifdef onInteract
+		else if( evt == LevelEvt$interact ){
+            
+            key player = llList2String(data, 0);        // Player that interacted
+            key object = llList2String(data, 1);        // Object that was interacted with
+			// Fetch the interaction data
+            list desc = explode("$$", prDesc(object));
+            list data = [];
+            list_shift_each(desc, val,
+                list e = explode("$", val);
+                if(llList2String(e, 0) == "LVIN")
+                    data = llDeleteSubList(e, 0, 0);
+            )
+            
+            // Data is now a list of the data passed with the interaction
+            string task = llList2String(data, 0);
+            // Not always needed, tracks if interaction was successful or not.
+			LocalConf$stdInteract(object, player, (list)onInteract( player, object, task, data ));
+            
+            
+        }
+		#endif
+        
+        // When a trigger has been set up
+		
+        #ifdef onTrigger
+		else if( evt == LevelEvt$trigger ){
+            
+            key player = llList2String(data, 0);
+            key trigger = llList2String(data, 1);
+            string d = llList2String(data, 2);
+            onTrigger( player, trigger, d );
+            
+        }
+		#endif
+        
+        // When a monster with ID set has died
+		#ifdef onIdDied
+        else if( evt == LevelEvt$idDied ){
+            
+            key id = llList2String(data, 0);
+            string n = llList2String(data, 1);
+            list vars = llJson2List(llList2String(data, 2));
+            
+            // Final goblin is dead
+            if( n == "finalGoblin" )
+                BFL = BFL|BFL_EXIT_AVAILABLE;
+            
+        }
+		#endif
+        
+		#ifdef onPlayerDied
+		else if( evt == LevelEvt$playerDied )
+			onPlayerDied( l2k(data, 0), l2k(data, 1) );
+		#endif
+		
+		#ifdef onDifficultyChanged
+		else if( evt == LevelEvt$difficulty )
+			onDifficultyChanged( l2i(data, 0), l2i(data, 1) );
+		#endif
+		
+		#ifdef onWipe
+		else if( evt == LevelEvt$wipe )
+			onWipe();
+		#endif
+		
+		#ifdef onPlayerInteract
+		else if( evt == LevelEvt$playerInteract )
+			onPlayerInteract(l2k(data, 0), l2k(data, 1));
+		#endif
+		
+		#ifdef onPotionDropped
+		else if( evt == LevelEvt$potionDropped )
+			onPotionDropped(l2k(data, 0), l2s(data, 1));
+		#endif
+		
+		#ifdef onPlayerSceneDone
+		else if( evt == LevelEvt$playerSceneDone )
+			onPlayerSceneDone(l2s(data, 0), l2i(data, 1), llJson2List(l2s(data, 2)));
+		#endif
+		
+    }
+	
+	#ifdef USE_PM
+	if( script == "pm Bridge" ){
+		
+		#ifdef pmOnQuestPickup
+		if( evt == PMLevelEvt$QUEST_PICKUP )
+			pmOnQuestPickup( l2k(data, 0), l2s(data, 1) );
+		#endif
+		
+		#ifdef pmOnQuestFinish
+		if( evt == PMLevelEvt$QUEST_FINISH )
+			pmOnQuestFinish( l2k(data, 0), l2s(data, 1) );
+		#endif
+		
+		#ifdef pmOnPurchase
+		if( evt == PMLevelEvt$PURCHASE_SUCCESS )
+			pmOnPurchase( l2k(data, 0), l2k(data, 1), l2i(data, 2), l2i(data, 3), l2i(data, 4) );
+		#endif
+		
+		#ifdef pmOnQuestProgress
+		if( evt == PMLevelEvt$QUEST_PROGRESS )
+			pmOnQuestProgress( l2i(data, 0), l2i(data, 1), l2i(data, 2) );
+		#endif
+		
+		#ifdef pmOnFishComplete
+		if( evt == PMLevelEvt$FISH_FINISH )
+			pmOnFishComplete( l2k(data, 0), l2i(data, 1), l2i(data, 2), l2i(data, 3), l2i(data, 4), l2s(data, 5), l2k(data, -1) );
+		#endif
+		
+		#ifdef onFishStart
+		if( evt == PMLevelEvt$FISH_START )
+			pmOnFishStart( l2k(data, 0), l2i(data, 1), l2i(data, 2), l2k(data, -1) );
+		#endif
+		
+	}
+	
+	#endif
+
+}
+
+// Multi-timers if you need them
+timerEvent( string id, string data ){
+    
+	onTimer(id, data);
+	
+    integer nr = (integer)data;
+    float next;
+    
+    string text; string sound; 
+    vector cam = <-1,-1,-1>; rotation camRot;
+    
+    
+    runOnPlayers(targ,
+    
+        if( text )
+            Language$common(targ, text, sound, 0.75);
+        if( cam == ZERO_VECTOR )
+            RLV$clearCamera(targ);
+        else if( camRot != ZERO_ROTATION )
+            RLV$setCamera(targ, (cam+llGetRootPosition()), camRot);
+            
+    )
+    
+    if( next )
+        multiTimer([id, nr+1, next, FALSE]);
+        
+}
+
+default{
+
+    // Reset on rez for ease of use
+    on_rez( integer mew ){ llResetScript(); }
+    
+    state_entry(){
+        
+        // Cache owner for testing
+        PLAYERS = [(string)llGetOwner()];
+		
+		#ifdef LISTEN_ON
+        // Listener is optional, you should use your own channel here
+        llListen(LISTEN_ON, "", "", "");
+		#endif
+    }
+	
+	#ifdef body
+	body
+	#endif
+	
+    
+	#ifdef LISTEN_ON
+    listen( integer chan, string name, key id, string data ){
+        onListen(chan, id, data);
+    }
+	#endif
+    
+    timer(){ multiTimer([]); }
+    
+    #include "xobj_core/_LM.lsl"
+    if(method$isCallback){
+		#ifdef onCallback
+			onCallback(SENDER_SCRIPT, METHOD, PARAMS, CB, id);
+		#endif
+        return;
+	}
+	
+	#ifdef onInternalMethod
+    if(method$internal){
+		onInternalMethod( SENDER_SCRIPT, METHOD, PARAMS, id );
+    }
+	#endif
+
+	#ifdef onMethod
+		onMethod( SENDER_SCRIPT, METHOD, PARAMS, id );
+	#endif
+
+    #define LM_BOTTOM
+    #include "xobj_core/_LM.lsl"
+    
+}
+

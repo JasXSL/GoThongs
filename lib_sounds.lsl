@@ -62,11 +62,21 @@
 #define gotSoundLib$golem$attack "ab6b782b-a0c6-45f9-63b3-05c9025ddac4"
 #define gotSoundLib$golem$death "ac8389b3-80a9-2164-fcde-df33e18c130b"
 
+#define gotSoundLib$residue$aggro "353af8f8-6129-e393-3d50-dd3b7866d52c"
+#define gotSoundLib$residue$takehit "8e5efd51-2eb7-505e-8e4e-3f6fafaa48de"
+#define gotSoundLib$residue$attack "baaa5950-b972-0e97-11ec-96cf1568b2b3"
+#define gotSoundLib$residue$death "4d3c5a7b-be42-b92b-6b19-7f04510db479"
+
 
 #define gotSoundLib$humanMale$aggro "cbbf5234-24d4-692d-3470-47a2f3e8bc42"
 #define gotSoundLib$humanMale$takehit "ea2cf924-1ad9-2421-013f-a916205eba95"
 #define gotSoundLib$humanMale$attack "aec5cd63-1756-9c7c-671f-018976e53989"
 #define gotSoundLib$humanMale$death "c1047f61-db16-2224-8c9c-c7aa610bac0c"
+
+#define gotSoundLib$gnawer$aggro "01e17fb6-f116-53b2-d357-ded2cb593f22"
+#define gotSoundLib$gnawer$takehit "f12d384c-4c15-a34d-3962-964968a32ff3"
+#define gotSoundLib$gnawer$attack "6f68db90-7acc-f25d-eb58-66ca56ddadb6"
+#define gotSoundLib$gnawer$death "7f506589-9062-8f4f-4a2d-600ff612b672"
 
 #define gotSoundLib$humanTiger$aggro "104853d3-3efb-d543-105e-e2427ce7b805"
 #define gotSoundLib$humanTiger$aggro_lost "0de57c59-cb6f-7c59-55dc-e26cf25779cb"
@@ -78,6 +88,23 @@
 #define gotSoundLib$tentacleTiger$takehit "5834444b-8d12-0a91-bf1b-435b184088eb"
 #define gotSoundLib$tentacleTiger$attack "a721e5cf-42b6-1060-7dd4-65d69584e9c6"
 #define gotSoundLib$tentacleTiger$death "0dd26453-4148-bbc1-7403-3da726914723"
+
+#define gotSoundLib$shambler$aggro "032f462d-437e-72fc-0b91-387f57951e59"
+#define gotSoundLib$shambler$takehit "d6f195c2-3d23-a2ad-f95b-876ef28ba2d7"
+#define gotSoundLib$shambler$attack "2eccdd2b-0869-19e3-e628-fc27585df8c6"
+#define gotSoundLib$shambler$death "846c425d-3284-e055-4166-8de781c1a0cf"
+
+
+#define gotSoundLib$quadropus$aggro "7313b7bd-864d-75e5-b309-01531cbd7591"
+#define gotSoundLib$quadropus$takehit "f322a55c-8f4e-d619-0ef6-57456c4c42a4"
+#define gotSoundLib$quadropus$attack "2ae85936-166e-ceee-6348-a9eae5b05c58"
+#define gotSoundLib$quadropus$death "e8b0c58c-d88b-5a86-a297-193feedb9abe"
+
+
+#define gotSoundLib$globber$aggro "d0f2ea8b-188b-c2fc-c670-d0bdeaf80dae"
+#define gotSoundLib$globber$takehit "90934dde-7e10-89e2-404f-db9e1f829094"
+#define gotSoundLib$globber$attack "e442ab54-aa9f-c42f-0646-3c034a0abbcf"
+#define gotSoundLib$globber$death "90934dde-7e10-89e2-404f-db9e1f829094"
 
 
 #define gotSoundLib$worm$aggro "cc1c23d6-9931-67be-3aaa-0fe8c4bc3c3f"

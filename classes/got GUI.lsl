@@ -47,4 +47,6 @@
 #define GUI$setWipes(targ, wipes) runMethod((str)targ, "got GUI", GUIMethod$setWipes, (list)wipes, TNN)
 
 
+#define GUI$BAR_TEXTURE "f5c7e300-20d9-204c-b0f7-19b1b19a3e8e"
+
 #endif
