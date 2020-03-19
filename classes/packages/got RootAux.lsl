@@ -341,9 +341,8 @@ default{
 			else if(message == "reset"){resetAll();}
 			
 
-			else if(message == "potion"){ 
+			else if(message == "potion")
 				Potions$use((string)LINK_ROOT); 
-			} 
 			
 			else if( message == "sheathe" && ~BFL&BFL_TIMER_SHEATHED ){
 			

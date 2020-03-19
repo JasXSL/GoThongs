@@ -144,6 +144,10 @@ default{
 			_pTexture = pTexture;
 		#endif
 		
+		#ifdef pDesc
+			_pDesc = pDesc;
+		#endif
+		
 		#ifdef pCharges
 			_pCharges = pCharges;
 		#endif
