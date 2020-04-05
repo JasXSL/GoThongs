@@ -18,7 +18,7 @@
 #define Monster$unsetSpellFlags(flags) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$toggleFlags, [0, flags, 1], TNN)
 
 #define Monster$lookOverride(targ) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$lookOverride, [targ], TNN)
-#define Monster$atkspeed(speed) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$atkspeed, [atkspeed], TNN)
+#define Monster$atkspeed(speed) runMethod((string)LINK_THIS, "got Monster", MonsterMethod$atkspeed, [speed], TNN)
 #define Monster$seek(targ, seekTarg, dist, callback) runMethod((str)targ, "got Monster", MonsterMethod$seek, [seekTarg, dist, callback], TNN)
 #define Monster$seekStop(targ) runMethod((str)targ, "got Monster", MonsterMethod$seekStop, [], TNN)
 
@@ -43,16 +43,16 @@
 #define Monster$RF_PACIFIED 2			// No attacks, but can aggro
 #define Monster$RF_NOROT 4
 #define Monster$RF_NOAGGRO 8			// No new aggro, but will keep attacking until it's lost all current aggro
-#define Monster$RF_FREEZE_AGGRO 0x10	// While this is set got Monster will not lose its aggro target on itself
-#define Monster$RF_NO_DEATH 0x20		// Don't delete on death, let LocalConf handle it through StatusEvt$death_hit
-#define Monster$RF_INVUL 0x40			// Invulnerable
-#define Monster$RF_NO_TARGET 0x80		// Not targetable 
-#define Monster$RF_NO_SPELLS 0x100		// Unable to cast spells
-#define Monster$RF_IS_BOSS 0x200		// Shows up in the boss bar
-#define Monster$RF_FLYING 0x400			// Travels in a linear fashion to enemy groin height without following the ground
-#define Monster$RF_360_VIEW 0x800		// Does not get shorter aggro range when players are behind it
+#define Monster$RF_FREEZE_AGGRO 0x10	// 16 While this is set got Monster will not lose its aggro target on itself
+#define Monster$RF_NO_DEATH 0x20		// 32 Don't delete on death, let LocalConf handle it through StatusEvt$death_hit
+#define Monster$RF_INVUL 0x40			// 64 Invulnerable
+#define Monster$RF_NO_TARGET 0x80		// 128 Not targetable 
+#define Monster$RF_NO_SPELLS 0x100		// 256 Unable to cast spells
+#define Monster$RF_IS_BOSS 0x200		// 512 Shows up in the boss bar
+#define Monster$RF_FLYING 0x400			// 1024 Travels in a linear fashion to enemy groin height without following the ground
+#define Monster$RF_360_VIEW 0x800		// 2048 Does not get shorter aggro range when players are behind it
 #define Monster$RF_FOLLOWER 0x1000		// Follower mode enabled
-#define Monster$RF_ANIMESH 0x2000		// This is an animesh monster
+#define Monster$RF_ANIMESH 0x2000		// 8192 This is an animesh monster
 #define Monster$RF_HUMANOID 0x4000		// This is a humanoid (allow certain monster interactions)
 #define Monster$RF_MINOR 0x8000			// This monster should not drop loot
 
@@ -97,7 +97,7 @@
 	#define MLC$melee_height$chest 1
 	#define MLC$melee_height$none -1
 	
-#define MLC$hover_height 20			// Offsets the monster's Z from the ground
+#define MLC$hover_height 20			// (float)height - Offsets the monster's Z from the ground
 #define MLC$aptitude 21				// (float)sec to track track a player after losing visibility. Default = 3
 #define MLC$sex 22					// Uses GENITALS_* flags. Pair with Monster$RF_HUMANOID
 

@@ -69,7 +69,7 @@ interactSuccess( key user ){
 		llTriggerSound( sound, vol );
 	
     INTERACTED = TRUE;
-	Potions$set(user, _pName, _pTexture, _pCharges, _pFlags, _pCooldown, _pData, _pDesc);
+	Potions$set(user, _pName, _pTexture, _pCharges, _pFlags, _pCooldown, _pData, _pDesc, llGetObjectName());
     llSetLinkPrimitiveParamsFast(LINK_SET, [
 		PRIM_POINT_LIGHT, FALSE, ZERO_VECTOR, 0, 0, 0, 
 		PRIM_COLOR, ALL_SIDES, <1,1,1>, 0, 
@@ -84,6 +84,8 @@ interactSuccess( key user ){
 }
 
 
+string desc_override;
+
 Portal$playerLists
 onEvt( string script, integer evt, list data ){
 	Portal$handlePlayers();
@@ -94,6 +96,11 @@ onEvt( string script, integer evt, list data ){
 	
 	#ifdef pConf$PHYS_ON_REZ
 		#if pConf$PHYS_ON_REZ == 2
+		// Desc updated. Indexes:
+		/*
+			0 : "M" if should be physical
+			1 : (str)desc - Desc override
+		*/
 		if( script == "got Portal" && evt == PortalEvt$desc_updated ){
 			
 			if( l2s(data, 0) == "M" ){
@@ -102,8 +109,13 @@ onEvt( string script, integer evt, list data ){
 				llSetTimerEvent(10);
 				
 			}
-				
 			
+			if( count(data) > 1 ){
+			
+				desc_override = l2s(data, 1);
+				llSetObjectDesc(desc_override);
+				
+			}
 		}
 		#endif
 		
@@ -117,8 +129,9 @@ onEvt( string script, integer evt, list data ){
 		#endif
 	#endif
 	
-	if( script == "got Portal" && evt == evt$SCRIPT_INIT )
+	if( script == "got Portal" && evt == evt$SCRIPT_INIT && desc_override == "" )
 		llSetObjectDesc("D$"+_pName+"$$STDIN");
+	
 	
     
 }

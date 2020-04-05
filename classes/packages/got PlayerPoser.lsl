@@ -15,6 +15,7 @@ list PLAYERS;
 list PLAYER_HUDS;
 list PLAYER_FLAGS;
 int FLAGS;
+list LINK_ORDER;
 
 list TO_PLAY;					// (key)id, (str)anim
 
@@ -54,8 +55,6 @@ onEvt(string script, integer evt, list data){
 			
 		// Players that should sit on this. Root prim is always 0 and 
 		list players = llJson2List(l2s(data, 0));
-		
-
 		startAnim(
 			players,
 			player_flags,
@@ -67,6 +66,34 @@ onEvt(string script, integer evt, list data){
 
     }
 	
+}
+
+forceSit( string targ ){
+
+	integer pos = llListFindList(TARGETS, (list)targ);
+	if( pos == -1 )
+		return;
+		
+	int f = fx$F_QUICKRAPE;
+	if( l2i(PLAYER_FLAGS, pos)&1 )
+		f = f|fx$F_SHOW_GENITALS;
+		
+	FX$send(targ, "", "["+
+		(string)(WF_ALLOW_WHEN_DEAD|WF_ALLOW_WHEN_QUICKRAPE)+","+
+		"0,0,"+
+		"0,"+
+		"["+
+			(str)ANIM_DURATION+","+
+			(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE|PF_TRIGGER_IMMEDIATE)+","+
+			"\"forceSat\","+
+			"["+
+				"[13,"+(str)f+"],"+
+				"[31,\""+(str)llGetLinkKey(l2i(LINK_ORDER, pos))+"\",0]"+
+			"]"+
+		"],"+
+		"[],[],[],0,0,1"+
+	"]", 0);
+
 }
 
 startAnim( list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags ){
@@ -88,42 +115,21 @@ startAnim( list players, list player_flags, float anim_duration, float anim_min_
 	TARGETS = players;
 	
 	// Prim order, root is always the first player
-	list order = [1,0,0,0,0,0,0,0];
+	LINK_ORDER = [1,0,0,0,0,0,0,0];
 	links_each( nr, name,
 	
 		int desc = l2i(llGetLinkPrimitiveParams(nr, (list)PRIM_DESC), 0);
 		if( nr != 1 && name == "POSEBALL" ){
-			order = llListReplaceList(order, (list)nr, desc, desc);
+			LINK_ORDER = llListReplaceList(LINK_ORDER, (list)nr, desc, desc);
 		}
 	)
 	
 	// Assign players to their prims
-	integer pl = 0;
 	list_shift_each(players, targ,
-
-		int f = fx$F_QUICKRAPE;
-		if( l2i(player_flags, pl)&1 )
-			f = f|fx$F_SHOW_GENITALS;
-		
-		FX$send(targ, "", "["+
-			(string)(WF_ALLOW_WHEN_DEAD|WF_ALLOW_WHEN_QUICKRAPE)+","+
-			"0,0,"+
-			"0,"+
-			"["+
-				(str)anim_duration+","+
-				(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE|PF_TRIGGER_IMMEDIATE)+","+
-				"\"forceSat\","+
-				"["+
-					"[13,"+(str)f+"],"+
-					"[31,\""+(str)llGetLinkKey(l2i(order, pl))+"\",0]"+
-				"]"+
-			"],"+
-			"[],[],[],0,0,1"+
-		"]", 0);
-		++pl;
-		
+		forceSit(targ);
 	)
 	
+	ptSet("retry", 1, TRUE);
 	ptSet("fail", 5, FALSE);
 	
 }
@@ -204,6 +210,7 @@ onSeatChange(){
         ptUnset("fail");				// Success, do not fail
         ANIM_STARTED = TRUE;					// It has started
         raiseEvent(gotPlayerPoserEvt$start, "");
+		ptUnset("retry");
 		
     }
 	// Not all players are seated
@@ -213,8 +220,10 @@ onSeatChange(){
 		// This has already started so now delete
         if( ANIM_STARTED )
             end();
+		
             
     }
+	
 }
 
 // Unsit and kill the seater
@@ -224,6 +233,7 @@ end(){
 		Level$playerSceneDone(targ, ANIM_STARTED, TARGETS);
 	)
 	raiseEvent(gotPlayerPoserEvt$end, "");
+	ptUnset("retry");
 	
 	list_shift_each(TARGETS, targ,
 		fxlib$remForceSit(targ);
@@ -256,6 +266,22 @@ ptEvt( string id ){
     else if( id == "fail" )
         end();
     
+	else if( id == "retry" ){
+		// Try seating players
+		
+		integer i;
+		for(; i<count(TARGETS); ++i ){
+			
+			key targ = l2k(TARGETS, i);
+			int link = l2i(LINK_ORDER, i);
+			if( llAvatarOnLinkSitTarget(link) == NULL_KEY ){
+				forceSit(targ);
+			}
+			
+		}
+			
+	}
+	
 }
 
 

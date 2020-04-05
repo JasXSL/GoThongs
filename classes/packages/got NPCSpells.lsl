@@ -55,6 +55,7 @@ string spells_set_by_script = "got LocalConf"; 	// Script that set the spells
 list CACHE;				// Spell arrays from localconf
 list CUSTOMCAST;		// Data about a cast triggered from a method
 list AGGROED;			// Keys of players we have aggroed
+int TEAM;
 
 
 updateText(){
@@ -140,11 +141,15 @@ onEvt(string script, integer evt, list data){
 
     }
 	
+	
 	else if( script == "got Status" ){
         
 		if( evt == StatusEvt$flags )
             STATUS_FLAGS = llList2Integer(data,0);
         
+		else if( evt == StatusEvt$team )
+			TEAM = l2i(data, 0);
+		
 		else if( evt == StatusEvt$monster_gotTarget )
             aggro_target = llList2String(data, 0);
         
@@ -216,22 +221,20 @@ endCast(integer success, integer force){
 		
     }
     raiseEvent(evt, mkarr(([spell_id, spell_targ, spell_targ_real, l2s(d, NPCS$SPELL_NAME)])));
-    
-	
-	
-	
+
 	ptUnset("CB");
 	ptUnset("CAST");
 	BFL = BFL&~BFL_CASTING;
 
     if( CAST_END_TIME-CAST_START_TIME > 0.1 && success ){
+	
 		updateText();
 		BFL = BFL|BFL_CC;
-		ptSet("CC", 1, FALSE);
-	}
-	else
-		clearCast();
 		
+		
+	}
+	
+	ptSet("CC", 1, FALSE);
     
 	
 }
@@ -280,9 +283,10 @@ startCast(integer spid, key targ, integer isCustom){
     if( flags&NPCS$FLAG_LOOK_OVERRIDE ){
 	
         Monster$lookOverride(targ);
+		/*
 		if( casttime<=0 )
 			ptSet("LAT", 1, FALSE); // Stop lookat
-			
+		*/
 	}
     
 	BFL = BFL|BFL_CASTING;
@@ -337,10 +341,10 @@ ptEvt(string id){
         ptSet("FDE", .05, FALSE);
 		
     }
-	
+	/*
 	else if( id == "LAT" )
 		Monster$lookOverride("");
-	
+	*/
 	else if( id == "SPS" )
 		BFL = BFL&~BFL_RECENT_CAST;
     
@@ -378,12 +382,14 @@ ptEvt(string id){
                 integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
                 float range = llList2Float(d, NPCS$SPELL_RANGE);
                 float minrange = llList2Float(d, NPCS$SPELL_MIN_RANGE);
-                integer sexReq = llList2Integer(d, NPCS$SPELL_TARG_SEX);
+                int sexReq = llList2Integer(d, NPCS$SPELL_TARG_SEX);
+				int fxReq = l2i(d, NPCS$SPELL_TARG_FX);
+				int statusReq = l2i(d, NPCS$SPELL_TARG_STATUS);
                 
                 // Default to aggro_target
                 list p = [aggro_target];
 				// Randomize all aggroed targets
-                if(flags&NPCS$FLAG_CAST_AT_RANDOM)
+                if( flags&NPCS$FLAG_CAST_AT_RANDOM )
 					p = llListRandomize(AGGROED, 1);
 					
 				// Loop through the players
@@ -406,7 +412,10 @@ ptEvt(string id){
 						llList2Integer(ray, -1) == 0 && 
 						!(status&StatusFlags$NON_VIABLE) && 
 						~fx&fx$UNVIABLE &&
-						(!sexReq || (sex&sexReq) == sexReq)
+						(!sexReq || (sex&sexReq) == sexReq) &&
+						(!fxReq || (fx&fxReq) == fxReq) &&
+						(!statusReq || (status&statusReq) == statusReq) &&
+						team != TEAM
 					){
                         
 						if( flags&NPCS$FLAG_REQUEST_CASTSTART ){
@@ -423,7 +432,8 @@ ptEvt(string id){
                         if(~flags&(NPCS$ALLOW_MULTIPLE_CHECKS|NPCS$FLAG_REQUEST_CASTSTART))
 							return;
 						
-                    }//else qd(llGetDisplayName(targ)+", not allowed: Range: "+(string)range+" dist "+(string)dist+" Minrange: "+(string)minrange+" Ray: "+llList2String(ray,-1));
+                    }
+					
                 
 				}
 				
@@ -516,20 +526,12 @@ default {
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    
 	//float DSTART = llGetTime();
 	
     // Here's where you receive callbacks from running methods
     if( method$isCallback ){
 	
-        if( llGetSubString(CB, 0, 5) == "SPELL;" ){
+        if( llGetSubString(CB, 0, 5) == "SPELL;" && l2i(PARAMS, 0) ){
 		
             list split = llParseString2List(CB, [";"], []);
             startCast(llList2Integer(split, 1), llList2String(split, 2), FALSE);
@@ -632,7 +634,6 @@ default {
 		pos = llListFindList(DISABLED, (list)id);
 		if( ~pos )
 			DISABLED = llDeleteSubList(DISABLED, pos, pos);
-			
 	}
 	
 	else if( METHOD == NPCSpellsMethod$silence ){

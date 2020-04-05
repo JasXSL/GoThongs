@@ -42,10 +42,10 @@
 #define FXMethod$addStacks 7			// (int)stacks, name, tag, sender, pid, runOnRem, flags, maxNR, isDispel, duration, (int)trig - Adds x stacks to spells that match the filter. If duration is non-zero, it is also updated.
 
 
-#define FXEvt$runEffect 1				// [(key)caster, (int)stacks, (arr)package, (int)id, (int)flags]
-#define FXEvt$effectAdded 2				// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
-#define FXEvt$effectRemoved 3			// [(key)caster, (int)stacks, (arr)package, (int)id, (bool)overwrite]
-#define FXEvt$effectStacksChanged 4		// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
+//#define FXEvt$runEffect 1				// [(key)caster, (int)stacks, (arr)package, (int)id, (int)flags]
+//#define FXEvt$effectAdded 2				// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
+//#define FXEvt$effectRemoved 3			// [(key)caster, (int)stacks, (arr)package, (int)id, (bool)overwrite]
+//#define FXEvt$effectStacksChanged 4		// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
 #define FXEvt$wrapperSuccess 5			// [(key)caster, (int)detrimental] - A wrapper was successfully added
 #define FXEvt$dodge 6					// [(key)caster] - You dodged an attack
 

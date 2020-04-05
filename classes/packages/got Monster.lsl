@@ -33,7 +33,7 @@ float wander;           // Range to roam
 float hoverHeight;		// Hover height. Primarily used for animesh
 
 integer height_add;		// LOS check height offset from the default 0.5m above root prim
-#define hAdd() ((float)height_add/10+hoverHeight)
+#define hAdd() ((float)height_add/10)
 
 float fxSpeed = 1;			// FX speed modifier
 float fxCooldownMod = 1;	// Used for attack speed
@@ -61,6 +61,14 @@ integer BFL = 0x20;            // Don't roam unless a player is in range
 #define getSpeed() (speed*fxSpeed)
 #define setState(n) STATE = n; raiseEvent(MonsterEvt$state, (str)STATE)
 
+vector groundPoint(){
+	
+	vector root = llGetRootPosition();
+	root.z -= hoverHeight;
+	return root;
+
+}
+
 lookAt( vector pos ){
 	
 	debugCommon("LookAt "+(str)isAnimesh());
@@ -74,46 +82,76 @@ lookAt( vector pos ){
 
 }
 
-integer moveInDir(vector dir){
+integer moveInDir( vector dir ){
 
 	if( dir == ZERO_VECTOR )
 		return FALSE;
     dir = llVecNorm(dir);
-	vector gpos = llGetRootPosition();
+	vector gpos = groundPoint();		// Returns the bottom of the mesh which should be ground level unless flying maybe
     
 	float sp = getSpeed();
-    if( ~getRF()&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp>0 ){
+	// Can move
+    if( ~getRF()&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp != 0.0 ){
         
-        if( ~BFL&BFL_CHASING && ~BFL&BFL_SEEKING )
-			sp/=2;
+		// If walking about then slow down
 
-			
+        if( ~BFL&BFL_CHASING && ~BFL&BFL_SEEKING && sp > 0.75 )
+			sp = 0.75;
+
+		// Multiply direction by speed
         dir = dir*sp;
-		vector a = <0,0,0.5+hAdd()-hoverHeight>;	// Max climb distance
-		vector b = <0,0,-1-hoverHeight>;	// Max drop distance
-		// If flying, go directly towards the target 
-		if( getRF()&Monster$RF_FLYING )
-			a = b = ZERO_VECTOR;
+		
+		bool flying = getRF()&Monster$RF_FLYING;
+		rotation baseRot = llGetRootRotation();
+		if( ~getRF()&Monster$RF_ANIMESH )
+			baseRot = llEuler2Rot(<0,-PI_BY_TWO,0>)*baseRot;
 
 		// Vertical raycast
-		vector rayStart = gpos+a;
-		// movement, hAdd() is not added
-        list r = llCastRay(rayStart, gpos+dir+b, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]);
-        vector hit = l2v(r, 1);
+		vector rayStart = gpos;
 		
-		if(
-			// Too steep drop
-			(~getRF()&Monster$RF_FLYING && llList2Integer(r, -1) <=0)
+		// Nonflying tries to locate the ground in front of the monster
+		float bz = -1; float az = 1;
+		if( getRF()&Monster$RF_FLYING )	// Flying draws a straight line towards where they want to go, centered at their middlepoint
+			bz = az = hoverHeight;
+
+		// If flying, only cast directly to target
+        list r = llCastRay(
+			gpos+<0,0,hAdd()+1>*baseRot, 
+			gpos+dir+<0,0,bz>*baseRot, 
+			[RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]
+		);
+        
+		vector hit = l2v(r, 1);
+		
+		
+		if( 
+			(!flying && l2i(r, -1) <= 0) ||		// Not flying and not found (too steep drop)
+			(flying && l2i(r, -1))				// Flying and found (blocked)
 		){
-            toggleMove(FALSE);
+            
+			toggleMove(FALSE);
 			return FALSE;
+			
         }
 
+		// Point on the ground to walk to
 		vector z = llList2Vector(r, 1);
+		
+		// If flying, move directly in direction
 		if( getRF()&Monster$RF_FLYING )
 			z = gpos+dir;
-			
-        llSetKeyframedMotion([z-gpos+<0,0,hoverHeight>, .25/sp], [KFM_DATA, KFM_TRANSLATION]);
+		// Otherwise move to ground plus hoverheight
+		// Not needed because hoverHeight is subtracted from gpos
+		/*else
+			z.z += hoverHeight;
+		*/
+		
+		float dist = llVecMag(z-gpos);
+		float speed = dist/2/sp;
+		
+		if( speed < 0.12 )
+			speed = 0.12;
+        llSetKeyframedMotion([z-gpos, speed], [KFM_DATA, KFM_TRANSLATION]);
         toggleMove(TRUE);
 		
     }else 
@@ -164,54 +202,68 @@ toggleMove(integer on){
 	multiTimer([TIMER_ATTACK, 0, atkspeed*fxCooldownMod, FALSE]); \
 	multiTimer([TIMER_EXEC_ATTACK])
 
-timerEvent(string id, string data){
+timerEvent( string id, string data ){
 
-    if(id == TIMER_FRAME){
+    if( id == TIMER_FRAME ){
 	
         if( BFL&BFL_STOPON || FXFLAGS&fx$F_STUNNED )
 			return;
         
+		int rf = getRF();
+		
         // Try to find a target
         if( STATE == MONSTER_STATE_IDLE ){
 		
             if(
-				getRF()&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED
+				rf&(Monster$RF_IMMOBILE|Monster$RF_FOLLOWER) || FXFLAGS&fx$F_ROOTED
 			)return;
             
 			//llSetLinkPrimitiveParamsFast(2, [PRIM_TEXT, (str)wander+"\n"+portalConf$desc, <1,1,1>, 1]);
-            // Find a random pos to go to maybe
+            // Find a random pos to go to. The random lets them pick different targets at random times.
             if( wander == 0 || llFrand(1)>.1 )
 				return;
 			
-            vector a = llGetRootPosition()+<0,0,.5>;
-            vector b = llGetRootPosition()+<0,0,.5>+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
+			vector rootPos = groundPoint();
+            vector a = rootPos+<0,0,.5>;
+            vector b = rootPos+<0,0,.5>+llVecNorm(<llFrand(2)-1,llFrand(2)-1,0>)*llFrand(wander);
             
-			if(llVecDist(b, rezpos)>wander)return;
+			if( rf&Monster$RF_FLYING )
+				b.z = rootPos.z;
+			
+			if( llVecDist(b, rezpos) > wander )
+				return;
 			
 			// Movement, hAdd() is not added
             list ray = llCastRay(a, b, []);
-            if(llList2Integer(ray, -1) == 0){
+            if( llList2Integer(ray, -1) == 0 ){
+			
                 lastseen = b;
 				setState(MONSTER_STATE_SEEKING);
+				
             }
+			
         } 
         
         
 		// Seeking a specific position
         else if( STATE == MONSTER_STATE_SEEKING ){
 		
-            if( getRF()&Monster$RF_FOLLOWER ){
+			// If monster ignore this because monster overrides
+            if( rf&Monster$RF_FOLLOWER ){
 			
 				setState(MONSTER_STATE_IDLE);
 				return;
 				
 			}
 
-			vector gpos = llGetRootPosition();
+			vector gpos = groundPoint();
 			
 			float md = 0.25;				// Min dist to be considered at target
 			vector t = lastseen;		// Pos to go to
-			if( SEEKTARG ){ // External defined target
+
+			
+			// External defined target
+			if( SEEKTARG ){ 
 			
 				t = l2v(SEEKTARG, 0);
 				md = l2f(SEEKTARG, 1);
@@ -219,6 +271,7 @@ timerEvent(string id, string data){
 					t = prPos(l2s(SEEKTARG,0));
 					
 			}
+			// We have waypoints to follow (tracking a lost target). Find the closest waypoint and pick that instead.
 			else if( count(WPOINTS) ){
 			
 				// Find the closest visible waypoint
@@ -250,30 +303,32 @@ timerEvent(string id, string data){
 				@found;
 				
 			}
-						
+			
 			
 			float dist = llVecDist(<t.x, t.y, 0>, <gpos.x, gpos.y, 0>);
 			
             if( 
 				dist > md && 
 				t != ZERO_VECTOR &&
-				~getRF()&Monster$RF_IMMOBILE && 
+				~rf&Monster$RF_IMMOBILE && 
 				~FXFLAGS&fx$F_ROOTED
 			){
 			
-				// Todo: Animesh should have 0.5m above
-                list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, t+<0,0,0.5>, [
+				// See if the path to the target location is clear
+                list ray = llCastRay(groundPoint()+<0,0,1+hAdd()>, t+<0,0,0.5>, [
 					RC_DATA_FLAGS, RC_GET_ROOT_KEY, 
 					RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL
 				]);
-				                
+				
+				// We can walk there
                 if(
-					llList2Integer(ray, -1)==0 || 
+					llList2Integer(ray, -1) == 0 || 
 					l2k(ray, 0) == l2k(SEEKTARG, 0)
 				){
 				
+					vector dir = t-gpos;		
 					// move towards the target
-                    if( moveInDir(t-gpos) ){
+                    if( moveInDir(dir) ){
 
 						return;
 						
@@ -283,9 +338,10 @@ timerEvent(string id, string data){
 				
 				
             }
+			
 			// We could not move towards the target.
 			
-			// We are seeking towards a scripted target.
+			// We are seeking towards a scripted target location.
 			if( SEEKTARG ){
 			
 				BFL = BFL&~BFL_SEEKING;
@@ -298,7 +354,7 @@ timerEvent(string id, string data){
 				
 			}
 			
-			// Unable to move towards the target so starte deleteing
+			// Unable to move towards the target so start deleting waypoints until maybe one fits
 			lastseen = l2v(WPOINTS, 0);
 			WPOINTS = llDeleteSubList(WPOINTS, 0, 0);
 			if( lastseen != ZERO_VECTOR )
@@ -323,7 +379,9 @@ timerEvent(string id, string data){
             BFL = BFL|BFL_CHASING;
 			
             vector ppos = prPos(chasetarg);
-            
+            parseMonsterOffsets(chasetarg, crAdd, chAdd)		// Range offsets
+			ppos.z += chAdd;
+			
             // Player left sim or monster target died
             if( ppos == ZERO_VECTOR ){
 			
@@ -337,15 +395,17 @@ timerEvent(string id, string data){
 				
             }
             
-			list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()-hoverHeight>, prPos(chasetarg)+<0,0,.5>, RC_DEFAULT + RC_DATA_FLAGS + RC_GET_ROOT_KEY);
+			vector ground = groundPoint();
+			
+			
+			
+			list ray = llCastRay(ground+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, RC_DEFAULT + RC_DATA_FLAGS + RC_GET_ROOT_KEY);
 			
             // Close enough to attack
-			if( llVecDist(ppos, llGetRootPosition()) <= hitbox ){
+			if( llVecDist(ppos, ground) <= hitbox+crAdd ){
 			
-				if(~BFL&BFL_IN_RANGE){
+				if( ~BFL&BFL_IN_RANGE )
                     raiseEvent(MonsterEvt$inRange, chasetarg);
-                }
-	
 				
 				// This is where we request an attack
 				if(
@@ -354,7 +414,7 @@ timerEvent(string id, string data){
 					BFL&BFL_IN_RANGE && 
 					~BFL&BFL_STOPON && 
 					~FXFLAGS&(fx$F_PACIFIED|fx$F_STUNNED) && 
-					~getRF()&Monster$RF_PACIFIED && 
+					~rf&Monster$RF_PACIFIED && 
 					// Attack LOS, hAdd() IS added
 					llList2Integer(ray, -1) == 0
 				){
@@ -394,7 +454,7 @@ timerEvent(string id, string data){
 			}
 			
 			// Stop moving at half the hitbox
-            if( llVecDist(ppos, llGetRootPosition()) <= hitbox/2 ){
+            if( llVecDist(ppos, ground) <= hitbox/2 ){
                 
 				updateLookAt();
 				toggleMove(FALSE);
@@ -402,8 +462,6 @@ timerEvent(string id, string data){
             }
             // Might be in range but should move closer
             else{
-				                
-				vector add = <0,0,1+hAdd()-hoverHeight>;	// Meters to raytrace to above us and target
 
 				// Cannot see the target
                 if( llList2Integer(ray, -1) > 0 ){
@@ -415,7 +473,7 @@ timerEvent(string id, string data){
 					multiTimer((list)TIMER_WAYPOINT + 0 + .1 + FALSE);
 					setState(MONSTER_STATE_SEEKING);
 					
-                    if( getRF()&Monster$RF_FREEZE_AGGRO )
+                    if( rf&Monster$RF_FREEZE_AGGRO )
 						return;
 						
                     string desc = prDesc(llList2Key(ray, 0));
@@ -428,9 +486,20 @@ timerEvent(string id, string data){
 				// can see target
 				else{
 				
+					vector add = <0,0,1+hAdd()-hoverHeight>;	// Meters to raytrace to above us and target
                     lastseen = ppos+add;
+					
+
+					
+					vector dir = ppos-ground;	// Our ground position minus target ground position
+					//if( rf & Monster$RF_FLYING )
+					//	dir += <0,0,hoverHeight>;	// Make sure we hover
+					/*
+					if( ~getRF() & Monster$RF_IMMOBILE )
+						qd("Moving to: "+(str)(ppos+dir));
+					*/
                     // move towards player
-                    moveInDir(llVecNorm(ppos-llGetRootPosition()));
+                    moveInDir(dir);
 					//qd("Move, dist is "+(str)llVecDist(ppos, llGetRootPosition())+" hitbox is "+(str)hitbox);
 					
                 }
@@ -634,8 +703,8 @@ onSettings(list settings){
 	}
 }
 
-default
-{
+default{
+
     on_rez(integer rawr){llResetScript();}
     
     timer(){multiTimer([]);}

@@ -33,10 +33,18 @@ integer STATE;
 float speed = 1;
 float height_add;
 float hoverHeight;
-#define hAdd() ((float)height_add/10+hoverHeight)
+#define hAdd() ((float)height_add/10)
 #define isAnimesh() (MONSTER_FLAGS&Monster$RF_ANIMESH)
 #define getSpeed() speed
 
+
+vector groundPoint(){
+	
+	vector root = llGetRootPosition();
+	root.z -= hoverHeight;
+	return root;
+
+}
 
 vector targetPos(){
 
@@ -50,8 +58,10 @@ vector targetPos(){
 		
 	// Rotation
 	rotation rot = l2r(data, 1);
-	rotation multi = llEuler2Rot(<0,0,PI+ANGLE>);
 	
+	
+	rotation multi = llEuler2Rot(<0,0,PI+ANGLE>);
+
 	
 	vector ascale = llGetAgentSize(l2k(data, 3));
 	point-= <0,0,ascale.z/2>;
@@ -59,7 +69,11 @@ vector targetPos(){
 	vector fwd = <0,0,1>;
 	if( l2i(data, 2) || ascale != ZERO_VECTOR )
 		fwd = <1,0,0>;
+		
 	
+	float dist = llVecDist(llGetPos(), point);
+	if( dist > 1 )
+		fwd /= dist;	// Offset can be decreased based on distance
 	fwd = fwd*rot*multi;
 	
 	
@@ -102,40 +116,54 @@ integer moveInDir( vector dir, float speedMulti ){
 	debugCommon("Moving. Flags: "+(str)MONSTER_FLAGS);
 	
     dir = llVecNorm(dir);
-	vector gpos = llGetRootPosition();
+	vector gpos = groundPoint();
 	
 	float sp = getSpeed()/speedMulti;
-	if( sp < 0.12 )
-		sp = 0.12;
 		
-    if( ~MONSTER_FLAGS&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp>0 ){
+    if( ~MONSTER_FLAGS&Monster$RF_IMMOBILE && ~FXFLAGS&fx$F_ROOTED && sp > 0 ){
         
         dir = dir*speedMulti;
-		vector a = <0,0,0.5+hAdd()-hoverHeight>;	// Max climb distance
-		vector b = <0,0,-1-hoverHeight>;	// Max drop distance
-		// If flying, go directly towards the target 
-		if( MONSTER_FLAGS&Monster$RF_FLYING )
-			a = b = ZERO_VECTOR;
+		
+		bool flying = MONSTER_FLAGS & Monster$RF_FLYING;
+		rotation baseRot = llGetRootRotation();
+		if( ~MONSTER_FLAGS & Monster$RF_ANIMESH )
+			baseRot = llEuler2Rot(<0,-PI_BY_TWO,0>)*baseRot;
 
 		// Vertical raycast
-		vector rayStart = gpos+a;
-		// movement, hAdd() is not added
-        list r = llCastRay(rayStart, gpos+dir+b, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]);
+		vector rayStart = gpos;
+		
+		// Nonflying tries to locate the ground in front of the monster
+		float bz = -1; float az = 1;
+		if( flying )	// Flying draws a straight line towards where they want to go, centered at their middlepoint
+			bz = az = hoverHeight;
+
+
+        list r = llCastRay(
+			gpos+<0,0,hAdd()+1>*baseRot, 
+			gpos+dir+<0,0,bz>*baseRot, 
+			[RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]
+		);
+
+
         vector hit = l2v(r, 1);
 		
 		if(
-			// Too steep drop
-			(~MONSTER_FLAGS&Monster$RF_FLYING && llList2Integer(r, -1) <=0)
+			(!flying && l2i(r, -1) <= 0) ||		// Not flying and not found (too steep drop)
+			(flying && l2i(r, -1))				// Flying and found (blocked)
 		)return FALSE;
         
 		vector z = llList2Vector(r, 1);
-		if( MONSTER_FLAGS&Monster$RF_FLYING )
+		if( flying )
 			z = gpos+dir;
 			
-		float time = .25/sp;
-		if( time < 0.12 )
-			time = 0.12;
-        llSetKeyframedMotion([z-gpos+<0,0,hoverHeight>, time], [KFM_DATA, KFM_TRANSLATION]);
+		float dist = llVecMag(z-gpos);
+		float speed = dist*sp;	// Technically this is always the same because distance changes based on input speed
+		
+		if( speed < 0.12 )
+			speed = 0.12;
+			
+        llSetKeyframedMotion([z-gpos, speed], [KFM_DATA, KFM_TRANSLATION]);
+		
 		
     }else 
 		return FALSE;
@@ -160,46 +188,6 @@ lookAt( vector pos ){
 	
 
 }
-
-/*
-integer moveInDir(vector dir, float speed){
-
-	if( dir == ZERO_VECTOR )
-		return FALSE;
-    dir = llVecNorm(dir);
-	vector gpos = llGetRootPosition();
-    
-	// Determines how smooth it should run, timer even should be faster than this
-	float STEPPING = 0.3;
-	
-	float sp = speed;
-	if(sp<0.3)sp = 0.3;
-	if(sp>3)sp = 3;
-	
-
-    dir = dir*sp*STEPPING;
-	vector a = <0,0,1>;	// Max climb distance
-	vector b = <0,0,-3>;	// Max drop distance
-	
-	// movement, hAdd() is not added
-    // Check if too high climb or too steep drop
-	list r = llCastRay((gpos+dir+a), (gpos+dir+b), ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]));
-    if(
-		// Too steep drop
-		llList2Integer(r, -1) <=0 || 
-		// Inside a wall
-		llVecDist(llGetRootPosition()+dir+<0,0,1>, llList2Vector(r, 1))<.1
-	){
-		return FALSE;
-    }
-    	
-	vector z = llList2Vector(r, 1);
-			
-    llSetKeyframedMotion([z-gpos, 1.*STEPPING], [KFM_DATA, KFM_TRANSLATION]);
-    llLookAt(gpos+<dir.x, dir.y, 0>, 1, 1);
-    return TRUE;
-}*/
-
 
 
 
@@ -241,10 +229,10 @@ onSettings(list settings){
 		settings = llDeleteSubList(settings, 0, 1);
 		
 		// Movement speed
-		if(idx == 1 && l2f(dta,0)>0)
+		if( idx == 1 && l2f(dta,0)>0 )
 			speed = l2f(dta,0);
 
-		if(idx == MLC$height_add)
+		if( idx == MLC$height_add )
 			height_add = l2i(dta,0);
 		
 		if( idx == MLC$hover_height )
@@ -277,33 +265,43 @@ timerEvent(string id, string data){
 		
 		BFL = BFL|BFL_HAS_TARGET;
 	
-		vector gpos = llGetRootPosition();
+		vector gpos = groundPoint();
 		
 		// Successfully determined a place to go (and not in range)
 		integer success;
 		
-		float dist = llVecDist(<gpos.x, gpos.y, 0>, <point.x, point.y, 0>);
-		if(dist > DISTANCE/2){
+		
+		float dist = llVecDist(<gpos.x, gpos.y, 0>, <point.x, point.y, 0>);	
+		if( dist > DISTANCE/2 ){
+		
+		
 			list los = llCastRay(gpos+<0,0,1>, point+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 			
 			if(l2i(los, -1) == 0){
+			
 				vector dir = llVecNorm(<point.x, point.y, 0>-<gpos.x, gpos.y, 0>);
-				success = moveInDir(dir, dist);
+				success = moveInDir(dir, dist/2);	// Move faster if far away
+				
 			}
 			
 			
 			if(!success){		// Couldn't find a path
-				if(BFL&BFL_DO_WARP){
+			
+				if( BFL&BFL_DO_WARP ){
 					warp();
 				}
-				else if(~BFL&BFL_WARP_TIMER){
+				else if( ~BFL&BFL_WARP_TIMER ){
+				
 					multiTimer(["WARP", "", 3, FALSE]);
 					BFL = BFL|BFL_WARP_TIMER;
+					
 				}
 			}
-			else if(~BFL&BFL_WALKING){
+			else if( ~BFL&BFL_WALKING ){
+				
 				MaskAnim$start("walk");
 				BFL = BFL|BFL_WALKING;
+				
 			}
 
 		}

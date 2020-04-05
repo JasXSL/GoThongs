@@ -7,6 +7,7 @@ integer P_POTION;
 #define POTION_POS <0.000000, 0.323226, 0.307781>
 integer P_POTION_INSPECT;
 
+string PRIM;
 string NAME;
 key TEXTURE;
 integer CHARGES_REMAINING;
@@ -42,22 +43,20 @@ timerEvent(string id, string data){
 
 dropPotion(){
 
-	if( NAME == "" || FLAGS&PotionsFlag$no_drop )
+	if( PRIM == "" || FLAGS&PotionsFlag$no_drop )
 		return;
 	
 	vector pos = llGetRootPosition()+llRot2Left(llGetRot())*.3;
 	rotation rot = llGetRot();
-	if(FLAGS&PotionsFlag$is_in_hud){
-		Spawner$spawnInt(NAME, pos, rot, "", FALSE, TRUE, ""); 
-	}
-	else if(FLAGS&PotionsFlag$raise_drop_event){
-		Level$potionDropped(NAME);
-	}
-	else{
-		LevelAux$spawnLiveTarg(ROOT_LEVEL, NAME, pos, rot);
-	}
+	if(FLAGS&PotionsFlag$is_in_hud)
+		Spawner$spawnInt(PRIM, pos, rot, "[\"M\"]", FALSE, TRUE, "POTS"); 
+	else if( FLAGS&PotionsFlag$raise_drop_event )
+		Level$potionDropped(PRIM);
+	else
+		LevelAux$spawnTarg(ROOT_LEVEL, PRIM, pos, rot, FALSE, "[\"M\"]", "POTS");
 	
-	raiseEvent(PotionsEvt$drop, NAME);
+	
+	raiseEvent(PotionsEvt$drop, PRIM);
 	
 }
 
@@ -65,6 +64,7 @@ dropPotion(){
 // Clears
 remPotion(){
 
+	PRIM = "";
 	NAME = "";
 	TEXTURE = "";
 	CHARGES_REMAINING = 0;
@@ -203,7 +203,10 @@ default {
 		COOLDOWN = (float)method_arg(4);
 		DATA = method_arg(5);
 		DESC = method_arg(6);
+		PRIM = method_arg(7);
 		
+		if( PRIM == "" )
+			PRIM = NAME;
 		//qd("Setting potion");
 		
 		if( CHARGES_REMAINING == 0 )

@@ -464,14 +464,7 @@ default{
 	}
     
 	#include "xobj_core/_LM.lsl"
-        /*
-            Included in all these calls:
-            METHOD - (int)method
-            PARAMS - (var)parameters
-            SENDER_SCRIPT - (var)parameters
-            CB - The callback you specified when you sent a task
-        */
-		
+
 		// Prevent callbacks from being received
         if( method$isCallback )
 			return;
@@ -753,7 +746,7 @@ default{
 						
 						// Send to fxCompiler
 						integer actions = FXCPARSE$ACTION_ADD;
-						if(flags&PF_TRIGGER_IMMEDIATE){
+						if( flags&PF_TRIGGER_IMMEDIATE ){
 							actions = actions|FXCPARSE$ACTION_RUN;
 							onEvt("", INTEVENT_PACKAGE_RAN, [pName(slice)]);
 						}

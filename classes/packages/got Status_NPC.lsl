@@ -57,6 +57,7 @@ string drops;			// JSON array of sub arrays of [(str)asset, (float)drop_chance]
 integer rAdd;		// Hitbox range add for players to hit ME
 integer hAdd;		// LOS check height offset from the default 0.5m above root prim
 integer MH;			// Melee height, Used for RP
+float hoverHeight;
 #define hAdd() ((float)hAdd/10)
 
 // (float)aggro, (key)id, (int)flags
@@ -99,10 +100,18 @@ list cID;		// Custom ID (str)id, (var)mixed - Used for got Level integration
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
 // Description is $M$(int)team$(int)HP_BITWISE$(int)rAdd(decimeters)$(int)hAdd$(int)status_flags$(int)monster_flags$(int)fx_flags$sex
-#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)rAdd+"$"+(str)hAdd+"$"+(str)SF+"$"+(str)RF+"$"+(str)FF+"$"+(str)sex);}
+#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)rAdd+"$"+(str)(hAdd-llRound(hoverHeight*10))+"$"+(str)SF+"$"+(str)RF+"$"+(str)FF+"$"+(str)sex);}
 
 #define dropag( player, type ) \
 	runMethod((str)LINK_THIS, cls$name, StatusMethod$monster_dropAggro, [player, type], TNN)
+
+vector groundPoint(){
+	
+	vector root = llGetRootPosition();
+	root.z -= hoverHeight;
+	return root;
+
+}
 
 ag( key pl, float ag ){
 
@@ -159,7 +168,7 @@ ag( key pl, float ag ){
 	
 		// Aggro target has left
 		key t = l2k(AG, i+1);
-        if( llKey2Name(t) == "" || llVecDist(llGetRootPosition(), prPos(t)) > 20 ){
+        if( llKey2Name(t) == "" || llVecDist(groundPoint(), prPos(t)) > 20 ){
 		
 			AG = llDeleteSubList(AG, i, i+AGGRO_STRIDE-1);
 			i-= AGGRO_STRIDE;
@@ -321,6 +330,8 @@ outputStats( integer f ){
 			rAdd = dtaInt; \
 		if(idx == MLC$height_add) \
 			hAdd = dtaInt; \
+		if( idx == MLC$hover_height ) \
+			hoverHeight = dtaFloat; \
 		if(idx == MLC$team && dtaStr != "") \
 			team = dtaInt; \
 		if(idx == MLC$drops) \
@@ -489,6 +500,8 @@ default
 	
 	sensor( integer total ){
 		
+		vector root = groundPoint();
+		
 		integer ffa = isFFA();
 		while( total-- ){
 		
@@ -498,7 +511,7 @@ default
 			// These can not be relied on for PC
 			parseDesc(k, resources, status, fx, sex, team, mf, armor);
 			vector ppos = prPos(k);
-			float dist =llVecDist(ppos, llGetRootPosition());
+			float dist =llVecDist(ppos, root);
 			float range = AR;
 			
 			float ang;
@@ -521,7 +534,7 @@ default
 				dist < range
 			){
 			
-				list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
+				list ray = llCastRay(root+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
 				if( llList2Integer(ray, -1) == 0 )
 					Status$get(k, "aggro");
 
@@ -758,7 +771,7 @@ default
 				list d = llListRandomize(llJson2List(drops), 1);
 				list_shift_each(d, val,
 					if(llFrand(1)<(float)j(val, 1)){ 
-						Spawner$spawn(j(val,0), (llGetRootPosition()+<0,0,.5>), llGetRot(), "[\"M\"]", FALSE, FALSE, "");
+						Spawner$spawn(j(val,0), (groundPoint()+<0,0,.5>), llGetRot(), "[\"M\"]", FALSE, FALSE, "");
 						d = [];
 					}
 				)
@@ -859,7 +872,8 @@ default
 		key p = method_arg(0);
 		vector pp = prPos(p);
 		float r = (float)method_arg(1);
-		if(llVecDist(llGetRootPosition(), pp) > r)return;
+		if(llVecDist(groundPoint(), pp) > r)
+			return;
 		list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, pp, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 		if(llList2Integer(ray, -1) == 0)
 			ag(p,10);

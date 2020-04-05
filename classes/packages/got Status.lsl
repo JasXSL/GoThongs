@@ -496,6 +496,8 @@ float spdmtm( string sn, key c ){
 }
 
 
+
+
 onDeath( string customAnim, key killer ){
 
 	// Player dead already
@@ -538,6 +540,7 @@ onDeath( string customAnim, key killer ){
 		Bridge$fetchRape((str)LINK_ROOT, customAnim);
 		return;
 	}
+	
 	// Otherwise fetch one
 	NPCInt$rapeMe();
 	Rape$activateTemplate();
@@ -880,6 +883,8 @@ default {
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
 		A_ARM = floor(llFrand(4));	// 0-3
 		OS( TRUE );
+		
+		//runOmniMethod("got NPCInt", NPCIntMethod$rapeMe, [], TNN);
         
     }
     

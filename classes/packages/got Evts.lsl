@@ -32,9 +32,12 @@ list TARGETED_BY;	// Players currently actively targeting you
 
 // If FIRST is true, it will ignore current target
 output(integer first){
-	if(output_cache == []){
+
+	if( output_cache == [] ){
+	
 		integer i;
-		for(i=0; i<llGetListLength(nearby_cache); i++){
+		for(; i<llGetListLength(nearby_cache); ++i ){
+		
 			key t = l2k(nearby_cache, i);
 			vector pos = prPos(t);
 				
@@ -43,43 +46,51 @@ output(integer first){
 			float score = dist+angle/8;
 			
 			// Prevents targeting the same one again
-			if(first && t == cache_targ)
+			if( first && t == cache_targ )
 				score = 9001;
 			output_cache += [score, llList2Key(nearby_cache, i)];
+			
 		}
 		output_cache = llListSort(output_cache, 2, TRUE);
+		
 	}
 
-	if(output_cache == [])return;
-	
+	if( output_cache == [] )
+		return;
 	
 	
 	integer i;
-	for(i=0; i<llGetListLength(output_cache); i+=2){
-		if(pointer>=llGetListLength(output_cache)/2)pointer = 0;
+	for(; i<llGetListLength(output_cache); i+=2 ){
+	
+		if( pointer>=llGetListLength(output_cache)/2 )
+			pointer = 0;
 		
 		key t = llList2Key(output_cache, pointer*2+1);
 		vector pos = prPos(t);
 		list ray = llCastRay(llGetRootPosition(), pos+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
 		
 		string desc = prDesc(t);
-		if(llList2Integer(ray, -1) <1 && descIsProper(desc)){
+		if( llList2Integer(ray, -1) <1 && descIsProper(desc) ){
+		
 			Status$monster_attemptTarget(t, true);
 			return;
+			
 		}
 		pointer++;
+		
 	}
 }
 
-onEvt(string script, integer evt, list data){
-	if(script == "got Status" && evt == StatusEvt$team)
+onEvt( string script, integer evt, list data ){
+
+	if( script == "got Status" && evt == StatusEvt$team )
 		TEAM = l2i(data,0);
-	else if(script == "#ROOT"){
+	else if( script == "#ROOT" ){
 	
-		if(evt == RootEvt$targ)
+		if( evt == RootEvt$targ )
 			cache_targ = l2s(data, 0);
 			
-		else if(evt == evt$BUTTON_PRESS && QTE_STAGES > 0){
+		else if( evt == evt$BUTTON_PRESS && QTE_STAGES > 0 ){
 			
 			list map = [
 				CONTROL_UP|CONTROL_FWD,
@@ -89,12 +100,15 @@ onEvt(string script, integer evt, list data){
 			];
 			
 			integer i;
-			for(i=0; i<count(map); ++i){
-				if(l2i(map, i)&l2i(data, 0)){
+			for(; i<count(map); ++i ){
+			
+				if( l2i(map, i)&l2i(data, 0) ){
 					qteButtonTouched(i);
 					return;
 				}
+				
 			}
+			
 		}
 		
 		else if(evt == evt$TOUCH_START && QTE_STAGES > 0 && l2i(data, 0) == P_BUTTONS){
@@ -108,6 +122,7 @@ onEvt(string script, integer evt, list data){
 			
 			qteButtonTouched(pos);
 		}
+		
 	}
 	else if( evt == StatusEvt$targeted_by && script == "got Status" ){
 		
@@ -116,7 +131,10 @@ onEvt(string script, integer evt, list data){
 		
 	}
 	else if( script == "got Status" && evt == StatusEvt$dead && l2i(data, 0) && QTE_STAGES > 0 ){
+	
+		debugCommon("Ending because player died")
 		toggleQTE(FALSE, FALSE);
+		
 	}
 	
 }
@@ -168,15 +186,18 @@ qteButtonTouched( integer button ){
 	
 	// SUCCESS
 	if(success){
+	
 		llPlaySound("45ab8496-0fad-b8f9-281d-02aaf588e306", 1);
 		// DONE
-		if(--QTE_STAGES == 0){
-			toggleQTE(FALSE, FALSE);
+		if( --QTE_STAGES == 0 ){
 			
+			debugCommon("Ending QTE because all buttons pressed")
+			toggleQTE(FALSE, FALSE);
 			return;
+			
 		}
-		
 		toggleQTE(TRUE, FALSE);
+		
 	}
 	else{
 		llPlaySound("dafef83b-035f-b2b8-319d-daac01b0936e", 1);
@@ -228,22 +249,33 @@ toggleQTE(integer on, integer instant){
 	}
 }
 
-onQteEnd(integer success){
-	sendCallback(l2s(QTE_SENDER_DATA, 0), l2s(QTE_SENDER_DATA, 1), EvtsMethod$startQuicktimeEvent, mkarr(([EvtsEvt$QTE$END, success])), l2s(QTE_SENDER_DATA, 2));
+onQteEnd( int success ){
+
+	sendCallback(
+		l2s(QTE_SENDER_DATA, 0), 
+		l2s(QTE_SENDER_DATA, 1), 
+		EvtsMethod$startQuicktimeEvent, 
+		mkarr((list)EvtsEvt$QTE$END + success), 
+		l2s(QTE_SENDER_DATA, 2)
+	);
 	raiseEvent(EvtsEvt$QTE, "0");
 	QTE_SENDER_DATA = [];
+	
 }
 
 
 ptEvt( string id ){
 
-	if(id == "CACHE")
+	if( id == "CACHE" )
 		BFL = BFL&~BFL_RECENT_CACHE;
 		
 	// Advance QTE stage
-	else if( llGetSubString(id,0,2) == "QTE" )
+	else if( llGetSubString(id,0,2) == "QTE" ){
+		
+		debugCommon("Stages left "+(str)QTE_STAGES);
 		toggleQTE(QTE_STAGES, llGetSubString(id, -1, -1) == "f");
-	
+		
+	}
 	// Set spell textures
 	else if(id == "OP"){
 	
@@ -538,6 +570,7 @@ default{
 	
 	if( METHOD == EvtsMethod$startQuicktimeEvent ){
 	
+		debugCommon("Start received: "+mkarr(PARAMS)+" from "+SENDER_SCRIPT)
 		QTE_STAGES = floor(l2i(PARAMS, 0)*fxMod);
 		if( QTE_STAGES < 1 && l2i(PARAMS, 0) > 0 )
 			QTE_STAGES = 1;
@@ -568,12 +601,17 @@ default{
 			
 		
 		float preDelay = l2f(PARAMS, 1);
-		if(preDelay){
+		if( preDelay ){
 			ptSet("QTE", preDelay, FALSE);
 			BFL = BFL|BFL_QTE_PRESSED;
 		}
-		else
-			toggleQTE(QTE_STAGES > 0, TRUE);
+		else{
+			
+			debugCommon("Starting QTE immediately with stages "+(str)QTE_STAGES)
+			toggleQTE((QTE_STAGES > 0), TRUE);	// -1 should also stop
+			
+		}
+		
 	}
 	
 	else if(METHOD == EvtsMethod$getTextureDesc){

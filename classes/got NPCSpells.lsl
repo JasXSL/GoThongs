@@ -35,8 +35,10 @@
 #define NPCS$SPELL_NAME 4			// Not needed for instant cast
 #define NPCS$SPELL_MIN_RANGE 5		// Minimum range of target 
 #define NPCS$SPELL_TARG_SEX 6		// Sex flags needed on target, 0 ignores 
+#define NPCS$SPELL_TARG_FX 7		// FX Flags needed on target, 0 ignores
+#define NPCS$SPELL_TARG_STATUS 8	// Status flags needed on target, 0 ignores
 
-#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex) llList2Json(JSON_ARRAY, [flags, casttime, recast, range, name, minrange, targSex])
+#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags) llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags))
 
 // Spell is the spell index, targ is the target (converted to owner key if attached), real is either same as targ or the HUD itself
 #define NPCSpellsEvt$SPELL_CAST_START 1				// (int)spell, (key)targ, (key)real, (str)spellName

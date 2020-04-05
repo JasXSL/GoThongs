@@ -16,7 +16,7 @@
 #define PotionsEvt$drop 2				// (str)potion_name
 #define PotionsEvt$use 3				// (str)potion_name
 
-#define Potions$set(targ, name, texture, charges, flags, cooldown, spellData, desc) runMethod(targ, "got Potions", PotionsMethod$setPotion, (list)(name) + (texture) + (_pCharges) + (flags) + (cooldown) + (spellData) + (desc), NORET)
+#define Potions$set(targ, name, texture, charges, flags, cooldown, spellData, desc, prim) runMethod(targ, "got Potions", PotionsMethod$setPotion, (list)(name) + (texture) + (_pCharges) + (flags) + (cooldown) + (spellData) + (desc) + (prim), NORET)
 #define Potions$setArray(targ, data) runMethod(targ, "got Potions", PotionsMethod$setPotion, (list)data, NORET)
 
 #define Potions$resetCooldown(targ) runMethod(targ, "got Potions", PotionsMethod$resetCooldown, [], NORET)

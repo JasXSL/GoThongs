@@ -49,16 +49,16 @@
 		#define fx$F_PACIFIED 0x2					// Unable to attack but can use friendly spells. For NPC it doesn't affect spells, but only auto attacks
 		#define fx$F_INVUL 0x4						// Cannot take damage
 		#define fx$F_ROOTED 0x8						// Unable to move but can attack
-		#define fx$F_QUICKRAPE 0x10					// Inside of a quickrape - This one is autochecked for in got FX and does not need a condition
-		#define fx$F_SILENCED 0x20					// Unable to cast any spells at all
-		#define fx$F_BLINDED 0x40					// Makes screen black
-		#define fx$F_NOROT 0x80						// Unable to rotate
-		#define fx$F_BLURRED 0x100					// Blurry screen
-		#define fx$F_NO_TARGET 0x200				// This player can not be targeted by NPCs
-		#define fx$F_NO_PULL 0x400					// Blocks fx$PULL (37)
-		#define fx$F_NO_DEATH 0x800					// PC - Prevents the player from going below 0 HP and instead raises StatusEvt$death_hit
-		#define fx$F_CAST_WHILE_MOVING 0x1000		// PC - Allows you to cast while moving
-		#define fx$F_SHOW_GENITALS 0x2000			// PC - Renders the character naked
+		#define fx$F_QUICKRAPE 0x10					// 16 Inside of a quickrape - This one is autochecked for in got FX and does not need a condition
+		#define fx$F_SILENCED 0x20					// 32 Unable to cast any spells at all
+		#define fx$F_BLINDED 0x40					// 64 Makes screen black
+		#define fx$F_NOROT 0x80						// 128 Unable to rotate
+		#define fx$F_BLURRED 0x100					// 256 Blurry screen
+		#define fx$F_NO_TARGET 0x200				// 512 This player can not be targeted by NPCs
+		#define fx$F_NO_PULL 0x400					// 1024 Blocks fx$PULL (37)
+		#define fx$F_NO_DEATH 0x800					// 2048 PC - Prevents the player from going below 0 HP and instead raises StatusEvt$death_hit
+		#define fx$F_CAST_WHILE_MOVING 0x1000		// 4096 PC - Allows you to cast while moving
+		#define fx$F_SHOW_GENITALS 0x2000			// 8192 PC - Renders the character naked
 		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
 		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
 		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind

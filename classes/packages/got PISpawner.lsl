@@ -19,6 +19,7 @@ spawnScene( string name, float duration, float min_speed, float max_speed, list 
 	
 	key pl = l2k(players, 0);
 	if( pos == ZERO_VECTOR ){
+	
 		pos = prPos(pl);
 		if( pos == ZERO_VECTOR )
 			return;
@@ -28,6 +29,7 @@ spawnScene( string name, float duration, float min_speed, float max_speed, list 
 		pos = l2v(ray, 1);
 		vector sc = llGetAgentSize(llGetOwnerKey(pl));
 		pos.z += sc.z/2;
+		
 	}
 	
 	integer i;
@@ -71,16 +73,16 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 		integer i;
 		for( ; i<count(pl); ++i ){
 		
-			
 			integer pos = llListFindList(PLAYERS, (list)l2s(pl, i));
 			if( ~pos )
-				viable += (list)l2s(PLAYER_HUDS, i);
+				viable += (list)l2s(PLAYER_HUDS, pos);
 			
 			// Instigator missing
-			if( i == 0 && !count(viable) )
+			if( i == 0 && !count(viable) && !no_instigator )
 				return;
 			
 		}
+		
 		
 		// Not enough players
 		if( count(viable) < 2 ){		
@@ -99,8 +101,10 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 				pg += t;
 		}
 
+
 		// Not enough adults to request or instigator is nonadult
 		if( count(adult) < 2 || l2s(pg, 0) == l2s(viable, 0) ){
+		
 			// Spawn a spank
 			spawnScene( 
 				"Spanking", 
@@ -113,6 +117,7 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 				[0,0]
 			);
 			return;
+			
 		}
 		
 		pg = [];

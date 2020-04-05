@@ -21,6 +21,9 @@ integer max_anims = 0;
 integer cur_anim;
 
 integer QTE;					// QTE taps
+int QTE_FLAGS;
+float QTE_PRE_DELAY;
+float QTE_BUTTON_DELAY;
 
 key VICTIM;
 
@@ -177,10 +180,11 @@ default{
         if(change&CHANGED_LINK){
 		
 			key sitter = getSitter();
-            if(sitter){
+            if( sitter ){
 			
-				if(llListFindList(PLAYERS, [(str)sitter]) == -1){
+				if( llListFindList(PLAYERS, [(str)sitter]) == -1 ){
 				
+					debugCommon("Unsat because not a proper player")
 					llUnSit(sitter);
 					return;
 					
@@ -190,14 +194,21 @@ default{
 				VICTIM = sitter;
                 raiseEvent(TrapEvent$seated, "[\""+(string)sitter+"\"]");
 				
-					llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
-				if( QTE )
-					Evt$startQuicktimeEvent(sitter, QTE, 2, "a", 0);
+				llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
+				
+				debugCommon("Starting QTE: "+(str)QTE);
+				if( QTE ){
+					
+					Evts$startQuicktimeEvent(sitter, QTE, QTE_PRE_DELAY, "a", QTE_BUTTON_DELAY, QTE_FLAGS);
+					
+				}
 				
             }
+			// Player unsat
 			else if( BFL&BFL_TRIGGERED ){
 				
-				Evt$startQuicktimeEvent(VICTIM, 0,0, TNN, 0);
+				debugCommon("Player unsat");
+				Evts$stopQuicktimeEvent(VICTIM);
                 raiseEvent(TrapEvent$unseated, "[\""+(string)VICTIM+"\"]");
 				if( cooldown_full > 0 )
 					multiTimer([TIMER_TRIGGER_RESET, "", cooldown_full, FALSE]);
@@ -220,25 +231,24 @@ default{
 	}
     
     #include "xobj_core/_LM.lsl"
-    /*
-        Included in all these calls:
-        METHOD - (int)method
-        PARAMS - (var)parameters
-        SENDER_SCRIPT - (var)parameters   
-        CB - The callback you specified when you sent a task
-    */ 
     if(method$isCallback){
-		if(SENDER_SCRIPT == "got Evts" && METHOD == EvtsMethod$startQuicktimeEvent){
+	
+		if( SENDER_SCRIPT == "got Evts" && METHOD == EvtsMethod$startQuicktimeEvent ){
             integer type = l2i(PARAMS, 0);
             
-            if(type == EvtsEvt$QTE$BUTTON){
+            if(type == EvtsEvt$QTE$BUTTON)
                 raiseEvent(TrapEvent$qteButton, l2s(PARAMS, 0));
-            }
-            else if(type == EvtsEvt$QTE$END){
+            
+			if( type == EvtsEvt$QTE$END ){
+			
+				debugCommon("Unsat because QTE end received from target")
                 llUnSit(getSitter());
+				
             }
+			
         }
 		return;
+		
 	}
 
 	if( METHOD == TrapMethod$anim && llGetPermissions() & PERMISSION_TRIGGER_ANIMATION ){
@@ -284,6 +294,7 @@ default{
 		if( count(attachments) )
 			att = ","+mkarr((list)fx$ATTACH+attachments);
 		
+		debugCommon("Force setting for "+(str)dur);
         FX$send(
 			method_arg(0), 
 			llGetKey(), 
@@ -301,12 +312,27 @@ default{
 		
 		
     }
-    if(METHOD == TrapMethod$useQTE){
+	
+    if( METHOD == TrapMethod$useQTE ){
+	
 		QTE = l2i(PARAMS, 0);
+			
+		QTE_PRE_DELAY = l2f(PARAMS, 1);
+		QTE_BUTTON_DELAY = l2f(PARAMS, 2);
+		QTE_FLAGS = l2i(PARAMS, 3);
+		
+		if( count(PARAMS) < 2 )
+			QTE_PRE_DELAY = 2;
+		
+		debugCommon("Using QTE "+(str)QTE)
+		
 	}
 	
-	if(METHOD == TrapMethod$end){
+	if( METHOD == TrapMethod$end ){
+		
+		debugCommon("Unsat because method from "+SENDER_SCRIPT)
 		llUnSit(getSitter());
+		
 	}
     
     #define LM_BOTTOM  

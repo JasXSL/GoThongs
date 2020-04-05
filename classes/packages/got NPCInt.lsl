@@ -19,10 +19,18 @@ string RN;            // Rape name, Usually prim name
     MeshAnim$startAnim(anim); MaskAnim$start(anim)
 
 float hAdd;             // Height add for raycast
-
+float hoverHeight;
 
 // Min time between icon outputs
 #define oqTime count(OST)/2*0.25
+
+vector groundPoint(){
+	
+	vector root = llGetRootPosition();
+	root.z -= hoverHeight;
+	return root;
+
+}
 
 // Turns an 8 byte character into a key if they are targeting you
 string getTargetingPlayer( string stub ){
@@ -157,20 +165,17 @@ default{
                     thSnd = llJson2List(l2s(dta, 0)); \
                 if(idx == MLC$height_add) \
                     hAdd = l2f(dta, 0)/10; \
+				if(idx == MLC$hover_height) \
+                    hoverHeight = l2f(dta, 0); \
                 if(idx == MLC$rapePackage && isset(l2s(dta, 0))) \
                     RN = l2s(dta, 0); \
             } \
+			return; \
         }
     
     
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
+
 
     if( 
         METHOD == NPCIntMethod$addTextureDesc || 
@@ -273,18 +278,28 @@ default{
             llTriggerSound(randElem(thSnd), 1);
     }
     
-    else if(METHOD == NPCIntMethod$rapeMe && ~RF&Monster$RF_INVUL){
-        
-        parseDesc(id, resources, status, fx, sex, team, mf);
-        
+    else if( METHOD == NPCIntMethod$rapeMe ){
+
+
+		if( RF&Monster$RF_INVUL )
+			return;
+			
+        parseDesc(id, resources, status, fx, sex, team, mf, void);
+
         if( team == TEAM )
             return;
     
-        list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd*0.5>, prPos(id)+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
-        if(llList2Integer(ray, -1) == 0){
+        list ray = llCastRay(
+			groundPoint()+<0,0,1+hAdd*0.5>, 
+			prPos(id)+<0,0,1>, 
+			RC_DEFAULT
+		);
+		
+        if( llList2Integer(ray, -1) == 0 ){
         
-            if(!isset(RN))
+            if( !isset(RN) )
                 RN = llGetObjectName();
+				
             Bridge$fetchRape(llGetOwnerKey(id), RN);
             
         }

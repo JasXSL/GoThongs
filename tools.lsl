@@ -4,8 +4,6 @@
 // Default reject types for raycast
 #define RC_DEFAULT (list)RC_REJECT_TYPES + (RC_REJECT_AGENTS|RC_REJECT_PHYSICAL)
 
-// trigger random squish
-#define squishSound() llTriggerSound(randElem((list)"72d65db8-31fe-375b-8716-89e3963fbf7d"+"90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd"+"f9194db3-9606-2264-3cde-765430179069"), llFrand(0.25)+0.25)
 
 // List of built in breast jiggle animations
 #define got$BREAST_JIGGLES (list)\
@@ -15,7 +13,11 @@
 	"breast_double_slap_left" + \
 	"breast_left_slap" + \
 	"breast_double_slap"
-
+	
+#define got$BUTT_JIGGLES (list) \
+	"buttslap"+ \
+	"buttslap_long"
+	
 // Gets a random from above
 #define getRandomBreastJiggle() \
 	l2s(got$BREAST_JIGGLES, llFloor(llFrand(6)))
@@ -120,6 +122,24 @@ if(l2i(_data, 0)){ /* HUD */ \
 	armor = l2i(_split,StatusDesc$pc$ARMOR); \
 }\
 }
+
+
+// Gets range add and height add. For avatars hAdd is a negative float you can add to their position to get their feet
+#define parseMonsterOffsets(targ, rAdd, hAdd) \
+float rAdd; float hAdd; \
+{\
+list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+list _split = explode("$", l2s(_data, 1)); \
+if( !l2i(_data, 0) ){ \
+	rAdd = l2f(_split,StatusDesc$npc$RANGE_ADD)/10; \
+	hAdd = l2f(_split,StatusDesc$npc$HEIGHT_ADD)/10; \
+}else{	\
+	vector ascale = llGetAgentSize(llGetOwnerKey(targ)); \
+	hAdd = -ascale.z/2; \
+} \
+}
+
+
 
 // For got FXCompiler.lsl
 // Parses the data needed to compare players for a smart heal

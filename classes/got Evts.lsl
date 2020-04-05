@@ -29,7 +29,7 @@
 #define Evts$cycleEnemy() runMethod((string)LINK_SET, "got Evts", EvtsMethod$cycleEnemy, [], TNN)
 #define Evt$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [numButtons, preDelay, buttonDelay, flags], callback)
 #define Evts$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags) Evt$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags)
-#define Evts$stopQicktimeEvent(targ) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [-1], TNN);
+#define Evts$stopQuicktimeEvent(targ) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [-1], TNN);
 
 #define Evts$addTextureDesc(pid, texture, desc, added, duration, stacks, pflags) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks, pflags], TNN)
 #define Evts$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
