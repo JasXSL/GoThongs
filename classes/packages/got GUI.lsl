@@ -1,8 +1,10 @@
+#define LM_NO_CALLBACKS
 #define USE_EVENTS
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"
 
 #define TEXTURE_NUMBERS "176e096d-7a43-9f72-1eb1-f58c186bca8d"
+#define TEXTURE_ROLES "8b7f71e3-d440-c2fa-11b2-2a603349102e"
 
 integer BFL;
 #define BFL_TOGGLED 0x1
@@ -10,9 +12,26 @@ integer BFL;
 #define BFL_UPDATE_QUEUE 0x4		// Bars update queue
 #define BFL_LOADING_SCREEN 0x8
 
-#define BAR_STRIDE 2
-list BARS = [0,0,0,0,0,0,0,0,0,0];  // [(int)portrait, (int)bars], target, self, coop0, coop1, coop2
-list FX_PRIMS = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+#define BARS$getPortrait( array ) ((array>>16)&0xFF)
+#define BARS$getBars( array ) ((array>>8)&0xFF)
+#define BARS$getRole( array ) (array&0xFF)
+
+#define BARS$setPortrait( array, prim ) (array|(prim<<16))
+#define BARS$setBars( array, prim ) (array|(prim<<8))
+#define BARS$setRole( array,prim ) (array|prim)
+
+#define BAR_TARGET 0
+#define BAR_SELF 1
+#define BAR_COOP0 2
+#define BAR_COOP1 3
+#define BAR_COOP2 4
+
+// 
+#define getFxPrim( index ) ((l2i(FX_PRIMS, index/4)>>(index%4)*8)&0xFF)
+#define setFxPrim( index, val ) FX_PRIMS = llListReplaceList(FX_PRIMS, (list)((l2i(FX_PRIMS, index/4)&~(0xFF<<(index%4)*8))|(val<<((index%4)*8))), index/4, index/4)
+
+list BARS = [0,0,0,0,0];  	// Bitwise storing prims: (uint8)portrait (uint8)bars (uint8)role For: target, self, coop0, coop1, coop2
+list FX_PRIMS = [0,0,0,0];	// 8bit blocks of prims. First 2 are self, second 2 are target
 list PARTY_ICONS = [];
 
 // Rez tracker
@@ -81,21 +100,22 @@ key boss;				// ID of boss (used if boss is a monster)
 			key texture = l2s(data, 1); \
 			integer team = l2i(data, 2); \
 			TARG = targ; \
+			int bar = l2i(BARS, BAR_TARGET); \
 			list out = [ \
-				PRIM_LINK_TARGET, llList2Integer(BARS, 0),  \
+				PRIM_LINK_TARGET, BARS$getPortrait(bar),  \
 				PRIM_POSITION, ZERO_VECTOR, \
-				PRIM_LINK_TARGET, llList2Integer(BARS, 1), \
+				PRIM_LINK_TARGET, BARS$getBars(bar), \
 				PRIM_POSITION, ZERO_VECTOR \
 			]; \
 			integer i; \
 			for(i=8; i<16; i++){ \
 				out+= [ \
-					PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i),  \
+					PRIM_LINK_TARGET, getFxPrim(i),  \
 					PRIM_POSITION, ZERO_VECTOR,  \
 					PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0  \
 				]; \
 			} \
-			if(targ != ""){ \
+			if( targ != "" ){ \
 				vector offs1 = <0,-.05,0.37>; \
 				vector offs2 = <0.05,.08,0.371>; \
 				vector base_offs = <0,0,.02>; \
@@ -105,7 +125,7 @@ key boss;				// ID of boss (used if boss is a monster)
 					color = <1,.5,.5>; \
 				 \
 				out=[ \
-					PRIM_LINK_TARGET, llList2Integer(BARS, 0), \
+					PRIM_LINK_TARGET, BARS$getPortrait(bar), \
 					PRIM_POSITION, offs1+base_offs, \
 					PRIM_COLOR, 0, color, 1, \
 					PRIM_COLOR, 1, <1,1,1>, 1, \
@@ -116,24 +136,25 @@ key boss;				// ID of boss (used if boss is a monster)
 				]; \
 				if(texture)out+=[PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0]; \
 				out+=[ \
-					PRIM_LINK_TARGET, llList2Integer(BARS, 1), \
+					PRIM_LINK_TARGET, BARS$getBars(bar), \
 					PRIM_POSITION, offs2+base_offs, \
 					PRIM_COLOR, 0, ZERO_VECTOR, .25, \
 					PRIM_COLOR, 1, ZERO_VECTOR, .5, \
 					PRIM_COLOR, 2, <1,.5,.5>, 1, \
 					PRIM_COLOR, 3, <.5,.8,1>, 1, \
 					PRIM_COLOR, 4, <1,.5,1>, 1, \
-					PRIM_COLOR, 5, <.5,.5,1>, 1, \
-					 \
+					PRIM_COLOR, 5, <.5,.5,1>, 1/*,*/ \
+					/* \
 					PRIM_TEXTURE, 2, default_tx, <.5,1,0>, <.25,0,0>, 0, \
 					PRIM_TEXTURE, 3, default_tx, <.5,1,0>, <.25,0,0>, 0, \
 					PRIM_TEXTURE, 4, default_tx, <.5,1,0>, <.25,0,0>, 0, \
 					PRIM_TEXTURE, 5, default_tx, <.5,1,0>, <.25,0,0>, 0 \
+					*/ \
 				]; \
 				integer i; \
 				for(i=8; i<16; i++){ \
 					out+= [ \
-						PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i),  \
+						PRIM_LINK_TARGET, getFxPrim(i),  \
 						PRIM_POSITION, <0.044754, 0.048681+0.022*(i-8), 0.352110>+base_offs, \
 						PRIM_COLOR, ALL_SIDES, ZERO_VECTOR, 0 \
 					]; \
@@ -153,7 +174,7 @@ key boss;				// ID of boss (used if boss is a monster)
 				if( l2k(PLAYER_HUDS, i) == TARG_FOCUS ) \
 					color = FOCUS_BORDER; \
 				out+= [ \
-					PRIM_LINK_TARGET, l2i(BARS, BAR_STRIDE*(i+1)), \
+					PRIM_LINK_TARGET, BARS$getPortrait(l2i(BARS, i)), \
 					PRIM_COLOR, 0, color, .75 \
 				]; \
 			} \
@@ -188,6 +209,7 @@ default {
 			
 		list statuses = (list)TARG+PLAYER_HUDS+boss;
 		list statuses_flags;
+		list statuses_sex;
 		integer i;
 		
 		
@@ -199,9 +221,10 @@ default {
 		// Loops through the keys above and sets to -1 if not found, or a bitwise resource block
 		for( ; i<count(statuses); ++i ){
 		
-			integer n = -1;
+			int n = -1;
 			key t = l2k(statuses, i);
-			integer s = 0;
+			int s = 0;
+			int se = 0;
 			
 			if( llKey2Name(t) ){
 			
@@ -209,6 +232,7 @@ default {
 				list split = explode("$", l2s(data, 1));
 				n = l2i(split, StatusDesc$npc$RESOURCES); // Resource block
 				s = l2i(split, StatusDesc$npc$STATUS);
+				se = -1;	// Sex. Only relevent for player targets right now
 				int mf = l2i(split, StatusDesc$npc$MONSTERFLAGS);
 				
 				// PC
@@ -216,6 +240,7 @@ default {
 					
 					n = l2i(split, StatusDesc$pc$RESOURCES); // HP block is in a different position of the description for PC
 					s = l2i(split, StatusDesc$pc$STATUS); // Same with status
+					se = l2i(split, StatusDesc$pc$SEX);
 					mf = 0;
 					
 				}
@@ -226,6 +251,7 @@ default {
 			}
 			
 			statuses_flags += s;
+			statuses_sex += se;
 			statuses = llListReplaceList(statuses, (list)n, i, i);
 			
 		}
@@ -233,16 +259,13 @@ default {
 		// Cycle status bars
 		for( i=0; i<count(statuses); ++i ){
 		
-			integer n = l2i(statuses, i);
+			int n = l2i(statuses, i);
 				
-			integer bar = l2i(BARS, 1); 						// Targ
-			integer portrait = l2i(BARS, 0);
+			int bar = BARS$getBars(l2i(BARS, i)); 						// Targ
+			int portrait = BARS$getPortrait(l2i(BARS, i));
+			int role = BARS$getRole(l2i(BARS, i));
 			float al = 0.5;
-			if(i){
-				bar = l2i(BARS, BAR_STRIDE*i+1); 			// A player or boss
-				portrait = l2i(BARS, BAR_STRIDE*i);
-			}
-				
+
 			// Boss
 			if(i == count(statuses)-1){
 				bar = P_BOSS_HP;
@@ -257,7 +280,7 @@ default {
 						
 				list faces = [2,3,4,5]; // HP, Mana, Arousal, pain
 						
-				if(i>1 && i != count(statuses)-1)
+				if( i > 1 && i != count(statuses)-1 )
 					faces = [1,2,3,4];
 						
 				float hp = (n>>21&127) / 127.0;
@@ -265,15 +288,16 @@ default {
 				float ars = (n>>7&127) / 127.0;
 				float pin = (n&127) / 127.0;
 				integer flags = l2i(statuses_flags, i);
-					
+				int sex = l2i(statuses_sex, i);
+				
 				vector overlay = <1,1,1>;
 
-				if(flags&StatusFlag$dead)
+				if( flags&StatusFlag$dead )
 					overlay = <.5,0,0>;
 				else if( flags&StatusFlag$coopBreakfree )
 					overlay = <.5,.75,1>;
 						
-						
+				// Set bars
 				list dta = [
 					PRIM_TEXTURE, l2i(faces,0), default_tx, <.5,1,0>, <.25-.5*hp,0,0>, 0,
 					PRIM_TEXTURE, l2i(faces,1), default_tx, <.5,1,0>, <.25-.5*mana,0,0>, 0,
@@ -282,7 +306,7 @@ default {
 					PRIM_TEXTURE, l2i(faces,3), default_tx, <.5,1,0>, <.25-.5*pin,0,0>, 0,
 					PRIM_COLOR, l2i(faces,3), <.5,.5,1>*(.5+pin*.5), 0.5+(float)floor(pin)/2
 				];
-				
+
 				// Boss top bar
 				if(i == count(statuses)-1)
 					dta = [
@@ -294,6 +318,17 @@ default {
 					[PRIM_LINK_TARGET, bar]+dta+
 					[PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, overlay, 1]
 				;
+				
+				data_out += (list)PRIM_LINK_TARGET + role;
+				// Portrait additional
+				if( ~sex )
+					data_out += [
+						PRIM_COLOR, 0, ONE_VECTOR, 1,
+						PRIM_TEXTURE, 0, TEXTURE_ROLES, <.25,1,0>, <-.375+.25*getRoleFromSex( sex ),0,0>, 0
+					];
+				else
+					data_out += [PRIM_COLOR, 0, ZERO_VECTOR, 0];
+				
 			}
 	
 			
@@ -363,7 +398,6 @@ default {
 						if( flags&PF_NO_DISPEL )
 							border = <0.5,0,1>;
 						
-						
 					}
 				
 					float percentage = ((float)(snap-added)/dur)/10;
@@ -388,7 +422,8 @@ default {
 					integer start = llRound(end*percentage);
 					
 					for(x=0; x<count(bars); x++){
-						integer link = l2i(FX_PRIMS, 8*l2i(bars,x)+slot);
+					
+						integer link = getFxPrim((8*l2i(bars,x)+slot));
 						llSetLinkTextureAnim(link, 0, 2, 0, 0, 0, 0, 0);
 						llSetLinkTextureAnim(link, ANIM_ON, 2, 16, 16, start, end-start, end/dur);
 						
@@ -409,7 +444,7 @@ default {
 			// Cycle over unset icons
 			for(i=slot; i<8; i++){
 				for(x=0; x<count(bars); x++)
-					out+= [PRIM_LINK_TARGET,l2i(FX_PRIMS, 8*l2i(bars,x)+i)]+block;
+					out+= [PRIM_LINK_TARGET,getFxPrim((8*l2i(bars,x)+i))]+block;
 			}
 		}
 		
@@ -424,19 +459,35 @@ default {
 		PLAYER_HUDS = (list)llGetKey();
 
         links_each(nr, name, 
-            integer n = (integer)llGetSubString(name, -1, -1); 
+            
+			int n = (int)llGetSubString(name, -1, -1); 
+			str start = llGetSubString(name, 0, 1);
             if(
-                llGetSubString(name, 0, 1) == "FR" ||  // Targ
-                llGetSubString(name, 0, 1) == "OP"    // Player
+                start == "FR" ||  // Targ
+                start == "OP" ||   // Player
+				start == "SP"
             ){
-                integer pos = (n-1)*BAR_STRIDE; 
-                if(llGetSubString(name, 0, 1) != "FR")pos+=BAR_STRIDE;
-                if(llGetSubString(name, 2, 2) == "B")pos++;
-                BARS = llListReplaceList(BARS, [nr], pos, pos);
+			
+                int pos = n; 
+				int cur = l2i(BARS, pos);
+				// Set bars
+				if( llGetSubString(name, 2, 2) == "B" )
+					cur = BARS$setBars(cur, nr);
+				// Set role icon
+				else if( start == "SP" )
+					cur = BARS$setRole(cur, nr);
+				// Set portrait
+				else
+					cur = BARS$setPortrait(cur, nr);
+				
+                BARS = llListReplaceList(BARS, (list)cur, pos, pos);
+				
             }
 			else if(llGetSubString(name, 0, 1) == "FX"){
+			
 				n = (int)llGetSubString(name, 2, -1);
-				FX_PRIMS = llListReplaceList(FX_PRIMS, [nr], n, n);
+				setFxPrim(n, nr);
+				
 			}
 			else if(name == "LOADING")P_LOADINGBAR = nr;
             else if(name == "QUIT")P_QUIT = nr;
@@ -545,7 +596,7 @@ default {
 				PRIM_COLOR, 0, ZERO_VECTOR, 0.75,
 				PRIM_COLOR, 1, ZERO_VECTOR, 0.5,
 				PRIM_COLOR, 2, <1,.5,.5>, 1,
-				PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <-0.25,0,0>, 0,
+				//PRIM_TEXTURE, 2, default_tx, <0.5,1,0>, <-0.25,0,0>, 0,
 				PRIM_DESC, (str)boss
 			];
 			exists = TRUE;
@@ -665,11 +716,13 @@ default {
 	}
 
     else if(METHOD == GUIMethod$toggle){
+		
 		integer show = l2i(PARAMS, 0);
 		if(show){
 			BFL = BFL|BFL_FIRST_ENABLED;
 		}
-		if(~BFL&BFL_FIRST_ENABLED && show)return;
+		if( ~BFL&BFL_FIRST_ENABLED && show )
+			return;
 
 		list out;
 		integer i;
@@ -705,7 +758,7 @@ default {
 
 				out+=[
 					// Self
-					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+BAR_STRIDE*i),
+					PRIM_LINK_TARGET, BARS$getPortrait(l2i(BARS, i+1)),
 					PRIM_POSITION, offs1,
 					PRIM_COLOR, 0, border, .75,
 					PRIM_COLOR, 1, <1,1,1>, bgAlpha,
@@ -716,7 +769,7 @@ default {
 					PRIM_COLOR, 5, <1,1,1>, 0,
 					PRIM_SIZE, scale,
 					
-					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+BAR_STRIDE*i+1),
+					PRIM_LINK_TARGET, BARS$getBars(l2i(BARS, i+1)),
 					PRIM_POSITION, offs2+<.05,0,0>,
 					PRIM_COLOR, 0, ZERO_VECTOR, .25,
 					PRIM_COLOR, 1, ZERO_VECTOR, .5,
@@ -724,12 +777,17 @@ default {
 					PRIM_COLOR, l2i(colors,1), <.5,.8,1>, 1,
 					PRIM_COLOR, l2i(colors,2), <1,.5,1>, 1,
 					PRIM_COLOR, l2i(colors,3), <.5,.5,1>, 1,
-					
+					/*
 					PRIM_TEXTURE, l2i(colors,0), default_tx, <.5,1,0>, <-.25,0,0>, 0,
 					PRIM_TEXTURE, l2i(colors,1), default_tx, <.5,1,0>, <-.25,0,0>, 0,
 					PRIM_TEXTURE, l2i(colors,2), default_tx, <.5,1,0>, <.25,0,0>, 0,
 					PRIM_TEXTURE, l2i(colors,3), default_tx, <.5,1,0>, <.25,0,0>, 0,
-					PRIM_SIZE, barscale
+					*/
+					PRIM_SIZE, barscale,
+					
+					PRIM_LINK_TARGET, BARS$getRole(l2i(BARS, i+1)),
+					PRIM_POSITION, offs1+<-0.03,-0.02,0.02>,
+					PRIM_SIZE, <.03,.03,.03>
 					
 				];
 					
@@ -745,7 +803,7 @@ default {
 						}
 						pos += <0,0.022*a,0>;
 						out+= [
-							PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, i*8+x), 
+							PRIM_LINK_TARGET, getFxPrim((i*8+x)), 
 							PRIM_SIZE, <0.02184, 0.02191, 0.01312>,
 							PRIM_POSITION, pos,
 							PRIM_COLOR, ALL_SIDES, <1,1,1>, 0
@@ -754,24 +812,25 @@ default {
 				}
 			}else{ 
 				
-				list h = [llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE), llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE+1)];
-				
 				out+= [
-					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE), 
+					PRIM_LINK_TARGET, BARS$getPortrait(l2i(BARS, i+1)), 
 					PRIM_POSITION, ZERO_VECTOR,
-					
-					PRIM_LINK_TARGET, llList2Integer(BARS, BAR_STRIDE+i*BAR_STRIDE+1),
+					PRIM_LINK_TARGET, BARS$getBars(l2i(BARS, i+1)),
+					PRIM_POSITION, ZERO_VECTOR,
+					PRIM_LINK_TARGET, BARS$getRole(l2i(BARS, i+1)),
 					PRIM_POSITION, ZERO_VECTOR
 				];
 				if(i == 0){
+				
 					integer x;
-					for(x=0; x<8; x++){
+					for( ; x<8; ++x ){
 						out+= [
-							PRIM_LINK_TARGET, llList2Integer(FX_PRIMS, x),
-							PRIM_POSITION, ZERO_VECTOR,
-							PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0
+							PRIM_LINK_TARGET, getFxPrim(x),
+							PRIM_POSITION, ZERO_VECTOR//,
+							//PRIM_TEXTURE, 2, "23b2ec39-ee06-58f7-bf37-47a50e0071dc", <1./16,1./16,0>, <1./32-1./16*8, 1./32-1./16*9, 0>, 0
 						];
 					}
+					
 				}
 				
 				

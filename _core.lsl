@@ -136,6 +136,10 @@
 #define GENITALS_VAGINA 0x2
 #define GENITALS_BREASTS 0x4
 
+#define ROLE_DPS 0
+#define ROLE_TANK 1
+#define ROLE_HEALER 2
+
 #define TEXTURE_PC "9505afb9-134d-61cf-b1de-4645ba9ffde2"
 #define TEXTURE_COOP "41d10278-ce32-825f-d93c-4092e3064e1a"
 

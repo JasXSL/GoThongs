@@ -281,7 +281,7 @@ ptEvt( string id ){
 	
 		// Always send to self
 		integer i; list out;
-		for( i=0; i<llGetListLength(SPELL_ICONS) && i/SPSTRIDE < 8; i+=SPSTRIDE )
+		for( ; i<llGetListLength(SPELL_ICONS) && i/SPSTRIDE < 8; i+=SPSTRIDE )
 			out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
 		GUI$setMySpellTextures(out);
 	

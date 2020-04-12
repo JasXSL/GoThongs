@@ -258,14 +258,9 @@ default
             SharedMedia$setBook("");
         
 		// Player clicked
-        else if( llGetSubString(ln, 0,1) == "OP" ){
+        else if( llGetSubString(ln, 0,1) == "OP" || llGetSubString(ln, 0, 1) == "SP" ){
 		
-			integer n = (int)llGetSubString(ln, 2, -1);
-			if( llGetSubString(ln, 2, 2) == "B" )
-				n = (int)llGetSubString(ln, 3, -1);
-			
-			--n;
-			
+			integer n = (int)llGetSubString(ln, -1, -1)-1;
 			if( n >= count(PLAYERS) )
 				return;
 			
@@ -276,8 +271,8 @@ default
 		
 		// Target frame
         else if(
-			ln == "FRB1" || 
-			ln == "FR1"
+			ln == "FRB0" || 
+			ln == "FR0"
 		){
 			setTarget("", "", TRUE, 0);
 		}

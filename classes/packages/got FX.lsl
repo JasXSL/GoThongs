@@ -460,7 +460,7 @@ default{
 	if( nr == TASK_FX ){ \
 		list data = llJson2List(s); \
 		FX_FLAGS = l2i(data, FXCUpd$FLAGS); \
-		DOD = i2f(l2i(data, FXCUpd$DODGE))-1; \
+		DOD = 1.0-i2f(l2i(data, FXCUpd$DODGE)); \
 	}
     
 	#include "xobj_core/_LM.lsl"
@@ -530,7 +530,7 @@ default{
 				CB_DATA = [FALSE];
 			#endif
 			// Check dodge
-			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != "s" && llFrand(1)<DOD ){
+			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != "s" && llFrand(1.0) < DOD ){
 				
 				// If not NPC we should animate when we dodge
 				#ifndef IS_NPC

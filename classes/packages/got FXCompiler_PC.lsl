@@ -369,14 +369,13 @@ updateGame(){
 			hlt = hlt | (int)llPow(2,llList2Integer(data, i+1));
 	}
 	
-
 	// These are the FXCUpd$ values
 	Passives$setActive(([ 
 		CACHE_FLAGS, 		// 00 FLAGS
 		stat( fx$MANA_REGEN_MULTI ), 		// 01 MANA_REGEN
 		100, 			// 02 DAMAGE_DONE (handled in TASK_OFFENSIVE_MODS)
 		100, 			// 03 DAMAGE_TAKEN (handled in Status$spellModifiers)
-		stat( fx$DODGE ), 		// 04 DODGE
+		statInverse( fx$DODGE ), 		// 04 DODGE Inverted (chance of FAILING a dodge)
 		stat( fx$CASTTIME_MULTI ), 			// 05 CASTTIME
 		stat( fx$COOLDOWN_MULTI ), 			// 06 COOLDOWN
 		stat( fx$MANA_COST_MULTI ), 			// 07 MANA_COST

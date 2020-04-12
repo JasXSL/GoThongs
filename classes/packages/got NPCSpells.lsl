@@ -226,7 +226,7 @@ endCast(integer success, integer force){
 	ptUnset("CAST");
 	BFL = BFL&~BFL_CASTING;
 
-    if( CAST_END_TIME-CAST_START_TIME > 0.1 && success ){
+    if( !success || (CAST_END_TIME-CAST_START_TIME > 0.1 && success) ){
 	
 		updateText();
 		BFL = BFL|BFL_CC;

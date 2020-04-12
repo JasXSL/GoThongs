@@ -13,7 +13,7 @@
 	#define FXCUpd$MANA_REGEN 1			// (float)multiplier - Default 1
 	#define FXCUpd$DAMAGE_DONE 2		// (float)multiplier - Default 1
 	#define FXCUpd$DAMAGE_TAKEN 3		// (float)multiplier - Default 1
-	#define FXCUpd$DODGE 4				// (float)multiplier - Default 1 (got FX handles conversion)
+	#define FXCUpd$DODGE 4				// (float)multiplier - Default 1 (got FX handles conversion). This is recalculated in HUD updates to represent chance of FAILING a dodge
 	#define FXCUpd$CASTTIME 5			// (float)multiplier - Default 1
 	#define FXCUpd$COOLDOWN 6			// (float)multiplier - Default 1
 	#define FXCUpd$MANACOST 7			// (float)multiplier - Default 1
@@ -61,6 +61,9 @@
 	FXCUpd$AROUSAL_ADD + \
 	FXCUpd$PAIN_ADD + \
 	FXCUpd$TEAM
+
+#define FXCUpd$inverse_multi (list) \
+	FXCUpd$DODGE
 
 // Settings that are arrays that should be appended
 #define FXCUpd$arrays (list)FXCUpd$CONVERSION

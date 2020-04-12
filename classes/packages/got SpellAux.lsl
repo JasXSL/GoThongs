@@ -30,7 +30,7 @@ float cHP = 100;
 float cMP = 50;
 float cAR;
 float cPP;
-float cCR;
+int cCR;
 float cMHP = 100;
 float cMMP = 50;
 
@@ -39,6 +39,7 @@ list PLAYERS;
 integer SF;			// Status flags
 
 // FX
+float bfDmg = 1;		// Befuddle damage multiplier
 float pdmod = 1;       // Damage done
 float cmod = 0;
 float cdmod = 1;		// Cooldown modifier
@@ -113,9 +114,9 @@ string runMath( string FX, integer index, key targ ){
 
 	_C = [
 		// Damage done multiplier
-        "D", (dm*pmod*cCR*spdmdm*difDmgMod()*bsMul),
+        "D", (dm*pmod*cCR*spdmdm*difDmgMod()*bsMul*bfDmg),
 		// Raw multiplier not affected by team or difficulty
-		"R", (dm*cCR*spdmdm*bsMul),
+		"R", (dm*cCR*spdmdm*bsMul*bfDmg),
 		// Critical hit
 		"C", cCR,
 		// Points of arousal
@@ -192,6 +193,7 @@ string runMath( string FX, integer index, key targ ){
     }
 
 	_C = [];
+	debugCommon(implode("", split));
     return implode("", split);
 }
 
@@ -213,6 +215,7 @@ onEvt(string script, integer evt, list data){
 	}
 	
 	else if(script == "got Status" && evt == StatusEvt$resources){
+	
 		// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
 		cAR = llList2Float(data, 4);
 		cPP = llList2Float(data, 6);
@@ -220,6 +223,7 @@ onEvt(string script, integer evt, list data){
 		cHP = l2f(data, 0);
 		cMP = l2f(data, 2);
 		cMMP = l2f(data, 3);
+		
 	}
 	else if(script == "got Status" && evt == StatusEvt$team)
 		TEAM = l2i(data,0);
@@ -264,6 +268,7 @@ onEvt(string script, integer evt, list data){
 		rollCrit(~flags&SpellMan$NO_CRITS, SPELL_CASTED);
 		
 		// Befuddle
+		bfDmg = 1.0;
 		if( llFrand(1) < befuddle-1 && (str)SPELL_TARGS != "AOE" && (count(SPELL_TARGS) > 1 || l2s(SPELL_TARGS, 0) != "1") ){
 
 			string targ = randElem(PLAYERS);
@@ -271,6 +276,8 @@ onEvt(string script, integer evt, list data){
 				SPELL_TARGS = [LINK_ROOT];
 			else if( llVecDist(llGetRootPosition(), prPos(targ)) < r )
 				SPELL_TARGS = [targ];
+			
+			bfDmg = 0.5;
 			
 		}
 		
@@ -331,20 +338,17 @@ applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 
 	}
 	
-
-	
-	
 }
 
 
 
 
-default
-{
+default{
+
 	state_entry(){
 		PLAYERS = [(str)llGetOwner()];
 	}
-	
+
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
 		list data = llJson2List(s); \
@@ -361,8 +365,8 @@ default
 		dmod = llJson2List(j(s, 0)); \
 	\
 	} \
-	
-	
+
+
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
 

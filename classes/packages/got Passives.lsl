@@ -173,6 +173,7 @@ compilePassives(){
 	// Values that should be added instead of multiplied
     list non_multi = FXCUpd$non_multi;
 	list arrays = FXCUpd$arrays;
+	list inverse_multi = FXCUpd$inverse_multi;
 	
     list keys = [];         // Stores the attribute IDs
     list vals = [];         // Stores the attribute values
@@ -198,13 +199,16 @@ compilePassives(){
         integer x;
         for( ; x<llGetListLength(block); x+=2 ){
 		
-            integer id = llList2Integer(block, x);
+            int id = llList2Integer(block, x);
             float val = llList2Float(block, x+1);
             
-			integer add = (~llListFindList(non_multi, [id])); // Check if we should add or multiply
-			integer array = (~llListFindList(arrays, [id]));
+			int add = ~llListFindList(non_multi, (list)id); // Check if we should add or multiply
+			if( ~llListFindList(inverse_multi, (list)id) )	// Inverse multiplicative. Used for dodge which calculates chance of NOT dodging to prevent rampant stacking
+				val = -val;
+				
+			int array = (~llListFindList(arrays, (list)id));
 
-            integer pos = llListFindList(keys, [id]);
+            int pos = llListFindList(keys, [id]);
             // The key already exists, add!
             if( ~pos ){
 			
@@ -297,6 +301,7 @@ output(){
 		FXCUpd$TEAM
     ;
     list non_multi = FXCUpd$non_multi; // Things that should be ADDed
+	list inverse_multi = FXCUpd$inverse_multi;
 	list arrays = FXCUpd$arrays;
 	list overwrite = FXCUpd$overwrite;
 	
@@ -327,11 +332,14 @@ output(){
 			
 			if( ~llListFindList(non_multi, (list)type) )
 				val = llList2Float(compiled_passives, i+1)+llList2Float(output,type);
+			else if( ~llListFindList(inverse_multi, (list)type) )
+				val = -val;
             output = llListReplaceList(output, (list)val, type, type);
 			
         }
 		
     }
+	
 
 	// Shorten
 	for( i=0; i<count(output); ++i ){
@@ -382,6 +390,7 @@ output(){
 	CACHE_FLAGS = set_flags;
 	
 	CPC = i2f(l2i(output, FXCUpd$PROC_BEN));
+	
 	llMessageLinked(LINK_SET, TASK_FX, mkarr(output), "");
 }
 
@@ -406,10 +415,11 @@ onEvt(string script, integer evt, list data){
 			integer flags = l2i(PASSIVES, i+3);
 			i+=n+PASSIVES_PRESTRIDE;
 			
-			if(flags&Passives$FLAG_REM_ON_CLEANUP){
+			if( flags&Passives$FLAG_REM_ON_CLEANUP ){
 				removePassiveByName(name);
 				jump restartWipe;
 			}
+			
 		}
 		output();
 		return;

@@ -105,24 +105,30 @@ list getDFXSlice( integer type, integer numElements ){
 	
 }
 
-#define stat( type ) _st(type, FALSE)
-#define statAdditive( type ) _st(type, TRUE)
+#define stat( type ) _st(type, 0)
+#define statAdditive( type ) _st(type, 1)
+#define statInverse( type ) _st(type, 2)
 
 // compiles a stat for output and returns it as a compressed integer
+// Additive can also be 2 in which case it is inverse multiplicative
 int _st( integer type, integer additive ){
 	
 	// The value we want to add should be the first value
-	float out = !additive;		
+	float out = additive != 1;		
 	list check = getDFXSlice( type, 1 );
 	
 	integer i;
 	for( ; i<count(check); i+=2 ){
 		
+		float val = l2f(check, i+1);
+		if( additive == 2 )
+			val = -val;
+		
 		int stacks = getStacks(dPid(l2i(check, i)), FALSE);
-		if( additive )
-			out += l2f(check, i+1)*stacks;
+		if( additive == 1 )
+			out += (val*stacks);
 		else
-			out *= (1+l2f(check, i+1)*stacks);
+			out *= (val*stacks+1);
 		
 	}	
 	

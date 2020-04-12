@@ -101,6 +101,7 @@ list OST; 				// Output status to
 list PLAYERS;
 list TG; 		// Targeting: (key)id, (int)flags
 
+int RO;			// Thong role
 int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
 
 integer DIF = 1;	// 
@@ -605,8 +606,12 @@ onEvt( string script, integer evt, list data ){
     }
 	
 	else if( script == "got Bridge" && evt == BridgeEvt$userDataChanged ){
+		
 		Status$setDifficulty(l2i(data, BSUD$DIFFICULTY));
+		RO = l2i(data, BSUD$THONG_ROLE);
 		US = l2i(data, BSUD$SETTING_FLAGS);
+		OS(false);
+		
 	}
 		
 	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" ){
@@ -748,7 +753,7 @@ OS( int ic ){
 	integer a = ARMOR;
 	if( FXF & fx$F_SHOW_GENITALS )
 		a = 0;
-	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)GF+"$"+(str)t+"$"+(str)US+"$"+(str)a);
+	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)(GF|(RO<<16))+"$"+(str)t+"$"+(str)US+"$"+(str)a);
 	
 	// Team change goes after because we need to update description first
 	if(pre != t){
@@ -977,7 +982,7 @@ default {
 		
 		}
 		else if(METHOD == StatusMethod$setSex){
-            GF = (integer)method_arg(0);
+            GF = l2i(PARAMS, 0)&(GENITALS_VAGINA|GENITALS_BREASTS|GENITALS_PENIS);
 			raiseEvent(StatusEvt$genitals, GF);
         }
     }

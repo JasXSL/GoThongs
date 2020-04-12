@@ -28,10 +28,35 @@
 #define gotSoundLib$gnoll$attack "be42c330-f776-325a-059d-7edcf1328b8c"
 #define gotSoundLib$gnoll$death "86c3ac10-bbd1-51ee-0bcf-660190b020e9"
 
+#define gotSoundLib$zapbot$aggro "35c275ae-66a3-0b42-3a4c-f9efa049de5e"
+#define gotSoundLib$zapbot$aggro_lost "c6b08c80-eae3-4a75-f30f-d34c1b95f66e"
+#define gotSoundLib$zapbot$takehit "a354f1db-dfdf-42fa-1e41-d915367d22e4"
+#define gotSoundLib$zapbot$attack "f6952ece-1eba-c7b0-e960-8253d18c2c61"
+#define gotSoundLib$zapbot$death "2cba8867-f1b9-a657-a12d-3629b7906314"
+
+
 #define gotSoundLib$octocat$aggro "0b291275-8881-1072-6ad2-1a8a9edbc45a"
 #define gotSoundLib$octocat$takehit "5af357bf-2714-d0c7-c68e-81fd7c31fa4c"
 #define gotSoundLib$octocat$attack "cd62682d-1374-5372-c96f-2e22e1863350"
 #define gotSoundLib$octocat$death "5f5722be-5de1-2c63-8018-aa81c77282ce"
+
+#define gotSoundLib$servoprobe$aggro "35c275ae-66a3-0b42-3a4c-f9efa049de5e"
+#define gotSoundLib$servoprobe$takehit "a354f1db-dfdf-42fa-1e41-d915367d22e4"
+#define gotSoundLib$servoprobe$attack "f6952ece-1eba-c7b0-e960-8253d18c2c61"
+#define gotSoundLib$servoprobe$death "2cba8867-f1b9-a657-a12d-3629b7906314"
+
+#define gotSoundLib$leech$aggro "e539cc8a-73fd-487d-8219-7962213e0ed9"
+#define gotSoundLib$leech$takehit "cfdc89c2-a976-7e76-4339-04b777b7edd8"
+#define gotSoundLib$leech$attack "ff5f6d30-a926-31bf-fa95-2ee6b88fbdac"
+#define gotSoundLib$leech$death "898c9cec-92d6-2102-438b-b5f575ccddd8"
+
+
+#define gotSoundLib$suckerfish$aggro "ece56a9e-2fa3-9728-94a8-d3f96bf750b9"
+#define gotSoundLib$suckerfish$takehit "5b451e03-141b-ac76-db22-3e2104f00d02"
+#define gotSoundLib$suckerfish$attack "c3c057fb-403c-f209-0e17-29e55002cbbe"
+#define gotSoundLib$suckerfish$death "0f2de2c8-c64b-0d93-bcb7-6b2b3ecfda77"
+
+
 
 #define gotSoundLib$minisini$takehit "6ec47fc1-e048-4e9f-a3f3-68c23d690793"
 #define gotSoundLib$minisini$attack "d526f5fb-6bde-8241-ee79-273056e61ea0"

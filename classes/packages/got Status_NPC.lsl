@@ -100,7 +100,18 @@ list cID;		// Custom ID (str)id, (var)mixed - Used for got Level integration
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
 // Description is $M$(int)team$(int)HP_BITWISE$(int)rAdd(decimeters)$(int)hAdd$(int)status_flags$(int)monster_flags$(int)fx_flags$sex
-#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){llSetObjectDesc("$M$"+(str)TEAM+"$"+(str)(llRound(HP/maxHP*127)<<21)+"$"+(str)rAdd+"$"+(str)(hAdd-llRound(hoverHeight*10))+"$"+(str)SF+"$"+(str)RF+"$"+(str)FF+"$"+(str)sex);}
+#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){\
+	llSetObjectDesc( \
+		"$M$"+ \
+		(str)TEAM+"$"+ \
+		(str)(llRound(HP/maxHP*127)<<21)+"$"+ \
+		(str)rAdd+"$"+ \
+		(str)(hAdd-llRound(hoverHeight*10))+ \
+		"$"+(str)SF+ \
+		"$"+(str)RF+ \
+		"$"+(str)FF+ \
+		"$"+(str)sex); \
+}
 
 #define dropag( player, type ) \
 	runMethod((str)LINK_THIS, cls$name, StatusMethod$monster_dropAggro, [player, type], TNN)
@@ -350,6 +361,7 @@ outputStats( integer f ){
 	} \
 	if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]"; \
 	setTeam(team); \
+	debugUncommon("Setting team from onSettings: "+(str)team); \
 	if(~BFL&BFL_INITIALIZED){ \
 		BFL = BFL|BFL_INITIALIZED; \
 		raiseEvent(StatusEvt$monster_init, ""); \
@@ -414,6 +426,14 @@ outputStats( integer f ){
 		if( initialized() && ~RF&Monster$RF_NO_TARGET ) \
 			Root$targetMe(l2s(data, 1), icon, TRUE, TEAM); \
 	} \
+	else if( script == "got NPCSpells" ){ \
+		if( evt == NPCSpellsEvt$SPELL_CAST_START || evt == NPCSpellsEvt$SPELL_CAST_FINISH || evt == NPCSpellsEvt$SPELL_CAST_INTERRUPT ){ \
+			SF = SF&~StatusFlag$casting; \
+			if( evt == NPCSpellsEvt$SPELL_CAST_START ) \
+				SF = SF|StatusFlag$casting; \
+			outputStats(FALSE); \
+		} \
+	}
 
 	
 	
@@ -702,7 +722,10 @@ default
 		outputStats(TRUE);
 		
 	}
-	else if(METHOD == StatusMethod$setTeam){ setTeam(l2i(PARAMS, 0)); }
+	else if(METHOD == StatusMethod$setTeam){
+		debugUncommon("Setting team from method by "+SENDER_SCRIPT+" : "+method_arg(0));
+		setTeam(l2i(PARAMS, 0)); 
+	}
 		
 
 	// Combat stuff below here
