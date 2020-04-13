@@ -71,6 +71,9 @@ vector groundPoint(){
 
 lookAt( vector pos ){
 	
+	if( BFL&BFL_DEAD )
+		return;
+	
 	debugCommon("LookAt "+(str)isAnimesh());
 	vector mpos = llGetPos();
 	pos.z = mpos.z;

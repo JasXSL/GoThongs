@@ -18,6 +18,7 @@
 
 
 #define Trap$useQTE(numTaps) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, [numTaps], TNN)
+#define Trap$useConfQTE(numTaps, preDelay, buttonDelay) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, (list)(numTaps)+(preDelay)+(buttonDelay), TNN)
 #define Trap$useLeftRightQTE(speed, preDelay, buttonDelay) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, (list)(speed)+(preDelay)+(buttonDelay)+Evts$qFlags$LR, TNN)
 #define Trap$useLeftRightFailableQTE(speed, preDelay, buttonDelay) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, (list)(speed)+(preDelay)+(buttonDelay)+(Evts$qFlags$LR|Evts$qFlags$LR_CAN_FAIL), TNN)
 
