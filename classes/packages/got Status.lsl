@@ -518,7 +518,7 @@ onDeath( string customAnim, key killer ){
 	AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
 		
 	float dur = 20;
-	if( isChallenge() ){
+	if( isChallenge() && count(PLAYERS) > 1 ){
 	
 		dur = 90;
 		/*
@@ -1193,7 +1193,6 @@ default {
 			if( llFrand(1) < amt-a)
 				++a;
 		}
-		
 		
 		dArm( a );
 		OS(FALSE);

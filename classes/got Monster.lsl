@@ -55,6 +55,7 @@
 #define Monster$RF_ANIMESH 0x2000		// 8192 This is an animesh monster
 #define Monster$RF_HUMANOID 0x4000		// This is a humanoid (allow certain monster interactions)
 #define Monster$RF_MINOR 0x8000			// This monster should not drop loot
+#define Monster$RF_ALWAYS_RAPE 0x10000	// 65536 This monster is always able to trigger sex poses on downed players regardless of invul
 
 #define Monster$atkFrame "_a"
 

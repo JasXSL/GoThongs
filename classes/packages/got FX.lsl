@@ -772,6 +772,7 @@ default{
 		// Remove an effect or add stacks
         if(METHOD == FXMethod$rem || METHOD == FXMethod$addStacks){
 		
+			// raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel
             integer rEvent = (integer)method_arg(0); 	// also num_stacks for addStacks
             list names = llJson2List(method_arg(1));				// Name of package
             list tags = llJson2List(method_arg(2));				//
@@ -795,16 +796,15 @@ default{
 			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
 			list find = llListSort(find(names, senders, tags, pids, flags, TRUE), 1, FALSE);	
-			
+
 			// Jump since we can't have continues
 			@delContinue;
-			while(find != [] && amount!=0){
+			while( find != [] && (amount < 0 || nr_affected < amount)){
 			
 				integer i = llList2Integer(find, 0);
 				list slice = pSlice(i);
 				
 				find = llDeleteSubList(find, 0, 0);
-				amount--;
 				
 				// UPDATE STACKS
 				if( METHOD == FXMethod$addStacks ){

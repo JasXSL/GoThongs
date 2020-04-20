@@ -66,8 +66,8 @@
 		#define fx$F_STUNNED_IMPORTANT 0x40000		// NPC - Effect stuns bosses as well
 		#define fx$F_FORCE_MOUSELOOK 0x80000		// PC - Makes only mouselook work
 		#define fx$F_SPELLS_MAX_RANGE 0x100000		// PC - Makes all spells cast as if they were done from max range (10m)
-		
-		#define fx$F_NO_NUDE_PENALTY 0x400000		// PC - Ignores nudity penalty
+		#define fx$F_IMPORTANT_DISPEL 0x200000		// Highlight player to mark an important dispel
+		#define fx$F_NO_NUDE_PENALTY 0x400000		// 4194304 PC - Ignores nudity penalty
 		
 		
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)

@@ -146,9 +146,11 @@
 	else if(t == fx$FULLREGEN)Status$fullregen(); \
 	else if(t == fx$DISPEL){ \
         integer flags = -PF_DETRIMENTAL; \
-        if(l2i(fx,1))flags = PF_DETRIMENTAL; \
+        if( l2i(fx,1) ) \
+			flags = PF_DETRIMENTAL; \
         integer maxnr = llList2Integer(fx, 2); \
-		FX$rem(FALSE, "", "", "", 0, FALSE, flags, TRUE, maxnr); \
+		/* raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel */ \
+		FX$rem(FALSE, "", "", "", 0, FALSE, flags, maxnr, TRUE); \
     } \
 	else if(t == fx$REM){ \
 		FX$rem(llList2String(fx, 1), llList2String(fx, 2), llList2String(fx, 3), llList2String(fx, 4), llList2String(fx, 5), llList2String(fx, 6), llList2String(fx, 7), llList2String(fx, 8), llList2String(fx, 9)); \

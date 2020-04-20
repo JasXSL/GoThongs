@@ -82,10 +82,14 @@ ptEvt(string id){
 
 
 onEvt( string script, integer evt, list data ){
+
     if( script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players) )
         PLAYERS = data;
     else if( script == "got Status" && evt == StatusEvt$team )
         TEAM = l2i(data, 0);
+	else if( script == "got Monster" && evt == MonsterEvt$runtimeFlagsChanged )
+		RF = l2i(data, 0);
+		
 }
 
 default{
@@ -159,8 +163,6 @@ default{
                 integer idx = l2i(data, 0); \
                 list dta = llList2List(data, 1, 1); \
                 data = llDeleteSubList(data, 0, 1); \
-                if(idx == 0) \
-                    RF = l2i(dta, 0); \
                 if(idx == MLC$takehit_sound) \
                     thSnd = llJson2List(l2s(dta, 0)); \
                 if(idx == MLC$height_add) \
@@ -281,7 +283,7 @@ default{
     else if( METHOD == NPCIntMethod$rapeMe ){
 
 
-		if( RF&Monster$RF_INVUL )
+		if( RF & Monster$RF_INVUL && !(RF&(Monster$RF_IS_BOSS|Monster$RF_ALWAYS_RAPE)) )
 			return;
 			
         parseDesc(id, resources, status, fx, sex, team, mf, void);

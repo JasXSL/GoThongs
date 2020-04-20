@@ -169,12 +169,13 @@ key boss;				// ID of boss (used if boss is a monster)
 		else if( evt == RootEvt$focus ){ \
 			TARG_FOCUS = l2s(data, 0); \
 			list out = []; integer i; \
-			for( i=0; i<count(PLAYER_HUDS); ++i ){ \
+			for( ; i<count(PLAYER_HUDS); ++i ){ \
 				vector color = <0,0,0>; \
 				if( l2k(PLAYER_HUDS, i) == TARG_FOCUS ) \
 					color = FOCUS_BORDER; \
+					\
 				out+= [ \
-					PRIM_LINK_TARGET, BARS$getPortrait(l2i(BARS, i)), \
+					PRIM_LINK_TARGET, BARS$getPortrait(l2i(BARS, i+1)), \
 					PRIM_COLOR, 0, color, .75 \
 				]; \
 			} \
@@ -210,6 +211,7 @@ default {
 		list statuses = (list)TARG+PLAYER_HUDS+boss;
 		list statuses_flags;
 		list statuses_sex;
+		list statuses_fx;
 		integer i;
 		
 		
@@ -223,15 +225,16 @@ default {
 		
 			int n = -1;
 			key t = l2k(statuses, i);
-			int s = 0;
-			int se = 0;
-			
+			int s;		// Status
+			int se;		// Sex
+			int fx;		// FX Flags
 			if( llKey2Name(t) ){
 			
 				list data = llGetObjectDetails(t, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
 				list split = explode("$", l2s(data, 1));
 				n = l2i(split, StatusDesc$npc$RESOURCES); // Resource block
 				s = l2i(split, StatusDesc$npc$STATUS);
+				fx = l2i(split, StatusDesc$npc$FX);
 				se = -1;	// Sex. Only relevent for player targets right now
 				int mf = l2i(split, StatusDesc$npc$MONSTERFLAGS);
 				
@@ -241,6 +244,8 @@ default {
 					n = l2i(split, StatusDesc$pc$RESOURCES); // HP block is in a different position of the description for PC
 					s = l2i(split, StatusDesc$pc$STATUS); // Same with status
 					se = l2i(split, StatusDesc$pc$SEX);
+					fx = l2i(split, StatusDesc$pc$FX);
+					
 					mf = 0;
 					
 				}
@@ -252,6 +257,7 @@ default {
 			
 			statuses_flags += s;
 			statuses_sex += se;
+			statuses_fx += fx;
 			statuses = llListReplaceList(statuses, (list)n, i, i);
 			
 		}
@@ -289,11 +295,14 @@ default {
 				float pin = (n&127) / 127.0;
 				integer flags = l2i(statuses_flags, i);
 				int sex = l2i(statuses_sex, i);
+				int fx = l2i(statuses_fx, i);
 				
 				vector overlay = <1,1,1>;
 
 				if( flags&StatusFlag$dead )
 					overlay = <.5,0,0>;
+				else if( fx&fx$F_IMPORTANT_DISPEL )
+					overlay = <.5,0,1>;
 				else if( flags&StatusFlag$coopBreakfree )
 					overlay = <.5,.75,1>;
 						
@@ -760,7 +769,7 @@ default {
 					// Self
 					PRIM_LINK_TARGET, BARS$getPortrait(l2i(BARS, i+1)),
 					PRIM_POSITION, offs1,
-					PRIM_COLOR, 0, border, .75,
+					//PRIM_COLOR, 0, border, .75,
 					PRIM_COLOR, 1, <1,1,1>, bgAlpha,
 					PRIM_TEXTURE, 1, texture, <1,1,0>, ZERO_VECTOR, 0,
 					PRIM_COLOR, 2, <1,1,1>, 0,

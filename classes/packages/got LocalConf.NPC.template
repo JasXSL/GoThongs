@@ -49,10 +49,12 @@
 	#define onSpellInterrupt( int spell, key targ )
 	#define onSpellFinish( int spell, key targ )
 	#define timerEvent( str id, str data )
-	#define onEvt(string script, integer evt, list data)
+	#define onEvent(string script, integer evt, list data)
+	#define afterEvent(string script, integer evt, list data)
 	#define onCallback(str sender_script, int method, list params, string CB, key id)	// Callback received
 	#define onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
 	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
+	
 	
 	Enabled by cf$USE_GRAPPLE
 	Optional user defined:
@@ -190,6 +192,7 @@
 		
 		if( GRAPPLE_TARG ){
 			
+			raiseEvent(LocalConfEvt$grappleEnd, GRAPPLE_TARG);
 			fxlib$removeSpellByName(GRAPPLE_TARG, "_Q");
 			Evts$stopQuicktimeEvent(GRAPPLE_TARG);
 			if( llAvatarOnSitTarget() )
@@ -221,6 +224,7 @@
 			"]]", 
 			TEAM_NPC
 		);
+		raiseEvent(LocalConfEvt$grappleStart, (str)hud);
 		#ifdef grappleOnStart
 		grappleOnStart();
 		#endif
@@ -379,6 +383,9 @@ onEvt(string script, integer evt, list data){
 		#endif
     }
 
+	#ifdef afterEvent
+	afterEvent(script, evt, data);
+	#endif
 
 }
 
@@ -476,6 +483,7 @@ default{
 						#ifdef grappleOnSuccess
 							grappleOnSuccess();
 						#endif
+						raiseEvent(LocalConfEvt$grappleSuccess, (str)GRAPPLE_TARG);
 						grappleEnd();
 						
 					}
@@ -485,6 +493,7 @@ default{
 						#ifdef grappleOnFail
 						t = grappleOnFail();
 						#endif
+						raiseEvent(LocalConfEvt$grappleFail, (str)GRAPPLE_TARG);
 						multiTimer(["_g_end", 0, t, FALSE]);
 						
 					}
@@ -534,6 +543,13 @@ default{
             raiseEvent(LocalConfEvt$iniData, mkarr(INI_DATA));
 		}
     }
+	
+	#ifdef cf$USE_GRAPPLE
+	if( METHOD == LocalConfMethod$grapple ){
+		grappleStart(method_arg(0), (int)method_arg(1));
+	}
+	
+	#endif
 
 	#ifdef onMethod
 		onMethod( SENDER_SCRIPT, METHOD, PARAMS, id );

@@ -34,7 +34,7 @@ list compiled_actives = [
 	1,	// 01 Mana regen - Multi | i2f
 	1,	// 02 Damge done - Multi | i2f
 	1,	// 03 Damage taken - Multi | i2f
-	1,	// 04 Dodge - Add | i2f
+	1,	// 04 Dodge - Multi | i2f
 	1,	// 05 Casttime - Multi | i2f
 	1,	// 06 Cooldown - Multi | i2f
 	1,	// 07 Mana cost - Multi | i2f
@@ -245,7 +245,8 @@ compilePassives(){
 					vals+= [mkarr(llJson2List(l2s(block, x+1)))];
 					
 				else{
-					if(!add)val+=1;	// If something is a multiplier it should always start at 1
+					if( !add )
+						val+=1;	// If something is a multiplier it should always start at 1
 					vals += val;
 				}
 				
@@ -329,11 +330,8 @@ output(){
 		else{
 		
 			float val = llList2Float(compiled_passives, i+1)*llList2Float(output,type);
-			
 			if( ~llListFindList(non_multi, (list)type) )
 				val = llList2Float(compiled_passives, i+1)+llList2Float(output,type);
-			else if( ~llListFindList(inverse_multi, (list)type) )
-				val = -val;
             output = llListReplaceList(output, (list)val, type, type);
 			
         }

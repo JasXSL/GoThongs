@@ -696,7 +696,7 @@ onSettings(list settings){
 	if(hitbox<=0)
 		hitbox = 3;
     
-	if(flagsChanged)
+	if( flagsChanged )
 		raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)getRF());
 	
 	if(~BFL&BFL_INITIALIZED){

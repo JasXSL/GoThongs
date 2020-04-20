@@ -11,6 +11,7 @@
 #define LocalConfMethod$checkCastSpell 5		// (int)id, (key)targ, expects callback true on success
 #define LocalConfMethod$stdInteract 6			// (key)sender, (key)object, (var)data - A player has interacted with the object. You can input anything you want as variables
 #define LocalConfMethod$generic 7 				// Generic method, put any data you want in it. Effect will vary between implementations
+#define LocalConfMethod$grapple 8				// key targ - Used with template to start a grapple (needs to be compiled with grapples)
 
 #define LocalConf$startSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$startSpell, [id], TNN)
 #define LocalConf$interruptSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$interruptSpell, [id], TNN)
@@ -20,13 +21,17 @@
 #define LocalConf$stdInteract(targ, sender, data) runMethod(targ, "got LocalConf", LocalConfMethod$stdInteract, [sender]+data, TNN)
 // Useful for monster scripts that aren't named LocalConf
 #define LocalConf$stdInteractByScript(targ, script, sender, data) runMethod(targ, script, LocalConfMethod$stdInteract, [sender]+data, TNN)
-#define LocalConf$generic(targ, params) runMethod((str)(targ), "got LocalConf", LocalConfMethod$generic, params, TNN)
+#define LocalConf$generic(targ, params) runMethod((str)(targ), "got LocalConf", LocalConfMethod$generic, (list)params, TNN)
 
 
 #define LocalConfEvt$iniData 1		// Separate from evt$SCRIPT_INIT in that this is raised on demand and contains script custom data
 									// This data will vary based on the object the conf is in
 									// For monster data see got Monster
 #define LocalConfEvt$emulateAttack 2// Emulates an attack for monsters without mesh anims
+#define LocalConfEvt$grappleStart 3	// (key)id Handled by template
+#define LocalConfEvt$grappleEnd 4	// (key)id Handled by template
+#define LocalConfEvt$grappleSuccess 3	// (key)id - LR Failable Grapple ended successfully
+#define LocalConfEvt$grappleFail 4	// (key)id - LR Grapple check failed
 
 
 // These can be used in monsters if you want									
@@ -38,6 +43,8 @@ string localConfIdle;
 	SPELLS += NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFX, statusFlags)
 
 
+#define LocalConf$grapple( targ ) runMethod((str)LINK_THIS, "got LocalConf", LocalConfMethod$grapple, (list)(targ), TNN)
+ 
 
 
 #endif

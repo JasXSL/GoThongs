@@ -304,5 +304,29 @@ string statsToText(list stats){
 	return ret;
 }
 
+// Requires PLAYER_HUDs
+int getNumRole( int role ){
+	
+	int out;
+	runOnHUDs(hud,
+		parseSex(hud, sex)
+		if( getRoleFromSex(sex) == role )
+			++out;
+	)
+	return out;
+
+}
+
+// Returns a list of keys
+list getHUDsByRole( int role ){
+	list out;
+	runOnHUDs(hud,
+		parseSex(hud, sex)
+		if( getRoleFromSex(sex) == role )
+			out += (key)hud;
+	)
+	return out;
+}
+
 #endif
 

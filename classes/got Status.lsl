@@ -149,13 +149,12 @@
 
 
 
-#define runOnAttackable(huds, targ, run) { integer _i; for(_i=0; _i<count(huds); ++_i){  \
-	key targ = l2k(huds, _i); \
+#define runOnAttackable(targ, run) runOnHUDs(targ,  \
 	parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor) \
 	if(_attackableV(status, fx)){ \
 		run \
 	} \
-}} 
+)
 
 // Takes a lifesteal value from SMBUR$durability and heals the caster if needed
 #define Status$handleLifeSteal(amount, var, caster) \

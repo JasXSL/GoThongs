@@ -162,10 +162,12 @@ onEvt(string script, integer evt, list data){
 		
 		else if( evt == StatusEvt$dead ){
 		
-            BFL = BFL|BFL_DEAD;
-            if( BFL&BFL_CASTING )
-				endCast(FALSE, TRUE);
-				
+			BFL = BFL&~BFL_DEAD;
+			if( l2i(data, 0) ){
+				BFL = BFL|BFL_DEAD;
+				if( BFL&BFL_CASTING )
+					endCast(FALSE, TRUE);
+			}
 			updateText();
 			
         }
@@ -185,7 +187,7 @@ clearCast(){
 	
 }
 
-endCast(integer success, integer force){
+endCast( integer success, integer force ){
     
 	if( ~BFL&BFL_CASTING )
 		return;
@@ -198,7 +200,9 @@ endCast(integer success, integer force){
 		d = CUSTOMCAST;
 	
     integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
-	if( flags&NPCS$FLAG_NO_INTERRUPT && !success && (!force || spell_id == -1) )
+	// Normally custom casts are not affected by force interrupts because they might go invulnerable and silence during an intermission
+	// Use force 2 or greater to interrupt these
+	if( flags&NPCS$FLAG_NO_INTERRUPT && !success && (!force || spell_id == -1) && force < 2 )
 		return;
 	
     float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
@@ -209,6 +213,7 @@ endCast(integer success, integer force){
         ptSet("CD_"+(string)spell_id, recasttime, FALSE);
 		
     }
+	qd("Success: "+(str)success+" force: "+(str)force);
 	
     if( success )
 		evt = NPCSpellsEvt$SPELL_CAST_FINISH;

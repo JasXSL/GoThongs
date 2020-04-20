@@ -230,7 +230,7 @@ outputStats( integer f ){
 
 	
 	// NPC has been ressurected
-	if( HP>0 && SF&StatusFlag$dead ){
+	if( HP > 0 && SF&StatusFlag$dead ){
 	
 		raiseEvent(StatusEvt$dead, "0");
 		SF = SF&~StatusFlag$dead;
@@ -462,6 +462,8 @@ outputStats( integer f ){
 			llSensor("", "", AGENT|ACTIVE, AR, PI); \
 		} \
     }\
+	else if( id == "WIPE" ) \
+		llDie();
 	
 
 _MT(string id, integer t)
@@ -824,10 +826,7 @@ default
 				
 			}
 			
-			llSleep(3);
-			llSetKeyframedMotion([<0,0,-4>, 8],[KFM_DATA,KFM_TRANSLATION]);
-			llSleep(6);
-			llDie();
+			ptSet("WIPE", 60, FALSE);
 			
 		}
 		else{
@@ -879,14 +878,20 @@ default
     else if(METHOD == StatusMethod$monster_taunt){
 		key t = method_arg(0);
 		integer inverse = (int)method_arg(1);
-		
+				
 		integer i;
-		for(i=0; i<count(AG); i+=AGGRO_STRIDE){
-			if((llList2Key(AG, i+1) == t) == inverse){
+		for( ; i<count(AG); i+=AGGRO_STRIDE ){
+		
+			if( (llList2Key(AG, i+1) == t) == inverse )
 				AG = llListReplaceList(AG, [1.0], i, i);
-			}
+				
 		}
-		ag("",0);
+		
+		if( !inverse && t != "" )
+			ag(t, 20);
+		else
+			ag("",0);
+			
 	}   
 	
 	//Nearby monster has found aggro
