@@ -368,7 +368,7 @@ updateGame(){
 		if( l2i(data, i+2) <= getStacks(dPid(l2i(data, i)), TRUE) )
 			hlt = hlt | (int)llPow(2,llList2Integer(data, i+1));
 	}
-	
+		
 	// These are the FXCUpd$ values
 	Passives$setActive(([ 
 		CACHE_FLAGS, 		// 00 FLAGS
@@ -396,7 +396,7 @@ updateGame(){
 		1,					// 21 AROUSAL_REGEN
 		hlt,				// 22 HIGHLIGHT_FLAGS
 		100,			// 23 Healing taken mod
-		1,					// 24 Movespeed (NPC only)
+		stat( fx$MOVE_SPEED ),				// 24 NPC: Movespeed. PC: Sprint regen.
 		stat( fx$HEALING_DONE_MULTI ),			// 25 Healing done mod
 		team,				// 26 Team override
 		stat( fx$BEFUDDLE ),		// 27 Befuddle

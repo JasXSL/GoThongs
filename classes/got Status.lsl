@@ -16,10 +16,11 @@
 	#define SMAFlag$OVERRIDE_CINEMATIC 0x2		// Allow this effect even during cinematics
 	#define SMAFlag$SOFTLOCK 0x4				// Use with pain or arousal to prevent regeneration from kicking in for a few seconds
 	#define SMAFlag$NO_STACK_MULTI 0x8			// Can be used if you don't want stack multi on only a resource, but the rest can be multiplied
-		
-	#define SMBUR$buildDurability(durability, spellName, flags, life_steal) [SMBUR$durability, 4, f2i(durability), spellName, flags, life_steal]
+	#define SMAFlag$FORCE_PERCENTAGE 0x10		// NPC only for now. Force sets HP to a percentage
+	
+	#define SMBUR$buildDurability(durability, spellName, flags, life_steal) ((list)SMBUR$durability + 4 + f2i(durability) + spellName + flags + life_steal)
 	//#define SMBUR$buildDurabilityNPC(durability, spellName, flags, life_steal, attacker) [SMBUR$durability, 4, f2i(durability), spellName, flags, life_steal, attacker]
-	#define SMBUR$buildMana(mana, spellName, flags) [SMBUR$mana, 3, f2i(mana), spellName, flags]
+	#define SMBUR$buildMana(mana, spellName, flags) ((list)SMBUR$mana + 3 + f2i(mana) + spellName + flags)
 	#define SMBUR$buildArousal(arousal, spellName, flags) [SMBUR$arousal, 3, f2i(arousal), spellName, flags]
 	#define SMBUR$buildPain(pain, spellName, flags) [SMBUR$pain, 3, f2i(pain), spellName, flags]
 	
@@ -199,7 +200,7 @@ if( var*amount != 0.0 ){ \
 // This is only for PC. NPC uses got NPCInt instead
 #define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
 
-#define Status$batchUpdateResources(attacker, SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, (list)attacker+SMBUR, TNN)
+#define Status$batchUpdateResources(attacker, SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, (list)(attacker)+SMBUR, TNN)
 #define Status$batchUpdateResourcesTarg(target, attacker, SMBUR) runMethod((str)target, "got Status", StatusMethod$batchUpdateResources, (list)attacker+SMBUR, TNN)
 // NPC
 //#define Status$addHP(amt, spellName, flags, attacker) Status$batchUpdateResources(0, SMBUR$buildDurabilityNPC(amt, spellName, flags, attacker))

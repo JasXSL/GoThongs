@@ -37,8 +37,9 @@
 #define NPCS$SPELL_TARG_SEX 6		// Sex flags needed on target, 0 ignores 
 #define NPCS$SPELL_TARG_FX 7		// FX Flags needed on target, 0 ignores
 #define NPCS$SPELL_TARG_STATUS 8	// Status flags needed on target, 0 ignores
+#define NPCS$SPELL_TARG_ROLE 9		// Bitwise combination (use role2flag) of viable specs
 
-#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags) llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags))
+#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags, viableRoles) llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags)+(viableRoles))
 
 // Spell is the spell index, targ is the target (converted to owner key if attached), real is either same as targ or the HUD itself
 #define NPCSpellsEvt$SPELL_CAST_START 1				// (int)spell, (key)targ, (key)real, (str)spellName

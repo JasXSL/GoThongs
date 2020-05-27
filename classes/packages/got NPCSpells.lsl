@@ -213,7 +213,6 @@ endCast( integer success, integer force ){
         ptSet("CD_"+(string)spell_id, recasttime, FALSE);
 		
     }
-	qd("Success: "+(str)success+" force: "+(str)force);
 	
     if( success )
 		evt = NPCSpellsEvt$SPELL_CAST_FINISH;
@@ -287,6 +286,7 @@ startCast(integer spid, key targ, integer isCustom){
     
     if( flags&NPCS$FLAG_LOOK_OVERRIDE ){
 	
+		qd("Setting look override, flags: "+(str)flags);
         Monster$lookOverride(targ);
 		/*
 		if( casttime<=0 )
@@ -390,6 +390,7 @@ ptEvt(string id){
                 int sexReq = llList2Integer(d, NPCS$SPELL_TARG_SEX);
 				int fxReq = l2i(d, NPCS$SPELL_TARG_FX);
 				int statusReq = l2i(d, NPCS$SPELL_TARG_STATUS);
+				int roleReq = l2i(d, NPCS$SPELL_TARG_ROLE);
                 
                 // Default to aggro_target
                 list p = [aggro_target];
@@ -418,6 +419,7 @@ ptEvt(string id){
 						!(status&StatusFlags$NON_VIABLE) && 
 						~fx&fx$UNVIABLE &&
 						(!sexReq || (sex&sexReq) == sexReq) &&
+						(!roleReq || roleReq&role2flag(getRoleFromSex(sex))) &&
 						(!fxReq || (fx&fxReq) == fxReq) &&
 						(!statusReq || (status&statusReq) == statusReq) &&
 						team != TEAM

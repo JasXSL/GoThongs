@@ -154,7 +154,7 @@ integer preInteract(key obj){
     return TRUE;
 }
 onInit(){
-    links_each(nr, name, if(name == "CROSSHAIR"){CROSSHAIR = nr;})
+    links_each(nr, name, if(name == "CROSSHAIR"){CROSSHAIR = nr;})	
 }
 #include "xobj_core/classes/packages/jas Interact.lsl"
 

@@ -58,6 +58,13 @@
 
 
 
+#define gotSoundLib$cluster$attack_small "dd5ed18e-9ec0-95d0-4da7-b4b6ebabe125"
+#define gotSoundLib$cluster$takehit "e77d6d08-d8d6-551f-6492-ba0931f7a6ea"
+#define gotSoundLib$cluster$attack "832a7dbc-d1e5-b772-3ec7-18c9144ac4a4"
+#define gotSoundLib$cluster$death "9091676b-1da1-0f6e-8795-bf1a44133a69"
+
+
+
 #define gotSoundLib$minisini$takehit "6ec47fc1-e048-4e9f-a3f3-68c23d690793"
 #define gotSoundLib$minisini$attack "d526f5fb-6bde-8241-ee79-273056e61ea0"
 #define gotSoundLib$minisini$death "9c095ae1-e5af-b378-e56c-395a166e37c4"
@@ -208,6 +215,12 @@
 #define gotSoundLib$lotus$takehit "dacb3254-f455-0c4f-4632-5cd237b08d3e"
 #define gotSoundLib$lotus$attack "6d71f5aa-ab47-f2b8-ece9-fff9fada7057"
 #define gotSoundLib$lotus$death "93601993-053d-7696-d782-debab3e28e34"
+
+
+#define gotSoundLib$mushroom$loop "1fc5e30a-1036-7942-95b0-7d696c0c5f88"
+#define gotSoundLib$mushroom$takehit "f615123a-61ce-41d8-5d1f-5caf9cd6ad33"
+#define gotSoundLib$mushroom$attack "fbde75c0-b744-dab3-d140-4a6cf8f74705"
+#define gotSoundLib$mushroom$death "b1c84e60-fcb5-0575-291d-6bf9e1c6ac13"
 
 
 #define gotSoundLib$spanks (list)"f8dad0f8-2ffc-ccbf-d115-8a8808722690" + "dcbfcb36-b84d-809f-c07b-cb0ab61d3cd8" + "76716856-edc6-6d7c-dbc9-7ec23723c6f6"

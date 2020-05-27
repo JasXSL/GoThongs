@@ -172,7 +172,7 @@ onEvt(string script, integer evt, list data){
 		
         string sender = pSender(slice);
         if(sender == "s")
-			sender = llGetOwner();
+			sender = llGetKey();
         
 		// Read the events from the package
         list evts = llJson2List(pEvts(slice));
@@ -261,11 +261,11 @@ onEvt(string script, integer evt, list data){
 				if(targ&TARG_AOE){
 					float range = maxtargs;
 					maxtargs = 1000;
-					FX$aoe(range, llGetOwner(), wrapper, TEAM);
+					FX$aoe(range, llGetKey(), wrapper, TEAM);
 				}
 				
 				// Run on self
-				if( targ&TARG_VICTIM || (targ&TARG_CASTER && sender == llGetOwner()) ){
+				if( targ&TARG_VICTIM || (targ&TARG_CASTER && (sender == llGetOwner() || sender == llGetKey())) ){
 					FX$run(sender, wrapper); maxtargs--;
 				}
 				// Run on dispeller (if dispel event)
@@ -473,8 +473,6 @@ default{
         if( METHOD == FXMethod$run ){
 			
 			string sender = method_arg(0);						// UUID of FX sender
-			
-			
 			// Convert sender to "s" if self
 			if( sender == llGetOwner() || sender == "" || sender == llGetKey() )
 				sender = "s";
@@ -657,6 +655,8 @@ default{
 						if( exists ){
 							// Remove the previous one and add its stacks
 							
+							int pid = llList2Integer(PACKAGES, l2i(exists,0));
+							
 							// Append time, allowing it to exceed the max duration
 							// This is also calculated in 
 							if( flags & PF_STACK_TIME ){
@@ -675,12 +675,13 @@ default{
 									stacks = mstacks;
 								slice = llListReplaceList(slice, [stacks], 2, 2);
 								//raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel
-								FX$rem(FALSE, "", "", "", l2i(PACKAGES, l2i(exists, 0)), FALSE, 0, 0, FALSE);
+								FX$rem(FALSE, "", "", "", pid, FALSE, 0, 0, FALSE);
 								
 							}
 							else{
 
-								FX$addStacks(LINK_THIS, stacks, "", 0, "", llList2Integer(PACKAGES, llList2Integer(exists,0)), TRUE, 0, 1, FALSE, dur, flags&PF_TRIGGER_IMMEDIATE);
+								// stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig
+								FX$addStacks(LINK_THIS, stacks, "", 0, "", pid, TRUE, 0, 1, FALSE, dur, flags&PF_TRIGGER_IMMEDIATE);
 								jump reloop;
 							
 							}
@@ -770,7 +771,7 @@ default{
         }
 		
 		// Remove an effect or add stacks
-        if(METHOD == FXMethod$rem || METHOD == FXMethod$addStacks){
+        if( METHOD == FXMethod$rem || METHOD == FXMethod$addStacks ){
 		
 			// raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel
             integer rEvent = (integer)method_arg(0); 	// also num_stacks for addStacks

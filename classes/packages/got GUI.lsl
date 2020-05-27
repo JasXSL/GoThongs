@@ -299,12 +299,12 @@ default {
 				
 				vector overlay = <1,1,1>;
 
-				if( flags&StatusFlag$dead )
+				if( flags&StatusFlag$coopBreakfree )
+					overlay = <.5,.75,1>;
+				else if( flags&StatusFlag$dead )
 					overlay = <.5,0,0>;
 				else if( fx&fx$F_IMPORTANT_DISPEL )
 					overlay = <.5,0,1>;
-				else if( flags&StatusFlag$coopBreakfree )
-					overlay = <.5,.75,1>;
 						
 				// Set bars
 				list dta = [

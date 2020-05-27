@@ -459,7 +459,7 @@ onEvt(string script, integer evt, list data){
 		if(
 			flags&Passives$PF_ON_COOLDOWN || 	// on cooldown
 			proc>proc_chance || 				// random chance fail
-			(CACHE_FLAGS&fx$NO_PROCS && ~flags&Passives$PF_OVERRIDE_PROC_BLOCK) // Procs are blocked right now
+			(CACHE_FLAGS&fx$F_NO_PROCS && ~flags&Passives$PF_OVERRIDE_PROC_BLOCK) // Procs are blocked right now
 		)jump evtBreak; // Go to next event
 
 		// Scan the next target
@@ -674,7 +674,7 @@ default{
 			l2f(set, 21),			\
 			l2i(set, 22),			\
 			i2f(l2f(set, 23)),		\
-			l2f(set, 24),			\
+			i2f(l2f(set, FXCUpd$MOVESPEED)),			\
 			i2f(l2f(set, 25)),		\
 			l2i(set, 26), 			\
 			i2f(l2f(set,27)),		\

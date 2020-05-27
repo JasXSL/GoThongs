@@ -140,6 +140,11 @@
 #define ROLE_TANK 1
 #define ROLE_HEALER 2
 
+// Converts to a flag for bitwise operation
+#define role2flag( role ) \
+	(1<<role)
+	
+
 #define TEXTURE_PC "9505afb9-134d-61cf-b1de-4645ba9ffde2"
 #define TEXTURE_COOP "41d10278-ce32-825f-d93c-4092e3064e1a"
 

@@ -15,6 +15,7 @@
 #define gotPISpawner$getAsset(item) runMethod(llGetOwner(), "got PISpawner", SpawnerMethod$getAsset, [item], TNN)
 
 #define gotPISpawner$generateInteraction(players, duration, pos, rot, no_instigator) runMethod(llGetOwner(), "got PISpawner", gotPiSpawnerMethod$generateInteraction, (list)mkarr((list)players)+duration+pos+rot+no_instigator, TNN)
+#define gotPISpawner$generateInteractionOn(target, players, duration, pos, rot, no_instigator) runMethod((str)target, "got PISpawner", gotPiSpawnerMethod$generateInteraction, (list)mkarr((list)players)+duration+pos+rot+no_instigator, TNN)
 
 #define gotPISpawner$callback(targ, raw_data) runMethod((str)targ, "got PISpawner", gotPiSpawnerMethod$callback, (list)raw_data, TNN)
 

@@ -635,78 +635,86 @@ default
 			if(type == SMBUR$durability){
 			
 				float pre = HP;
-				float spdmtm = 1;
-				integer cn = key2int(attacker);
-	
-				integer i;
-				for( i=0; i<count(SDTM); i+=3 ){
 				
-					if( 
-						llList2String(SDTM, i) == spellName && 
-						( !l2i(SDTM, i+1) || l2i(SDTM, i+1) == cn ) 
-					){
+				
+				if( flags & SMAFlag$FORCE_PERCENTAGE ){
+					HP = maxHP*(-amount);
+				}
+				else{
+					float spdmtm = 1;
+					integer cn = key2int(attacker);
+					integer i;
+					for( i=0; i<count(SDTM); i+=3 ){
+					
+						if( 
+							llList2String(SDTM, i) == spellName && 
+							( !l2i(SDTM, i+1) || l2i(SDTM, i+1) == cn ) 
+						){
+							
+							float nr = llList2Float(SDTM, i+2);
+							if( nr <0 )
+								nr = 0;
+							spdmtm = nr;
+							i = count(SDTM);
+							
+						}
 						
-						float nr = llList2Float(SDTM, i+2);
-						if( nr <0 )
-							nr = 0;
-						spdmtm = nr;
-						i = count(SDTM);
+					}
+
+					amount*=spdmtm;
+					
+					
+					if( flags&SMAFlag$IS_PERCENTAGE )
+						amount*=maxHP;
+						
+					if(amount<0){
+					
+						// Damage taken multiplier
+						float fmdt = 1;
+						integer pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)0);
+						if( ~pos )
+							fmdt *= l2f(fmDT, pos*2+1);
+						if( ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(attacker))) )
+							fmdt *= l2f(fmDT, pos*2+1);
+								
+						amount*=fmdt;
+						parseDesc(attacker, _r, _s, _f, _st, team, _mo, _a)
+						if( attacker != "" && team != TEAM )
+							ag(attacker, llFabs(amount));
+						
+					}
+					else{
+					
+						// Healing taken multiplier
+						float fmht = 1;
+						// Add wildcard
+						integer pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)0);
+						if( ~pos )
+							fmht *= l2f(fmHT, pos*2+1);
+						// Add specific attacker
+						if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(attacker))) )
+							fmht *= l2f(fmHT, pos*2+1);
+						amount*= fmht;
 						
 					}
 					
-				}
-
-				amount*=spdmtm;
-				
-				
-				if(flags&SMAFlag$IS_PERCENTAGE)
-					amount*=maxHP;
+					raiseEvent(StatusEvt$hurt, llList2Json(JSON_ARRAY, [(str)amount, attacker]));
+					if( amount<0 && RF&Monster$RF_INVUL )
+						return;
 					
-				if(amount<0){
-				
-					// Damage taken multiplier
-					float fmdt = 1;
-					integer pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)0);
-					if( ~pos )
-						fmdt *= l2f(fmDT, pos*2+1);
-					if( ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(attacker))) )
-						fmdt *= l2f(fmDT, pos*2+1);
-							
-					amount*=fmdt;
-					parseDesc(attacker, _r, _s, _f, _st, team, _mo, _a)
-					if( attacker != "" && team != TEAM )
-						ag(attacker, llFabs(amount));
+					HP += amount;
 					
+					Status$handleLifeSteal(amount, steal, attacker)
 				}
-				else{
+				if( HP <= 0 && HP != pre ){
 				
-					// Healing taken multiplier
-					float fmht = 1;
-					// Add wildcard
-					integer pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)0);
-					if( ~pos )
-						fmht *= l2f(fmHT, pos*2+1);
-					// Add specific attacker
-					if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(attacker))) )
-						fmht *= l2f(fmHT, pos*2+1);
-					amount*= fmht;
-					
-				}
-				
-				raiseEvent(StatusEvt$hurt, llList2Json(JSON_ARRAY, [(str)amount, attacker]));
-				if( amount<0 && RF&Monster$RF_INVUL )
-					return;
-				
-				HP += amount;
-				
-				Status$handleLifeSteal(amount, steal, attacker)
-				
-				if(HP<=0 && HP != pre){
 					HP = 0;
 					Status$kill(LINK_THIS);
 					return;
+					
 				}
-				else if(HP > maxHP)HP = maxHP;
+				else if( HP > maxHP )
+					HP = maxHP;
 				
 				if(pre != HP)
 					outputStats(FALSE);
@@ -826,7 +834,7 @@ default
 				
 			}
 			
-			ptSet("WIPE", 60, FALSE);
+			ptSet("WIPE", 10, FALSE);
 			
 		}
 		else{

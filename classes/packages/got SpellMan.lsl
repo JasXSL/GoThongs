@@ -81,8 +81,11 @@ integer SPELL_ON_TARG = -1;		// A spell to queue when target is changed
 float CACHE_CASTTIME = 0;
 integer QUEUE_SPELL = -1;		// Spell to cast after finishing the current cast
 float CACHE_MANA;
+
+// Calculated on spell start
 float RANGE_ADD;
 float HEIGHT_ADD;
+
 key TARG_FOCUS;
 
 list PLAYERS;					// Me and coop player
@@ -95,29 +98,36 @@ integer BFL;
 
 
 
-// This is a code block that checks if a player is visible. Ret is an optional return value
+// Checks line of sight, data is spelldata
+bool visionCheck( list data ){
 
-#define CODE$VISION_CHECK(ret) \
-string targ = llList2String(SPELL_TARGS, 0); \
-if(targ != (string)LINK_ROOT && targ != "AOE"){ \
-    integer flags = spellTargets(data); \
-	vector pos = prPos(llList2String(SPELL_TARGS, 0));\
-    if(~flags&TARG_REQUIRE_NO_FACING){ \
-		vector gpos = llGetRootPosition();\
-        prAngX(targ, ang); \
-		integer inRange = (llVecDist(pos, llGetRootPosition())<3 && llVecDist(<gpos.x,gpos.y,0>,<pos.x,pos.y,0>)<0.5);\
-        if(llFabs(ang)>PI_BY_TWO && !inRange){ \
-            A$(ASpellMan$errTargInFront); \
-            SpellMan$interrupt(TRUE); \
-            return ret; \
-        } \
-    }\
-    list ray = llCastRay(llGetRootPosition()+<0,0,.5>, pos+<0,0,1+HEIGHT_ADD>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); \
-    if(llList2Integer(ray, -1) == 1 && llList2Key(ray,0) != targ){ \
-        A$(ASpellMan$errVisionObscured); \
-        SpellMan$interrupt(TRUE); \
-        return ret; \
-    } \
+	string targ = llList2String(SPELL_TARGS, 0);
+	if( targ != (string)LINK_ROOT && targ != "AOE" ){
+	
+		integer flags = spellTargets(data);
+		vector pos = prPos(llList2String(SPELL_TARGS, 0));
+		if( ~flags&TARG_REQUIRE_NO_FACING ){
+		
+			vector gpos = llGetRootPosition();
+			prAngX(targ, ang);
+			integer inRange = (llVecDist(pos, llGetRootPosition())<3 && llVecDist(<gpos.x,gpos.y,0>,<pos.x,pos.y,0>)<0.5);
+			if(llFabs(ang)>PI_BY_TWO && !inRange){
+				A$(ASpellMan$errTargInFront);
+				SpellMan$interrupt(TRUE);
+				return FALSE;
+			}
+		}
+		
+		list ray = llCastRay(llGetRootPosition()+<0,0,.5>, pos+<0,0,1+HEIGHT_ADD>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL, RC_DATA_FLAGS, RC_GET_ROOT_KEY]); 
+		if(llList2Integer(ray, -1) == 1 && llList2Key(ray,0) != targ){ 
+			A$(ASpellMan$errVisionObscured); 
+			SpellMan$interrupt(TRUE); 
+			return FALSE; 
+		}
+		
+	}
+	return TRUE;
+	
 }
 /*
 	list bounds = llGetBoundingBox(llList2String(SPELL_TARGS, 0));\
@@ -173,21 +183,9 @@ onEvt(string script, integer evt, list data){
 		else if(evt == RootEvt$targ){
 			
 			recacheTarget();
-			if(SPELL_ON_TARG != -1){
+			if( SPELL_ON_TARG != -1 )
 				startSpell(SPELL_ON_TARG);
-			}
-			
-			RANGE_ADD = 0;
-			list data = llGetObjectDetails(CACHE_ROOT_TARGET, [OBJECT_DESC, OBJECT_ATTACHED_POINT]);
-			if(!llList2Integer(data, 1)){
-			
-				// This is an NPC, add range add
-				list split = explode("$", l2s(data, 0));
-				RANGE_ADD = l2f(split, 4)/10;
-				HEIGHT_ADD = l2f(split, 5)/10;
-				
-			}
-
+		
 		}
 
     }
@@ -346,9 +344,24 @@ integer castSpell(integer nr){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
+	
+	// Need to cache hitbox data
+
+	RANGE_ADD = 0;
+	HEIGHT_ADD = 0;
+	list at = llGetObjectDetails(l2s(SPELL_TARGS, 0), [OBJECT_DESC, OBJECT_ATTACHED_POINT]);
+	if( !llList2Integer(at, 1) ){
+	
+		// This is an NPC, add range add
+		list split = explode("$", l2s(at, 0));
+		RANGE_ADD = l2f(split, 4)/10.;
+		HEIGHT_ADD = l2f(split, 5)/10.;
+		
+	}
 
 	// Run LOS check
-    CODE$VISION_CHECK(FALSE)
+    if( !visionCheck(data) )
+		return FALSE;
     
     
 	// Check spell range
@@ -459,7 +472,8 @@ spellComplete(){
 	// Make sure LOS is proper unless it's instant cast
     if(CACHE_CASTTIME>0){
 	
-		CODE$VISION_CHECK()
+		if( !visionCheck(data) )
+			return;
 		SpellFX$stopSound();
 		
     }
@@ -475,7 +489,7 @@ spellComplete(){
             
     
     // Consume mana
-    if(cost != 0)
+    if( cost != 0 )
 		Status$batchUpdateResources("", SMBUR$buildMana(-cost, "", 0));
 	
     // Set cooldown

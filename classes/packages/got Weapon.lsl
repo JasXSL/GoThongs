@@ -25,8 +25,8 @@ timerEvent(string id, string data){
             multiTimer([id]);
         else{
             
-            llRequestPermissions(llGetOwner(), PERMISSION_ATTACH);
-			multiTimer([TIMER_CHECK_ATTACH, "", 25, TRUE]);
+            //llRequestPermissions(llGetOwner(), PERMISSION_ATTACH);
+			RLV$reqAttach();
 			
         }
 		
@@ -228,6 +228,8 @@ default{
 			
 		)
 		
+		llListen(RLVcfg$ATC_CHAN, "", "", "GET");
+		
     }
     
     attach(key id){
@@ -257,6 +259,13 @@ default{
     }
     
 	#define LISTEN_LIMIT_FREETEXT \
+		if( chan == RLVcfg$ATC_CHAN ){ \
+			idOwnerCheck \
+			if( llGetAttached() ) \
+				return; \
+			llRequestPermissions(llGetOwner(), PERMISSION_ATTACH); \
+		}\
+		\
 		integer isOwner = llGetOwnerKey(id) == llGetOwner(); \
 		if( isOwner && chan == WFX_CHAN ) \
 			return handleWeaponEffect(llJson2List(message)); \

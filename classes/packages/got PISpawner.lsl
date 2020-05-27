@@ -51,7 +51,7 @@ spawnScene( string name, float duration, float min_speed, float max_speed, list 
 
 onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB ){
 
-	if( METHOD == gotPiSpawnerMethod$generateInteraction && method$byOwner ){
+	if( METHOD == gotPiSpawnerMethod$generateInteraction ){
 		
 		list pl = [];
 		list _temp = llJson2List(method_arg(0));

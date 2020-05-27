@@ -35,8 +35,8 @@
 		#define fxhfColor$toxic "<.8,1,.7>"
 		#define fxhfColor$holy "<1,1,.7>"
 		#define fxhfColor$cold "<.5,.8,1>"
-		
-		
+	
+	
 	#define fx$ANIM 7							// [(str)anim(or array), (int)start, (bool)ignore_immediate, (int)flags] | If ignore immediate is set, it will not be run on instant effects or ticks.
 	#define fx$DODGE 8							// (float)chance_to_add - Adds a chance to dodge bad spells unless undodgable
 	//#define fx$DEBUG 9							// [(str)message]
@@ -62,14 +62,13 @@
 		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
 		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
 		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind
-		#define fx$NO_PROCS 0x20000					// PC - Disables procs
+		#define fx$F_NO_PROCS 0x20000					// PC - Disables procs
 		#define fx$F_STUNNED_IMPORTANT 0x40000		// NPC - Effect stuns bosses as well
 		#define fx$F_FORCE_MOUSELOOK 0x80000		// PC - Makes only mouselook work
 		#define fx$F_SPELLS_MAX_RANGE 0x100000		// PC - Makes all spells cast as if they were done from max range (10m)
-		#define fx$F_IMPORTANT_DISPEL 0x200000		// Highlight player to mark an important dispel
+		#define fx$F_IMPORTANT_DISPEL 0x200000		// 2097152 Highlight player to mark an important dispel
 		#define fx$F_NO_NUDE_PENALTY 0x400000		// 4194304 PC - Ignores nudity penalty
-		
-		
+
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE|fx$F_NO_TARGET)
 		
@@ -109,7 +108,7 @@
 	#define fx$PAIN_MULTI 41					// (float)add - PC only, Increases or decreases pain generation
 	#define fx$ALERT 42							// (str)text, (bool)ownersay, (bool)sound - PC only, standard alert
 	#define fx$ATTACH 43						// attachment1, attachment2...
-	#define fx$MOVE_SPEED 44					// (float)add - NPC only, reduces movement speed
+	#define fx$MOVE_SPEED 44					// (float)add - NPC: Multiplies against normal move speed. PC: Sprint regen multiplier.
 	#define fx$SPELL_MANACOST_MULTI 45			// (int)index, (float)multiply - PC only
 	#define fx$SPELL_CASTTIME_MULTI 46			// (int)index, (float)multiply - PC only
 	#define fx$SPELL_COOLDOWN_MULTI 47			// (int)index, (float)multiply - PC only
@@ -139,7 +138,7 @@
 	#define fx$FOV 67							// (float)fov - Field of view. PC only. Last one in gets used
 	#define fx$PROC_BEN 68						// (float)multiplier - Affects chances of procs from passives and nondetrimental effects
 	#define fx$PROC_DET 69						// (float)multiplier - Affects chances of detrimental effects
-	#define fx$STANCE 70						// (str)anim - Overrides the stance. PC only. Non instant only.
+	#define fx$STANCE 70						// (str)anim/(obj)override - Overrides the stance and/or AO. PC only. Non instant only. If an object it should be like: {ao_type:ao_anim}
 	#define fx$LOOK_AT 71						// (vec)pos/(float)rotation/"SENDER" - PC only. Turns the avatar towards a position
 	#define fx$DAMAGE_ARMOR 72					// (int)points - PC only. 50 per slot. Can be negative to restore
 	#define fx$MAX_PAIN_MULTI 73				// (float)amount - Adds or lowers max pain/arousal
@@ -177,6 +176,7 @@
 	#define fx$COND_NAME 17						// (str)name - Recipient has name
 	#define fx$COND_SAME_OWNER 18				// void - Recipient has the same owner as the sender
 	#define fx$COND_RANDOM 19					// (float)chance between 0 and 1
+	
 	
 	
 // Reserved names:

@@ -66,8 +66,10 @@ string IDLE_ANIM;	// Active idle anim
 
 #define animExists( anim ) llGetInventoryType(anim) == INVENTORY_ANIMATION
 
+
 updateStance(){
 
+	// Lowest to highest priority
 	string anim = "stance_fists";
 	if( STANCE != "" && !unsheatable && ~BFL&BFL_SHEATHED )
 		anim = STANCE;
@@ -77,9 +79,26 @@ updateStance(){
 		anim = getSpellStance();
 	if( LAST_SPELL_CAST == -1 && l2s(SPELL_STANCES, 1) != "" )
 		anim = l2s(SPELL_STANCES, 1);
-	if( count(FXS) )
-		anim = l2s(FXS, -1);
+	
+	str ao = "{}";	// Stacks all AO entries together
+	int i;
+	for(; i<count(FXS); ++i ){
 		
+		str val = l2s(FXS, i);
+		// Normal stance overrides get added as the standing
+		if( llJsonValueType(val, []) != JSON_OBJECT )
+			ao = llJsonSetValue(ao, (list)"Standing", val);
+		else{
+		
+			list l = llJson2List(val);
+			int x;
+			for( ; x<count(l); x = x+2 )
+				ao = llJsonSetValue(ao, llList2List(l, x, x), l2s(l, x+1));
+			
+		}
+		
+	}
+	
 	//if( BFL&BFL_STANCE )
 	//	anim = "";
 	if( ~STATUS&StatusFlag$combat ){
@@ -102,7 +121,7 @@ updateStance(){
 				llStartAnimation(an);
 		
 		}
-					
+	
 	}
 	// Out of combat
 	else if( IDLE_ANIM ){
@@ -119,9 +138,25 @@ updateStance(){
 	integer p = llGetPermissions()&PERMISSION_OVERRIDE_ANIMATIONS;
 	if( !p )
 		return;
+	
+	// Go through AO overrides
+	list aoList = llJson2List(ao);
+	for( i=0; i<count(aoList); i += 2 ){
+		
+		str k = l2s(aoList, i);
+		str v = l2s(aoList, i+1);
+		
+		// If standing is set, let it be handled by the default stand handler
+		if( k == "Standing" )
+			anim = v;
+		else
+			llSetAnimationOverride(k, v);
 
-	if( anim )
+	}
+
+	if( anim != "" ){
 		llSetAnimationOverride( "Standing", anim );
+	}
 	else
 		llResetAnimationOverride("Standing");
 	
@@ -523,9 +558,21 @@ default{
 			
 			if( begin )
 				FXS += stance;
-			else
+			else{
+				
+				// This was an AO set. Remove
+				if( llJsonValueType(l2s(FXS, pos), []) == JSON_OBJECT ){
+				
+					list l = llJson2List(l2s(FXS, pos));
+					integer i;
+					for(; i<count(l); i += 2 )
+						llResetAnimationOverride(l2s(l, i));
+					
+				}
+				
 				FXS = llDeleteSubList(FXS, pos, pos);
-			
+				
+			}
 			updateStance();
 			
 		}

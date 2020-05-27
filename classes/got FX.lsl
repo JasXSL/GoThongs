@@ -55,11 +55,12 @@
 #define FX$run(sender, wrapper) runMethod((string)LINK_ROOT, "got FX", FXMethod$run, (list)(sender)+(wrapper), TNN)
 #define FX$refresh() runMethod((string)LINK_SET, "got FX", FXMethod$refresh, [], TNN)
 #define FX$rem(raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel) runMethod((string)LINK_SET, "got FX", FXMethod$rem, ([raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel]), TNN)
+#define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig]), TNN)
+
 #define FX$remByNameCB(targ, name, cb) runMethod((string)targ, "got FX", FXMethod$rem, (list)0 + name + "" + "" + "" + "" + 0 + 0 + 0, cb)
 #define FX$aoe(range, sender, wrapper, team) runLimitMethod((str)AOE_CHAN, "got FX", FXMethod$run, ([sender, wrapper, range, team]), TNN, range) 
 // Tags can be a JSON array or a single tag
 #define FX$hasTags(targ, tags, cb) runMethod(targ, "got FX", FXMethod$hasTags, (list)(tags), cb)
-#define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig]), TNN)
 
 #ifndef fx$COND_HAS_PACKAGE_NAME
 	#define fx$COND_HAS_PACKAGE_NAME 1			// [(str)name1, (str)name2...] - Recipient has a package with at least one of these names

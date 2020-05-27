@@ -105,7 +105,7 @@ int RO;			// Thong role
 int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
 
 integer DIF = 1;	// 
-#define difMod() ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.4)
+#define difMod() ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.462)
 
 
 
@@ -123,11 +123,11 @@ float rCnv( integer ty, float am ){
 	list resources = [0,0,0,0];
 	
 	
-	for(i=0; i<count(fxC); ++i){
+	for(; i<count(fxC); ++i){
+	
 		integer conv = l2i(fxC, i);
 		integer onDetri = !(FXC$conversionNonDetrimental(conv));
-				
-
+		
 		if( 
 			FXC$conversionFrom(conv) == ty && 
 			onDetri == isDetrimental
@@ -146,6 +146,7 @@ float rCnv( integer ty, float am ){
 			
 			integer ndx = llListFindList(conversions, [b]);
 			resources = llListReplaceList(resources, [l2f(resources, ndx)+amt], ndx, ndx);
+			
 		}
 	}
 	
@@ -407,6 +408,7 @@ aAR( float am, string sn, integer flags, integer iCnv, key atkr ){
 	// Run conversions
 	if(!iCnv)
 		am*=rCnv(FXC$CONVERSION_AROUSAL, am);
+	
 	
     AROUSAL += am;
     if(AROUSAL<=0)AROUSAL = 0;
@@ -700,7 +702,7 @@ integer cC;		// cache Clothes (armor)
 // ic = ignore cache check
 OS( int ic ){ 
 
-	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR )
+	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR && PF == SF )
 		return;
 			
 	cH = HP;
@@ -807,17 +809,17 @@ ptEvt(string id){
 		integer n; // Used to only update if values have changed
 			
 		float add = (maxMana()*DEF_MANA_REGEN)*fmMR;
-        if( add > 0 )
-			aMP(add, "", 0, TRUE, llGetOwner());
+        if( add > 0 && MANA < maxMana() )
+			aMP(add, "", 0, FALSE, llGetOwner());
 		
 		// The following only regenerate out of combat
 		if( !inCombat ){
 
-			if(DEF_HP_REGEN*fmHR>0)
+			if( DEF_HP_REGEN*fmHR>0 && HP < maxHP() )
 				aHP(fmHR*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, TRUE, llGetOwner(), 0);
-			if( DEF_PAIN_REGEN*fmPR>0 && ~BFL&BFL_SOFTLOCK_PAIN )
+			if( DEF_PAIN_REGEN*fmPR>0 && ~BFL&BFL_SOFTLOCK_PAIN && PAIN > 0 )
 				aPP(-fmPR*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
-			if( DEF_AROUSAL_REGEN*fmAR>0 && ~BFL&BFL_SOFTLOCK_AROUSAL )
+			if( DEF_AROUSAL_REGEN*fmAR>0 && ~BFL&BFL_SOFTLOCK_AROUSAL && AROUSAL > 0 )
 				aAR(-fmAR*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
 			
 		}
@@ -857,14 +859,14 @@ ptEvt(string id){
 	else if(id == TIMER_COMBAT){
 	
 		SF = SF&~StatusFlag$combat;
-		saveFlags();
+		OS(false);
 		
 	}
 	else if( id == TIMER_COOP_BREAKFREE ){
 	
 		llRezAtRoot("BreakFree", llGetRootPosition(), ZERO_VECTOR, ZERO_ROTATION, 1);
 		SF = SF|StatusFlag$coopBreakfree;
-		saveFlags();
+		OS(false);
 		
 	}
 	
