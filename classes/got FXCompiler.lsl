@@ -113,9 +113,38 @@
 // LIBRARY
 #ifndef NPC
 	#define spawn Spawner$spawnInt
+	#define handleSmartHeal() \
+		if( targs&FXAF$SMART_HEAL ){ \
+			\
+			float s = llGetTime(); \
+			key targ; float chp = 1; \
+			list targs = llJson2List(llGetSubString(l2s(llGetLinkMedia(P_EVTS, 0, (list)Evts$NEAR_DB_MEDIA), 0), 8, -1)); \
+			targs += (list)0 + llGetKey(); /* Owner is never in nearby array */ \
+			/* Targs is strided, see got Evts: list T */ \
+			int n; \
+			for(; n < count(targs); n = n+2 ){ \
+				key hud = l2k(targs, n+1); \
+				smartHealDescParse(hud, resources, status, fx, team) \
+				if( team == TEAM && !(status&StatusFlags$NON_VIABLE) && !(fx&fx$UNVIABLE) ){ \
+					float hp = (float)(resources>>21&127)/127.0; \
+					if( (hp <= chp || targ == "") && llVecDist(llGetPos(), prPos(hud)) <= 10 ){ \
+						targ = hud; \
+						chp = hp; \
+					} \
+				} \
+			} \
+			targs = []; \
+			if( targ != "" && targ != llGetKey() )\
+				FX$send(targ, llGetKey(), l2s(fx,1), TEAM); \
+			if( targ != "" && targ == llGetKey() ) \
+				FX$run("", l2s(fx,1)); \
+		}
 #else
 	#define spawn Spawner$spawn
+	#define handleSmartHeal()
 #endif
+
+
 
 
 // These are INSTNAT tasks that are shared
@@ -177,24 +206,7 @@
 		if(targs&FXAF$AOE){ \
 			FX$aoe(range, llGetKey(), l2s(fx,1), TEAM); \
 		} \
-		if( targs&FXAF$SMART_HEAL ){ \
-			float s = llGetTime(); \
-			key targ; float chp = 1; \
-			runOnHUDs(hud,  \
-				smartHealDescParse(hud, resources, status, fx, team) \
-				if( team == TEAM && !(status&StatusFlags$NON_VIABLE) && !(fx&fx$UNVIABLE) ){ \
-					float hp = (float)(resources>>21&127)/127.0; \
-					if( (hp <= chp || targ == "") && llVecDist(llGetPos(), prPos(hud)) <= 10 ){ \
-						targ = hud; \
-						chp = hp; \
-					} \
-				} \
-			) \
-			if( targ != "" && targ != llGetKey() )\
-				FX$send(targ, llGetKey(), l2s(fx,1), TEAM); \
-			if( targ != "" && targ == llGetKey() ) \
-				FX$run("", l2s(fx,1)); \
-		} \
+		handleSmartHeal(); \
 	}\
 	else if(t == fx$ADD_STACKS){ \
 		FX$addStacks(LINK_ROOT, llList2Integer(fx, 1), llList2String(fx, 2), llList2Integer(fx, 3), llList2String(fx, 4), llList2Integer(fx, 5), llList2Integer(fx, 6), llList2Integer(fx, 7), llList2Integer(fx, 8), llList2Integer(fx, 9), l2f(fx,10), false); \

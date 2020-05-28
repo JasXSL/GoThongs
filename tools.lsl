@@ -149,13 +149,19 @@ if( !l2i(_data, 0) ){ \
 // Parses the data needed to compare players for a smart heal
 #define smartHealDescParse(targ, resources, status, fx, team) \
 	integer resources; integer status; integer fx; integer team;  \
-	list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
+	list _data = llGetObjectDetails(targ, (list)OBJECT_ATTACHED_POINT + OBJECT_DESC); \
 	list _split = explode("$", l2s(_data, 1));  \
-	resources = l2i(_split, 0); \
-	status = l2i(_split, 1); \
-	fx = l2i(_split, 2);  \
-	team = l2i(_split, 4);
-
+	resources = l2i(_split, StatusDesc$npc$RESOURCES); \
+	status = l2i(_split, StatusDesc$npc$STATUS); \
+	fx = l2i(_split, StatusDesc$npc$FX);  \
+	team = l2i(_split, StatusDesc$npc$TEAM); \
+	/* HUD */ \
+	if( l2i(_data, 0) ){  \
+		resources = l2i(_split, StatusDesc$pc$RESOURCES); \
+		status = l2i(_split, StatusDesc$pc$STATUS); \
+		fx = l2i(_split, StatusDesc$pc$FX); \
+		team = l2i(_split, StatusDesc$pc$TEAM); \
+	}\
 
 // Same as above but only gets sex
 #define parseSex(targ, var) \

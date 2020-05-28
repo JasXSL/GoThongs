@@ -319,13 +319,15 @@ default{
 		
 		// Gesture commands
 		if(chan == 3){ 
+		
 			// Party join
-			if(~llListFindList(["Join", "Accept", "Decline"], [message])) 
+			if( ~llListFindList(["Join", "Accept", "Decline"], [message]) ) 
 				Bridge$dialog(message); 
+			
 			// Space targeting
-			else if(message == "switch"){ 
-				Evts$cycleEnemy(); 
-			} 
+			else if( llGetSubString(message, 0, 5) == "switch" )
+				Evts$cycleEnemy(llGetSubString(message, 6, -1) == "f"); 
+			
 			
 			else if(llGetSubString(message, 0, 5) == "player"){
 			

@@ -878,7 +878,7 @@ default
 	
     // This person wants to target me
 	else if(METHOD == StatusMethod$monster_attemptTarget && ~RF&Monster$RF_NO_TARGET)
-        Root$targetMe(id, icon, (integer)method_arg(0), TEAM);
+        Root$targetMe(prRoot(id), icon, (integer)method_arg(0), TEAM);
     // Add aggro
 	else if(METHOD == StatusMethod$monster_aggro){
         ag(method_arg(0), (float)method_arg(1));

@@ -458,7 +458,7 @@ targScan( list sensed ){
 	
 	// Write to this DB
 	llSetLinkMedia(LINK_THIS, 0, [
-		PRIM_MEDIA_HOME_URL, mkarr(llList2List(T, 0, 19)), // Store 10 players
+		Evts$NEAR_DB_MEDIA, "https://"+mkarr(llList2List(T, 0, 19)), // Store 10 players
 		PRIM_MEDIA_AUTO_PLAY, false,
 		PRIM_MEDIA_PERMS_INTERACT, PRIM_MEDIA_PERM_NONE,
 		PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_NONE
@@ -545,7 +545,6 @@ default{
     }
     
 
-	// Todo: Allow friends here
 	if( METHOD == EvtsMethod$cycleEnemy && method$internal ){
 		
 		int getFriendly = l2i(PARAMS, 0) > 0;	// Param 0: Get friendly target

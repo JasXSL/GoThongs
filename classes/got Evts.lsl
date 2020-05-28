@@ -1,7 +1,10 @@
 #ifndef _gotEvts
 #define _gotEvts
 
-#define EvtsMethod$cycleEnemy 1				// void - Get a nearby enemy
+#define Evts$PRIM_NAME "EVTS"
+#define Evts$NEAR_DB_MEDIA PRIM_MEDIA_HOME_URL
+
+#define EvtsMethod$cycleEnemy 1				// (bool)friends - Get a nearby enemy
 #define EvtsMethod$startQuicktimeEvent 2	/* Starts a quick time event. Sends a callback with the first arg being one of the below tasks and the CB specified.
 	(int)numButtons, 		- Nr butttons needed to be pressed. In LR_CAN_FAIL mode this sets the speed of the bar growing, default 30% per second
 	(float)preDelay, 		- Time to wait before showing the buttons.
@@ -26,15 +29,15 @@
 	
 	
 
-#define Evts$cycleEnemy() runMethod((string)LINK_SET, "got Evts", EvtsMethod$cycleEnemy, [], TNN)
+#define Evts$cycleEnemy(friends) runMethod((string)LINK_SET, "got Evts", EvtsMethod$cycleEnemy, (list)(friends), TNN)
 #define Evt$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [numButtons, preDelay, buttonDelay, flags], callback)
 #define Evts$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags) Evt$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags)
 #define Evts$stopQuicktimeEvent(targ) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [-1], TNN);
 
-#define Evts$addTextureDesc(pid, texture, desc, added, duration, stacks, pflags) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks, pflags], TNN)
-#define Evts$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
+#define Evts$addTextureDesc(pid, texture, desc, added, duration, stacks, pflags) runMethod((string)LINK_SET, "got Evts", EvtsMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks, pflags], TNN)
+#define Evts$remTextureDesc(pid) runMethod((string)LINK_SET, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
 #define Evts$getTextureDesc(player, pid) runMethod((str)player, "got Evts", EvtsMethod$getTextureDesc, (list)pid, TNN)
-#define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)
+#define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_SET, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)
 
 string evtsStringitizeDesc( string desc, int stacks ){
 	

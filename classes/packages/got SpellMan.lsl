@@ -325,7 +325,7 @@ integer castSpell(integer nr){
 		// Set a spell to cast when we get a target
 		SPELL_ON_TARG = nr;
 		multiTimer(["Q", "", 2, FALSE]);
-		Evts$cycleEnemy();
+		Evts$cycleEnemy(FALSE);
 		return -2;
 	}
 	

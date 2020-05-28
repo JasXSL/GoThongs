@@ -10,7 +10,6 @@
 	updateGame()
 	
 */
-list PLAYER_HUDS;
 //#define USE_EVENTS
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"
@@ -81,6 +80,9 @@ integer getStacks( integer pid, integer absolute ){
 	
 }
 
+#ifndef IS_NPC
+	int P_EVTS;
+#endif
 
 default 
 {
@@ -96,7 +98,12 @@ default
 		}
 	}
 	#else
-	state_entry(){ PLAYER_HUDS = (list)((string)llGetKey()); }
+	state_entry(){ 
+		links_each(nr, name,
+			if( name == Evts$PRIM_NAME )
+				P_EVTS = nr;
+		)
+	}
 	#endif
 	
 	link_message( integer link, integer nr, string s, key id ){
@@ -112,17 +119,7 @@ default
 			str script = l2s(dta, 0);
 			if( l2s(dta,0) == "got Status" && evt == StatusEvt$team )
 				TEAM = l2i(dta,1);
-				
-			#ifdef NPC
-			if( script == "got Portal" && evt == PortalEvt$playerHUDs )
-				PLAYER_HUDS = llJson2List(l2s(dta, 1));
-			#else
-			if( script == "#ROOT" && evt == RootEvt$coop_hud ){
-				
-				PLAYER_HUDS = llListReplaceList(llJson2List(l2s(dta, 1)), (list)((str)llGetKey()), 0, 0);
 
-			}
-			#endif
 			#ifdef USE_EVENTS
 				onEvt( l2s(dta, 0), (int)((str)id), llJson2List(l2s(dta, 1)) );
 			#endif
