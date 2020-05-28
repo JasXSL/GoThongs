@@ -100,11 +100,10 @@ rotation got_n2r( rotation Q ){
 	monsterflags : int variable name to create and store monster runtime flags in. When used on a PC, these are the settings flags from got Bridge.lsl
 	armor : int variable name to create and store armor data in (use Status$splitArmor, see got Status.lsl for more info)
 */
-#define parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor) \
+#define parseDescString(input, hud, resources, status, fx, sex, team, monsterflags, armor) \
 integer resources; integer status; integer fx; integer team; integer sex; integer monsterflags; int armor; \
-{\
-list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
-list _split = explode("$", l2s(_data, 1)); \
+{ \
+list _split = explode("$", input); \
 resources = l2i(_split,StatusDesc$npc$RESOURCES); \
 status = l2i(_split,StatusDesc$npc$STATUS); \
 fx = l2i(_split,StatusDesc$npc$FX); \
@@ -112,7 +111,7 @@ team = l2i(_split,StatusDesc$npc$TEAM); \
 monsterflags = l2i(_split, StatusDesc$npc$MONSTERFLAGS); \
 sex = l2i(_split,StatusDesc$npc$SEX); \
 armor = 0; \
-if(l2i(_data, 0)){ /* HUD */ \
+if(hud){ /* HUD */ \
 	resources = l2i(_split, StatusDesc$pc$RESOURCES); \
 	status = l2i(_split, StatusDesc$pc$STATUS); \
 	fx = l2i(_split, StatusDesc$pc$FX); \
@@ -122,6 +121,11 @@ if(l2i(_data, 0)){ /* HUD */ \
 	armor = l2i(_split,StatusDesc$pc$ARMOR); \
 }\
 }
+
+
+#define parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor) \
+parseDescString(prDesc(targ), prAttachPoint(targ), resources, status, fx, sex, team, monsterflags, armor) \
+
 
 
 // Gets range add and height add. For avatars hAdd is a negative float you can add to their position to get their feet

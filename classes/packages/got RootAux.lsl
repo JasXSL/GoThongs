@@ -1,6 +1,5 @@
 list PLAYERS;
 list PLAYER_HUDS;
-list PLAYER_ICONS = ["d1f4998d-edb0-4067-da12-d651a3dbe9ac"];
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -142,9 +141,6 @@ onEvt(string script, integer evt, list data){
 		}
 		else if(evt == RLVevt$cam_unset)BFL = BFL&~BFL_CAM_SET;
 	}
-	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons)
-		PLAYER_ICONS = data;
-		
 	else if(script == "got Status" && evt == StatusEvt$flags){
 		SF = l2i(data, 0);
 		tClt();
@@ -332,10 +328,12 @@ default{
 			} 
 			
 			else if(llGetSubString(message, 0, 5) == "player"){
+			
 				integer n = (int)llGetSubString(message, 6, -1);
 				if(n >= count(PLAYER_HUDS))
 					return;
-				Root$targetThis(llList2Key(PLAYER_HUDS, n), l2s(PLAYER_ICONS, n), TRUE, -1);
+				Root$targetCoop(LINK_ROOT, l2s(PLAYER_HUDS, n));
+				
 			}
 			
 			else if(message == "reset"){resetAll();}

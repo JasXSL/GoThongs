@@ -9,12 +9,15 @@ integer BFL;
 #define BFL_LR 0x10						// We're currently pressing left right
 
 #define CARPAL_PROTECTION 0.5			// Adds a max cap on how fast you can press
+#define SENSE_RANGE 15					// Max range of space to target/vicinity checker
 
 integer TEAM = TEAM_PC;
 
-integer pointer;
-list output_cache = [];		// score, key
-list nearby_cache = [];		// key, key...
+			// Stores nearby entities
+list T;		// 00000000 score0-255, (bitarr)0 friend, (key)id
+			// Note that score is only updated when pressing space after moving.
+
+// Tracks where we were last check. If we moved out of the way, the scoring list must be rebuilt.
 vector cache_pos;
 rotation cache_rot;
 key cache_targ;
@@ -28,67 +31,20 @@ list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)dura
 
 list TARGETED_BY;	// Players currently actively targeting you
 
-#define descIsProper(desc) llGetSubString(desc, 0, 2) == "$M$" && (int)llGetSubString(desc, 3, 3) != TEAM
-
-// If FIRST is true, it will ignore current target
-output(integer first){
-
-	if( output_cache == [] ){
-	
-		integer i;
-		for(; i<llGetListLength(nearby_cache); ++i ){
-		
-			key t = l2k(nearby_cache, i);
-			vector pos = prPos(t);
-				
-			float dist = llVecDist(pos, llGetRootPosition());
-			float angle = llRot2Angle(llRotBetween(llRot2Fwd(llGetRot()), llVecNorm(pos-llGetRootPosition())))*RAD_TO_DEG;
-			float score = dist+angle/8;
-			
-			// Prevents targeting the same one again
-			if( first && t == cache_targ )
-				score = 9001;
-			output_cache += [score, llList2Key(nearby_cache, i)];
-			
-		}
-		output_cache = llListSort(output_cache, 2, TRUE);
-		
-	}
-
-	if( output_cache == [] )
-		return;
-	
-	
-	integer i;
-	for(; i<llGetListLength(output_cache); i+=2 ){
-	
-		if( pointer>=llGetListLength(output_cache)/2 )
-			pointer = 0;
-		
-		key t = llList2Key(output_cache, pointer*2+1);
-		vector pos = prPos(t);
-		list ray = llCastRay(llGetRootPosition(), pos+<0,0,.5>, [RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]);
-		
-		string desc = prDesc(t);
-		if( llList2Integer(ray, -1) <1 && descIsProper(desc) ){
-		
-			Status$monster_attemptTarget(t, true);
-			return;
-			
-		}
-		pointer++;
-		
-	}
-}
+list PLAYER_HUDS;
 
 onEvt( string script, integer evt, list data ){
 
 	if( script == "got Status" && evt == StatusEvt$team )
 		TEAM = l2i(data,0);
+		
 	else if( script == "#ROOT" ){
 	
 		if( evt == RootEvt$targ )
 			cache_targ = l2s(data, 0);
+			
+		else if( evt == RootEvt$coop_hud )
+			PLAYER_HUDS = data;
 			
 		else if( evt == evt$BUTTON_PRESS && QTE_STAGES > 0 ){
 			
@@ -405,6 +361,111 @@ ptEvt( string id ){
 	
 }
 
+// Calculate a targeting score
+int getScore( key t ){
+	
+	vector rootPos = llGetRootPosition();
+	rotation rootRot = llGetRot();
+	vector pos = prPos(t);
+	float dist = llVecDist(pos, rootPos);
+	float angle = llRot2Angle(llRotBetween(llRot2Fwd(rootRot), llVecNorm(pos-rootPos)))*RAD_TO_DEG;
+	int score = llRound(dist+angle/8*5); // Score. Lower is better
+	if( score > 0xFF )
+		score = 0xFF;
+		
+	return score;
+
+}
+
+// Updates target lists with sensed players
+targScan( list sensed ){
+
+	sensed += llDeleteSubList(PLAYER_HUDS, 0, 0);	// Do not need owner
+	
+	list t;	// Same syntax as T
+
+	int dirty;	// Checks if we must update the database
+	vector gpos = llGetRootPosition();
+	
+	// Filter
+	int i;
+	for( ; i<count(sensed); ++i ){
+	
+		key targ = l2k(sensed, i);
+		
+		list dta = llGetObjectDetails(targ, (list)OBJECT_DESC + OBJECT_ATTACHED_POINT + OBJECT_POS );
+		string desc = l2s(dta, 0);
+		vector tpos = l2v(dta, 2);
+		if( (llGetSubString(desc, 0, 2) == "$M$" || l2i(dta, 1)) && llVecDist(gpos, tpos) < SENSE_RANGE ){
+			
+			parseDescString(desc, prAttachPoint(targ), resources, status, fx, sex, team, monsterflags, armor)
+			
+			// Ignore dead and no_target
+			if( ~fx&fx$F_NO_TARGET && ~status&StatusFlag$dead ){
+			
+				int score;
+				int fr = team == TEAM;
+	
+				int pos = llListFindList(T, (list)targ);
+				if( ~pos ){
+					
+					// Get existing score
+					score = (l2i(T, pos-1)>>1)&0xF;
+					int friend = l2i(T, pos-1)&1;
+					dirty = dirty || friend != fr;	// Check if friendly status has changed
+				
+				}else{
+					
+					// List has changed and must be updated
+					dirty = true;
+					score = getScore(targ);
+					
+				}
+					
+				t += (list)(fr|(score<<1)) + targ;
+				
+			}
+			
+		}
+		
+	}
+	
+	// First compare list length for speed
+	dirty = dirty || count(T) != count(t);
+	
+	// Otherwise check if anything was deleted
+	if( !dirty ){
+	
+		for( i=0; i<count(T) && !dirty; i = i+2 ){
+			
+			if( llListFindList(t, llList2List(T, i+1, i+1)) == -1 )
+				dirty = TRUE;
+		
+		}
+
+	}
+	
+	// Nothing changed.
+	if( !dirty )
+		return;
+	
+	T = t;
+	
+	list names;
+	integer n;
+	for( ; n < count(T); n += 2 )
+		names += llKey2Name(l2k(T, n+1));
+	
+	// Write to this DB
+	llSetLinkMedia(LINK_THIS, 0, [
+		PRIM_MEDIA_HOME_URL, mkarr(llList2List(T, 0, 19)), // Store 10 players
+		PRIM_MEDIA_AUTO_PLAY, false,
+		PRIM_MEDIA_PERMS_INTERACT, PRIM_MEDIA_PERM_NONE,
+		PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_NONE
+	]);
+
+}
+
 default{
 
     state_entry(){
@@ -433,6 +494,9 @@ default{
 		
 		toggleQTE(FALSE, FALSE);
 		
+		// Every second, rebuild list of nearby viable targets
+		llSensorRepeat("", "", SCRIPTED, SENSE_RANGE, PI, 1.0);
+		
     }
     changed(integer change){
         if(change&CHANGED_REGION){
@@ -451,18 +515,18 @@ default{
     }
 	
 	sensor(integer total){
+	
+		list all;
 		integer i;
-		for(i=0; i<total; i++){
-			string desc = prDesc(llDetectedKey(i));
-			if(descIsProper(desc)){
-				nearby_cache+=llDetectedKey(i);
-			}
-			
-		}
+		for( ; i < total; ++i )
+			all += llDetectedKey(i);
+		targScan(all);
 		
-		output(TRUE);
 	}
 	
+	no_sensor(){
+		targScan([]);
+	}
 	
 	timer(){
 		ptRefresh();
@@ -480,93 +544,183 @@ default{
         return;
     }
     
-    if(method$internal){
-	
-        if(METHOD == EvtsMethod$cycleEnemy){
+
+	// Todo: Allow friends here
+	if( METHOD == EvtsMethod$cycleEnemy && method$internal ){
+		
+		int getFriendly = l2i(PARAMS, 0) > 0;	// Param 0: Get friendly target
+		
+		// Need to use the top priority target instead of cycling to the next
+		int useFirst = (
+			// Moved more than 1m
+			llVecDist(llGetRootPosition(), cache_pos)>1 || 
+			// Rotated more than 45 deg
+			llAngleBetween(llGetRot(), cache_rot)>PI/8 || 
+			// Not cached within 4 sec
+			~BFL&BFL_RECENT_CACHE
+		);
+		
+		if( useFirst ){
+		
+			// Build a new list of targets
+			BFL = BFL|BFL_RECENT_CACHE;
+			cache_pos = llGetRootPosition();
+			cache_rot = llGetRot();
 			
+			// Assign scores
+			integer i;
+			for( ; i < count(T); i += 2 ){
 			
-			if(
-				// Moved more than 1m
-				llVecDist(llGetRootPosition(), cache_pos)>1 || 
-				// Rotated more than 45 deg
-				llAngleBetween(llGetRot(), cache_rot)>PI/8 || 
-				// Not cached within 4 sec
-				~BFL&BFL_RECENT_CACHE || 
-				// Nobody nearby found
-				nearby_cache == []
-			){
-				// Build a new list of targets
-				BFL = BFL|BFL_RECENT_CACHE;
-				cache_pos = llGetRootPosition();
-				cache_rot = llGetRot();
-				nearby_cache = [];
-				output_cache = [];
-				pointer = 0;
-				llSensor("", "", SCRIPTED, 14, PI_BY_TWO);
+				int friendly = l2i(T, i)&1;
+				
+				key t = l2k(T, i+1);
+				int score = getScore(t);
+					
+				T = llListReplaceList(T, (list)(friendly|(score<<1)), i, i);
+				
 			}
-			else{
-				pointer++;
-				output(FALSE);
-			}
-			ptSet("CACHE", 4, FALSE);
+			
+			T = llListSort(T, 2, TRUE);
+			
+		}
+
+		
+		ptSet("CACHE", 4, FALSE);	// Target cache lasts 4 sec after the last spacebar hit
+
+		// Do filtering
+		list sc;	// (key)id
+			
+		rotation rootRot = llGetRootRotation();
+		vector rootPos = llGetRootPosition();
+		integer i;
+		for( ; i<count(T); i += 2 ){
+		
+			// Invalid friendly status
+			if( (l2i(T, i)&1) != getFriendly )
+				jump cycleContinue;
+				
+			key t = l2k(T, i+1);
+			vector pos = prPos(t);
+			// Can only target up to 20m
+			if( llVecDist(pos, rootPos) > 20 )
+				jump cycleContinue;
+
+			// Only allow in front
+			vector temp = (pos-rootPos)/rootRot; 
+			float ang = llFabs(llAtan2(temp.y,temp.x));
+			if( ang > PI_BY_TWO )
+				jump cycleContinue;
+				
+			// Check raycast
+			list ray = llCastRay(rootPos, pos+<0,0,.5>, RC_DEFAULT+(list)RC_DATA_FLAGS + RC_GET_ROOT_KEY);
+			key rayTarg = l2k(ray, 0);
+			if( 
+				llList2Integer(ray, -1) == 1 && 			// Hindered
+				rayTarg != t &&								// Target is nonphantom but this was not it
+				(!prAttachPoint(t) || prRoot(t) != rayTarg)	// Player is not sitting on target
+			)jump cycleContinue;
+
+			// Pass filter
+			sc += t;
+
+			@cycleContinue;
+			
 		}
 		
-		else if(
-			METHOD == EvtsMethod$addTextureDesc ||
-			METHOD == EvtsMethod$remTextureDesc ||
-			METHOD == EvtsMethod$stacksChanged
-		){
+		list names;
+		integer n;
+		for(; n<count(sc); ++n )
+			names += llKey2Name(l2k(sc, n));
+		
+		// No targets passed filter
+		if( !count(sc) )
+			return;
+		
+		
+		
+		int pointer = 0;
+		
+		if( !useFirst ){
+		
+			// Find where our current targ is in this list
+			int pos = llListFindList(sc, (list)cache_targ);
+			if( ~pos ){
 			
-			if( METHOD == EvtsMethod$addTextureDesc ){
-				// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)pflags]
-				SPELL_ICONS += 
-					// PID
-					(list)l2i(PARAMS, 0) + 
-					// Texture
-					method_arg(1) +
-					// Desc
-					method_arg(2) + 
-					// Added
-					l2i(PARAMS, 3) + 
-					// Duration
-					l2i(PARAMS, 4) + 
-					// Stacks
-					l2i(PARAMS, 5) +
-					// Flags
-					l2i(PARAMS, 6)
-				;
-			}
-			else if(METHOD == EvtsMethod$remTextureDesc){
-			
-				integer pid = l2i(PARAMS, 0);
-				integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-				if( pos == -1 )
+				// No other target available than our current target
+				if( count(sc) == 1 )
 					return;
-				
-				SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
-				
-			}
-			else{
-			
-				integer pid = (integer)method_arg(0);
-				integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-				if( pos == -1 )
-					return;
-				
-				SPELL_ICONS = llListReplaceList(SPELL_ICONS, 
-					(list)l2i(PARAMS, 1) +l2i(PARAMS, 2) + l2i(PARAMS, 3), 
-				pos*SPSTRIDE+3,pos*SPSTRIDE+5);
+				pointer = pos+1;
+				if( pointer >= count(sc) )
+					pointer = 0;
 				
 			}
+		}
+		
+		key targ = l2k(sc, pointer);
+		if( prAttachPoint(targ) )
+			Root$targetCoop(LINK_ROOT, targ);
+		else
+			Status$monster_attemptTarget(l2k(sc, pointer), true);
+		
+	}
+	
+	else if(
+		METHOD == EvtsMethod$addTextureDesc ||
+		METHOD == EvtsMethod$remTextureDesc ||
+		METHOD == EvtsMethod$stacksChanged
+	){
+		
+		if( METHOD == EvtsMethod$addTextureDesc ){
+			// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)pflags]
+			SPELL_ICONS += 
+				// PID
+				(list)l2i(PARAMS, 0) + 
+				// Texture
+				method_arg(1) +
+				// Desc
+				method_arg(2) + 
+				// Added
+				l2i(PARAMS, 3) + 
+				// Duration
+				l2i(PARAMS, 4) + 
+				// Stacks
+				l2i(PARAMS, 5) +
+				// Flags
+				l2i(PARAMS, 6)
+			;
+		}
+		else if(METHOD == EvtsMethod$remTextureDesc){
+		
+			integer pid = l2i(PARAMS, 0);
+			integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if( pos == -1 )
+				return;
 			
+			SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
 			
-			// Set textures after 0.2 sec of finishing receiving updates
-			ptSet("OP", 0.2, FALSE);
+		}
+		else{
+		
+			integer pid = (integer)method_arg(0);
+			integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
+			if( pos == -1 )
+				return;
 			
+			SPELL_ICONS = llListReplaceList(SPELL_ICONS, 
+				(list)l2i(PARAMS, 1) +l2i(PARAMS, 2) + l2i(PARAMS, 3), 
+			pos*SPSTRIDE+3,pos*SPSTRIDE+5);
 			
-        }
+		}
+		
+		
+		// Set textures after 0.2 sec of finishing receiving updates
+		ptSet("OP", 0.2, FALSE);
+		
+		
+	}
 
-    }
+    
+	
 	
 	if( METHOD == EvtsMethod$startQuicktimeEvent ){
 	

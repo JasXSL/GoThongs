@@ -543,6 +543,16 @@ default
         setTarget(method_arg(0), method_arg(1), l2i(PARAMS, 2), l2i(PARAMS, 3));
 		
     }
+	else if( METHOD == RootMethod$targetCoop ){
+		
+		key hud = method_arg(0);
+		int pos = llListFindList(COOP_HUDS, (list)hud);
+		if( pos == -1 )
+			return;
+			
+		setTarget(l2s(COOP_HUDS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
+		
+	}
 	else if( METHOD == RootMethod$setLevel ){
 	
 		key pre = ROOT_LEVEL;

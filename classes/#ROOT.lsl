@@ -14,7 +14,7 @@
 #define RootMethod$refreshTarget 10				// (key)id, Force a target refresh command if id is "" or we are currently targeting ID
 #define RootMethod$getTarget 11					// void - Callbacks the key of your current target
 #define RootMethod$refreshPlayers 69			// void - Sends the players and coop_hud event. Good for debugging.
-
+#define RootMethod$targetCoop 12				// (key)hud_id - Tries to target a coop player by HUD ID
 
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed
@@ -46,7 +46,7 @@
 #define Root$attached() llRegionSay(AOE_CHAN, (string)RUN_METHOD+":#ROOT"+llList2Json(JSON_ARRAY, [RootMethod$attached, "", llGetScriptName(), "ATTACHED"]))
 #define Root$forceRefresh(targ, id) runMethod(targ, "#ROOT", RootMethod$refreshTarget, [id], TNN)
 #define Root$getTarget(targ, cb) runMethod(targ, "#ROOT", RootMethod$getTarget, [], cb)
-
+#define Root$targetCoop(targ, hud) runMethod((str)targ, "#ROOT", RootMethod$targetCoop, (list)hud, TNN)
 
 // This is a custom call that bypasses XOBJ. Send it on AOE_CHAN and it sends back "GHD"+json_array(HUDs)
 #define Root$getHUDSLight(targ) llRegionSayTo(targ, AOE_CHAN, "GHD")

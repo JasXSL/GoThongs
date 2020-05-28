@@ -286,7 +286,6 @@ startCast(integer spid, key targ, integer isCustom){
     
     if( flags&NPCS$FLAG_LOOK_OVERRIDE ){
 	
-		qd("Setting look override, flags: "+(str)flags);
         Monster$lookOverride(targ);
 		/*
 		if( casttime<=0 )
