@@ -34,6 +34,8 @@ int cCR;
 float cMHP = 100;
 float cMMP = 50;
 
+int P_EVT;	// Stores event prim
+
 list PLAYERS;
 
 integer SF;			// Status flags
@@ -270,16 +272,34 @@ onEvt(string script, integer evt, list data){
 		// Befuddle
 		bfDmg = 1.0;
 		if( llFrand(1) < befuddle-1 && (str)SPELL_TARGS != "AOE" && (count(SPELL_TARGS) > 1 || l2s(SPELL_TARGS, 0) != "1") ){
-
-			string targ = randElem(PLAYERS);
-			if( targ == llGetOwner() )
-				SPELL_TARGS = [LINK_ROOT];
-			else if( llVecDist(llGetRootPosition(), prPos(targ)) < r )
-				SPELL_TARGS = [targ];
+			
+			vector rpos = llGetRootPosition();
+			list players = llJson2List(llGetSubString(l2s(llGetLinkMedia(P_EVT, 0, (list)Evts$NEAR_DB_MEDIA), 0), 8, -1));
+			list viable = (list)"";
+			int i;
+			for( ; i<count(players); i += 2 ){
+			
+				key t = l2s(players, i+1);
+				smartHealDescParse(t, resources, status, fx, team)
+				if( _attackableV(status, fx) && llVecDist(prPos(t), rpos ) < r )
+					viable += t;
+			
+			}
+			players = [];
+			
+			string targ = randElem(viable);
+			if( targ == "" )
+				SPELL_TARGS = (list)LINK_ROOT;
+			else
+				SPELL_TARGS = (list)targ;
 			
 			bfDmg = 0.5;
 			
 		}
+		
+		llMessageLinked(LINK_THIS, TASK_SPELL_VIS, llList2Json(JSON_ARRAY, (list)
+			SPELL_CASTED + mkarr(SPELL_TARGS)
+		), "");
 		
 		t0 = l2s(SPELL_TARGS, 0);	// original target is always the victim of the main spell, it's not overridden by self cast
 		
@@ -347,6 +367,12 @@ default{
 
 	state_entry(){
 		PLAYERS = [(str)llGetOwner()];
+		links_each( nr, name,
+			
+			if( name == Evts$PRIM_NAME )
+				P_EVT = nr;
+				
+		)
 	}
 
 	#define LM_PRE \

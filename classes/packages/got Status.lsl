@@ -1084,8 +1084,8 @@ default {
 		METHOD == StatusMethod$fullregen || 
 		(METHOD == StatusMethod$coopInteract && SF&StatusFlag$coopBreakfree)
 	){
-				
-		integer ignoreInvul = l2i(PARAMS, 0);
+		
+		int ignoreInvul = METHOD == StatusMethod$fullregen && l2i(PARAMS, 0);
         Rape$end();
         
 		if( SF&StatusFlag$dead && ! ignoreInvul ){

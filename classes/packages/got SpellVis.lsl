@@ -241,11 +241,6 @@ onEvt(string script, integer evt, list data){
         
         integer casted = l2i(data, 0);                    // Spell casted index 0-4
         list SPELL_TARGS = llJson2List(l2s(data, 3));                    // Targets casted at
-		
-        /*
-        if(!l2i(data, 4))                                        // No cooldown, just wipe the cast bar
-            stopCast(SPELL_CASTED);
-        */
         
         list visual = llList2List(FX_CACHE, casted*FXSTRIDE, casted*FXSTRIDE+FXSTRIDE-1);
 
@@ -284,35 +279,12 @@ onEvt(string script, integer evt, list data){
                 llTriggerSound(s, vol);
         )
         
-        list visuals = [llList2String(visual, fxc$rezzable)];
-        if(llJsonValueType((string)visuals, []) == JSON_ARRAY)
-            visuals = llJson2List((string)visuals);
-
-        // rez visuals
-        list_shift_each(SPELL_TARGS, val, 
-            
-            if(val == llGetKey() || val == "AOE" || val == "1")
-                val = llGetOwner();
-            
-            integer i;
-            for(i=0; i<llGetListLength(visuals); i++){
-                string v = llList2String(visuals, i); 
-                if(v){
-                    string targ = val;
-                    if(prAttachPoint(targ))
-                        targ = llGetOwnerKey(val);
-                    
-                    if( llJsonValueType(v, []) == JSON_ARRAY )
-                        SpellFX$spawnInstant(v, targ);
-                    else
-                        SpellFX$spawn(v, targ);
-                    
-                }
-            }
-        )
         onSpellEnd(casted, i2f(l2f(data, 5)));
 		
     }
+	
+	
+	
 	// Cast interrupted
     else if(script == "got SpellMan" && evt == SpellManEvt$interrupted){
 	
@@ -462,7 +434,43 @@ setAbilitySpinner( integer abil, float startPercent, float duration, integer rev
     llSetLinkTextureAnim(llList2Integer(ABILS, abil), ANIM_ON|flags, 2, 4,32, startFrame, totalFrames, total);
 }
 
+// Targets are uuids
+handleRezzed( int casted, list targets ){
+	
+	list visual = llList2List(FX_CACHE, casted*FXSTRIDE, casted*FXSTRIDE+FXSTRIDE-1);
+	
+	list visuals = [llList2String(visual, fxc$rezzable)];
+	if(llJsonValueType((string)visuals, []) == JSON_ARRAY)
+		visuals = llJson2List((string)visuals);
 
+	// rez visuals
+	list_shift_each(targets, val, 
+		
+		if( (key)val ){}
+		else
+			val = llGetOwner();
+		
+		integer i;
+		for( ; i < count(visuals); ++i ){
+		
+			string v = llList2String(visuals, i); 
+			if( v ){
+			
+				string targ = val;
+				if( prAttachPoint(targ) )
+					targ = llGetOwnerKey(val);
+				
+				if( llJsonValueType(v, []) == JSON_ARRAY )
+					SpellFX$spawnInstant(v, targ);
+				else
+					SpellFX$spawn(v, targ);
+				
+			}
+			
+		}
+	)
+
+}
 
 
 timerEvent(string id, string data){
@@ -587,7 +595,10 @@ default {
             } \
         } \
         PP(0,out); \
-    }
+    } \
+	else if( nr == TASK_SPELL_VIS ){ \
+		handleRezzed((int)j(s, 0), llJson2List(j(s, 1))); \
+	}
     
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 

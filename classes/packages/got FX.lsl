@@ -302,7 +302,12 @@ integer preCheck(key sender, list package, integer team){
 	
 	// Quick scan if we're dead or not
 	integer flags = l2i(package, PACKAGE_FLAGS);
-	if(~flags&PF_ALLOW_WHEN_DEAD && isDead()){
+	if( 
+		(~flags&PF_ALLOW_WHEN_DEAD && isDead() )
+		#ifdef IS_INVUL_CHECK
+		|| (flags&PF_DETRIMENTAL && IS_INVUL_CHECK())
+		#endif
+	){
 		return FALSE;
 	}
 	// Conditions from the package
