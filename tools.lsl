@@ -23,7 +23,7 @@
 	l2s(got$BREAST_JIGGLES, llFloor(llFrand(6)))
 
 // Triggers a breast jiggle on a target
-#define triggerBreastJiggle( targ ) AnimHandler$targAnim(targ, l2s((list)got$BREAST_JIGGLES, llFloor(llFrand(6))), true)
+#define triggerBreastJiggle( targ ) AnimHandler$targAnim(targ, l2s(got$BREAST_JIGGLES, llFloor(llFrand(6))), true)
 
 // Trigger a breast jiggle on a target but only for one breast
 #define triggerBreastJiggleSided( targ ) AnimHandler$targAnim(targ, l2s((list)\

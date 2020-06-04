@@ -518,19 +518,21 @@ default{
 			// Quick flag check on the wrapper
 			if(
 				(~flags&WF_ALLOW_WHEN_DEAD && STATUS&StatusFlag$dead) || 
-				(~flags&WF_ALLOW_WHEN_QUICKRAPE && FX_FLAGS&fx$F_QUICKRAPE) || 
+				(~flags&WF_ALLOW_WHEN_QUICKRAPE && FX_FLAGS&fx$F_QUICKRAPE && flags&WF_DETRIMENTAL) || 
 				(~flags&WF_ALLOW_WHEN_RAPED && STATUS&StatusFlag$raped) ||
 				(range > 0 && llVecDist(llGetRootPosition(), prPos(id))>range)
 				#ifdef IS_NPC
 				|| !RC
 				#endif
-			)CB_DATA = [FALSE];
-			
+			){
+				CB_DATA = [FALSE];
+			}
 			
 			// If a user defined invul function is defined
 			#ifdef IS_INVUL_CHECK
-			else if( flags&WF_DETRIMENTAL && IS_INVUL_CHECK() )
+			else if( flags&WF_DETRIMENTAL && IS_INVUL_CHECK() ){
 				CB_DATA = [FALSE];
+			}
 			#endif
 			// Check dodge
 			else if( ~flags&WF_NO_DODGE && flags&WF_DETRIMENTAL && sender != "s" && llFrand(1.0) < DOD ){
@@ -543,6 +545,7 @@ default{
 				onEvt("", INTEVENT_DODGE, []);
 				raiseEvent(FXEvt$dodge, sender);
 				CB_DATA = [FALSE];
+				
 				
 			}
 			else{

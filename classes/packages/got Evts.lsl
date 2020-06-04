@@ -654,6 +654,13 @@ default{
 				
 			}
 		}
+		else if( l2k(sc, 0) == cache_targ ){
+			// No other target than current
+			if( count(sc) < 2 )
+				return;
+			pointer = 1;
+			
+		}
 		
 		key targ = l2k(sc, pointer);
 		if( prAttachPoint(targ) )

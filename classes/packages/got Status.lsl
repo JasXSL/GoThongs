@@ -105,7 +105,8 @@ int RO;			// Thong role
 int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
 
 integer DIF = 1;	// 
-#define difMod() ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.462)
+// old ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.462)
+#define difMod() ((1.+(llPow(2, (float)DIF*.92)+DIF*3)*0.1)-0.489)
 
 
 

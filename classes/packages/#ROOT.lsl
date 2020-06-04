@@ -311,11 +311,11 @@ default
 				return;
 			
 			// The icons are split into blocks of 8
-			string targ = (string)LINK_ROOT;
+			string targ = (string)LINK_SET;
 			if( floor((float)button/8) == 1 && TARG != llGetKey() )
 				targ = TARG;
 			
-			if( TARG_IS_PC || targ == (string)LINK_ROOT )
+			if( TARG_IS_PC || targ == (string)LINK_SET )
 				Evts$getTextureDesc(targ, desc);
 			else
 				NPCInt$getTextureDesc(targ, desc);
