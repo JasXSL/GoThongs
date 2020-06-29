@@ -41,6 +41,7 @@
 #define GotAPIEvt$unbound 2	
 
 #define GotAPIMethod$list 0			// Owner only, outputs currently bound APIs in chat
+#define GotAPIMethod$getStats 1		// Gets current effect modifiers (both passive and active in a human readable form)
 
 // output actions
 #define GotAPI$actionIni 1			// void | Sent to everyone

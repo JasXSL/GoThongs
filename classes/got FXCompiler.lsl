@@ -50,7 +50,7 @@
 	#define FXCUpd$HP_ARMOR_DMG_MULTI 35	// (float)multi - Increases or decreases the chance of taking armor damage from HP damage
 	#define FXCUpd$ARMOR_DMG_MULTI 36	// (float)multi - Increases or decreases armor damage taken in general
 	#define FXCUpd$QTE_MOD 37			// (PC)(float)multi - Increases or decreases nr of clicks you have to do in a quick time event.
-	
+	#define FXCUpd$COMBAT_HP_REGEN 38	// (float)multi - Allows HP regen to continue in combat. Default 1 (gets subtracted in got Status)
 	
 // Settings that are are not multiplicative
 #define FXCUpd$non_multi (list) \
@@ -111,7 +111,7 @@
 	
 	
 // LIBRARY
-#ifndef NPC
+#ifndef IS_NPC
 	#define spawn Spawner$spawnInt
 	#define handleSmartHeal() \
 		if( targs&FXAF$SMART_HEAL ){ \

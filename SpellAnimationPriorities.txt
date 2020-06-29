@@ -7,8 +7,8 @@ CASTER ANIMATION PRIORITIES:
 
 ANIMESH MONSTER PRIORITIES:
 - Idle: 1
-- Attack: 2
-- Walk: 3
-- Hurt: 3 (only upper body)
+- Walk: 2
+- Hurt: 2 (only upper body)
+- Attack: 3
 - Attack upper body: 4
 - Death: 5

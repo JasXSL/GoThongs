@@ -23,7 +23,7 @@ if(SFp != SF){ \
 
 #define TIME_SOFTLOCK 4		// Arousal/Pain softlock lasts 3 sec
 
-#define updateCombatTimer() ptSet(TIMER_COMBAT, StatusConst$COMBAT_DURATION, FALSE)
+#define updateCombatTimer() multiTimer([TIMER_COMBAT, 0, StatusConst$COMBAT_DURATION, FALSE])
 
 integer BFL = 1;
 #define BFL_CLIMB_ROOT 4		// Ended climb, root for a bit
@@ -67,6 +67,7 @@ float fmPT = 1;					// Pain taken
 float paHT = 1;					// Healing taken from passives
 list fmHT;						// healing taken from actives [int playerID, float amount] From ACTIVE. 0 is wildcard
 float fmHR = 1;					// HP regen
+float cfmHR = 0.0;				// Combat HP regen multiplier
 float fmPR = 1;					// Pain regen
 float fmAR = 1;					// Arousal regen
 float fmAC = 1;					// Armor damage taken from damage multiplier
@@ -259,8 +260,8 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 	
 	if(fl&SMAFlag$IS_PERCENTAGE)
 		am*=maxHP();
-	
-    else if(am<0){
+	// Damage
+    else if( am < 0 ){
 	
 		// Damage taken multiplier
 		float fmdt = 1;
@@ -302,6 +303,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 	
 	float mod = fmAC*fmA;
 	if( mod > 0 ){
+	
 		float ARMOR_PER_DMG = 10.0/mod;	// every 10 points of damage reduces armor by 1
 		int aDmg = 
 			llFloor(llFabs(am)/ARMOR_PER_DMG) + 
@@ -309,6 +311,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		;
 		if( am < 0 && aDmg )
 			dArm(aDmg);
+			
 	}
     HP += am;
 	
@@ -341,12 +344,13 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 			SF = SF&~StatusFlag$raped;
 			SF = SF&~StatusFlag$coopBreakfree;
 			
+			
             raiseEvent(StatusEvt$dead, 0);
 			gotClassAtt$dead(0);
             Rape$end();
             AnimHandler$anim("got_loss", FALSE, 0, 0, 0);
 			
-			ptUnset(TIMER_BREAKFREE);
+			multiTimer([TIMER_BREAKFREE]);
 			GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
 			GUI$toggleQuit(FALSE);
 			OS(TRUE);
@@ -402,7 +406,7 @@ aAR( float am, string sn, integer flags, integer iCnv, key atkr ){
 	if( flags&SMAFlag$SOFTLOCK ){
 		
 		BFL = BFL|BFL_SOFTLOCK_AROUSAL;
-		ptSet("SL:"+(str)BFL_SOFTLOCK_AROUSAL, TIME_SOFTLOCK, 0);
+		multiTimer(["SL:"+(str)BFL_SOFTLOCK_AROUSAL, 0, TIME_SOFTLOCK, 0]);
 		
 	}
 	
@@ -446,7 +450,7 @@ aPP( float am, string sn, integer flags, integer iCnv, key atkr ){
 	if( flags&SMAFlag$SOFTLOCK ){
 		
 		BFL = BFL|BFL_SOFTLOCK_PAIN;
-		ptSet("SL:"+(str)BFL_SOFTLOCK_PAIN, TIME_SOFTLOCK, 0);
+		multiTimer(["SL:"+(str)BFL_SOFTLOCK_PAIN, 0, TIME_SOFTLOCK, 0]);
 		
 	}
     
@@ -529,12 +533,12 @@ onDeath( string customAnim, key killer ){
 			dur = 0;
 		else
 		*/
-		ptSet(TIMER_COOP_BREAKFREE, 20, FALSE);
+		multiTimer([TIMER_COOP_BREAKFREE, 0, 20, FALSE]);
 			
 	}
 	if(dur){
 	
-		ptSet(TIMER_BREAKFREE, dur, FALSE);
+		multiTimer([TIMER_BREAKFREE, 0, dur, FALSE]);
 		GUI$toggleLoadingBar((string)LINK_ROOT, TRUE, dur);
 		
 	}
@@ -662,7 +666,7 @@ onEvt( string script, integer evt, list data ){
 			integer f = (int)j(llList2String(data,1), 0);
 			if( f&StatusClimbFlag$root_at_end ){
 				
-				ptSet(TIMER_CLIMB_ROOT, 1.5, FALSE);
+				multiTimer([TIMER_CLIMB_ROOT, 0, 1.5, FALSE]);
 				BFL = BFL|BFL_CLIMB_ROOT;
 				
 			}
@@ -741,7 +745,7 @@ OS( int ic ){
 		]));
 
 		BFL = BFL|BFL_STATUS_SENT;
-		ptSet("_", 0.25, FALSE);
+		multiTimer(["_", 0, 0.25, FALSE]);
 	}
 	
 	
@@ -795,7 +799,7 @@ OS( int ic ){
 	
 }
 
-ptEvt(string id){
+timerEvent( string id, string data ){
 	
     if(id == TIMER_REGEN){
 		integer inCombat = (SF&StatusFlags$combatLocked)>0;
@@ -814,16 +818,19 @@ ptEvt(string id){
 			aMP(add, "", 0, FALSE, llGetOwner());
 		
 		// The following only regenerate out of combat
-		if( !inCombat ){
-
-			if( DEF_HP_REGEN*fmHR>0 && HP < maxHP() )
-				aHP(fmHR*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, TRUE, llGetOwner(), 0);
-			if( DEF_PAIN_REGEN*fmPR>0 && ~BFL&BFL_SOFTLOCK_PAIN && PAIN > 0 )
-				aPP(-fmPR*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
-			if( DEF_AROUSAL_REGEN*fmAR>0 && ~BFL&BFL_SOFTLOCK_AROUSAL && AROUSAL > 0 )
-				aAR(-fmAR*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
+		if( ( !inCombat || cfmHR > 0 ) && DEF_HP_REGEN*fmHR>0 && HP < maxHP() ){
+		
+			float r = fmHR;
+			if( inCombat )
+				r *= cfmHR;
+			aHP(r*DEF_HP_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, TRUE, llGetOwner(), 0);
 			
 		}
+		if( !inCombat && DEF_PAIN_REGEN*fmPR>0 && ~BFL&BFL_SOFTLOCK_PAIN && PAIN > 0 )
+			aPP(-fmPR*DEF_PAIN_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
+		if( !inCombat && DEF_AROUSAL_REGEN*fmAR>0 && ~BFL&BFL_SOFTLOCK_AROUSAL && AROUSAL > 0 )
+			aAR(-fmAR*DEF_AROUSAL_REGEN, "", SMAFlag$IS_PERCENTAGE, TRUE, llGetOwner());
+		
 		
 		OS(FALSE);
 		
@@ -886,7 +893,7 @@ default {
 	
 		PLAYERS = [(string)llGetOwner()];
         Status$fullregen();
-        ptSet(TIMER_REGEN, 1, TRUE);
+        multiTimer([TIMER_REGEN, 0, 1, TRUE]);
         llRegionSayTo(llGetOwner(), 1, "jasx.settings");
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
 		A_ARM = floor(llFrand(4));	// 0-3
@@ -897,17 +904,19 @@ default {
     }
     
     timer(){
-        ptRefresh();
+		multiTimer([]);
     }
     
 	#define LM_PRE \
-	if(nr == TASK_REFRESH_COMBAT){ \
+	if( nr == TASK_REFRESH_COMBAT ){ \
 		integer combat = SF&StatusFlag$combat; \
 		SF = SF|StatusFlag$combat; \
 		updateCombatTimer(); \
-		if(!combat)saveFlags(); \
+		if(!combat){ \
+			saveFlags(); \
+		} \
 	} \
-	if(nr == TASK_FX){ \
+	if( nr == TASK_FX ){ \
 		list data = llJson2List(s); \
         integer pre = FXF; \
 		FXF = llList2Integer(data, 0); \
@@ -918,7 +927,7 @@ default {
 			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force"); \
 		}\
 		if((pre&fx$F_FORCE_MOUSELOOK) != (FXF&fx$F_FORCE_MOUSELOOK)){\
-			ptSet(TIMER_MOUSELOOK, (float)((FXF&fx$F_FORCE_MOUSELOOK)>0)/10, TRUE); \
+			multiTimer([TIMER_MOUSELOOK, 0, (float)((FXF&fx$F_FORCE_MOUSELOOK)>0)/10, TRUE]); \
 		}\
         paDT = i2f(l2f(data, FXCUpd$DAMAGE_TAKEN)); \
         fmMR = i2f(l2f(data, FXCUpd$MANA_REGEN)); \
@@ -935,6 +944,7 @@ default {
 		fmMP = i2f(l2f(data, FXCUpd$PAIN_MULTIPLIER)); \
 		fmMPn = llList2Integer(data, FXCUpd$PAIN_ADD); \
 		fmHR = i2f(l2f(data, FXCUpd$HP_REGEN)); \
+		cfmHR = i2f(l2f(data, FXCUpd$COMBAT_HP_REGEN))-1.0;\
 		fmPR = i2f(l2f(data, FXCUpd$PAIN_REGEN)); \
 		fmAR = i2f(l2f(data, FXCUpd$AROUSAL_REGEN)); \
 		paHT = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
@@ -946,6 +956,11 @@ default {
 		MANA = maxMana()*mperc; \
         OS( TRUE ); \
     } \
+	else if( nr ==  TASK_SPELL_MODS ){ \
+		SDTM = llJson2List(j(s, 0)); \
+		fmDT = llJson2List(j(s, 1)); \
+		fmHT = llJson2List(j(s, 2)); \
+	}
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl"  
@@ -996,8 +1011,7 @@ default {
 			"HP: "+(str)HP+"/"+(str)maxHP()+"\n"+
 			"Mana: "+(str)MANA+"/"+(str)maxMana()+"\n"+
 			"Ars: "+(str)AROUSAL+"/"+(str)maxArousal()+"\n"+
-			"Pain: "+(str)PAIN+"/"+(str)maxPain()+"\n"+
-			"Dmg Taken: "+(str)paDT
+			"Pain: "+(str)PAIN+"/"+(str)maxPain()
 		);
 	}
 	
@@ -1093,7 +1107,7 @@ default {
 		
 			SF = SF|StatusFlag$invul;
 			OS(TRUE);
-			ptSet(TIMER_INVUL, 6, FALSE);
+			multiTimer([TIMER_INVUL, 0, 6, FALSE]);
 			
 		}
 		
@@ -1114,21 +1128,13 @@ default {
 		
 		
 		// Clear rape stuff
-		ptUnset(TIMER_BREAKFREE);
+		multiTimer([TIMER_BREAKFREE]);
 		GUI$toggleLoadingBar((string)LINK_ROOT, FALSE, 0);
 		GUI$toggleQuit(FALSE);
     }
     else if(METHOD == StatusMethod$get){
         CB_DATA = [SF, FXF, floor(HP/maxHP()*100), floor(MANA/maxMana()*100), floor(AROUSAL/maxArousal()*100), floor(PAIN/maxPain()*100), GF, TEAM];
     }
-    else if( METHOD == StatusMethod$spellModifiers ){
-        
-		SDTM = llJson2List(method_arg(0));
-		fmDT = llJson2List(method_arg(1));
-		fmHT = llJson2List(method_arg(2));
-
-	}
-    
 	
     else if(METHOD == StatusMethod$outputStats)
         OS(TRUE);

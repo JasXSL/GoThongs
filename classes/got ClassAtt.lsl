@@ -21,7 +21,8 @@
 #define gotClassAtt$raiseEvent(evt, args) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)evt+args, TNN)
 
 #define gotClassAtt$spellStart(customData, timeout) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$spellStart+customData+timeout, TNN)
-#define gotClassAtt$spellEnd(customData, success) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$spellEnd+customData+success, TNN)
+// CustomData is the array from dev tools spell visual ex ["A","A"]. spellVisData is an array of [(arr)targets]
+#define gotClassAtt$spellEnd(customData, success, spellVisData) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$spellEnd+ (customData) + (success) + (spellVisData), TNN)
 #define gotClassAtt$stance(stance) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$stance+stance, TNN)
 #define gotClassAtt$dead(dead) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$dead+dead, TNN)
 

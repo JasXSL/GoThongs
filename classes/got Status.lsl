@@ -180,7 +180,8 @@ if( var*amount != 0.0 ){ \
 #define StatusFlag$invul 0x400		// Invulnerable after rape
 #define StatusFlag$combat 0x800		// In combat
 #define StatusFlag$boss_fight 0x1000// In boss fight
-#define StatusFlag$coopBreakfree 0x2000	// Coop player can break you free now (challenge mode)
+#define StatusFlag$coopBreakfree 0x2000	// 8192 Coop player can break you free now (challenge mode)
+
 
 #define StatusFlags$combatLocked (StatusFlag$combat|StatusFlag$boss_fight)
 #define StatusFlags$noCast (StatusFlag$dead|StatusFlag$raped|StatusFlag$climbing)
@@ -215,7 +216,9 @@ if( var*amount != 0.0 ){ \
 #define Status$fullregenTarget(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [], TNN)
 #define Status$fullregenTargetNoInvul(targ) runMethod(targ, "got Status", StatusMethod$fullregen, [1], TNN)
 #define Status$get(targ, cb) runMethod(targ, "got Status", StatusMethod$get, [], cb)
-#define Status$spellModifiers(spell_dmg_taken_mod, dmg_taken_mod, healing_taken_mod) runMethod((string)LINK_ROOT, "got Status", StatusMethod$spellModifiers, [mkarr(spell_dmg_taken_mod), mkarr(dmg_taken_mod), mkarr(healing_taken_mod)], TNN)
+//#define Status$spellModifiers(spell_dmg_taken_mod, dmg_taken_mod, healing_taken_mod) \
+	
+
 #define Status$playerSceneDone(targ) runMethod((string)targ, "got Status", StatusMethod$playerSceneDone, [], TNN)
 
 #define Status$setSex(sex) runMethod((string)LINK_ROOT, "got Status", StatusMethod$setSex, [sex], TNN)

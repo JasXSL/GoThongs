@@ -384,7 +384,10 @@ integer preCheck(key sender, list package, integer team){
 				ang = a;
 			}
 			
-			add = llFabs(ang) < l2f(dta, 0);
+			vector tpos = prPos(sender);
+			vector gpos = llGetRootPosition();
+			tpos.z = gpos.z;
+			add = llFabs(ang) < l2f(dta, 0) || llVecDist(tpos, gpos) < 0.5;
 		
 		}
 		else if( c == fx$COND_TEAM )

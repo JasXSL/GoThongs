@@ -1,5 +1,6 @@
 #define PMATH_CONSTS _C
 #define USE_EVENTS
+#define IGNORE_CALLBACKS
 #include "got/_core.lsl"
 
 list _C;		// Math constants
@@ -41,6 +42,8 @@ list PLAYERS;
 integer SF;			// Status flags
 
 // FX
+float dtmod = 1.0;		// Damage taken modifier from PASSIVE
+float adtmod = 1.0;		// Damage taken modifier from ACTIVE (Only affects ALL damage taken mods, not spell damage taken or from a specific target)
 float bfDmg = 1;		// Befuddle damage multiplier
 float pdmod = 1;       // Damage done
 float cmod = 0;
@@ -68,6 +71,9 @@ string t0;	// First target of a targeted spell
 
 string runMath( string FX, integer index, key targ ){
 
+	if( (str)targ == (str)LINK_ROOT )
+		targ = llGetKey();
+	
 	FX = implode(targ, explode("$TARG$", FX));
 	FX = implode(t0, explode("$T0$", FX));
 	FX = implode((str)llGetKey(), explode("$SELF$", FX));
@@ -77,6 +83,7 @@ string runMath( string FX, integer index, key targ ){
 	FX = implode((str)((int)("0x"+(str)targ)), explode("$tI$", FX));
 	FX = implode((str)((int)("0x"+(str)llGetKey())), explode("$sI$", FX));
 	FX = implode((str)((int)("0x"+(str)llGetOwner())), explode("$soI$", FX));
+	
 
 	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
     list split = llParseString2List(FX, ["$MATH$","$M$"], []);
@@ -141,6 +148,8 @@ string runMath( string FX, integer index, key targ ){
 		"hpp", cHP/cMHP,
 		"mpp", cMP/cMMP,
 		
+		"dtm", dtmod*adtmod,
+		
 		// Max HP
 		"mhp", cMHP,
 		// Current MP
@@ -159,7 +168,6 @@ string runMath( string FX, integer index, key targ ){
 		
 		
     ];
-	
 	
 	
     integer i;
@@ -194,8 +202,9 @@ string runMath( string FX, integer index, key targ ){
 		
     }
 
+
 	_C = [];
-	debugCommon(implode("", split));
+	//qd(implode("", split));
     return implode("", split);
 }
 
@@ -302,6 +311,8 @@ onEvt(string script, integer evt, list data){
 		), "");
 		
 		t0 = l2s(SPELL_TARGS, 0);	// original target is always the victim of the main spell, it's not overridden by self cast
+		if( t0 == (str)LINK_ROOT )
+			t0 = llGetKey();
 		
 		// RunMath should be done against certain targets for backstab to work
 		applyWrapper(spellWrapper(SPELL_CASTED), SPELL_CASTED, SPELL_TARGS, r);
@@ -385,13 +396,20 @@ default{
 		fxFlags = l2i(data, FXCUpd$FLAGS);\
 		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\
 		bsMul = i2f(l2f(data,FXCUpd$BACKSTAB_MULTI)); \
+		dtmod = i2f(l2f(data, FXCUpd$DAMAGE_TAKEN)); \
 	} \
 	else if( nr == TASK_OFFENSIVE_MODS ){ \
 	\
 		dmod = llJson2List(j(s, 0)); \
 	\
 	} \
-
+	else if( nr ==  TASK_SPELL_MODS ){ \
+		list l = llJson2List(j(s, 1)); /* Spell damage done mod */ \
+		int pos = llListFindList(l, (list)0); \
+		adtmod = 1;\
+		if( ~pos )\
+			adtmod = l2f(l, pos+1);\
+	}
 
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 

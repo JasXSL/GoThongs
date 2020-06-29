@@ -223,6 +223,18 @@
 #define gotSoundLib$mushroom$death "b1c84e60-fcb5-0575-291d-6bf9e1c6ac13"
 
 
+#define gotSoundLib$tmfiend$spawn "4bb9ca16-a6a7-3662-41b7-2076ae3f7385"
+#define gotSoundLib$tmfiend$takehit "a0db0d96-21d8-34d3-39a7-adeec0b6b6db"
+#define gotSoundLib$tmfiend$attack "480052ef-34b5-cfcf-d3e2-bd1aff139819"
+#define gotSoundLib$tmfiend$death "e2bae45a-24f6-894f-01c3-bf3090096b3f"
+
+#define gotSoundLib$assistacle$takehit "ca47de64-fa72-c394-7b53-d126c9f46237"
+#define gotSoundLib$assistacle$attack "1ed6c159-9b6b-513f-757f-b0187cd937cd"
+#define gotSoundLib$assistacle$death "d78b59a0-4f91-3d82-6ec6-9767da63a069"
+
+
+
+
 #define gotSoundLib$spanks (list)"f8dad0f8-2ffc-ccbf-d115-8a8808722690" + "dcbfcb36-b84d-809f-c07b-cb0ab61d3cd8" + "76716856-edc6-6d7c-dbc9-7ec23723c6f6"
 #define gotSoundLib$squish (list)"b0df139c-4a16-ea66-9596-e066719ea334" + "63be71de-c17e-5aa7-a568-9e41e4cbd2c9" + "b82ed554-a4e3-cd38-2306-c3b114ec0bfc"
 

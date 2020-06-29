@@ -244,11 +244,12 @@ updateGame(){
 			spdmtm+=[n, caster, 1+llList2Float(data, i+2)*stacks];
 			
     }
-	Status$spellModifiers(
-		spdmtm, 
-		cMod(fx$DAMAGE_TAKEN_MULTI), 
-		cMod(fx$HEALING_TAKEN_MULTI)
-	); 
+
+	llMessageLinked(LINK_ROOT, TASK_SPELL_MODS, mkarr((list)
+		mkarr(spdmtm) + 
+		mkarr(cMod(fx$DAMAGE_TAKEN_MULTI)) + 
+		mkarr(cMod(fx$HEALING_TAKEN_MULTI))
+	), "");
      
     llMessageLinked(LINK_THIS, TASK_OFFENSIVE_MODS, "["+implode(",", ([
 		mkarr(cMod(fx$DAMAGE_DONE_MULTI))
@@ -286,7 +287,7 @@ updateGame(){
 		0,					// (unsupported)fov
 		stat( fx$PROC_BEN ),	// Beneficial proc chance
 		stat( fx$PROC_DET ),		// Detrimental proc chance
-		0,0					// (unsupported)armor damage
+		0,0,0,0					// (unsupported)armor damage, qtemod, hpregen
 	])), "");
 }
 

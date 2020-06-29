@@ -4,7 +4,10 @@
 list PLAYERS;
 integer chan;
 list bindings;			// (key)targ, (int)chan
+list PASSIVES;
 
+float adtmod = 1.0;		// Global active damage taken mod
+float addmod = 1.0;		// Global active damage done mod
 onEvt(string script, integer evt, list data){
 
 	if( bindings ){
@@ -52,8 +55,8 @@ timerEvent(string id, string data){
 	}
 	
 }
-default
-{
+default{
+
     state_entry(){
 	
 		PLAYERS = [(str)llGetOwner()];
@@ -76,8 +79,6 @@ default
 		list data = llJson2List(llGetSubString(message, 3, -1));
 		integer command = llList2Integer(data, 0);
 		data = llDeleteSubList(data, 0, 0);
-		
-		
 		
 		if( command == GotAPI$cmdBind || command == GotAPI$cmdUnbind ){
 		
@@ -114,15 +115,98 @@ default
 
 	}
 	
+	
+	#define LM_PRE \
+		if( nr == TASK_FX ) \
+			PASSIVES = llJson2List(s); \
+		else if( nr ==  TASK_SPELL_MODS ){ \
+			list l = llJson2List(j(s, 1)); /* Spell damage done mod */ \
+			int pos = llListFindList(l, (list)0); \
+			adtmod = 1;\
+			if( ~pos )\
+				adtmod = l2f(l, pos+1);\
+		} \
+		else if( nr == TASK_OFFENSIVE_MODS ){ \
+			list l = llJson2List(j(s, 0)); \
+			int pos = llListFindList(l, (list)0); \
+			addmod = 1;\
+			if( ~pos )\
+				addmod = l2f(l, pos+1);\
+		}
+	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
+    if( METHOD == GotAPIMethod$getStats ){
+		
+		list descs = fx$FLAG_DESCS;
+		list descsOut;
+		
+		// Dumps all passive stats
+		llOwnerSay("    :: MODIFIERS ::");
+		int f = l2i(PASSIVES, 0);
+		integer i;
+		for( ; i<32; ++i ){
+			if( f&(1<<i) )
+				descsOut += l2s(descs, i);
+		}
+		llOwnerSay("FLAGS > "+llList2CSV(descsOut));
+		descs = descsOut = [];
+		
+		llOwnerSay("RESOURCE MODIFIERS > "+
+			l2s(PASSIVES, FXCUpd$HP_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$HP_ADD)+" HP | "+
+			l2s(PASSIVES, FXCUpd$MANA_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$MANA_ADD)+" MP | "+
+			l2s(PASSIVES, FXCUpd$PAIN_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$PAIN_ADD)+" Pain | "+
+			l2s(PASSIVES, FXCUpd$AROUSAL_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$AROUSAL_ADD)+" Arousal"
+			
+		);
+		
+		
+		llOwnerSay(
+			"POWER> "+
+			(str)llRound(l2i(PASSIVES, FXCUpd$DAMAGE_DONE)*addmod)+"% Damage & Healing done | "+
+			l2s(PASSIVES, FXCUpd$HEAL_DONE_MOD)+"% Bonus healing | "+
+			l2s(PASSIVES, FXCUpd$CRIT)+"% Crit chance | "+
+			l2s(PASSIVES, FXCUpd$BACKSTAB_MULTI)+"% Damage done from  behind"
+		);
+		
+		
+		llOwnerSay(
+			"REGEN > "+
+			l2s(PASSIVES, FXCUpd$HP_REGEN)+"% HP | "+
+			l2s(PASSIVES, FXCUpd$MANA_REGEN)+"% MP | "+
+			l2s(PASSIVES, FXCUpd$PAIN_REGEN)+"% Pain | "+
+			l2s(PASSIVES, FXCUpd$AROUSAL_REGEN)+"% Arousal | "+
+			(str)(l2i(PASSIVES, FXCUpd$COMBAT_HP_REGEN)-100)+"% Combat HP Regen"
+		);
+		
+		
+		llOwnerSay("DEFENSES > "+
+			(str)(100-l2i(PASSIVES, FXCUpd$DODGE))+"% Dodge | "+	// Dodge is inverse
+			(str)llRound(l2i(PASSIVES, FXCUpd$DAMAGE_TAKEN)*adtmod)+"% Damage Taken | "+
+			l2s(PASSIVES, FXCUpd$HEAL_MOD)+"% Healing received | "+
+			l2s(PASSIVES, FXCUpd$HP_ARMOR_DMG_MULTI)+"% HP to armor damage multiplier | "+
+			l2s(PASSIVES, FXCUpd$ARMOR_DMG_MULTI)+"% Global armor damage multiplier | "+
+			l2s(PASSIVES, FXCUpd$QTE_MOD)+"% Quick time event haste"			
+		);
+		
+		llOwnerSay("BEFUDDLE CHANCE > "+l2s(PASSIVES,FXCUpd$BEFUDDLE)+"%");
+		llOwnerSay("MANA COST > "+l2s(PASSIVES, FXCUpd$MANACOST)+"%");
+		
+		llOwnerSay("PROCS > "+
+			l2s(PASSIVES,FXCUpd$PROC_BEN)+"% Beneficial proc chance | "+
+			l2s(PASSIVES,FXCUpd$PROC_DET)+"% Detrimental proc chance"
+		);
+		
+		llOwnerSay("SPEED > "+
+			l2s(PASSIVES, FXCUpd$CASTTIME)+"% cast time multiplier | "+
+			l2s(PASSIVES, FXCUpd$COOLDOWN)+"% cooldown multiplier | "+
+			l2s(PASSIVES, FXCUpd$MOVESPEED)+"% sprint regeneration | "+
+			l2s(PASSIVES, FXCUpd$SPRINT_FADE_MULTI)+"% sprint duration increase | "+
+			l2s(PASSIVES, FXCUpd$SWIM_SPEED_MULTI)+"% swim speed"			
+		);
+		
+		
+	}
 
 	if(method$byOwner && METHOD == GotAPIMethod$list && !(method$isCallback)){
 		

@@ -255,7 +255,7 @@ remEffect( integer pid, integer pflags, string pname, string fxobjs, integer tim
 		
 		// PC specific:
 		else if( t == fx$CLASS_VIS )
-			gotClassAtt$spellEnd(l2s(fx,0), -1);
+			gotClassAtt$spellEnd(l2s(fx,0), -1, 0);
 		else if( t == fx$FORCE_SIT )
 			llOwnerSay("@unsit=y,unsit=force");
 		else if( t == fx$PULL ){
@@ -332,11 +332,15 @@ updateGame(){
 			spdmtm+=[n, caster, 1+llList2Float(data, i+2)*stacks];
 			
     }
-	Status$spellModifiers(
-		spdmtm, 
-		cMod(fx$DAMAGE_TAKEN_MULTI), 
-		cMod(fx$HEALING_TAKEN_MULTI)
-	); 
+
+	llMessageLinked(LINK_ROOT, TASK_SPELL_MODS, mkarr((list)
+			mkarr(spdmtm) + 
+			mkarr(cMod(fx$DAMAGE_TAKEN_MULTI)) + 
+			mkarr(cMod(fx$HEALING_TAKEN_MULTI))
+		),
+		""
+	);
+	
 	data = [];
 
 	llMessageLinked(LINK_THIS, TASK_OFFENSIVE_MODS, mkarr(([
@@ -375,7 +379,7 @@ updateGame(){
 		CACHE_FLAGS, 		// 00 FLAGS
 		stat( fx$MANA_REGEN_MULTI ), 		// 01 MANA_REGEN
 		100, 			// 02 DAMAGE_DONE (handled in TASK_OFFENSIVE_MODS)
-		100, 			// 03 DAMAGE_TAKEN (handled in Status$spellModifiers)
+		100, 			// 03 DAMAGE_TAKEN (handled in TASK_SPELL_MODS)
 		statInverse( fx$DODGE ), 		// 04 DODGE Inverted (chance of FAILING a dodge)
 		stat( fx$CASTTIME_MULTI ), 			// 05 CASTTIME
 		stat( fx$COOLDOWN_MULTI ), 			// 06 COOLDOWN
@@ -410,7 +414,8 @@ updateGame(){
 		stat( fx$PROC_DET ),		// Detrimental proc chance
 		stat( fx$HP_ARMOR_DMG_MULTI ),
 		stat( fx$ARMOR_DMG_MULTI ),
-		stat( fx$QTE_MOD )
+		stat( fx$QTE_MOD ),
+		stat( fx$COMBAT_HP_REGEN )
 	])); 
 }
 #include "got/classes/packages/got FXCompiler.lsl"

@@ -584,7 +584,11 @@ default
 		} \
 		else if( nr == TASK_OFFENSIVE_MODS )\
 			fmDD = llJson2List(j(s, 0));  \
-		
+		else if( nr ==  TASK_SPELL_MODS ){ \
+			SDTM = llJson2List(j(s, 0)); \
+			fmDT = llJson2List(j(s, 1)); \
+			fmHT = llJson2List(j(s, 2)); \
+		}
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -850,15 +854,6 @@ default
     else if( METHOD == StatusMethod$get )
         CB_DATA = (list)SF + FF + floor(HP/maxHP) + 0 + 0 + 0 + 0 + TEAM;
     
-	
-	// Whenever spell modifiers have changed
-    else if( METHOD == StatusMethod$spellModifiers ){
-        
-		SDTM = llJson2List(method_arg(0));
-		fmDT = llJson2List(method_arg(1));
-		fmHT = llJson2List(method_arg(2));
-		
-	}
 
 	// Drop aggro from this
     else if( METHOD == StatusMethod$monster_dropAggro ){

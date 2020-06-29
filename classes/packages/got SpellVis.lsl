@@ -252,10 +252,17 @@ onEvt(string script, integer evt, list data){
         
 		
 		list p = llList2List(PARTICLE_CACHE, casted*PSTRIDE, casted*PSTRIDE+PSTRIDE-1);
+		
+		// index 3 of visual has -2 for class attach
 		if( l2i(p, 0) == -2 ){
 
+			// First block after the -2 that contains weapon trails etc
+			
+			// Use class attach visual
 			if( l2s(p, 1) )
-				gotClassAtt$spellEnd(l2s(p, 1), 1);
+				gotClassAtt$spellEnd(l2s(p, 1), 1, "["+mkarr(SPELL_TARGS)+"]");
+				
+			// Use weapon trail
 			if( l2s(p, 2) != "" )
 				Weapon$trail(l2s(p,2));
 			
@@ -290,7 +297,7 @@ onEvt(string script, integer evt, list data){
 	
 		list p = llList2List(PARTICLE_CACHE, SPELL_CASTED*PSTRIDE, SPELL_CASTED*PSTRIDE+PSTRIDE-1);
 		if( l2i(p, 0) == -2 )
-			gotClassAtt$spellEnd(l2s(p, 1), 0);
+			gotClassAtt$spellEnd(l2s(p, 1), 0, "[]");
         onSpellEnd(l2i(data,0), i2f(l2i(data, 1)));
 		
     }

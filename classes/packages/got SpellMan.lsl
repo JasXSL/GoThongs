@@ -215,49 +215,6 @@ onEvt(string script, integer evt, list data){
 }
 
 
-// This is a macro that turns flags into targets
-// Returns a list of targets or ["AOE"], or ["Q"] to queue on target change
-
-#define flagsToTargets(targets, var) \
-var = []; \
-if(targets & TARG_AOE){ \
-	var = ["AOE"]; \
-} \
-else if(targets == TARG_CASTER){ \
-	var = [LINK_ROOT]; \
-} \
-else{ \
-	key targ = CACHE_ROOT_TARGET; \
-	integer noTarg = targ == ""; \
-    if(targ == llGetOwner()){ \
-		targ = ""; \
-	} \
-     \
-	if(isset(targ) && (~targets&TARG_CASTER || (BFL&(BFL_CROUCH_HELD|BFL_QUEUE_SELF_CAST)) == 0)){ \
-        if(targets&TARG_PC && CACHE_ROOT_TARGET_TEAM == TEAM){ \
-			var = [targ]; \
-		} \
-        else if( \
-			targets&TARG_NPC && \
-			CACHE_ROOT_TARGET_TEAM != TEAM \
-		){ \
-			var = [targ]; \
-		}\
-    } \
-    else if( \
-		BFL&(BFL_QUEUE_SELF_CAST|BFL_CROUCH_HELD) && \
-		TARG_FOCUS != "" && \
-		targets&TARG_PC && \
-		(CACHE_ROOT_TARGET_TEAM != TEAM || noTarg) \
-	){ \
-		var = [TARG_FOCUS];\
-	} \
-	\
-	if(targets&TARG_CASTER && var == [])var = [LINK_ROOT]; \
-	else if(targets&TARG_NPC && !isset(targ) && SPELL_ON_TARG == -1 && var == []){ \
-		var = ["Q"]; \
-	}\
-}
 
 // This attempts to start casting a spell
 integer castSpell(integer nr){
@@ -317,8 +274,76 @@ integer castSpell(integer nr){
     }
 
     
-	// Grab targets
-	flagsToTargets(SPF, SPELL_TARGS);
+
+	SPELL_TARGS = [];
+	// AoE overrides all other
+	if( SPF & TARG_AOE ){
+		SPELL_TARGS = ["AOE"];
+	}
+	// Self only
+	else if( SPF == TARG_CASTER ){
+		SPELL_TARGS = [LINK_ROOT];
+	}
+	// Gotta check target
+	else{
+	
+		// Get key of our current target
+		key targ = CACHE_ROOT_TARGET;
+		// Check if we have a target
+		integer noTarg = targ == "";
+		// Shorten self target to ""
+		if( targ == llGetOwner() || targ == llGetKey() )
+			targ = ""; 
+
+		if( 
+			targ != "" && // target exists
+			(
+				// ~SPF&TARG_CASTER || // Not sure why this is here
+				(BFL&(BFL_CROUCH_HELD|BFL_QUEUE_SELF_CAST)) == 0
+			)
+		){
+			
+			if( 
+				// Friendly target allowed
+				(
+					SPF&TARG_PC && 
+					CACHE_ROOT_TARGET_TEAM == TEAM
+				) ||
+				// Enemy target allowed
+				(
+					SPF&TARG_NPC &&
+					CACHE_ROOT_TARGET_TEAM != TEAM
+				)
+			){
+				SPELL_TARGS = [targ];
+			}
+		}
+		// Focus target exists
+		else if(
+			BFL&(BFL_QUEUE_SELF_CAST|BFL_CROUCH_HELD) &&	// Target focus modifier set
+			TARG_FOCUS != ""
+		){
+			
+			int focusIsCaster = TARG_FOCUS == llGetOwner() || TARG_FOCUS == llGetKey();
+			if( 
+				(
+					focusIsCaster && SPF&TARG_CASTER
+				) ||
+				(
+					!focusIsCaster && SPF&TARG_PC &&			// Only friends can be focused 
+					(CACHE_ROOT_TARGET_TEAM != TEAM || noTarg)	// Friendly target is ALWAYS focus, we can use the target for that instead
+				)
+			)SPELL_TARGS = [TARG_FOCUS];
+		}
+
+		// No targets passed filter, but this can target self, so auto self cast (using a green spell on enemy)
+		if( SPF&TARG_CASTER && SPELL_TARGS == [] )
+			SPELL_TARGS = [LINK_ROOT];
+		// Already casting, but we can queue this?
+		else if( SPF&TARG_NPC && targ == "" && SPELL_ON_TARG == -1 && SPELL_TARGS == [] )
+			SPELL_TARGS = ["Q"];
+		
+	}
 	
 	// If I don't have a target and the spell requires one, try to grab one and cast on it
 	if((string)SPELL_TARGS == "Q"){

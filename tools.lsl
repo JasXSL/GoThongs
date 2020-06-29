@@ -273,7 +273,7 @@ int _attackableHUD(key HUD){
 	}
 	return _attackableV(status, fx);
 }
-	
+
 
 // Returns an array of hp, mana, arousal, pain
 #define splitResources(n) [(n>>21&127) / 127.0, (n>>14&127) / 127.0, (n>>7&127) / 127.0, (n&127) / 127.0]

@@ -37,6 +37,8 @@
 #define TASK_MONSTER_SETTINGS -1004			// See got Monster Monster$updateSettings(settings)
 #define TASK_OFFENSIVE_MODS -1005			// [(arr)[int casterID, float dmg_done_to_caster_id_mod]] | Sent as a root macro because PC handles in SpellAux, NPC handles in monster
 #define TASK_SPELL_VIS -1006				// [(int)spellIndex, (arr)targets] SpellAux handles rezzed spell visuals because of befuddle
+#define TASK_SPELL_MODS -1007				// (arr)spell_dmg_taken_mod, dmg_taken_mod, healing_Taken_mod
+
 
 // Include the XOBJ framework
 #include "xobj_core/_ROOT.lsl"

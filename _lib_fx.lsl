@@ -60,7 +60,7 @@
 		#define fx$F_CAST_WHILE_MOVING 0x1000		// 4096 PC - Allows you to cast while moving
 		#define fx$F_SHOW_GENITALS 0x2000			// 8192 PC - Renders the character naked
 		#define fx$F_DISARM 0x4000					// PC - Disables weapon graphic
-		#define fx$F_NO_INTERRUPT 0x8000			// PC - Blocks interrupts
+		#define fx$F_NO_INTERRUPT 0x8000			// 32768 - PC - Blocks interrupts
 		#define fx$F_ALWAYS_BEHIND 0x10000			// PC - All attacks made from this character are treated as from behind
 		#define fx$F_NO_PROCS 0x20000					// PC - Disables procs
 		#define fx$F_STUNNED_IMPORTANT 0x40000		// NPC - Effect stuns bosses as well
@@ -68,6 +68,33 @@
 		#define fx$F_SPELLS_MAX_RANGE 0x100000		// PC - Makes all spells cast as if they were done from max range (10m)
 		#define fx$F_IMPORTANT_DISPEL 0x200000		// 2097152 Highlight player to mark an important dispel
 		#define fx$F_NO_NUDE_PENALTY 0x400000		// 4194304 PC - Ignores nudity penalty
+
+		// Should coincide with above
+		#define fx$FLAG_DESCS (list)\
+			"Stunned" + \
+			"Pacified" + \
+			"Invulnerable" + \
+			"Rooted" + \
+			"In Scene" + \
+			"Silenced" + \
+			"Blinded" + \
+			"No Rotation" + \
+			"Blurred" + \
+			"Nontargetable" + \
+			"Non-pullable" + \
+			"No death" + \
+			"Cast while moving" + \
+			"Naked" + \
+			"Disarmed" + \
+			"Noninterruptable" + \
+			"Always backstab" + \
+			"No procs" + \
+			"Important stun" + \
+			"Forced mouselook" + \
+			"Casting at max range" + \
+			"Has important dispellable effect" + \
+			"No nude penalty"
+			
 
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
 		#define fx$UNVIABLE (fx$F_QUICKRAPE|fx$F_NO_TARGET)
@@ -146,6 +173,7 @@
 	#define fx$HP_ARMOR_DMG_MULTI 75			// (float)amount - Adds or lowers armor damage taken from HP damage
 	#define fx$ARMOR_DMG_MULTI 76				// (float)amount - Adds or lowers armor damage taken
 	#define fx$QTE_MOD 77						// (float)amount - Increases or decreases nr of clicks needed in quicktime events
+	#define fx$COMBAT_HP_REGEN 78				// (float)amount - Allow HP regen to continue in combat, multiplied by amount
 	
 // conditions
 	// Built in
