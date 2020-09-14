@@ -79,7 +79,7 @@ default
             }
             else llStopSound();
         }
-        else if(METHOD == SpellFXMethod$spawnInstant){
+        else if( METHOD == SpellFXMethod$spawnInstant ){
 		
             list data = llJson2List(method_arg(0));
             string name = llList2String(data, 0);
@@ -97,22 +97,24 @@ default
 				t = llGetOwner();
             
 			
-			
-			
-            boundsHeight(t, b)
-			vector as = llGetAgentSize(t);
-            if( as ){
-			
-				b = 0;
-				pos_offset.z *= as.z;
+			float b;	// Bounds height. 0 = ignore
+			if( ~flags&SpellFXFlag$SPI_IGNORE_HEIGHT ){
 				
+				vector as = llGetAgentSize(t);
+				if( as ){
+				
+					pos_offset.z *= as.z;
+					
+				}
+				else{
+					boundsHeight(t, height)
+					b = height;
+					parseDesc(t, resources, status, fx, sex, team, monsterflags, _a)
+					if( monsterflags & Monster$RF_ANIMESH  )
+						b /= 2;
+					pos_offset.z *= b;
+				}			
 			}
-			else{
-				parseDesc(t, resources, status, fx, sex, team, monsterflags, _a)
-				if( monsterflags & Monster$RF_ANIMESH  )
-					b /= 2;
-				pos_offset.z *= b;
-			}			
             
 			vector vrot = llRot2Euler(prRot(t));
 			if( ~flags&SpellFXFlag$SPI_FULL_ROT )

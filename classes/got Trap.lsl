@@ -6,8 +6,9 @@
 	#define Trap$fsFlags$attackable 0x2	// Allows the victim to be attackable
 	#define Trap$fsFlags$noAnims 0x4	// Do not animate
 	
+	
 #define TrapMethod$end 2			// void - Force end
-#define TrapMethod$useQTE 3			// (int)numTaps/speed, preDelay, buttonDelay, flags - Use a quicktime event. 0 numTaps disables
+#define TrapMethod$useQTE 3			// (int)numTaps/speed, preDelay, buttonDelay, flags - Use a quicktime event. 0 numTaps disables. See got Evts -> Evts$qFlags
 #define TrapMethod$anim 4			// (str)anim, (bool)start - Start or stop an animation on the victim
 
 #define TrapEvent$triggered 1
@@ -18,7 +19,7 @@
 
 
 #define Trap$useQTE(numTaps) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, [numTaps], TNN)
-#define Trap$useConfQTE(numTaps, preDelay, buttonDelay) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, (list)(numTaps)+(preDelay)+(buttonDelay), TNN)
+#define Trap$useConfQTE(numTaps, preDelay, buttonDelay, flags) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, (list)(numTaps)+(preDelay)+(buttonDelay)+(flags), TNN)
 #define Trap$useLeftRightQTE(speed, preDelay, buttonDelay) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, (list)(speed)+(preDelay)+(buttonDelay)+Evts$qFlags$LR, TNN)
 #define Trap$useLeftRightFailableQTE(speed, preDelay, buttonDelay) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, (list)(speed)+(preDelay)+(buttonDelay)+(Evts$qFlags$LR|Evts$qFlags$LR_CAN_FAIL), TNN)
 

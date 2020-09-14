@@ -98,7 +98,7 @@
 #define StatusEvt$death_hit 9				// void - HP has reached 0 but fx$F_NO_DEATH is set
 #define StatusEvt$genitals 10				// (int)genitals - Whenever genitals have changed. _core has a definition of these flags
 #define StatusEvt$loading_level 11			// [(key)level]
-#define StatusEvt$resources 12				// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain, (float)hpPerc] - PC only
+#define StatusEvt$resources 12				// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain, (float)hpPerc, (int)armor_total] - PC only
 #define StatusEvt$monster_aggro 13			// [player1, player2...] - Players who have aggroed the monster in order of max aggro
 #define StatusEvt$team 14					// (int)team - Team has been updated
 #define StatusEvt$interacted 15				// (key)id - Another player has interacted with you
@@ -110,7 +110,7 @@
 	#define Status$armorSlot$BOOTS 3
 	#define Status$armorSlot$GROIN 4
 	
-	#define Status$FULL_ARMOR 852176050		// 50 in each type
+	#define Status$FULL_ARMOR 852176050		// 50 in each type (6 bits)
 	#define Status$getArmorVal( armor, slot ) ((armor>>(slot*6))&63)
 	#define Status$setArmorVal( armor, slot, val ) armor = ((armor&~(63<<(slot*6)))|((val&63)<<(slot*6)))
 	

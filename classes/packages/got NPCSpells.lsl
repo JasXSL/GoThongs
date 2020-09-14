@@ -390,6 +390,7 @@ ptEvt(string id){
 				int fxReq = l2i(d, NPCS$SPELL_TARG_FX);
 				int statusReq = l2i(d, NPCS$SPELL_TARG_STATUS);
 				int roleReq = l2i(d, NPCS$SPELL_TARG_ROLE);
+				float angle = l2f(d, NPCS$SPELL_ROT);
                 
                 // Default to aggro_target
                 list p = [aggro_target];
@@ -408,6 +409,9 @@ ptEvt(string id){
 					
 					// Get some info about the target
 					parseDesc(targ, resources, status, fx, sex, team, rf, arm);
+					// Todo: Make it react to non-animesh NPCs some time? Worth keeping rotation to only X?
+					
+					myAngX(targ, ang)
 					
 					
                     if(
@@ -421,7 +425,8 @@ ptEvt(string id){
 						(!roleReq || roleReq&role2flag(getRoleFromSex(sex))) &&
 						(!fxReq || (fx&fxReq) == fxReq) &&
 						(!statusReq || (status&statusReq) == statusReq) &&
-						team != TEAM
+						team != TEAM &&
+						(angle == 0 || (angle < 0 && llFabs(ang) > -angle) || (angle > 0 && llFabs(ang) < angle))
 					){
                         
 						if( flags&NPCS$FLAG_REQUEST_CASTSTART ){
@@ -492,6 +497,20 @@ onSettings(list settings){
 			RUNTIME_FLAGS = l2i(dta,0);
 	}
 	
+}
+
+// turns a var ID into an index. Allowing you to find a spell by index (int) or name (anything else)
+int list2index( list v ){
+	// Find by name if ID is not int
+	if( llGetListEntryType(v, 0) != TYPE_INTEGER ){
+		integer i;
+		for(; i<count(CACHE); ++i ){
+			if( j(l2s(CACHE, i), NPCS$SPELL_NAME) == l2s(v, 0) )
+				return i;
+		}
+		
+	}
+	return l2i(v, 0);
 }
 
 default {
@@ -581,7 +600,9 @@ default {
 		list_shift_each(PARAMS, id,
 			
 			ptUnset("CD_"+id);
-			if( llListFindList(DISABLED, [(int)id]) == -1 )
+			integer n = list2index((list)id);	// Convert to integer if it is a string name
+			
+			if( llListFindList(DISABLED, (list)n) == -1 )
 				DISABLED += (int)id;
 				
 		)
@@ -633,8 +654,10 @@ default {
 	// Wipes cooldowns and enables spells
 	else if( METHOD == NPCSpellsMethod$wipeCooldown ){
 		
-		integer id = l2i(PARAMS, 0);
-		integer pos = llListFindList(cooldowns, [id]);
+		
+		integer id = list2index(PARAMS);
+		integer pos = llListFindList(cooldowns, (list)id);
+		
 		if( ~pos )
 			cooldowns = llDeleteSubList(cooldowns, pos, pos);
 		pos = llListFindList(DISABLED, (list)id);

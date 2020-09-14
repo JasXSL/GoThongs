@@ -34,6 +34,7 @@ float cPP;
 int cCR;
 float cMHP = 100;
 float cMMP = 50;
+float cArmor = 250;
 
 int P_EVT;	// Stores event prim
 
@@ -141,7 +142,7 @@ string runMath( string FX, integer index, key targ ){
 		// HEaling done multiplier
 		"h", hdmod,
 		"T", TEAM,
-		
+		"ar", cArmor,
 		// random int between 0 and 2
 		"nc", (int)llFrand(3),
 		// HP/MP percent. Faster than using a formula
@@ -227,13 +228,14 @@ onEvt(string script, integer evt, list data){
 	
 	else if(script == "got Status" && evt == StatusEvt$resources){
 	
-		// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain] - PC only
+		// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain, (float)hpPerc, (int)armor_pool] - PC only
 		cAR = llList2Float(data, 4);
 		cPP = llList2Float(data, 6);
 		cMHP = l2f(data, 1);
 		cHP = l2f(data, 0);
 		cMP = l2f(data, 2);
 		cMMP = l2f(data, 3);
+		cArmor = l2i(data, 9);
 		
 	}
 	else if(script == "got Status" && evt == StatusEvt$team)

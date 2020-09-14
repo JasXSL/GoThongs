@@ -741,7 +741,8 @@ OS( int ic ){
 			(int)MANA, (int)maxMana(), 
 			(int)AROUSAL, (int)maxArousal(), 
 			(int)PAIN,(int)maxPain(),
-			HP/maxHP()
+			HP/maxHP(),
+			(ARMOR&0x3F)+((ARMOR>>6)&0x3F)+((ARMOR>>12)&0x3F)+((ARMOR>>18)&0x3F)+((ARMOR>>24)&0x3F)	// Total points of armor
 		]));
 
 		BFL = BFL|BFL_STATUS_SENT;

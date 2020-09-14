@@ -5,7 +5,7 @@
 	#define gotAnimeshScene$cPos "pos"						// (vec)pos. Where to put the player.
 	#define gotAnimeshScene$cRot "rot"						// (rot)rotation. How to rotate the player
 	#define gotAnimeshScene$cHeight "height"				// (float)height. Height above ground to put player
-	#define gotAnimeshScene$cSound "sound"					// (arr)thrust_sounds. use [] for none, do not include to use default squish
+	#define gotAnimeshScene$cSound "sound"					// (arr)thrust_sounds (MUST be array). use [] for none, do not include to use default squish
 	#define gotAnimeshScene$cSoundVolMin "volMin"			// (float)min squish vol
 	#define gotAnimeshScene$cSoundVolMax "volMax"			// (float)max squish vol
 	#define gotAnimeshScene$cFlags "flags"					// 
@@ -14,7 +14,7 @@
 	
 #define gotAnimeshSceneMethod$orient 2				// (vec)pos, (rot)rotation - Quickly update the pos and rot of any sitting player. Good for debug.
 #define gotAnimeshSceneMethod$killByName 3				// (str)name - Kills by name
-#define gotAnimeshSceneMethod$trigger 4				// int visuals - 1 = particles, 2 = sound
+#define gotAnimeshSceneMethod$trigger 4				// int visuals - 1 = particles, 2 = sound - Trigger default particles or sounds (splat)
 
 
 #define gotAnimeshSceneEvt$thrust 1					// void - Raised when a thrust starts

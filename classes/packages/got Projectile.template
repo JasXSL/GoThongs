@@ -17,6 +17,10 @@ relies on the following functions and definitions
 	// Impact particles
 	boom(){}
 	
+	// Optional defines:
+	//#define timerEvt(id, data) timerEvt(id, data)
+	//#define NO_DEATH
+	
 	#include "got/classes/packages/got Projectile.template"
 	
 	description:
@@ -134,7 +138,7 @@ STEP(){
 		
 	}
 	
-    if(dist<.3){
+    if( dist < .3 ){
 	
         llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
 		boom();
@@ -154,9 +158,11 @@ STEP(){
 			NPCInt$hitfx(TARGET);
 		#endif
 		llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
+		#ifndef NO_DEATH
         llSleep(2);
         llDie();
 		llSleep(2);
+		#endif
 		
     }
     
@@ -196,6 +202,11 @@ STEP(){
 }
 
 timerEvent(string id, string data){
+	
+	#ifdef timerEvt
+		timerEvt(id, data);
+	#endif
+
     if(id == "FAIL"){
 		DeathDebug("Dying because of death timer");
 		llDie();

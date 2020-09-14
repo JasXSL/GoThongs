@@ -39,8 +39,20 @@ list localConfAnims;
 string localConfIdle;					
 #define localConfCacheAnims() integer i; for(i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION); i++){string n = llGetInventoryName(INVENTORY_ANIMATION, i); if(localConfIdle){if(n != localConfIdle && llGetSubString(n, 0, llStringLength(localConfIdle)-1) == localConfIdle){localConfAnims+=n;}}else if(llGetSubString(n, -2, -1) == "_1"){localConfIdle = llGetSubString(n, 0, -3); i=0;}}
 									
-#define LocalConf$npc$addSpell(flags, casttime, recast, range, name, minrange, targSex, targFX, statusFlags, viableRoles) \
-	SPELLS += NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFX, statusFlags, viableRoles)
+/*
+	Flags: Defined in got NPCSpells NPCS$FLAG_*
+	Casttime: Float in seconds
+	Recast: Recast time, float, seconds
+	Range: Float range in meters
+	Name: str name of spell
+	Minrange: min range float in meters. Meaning player must be further than this range to be targeted.
+	TargSex: Sex flags that ALL must be present on target (see _core.lsl)
+	TargFX: FX flags that ALL must be present on the target (see got FX.lsl)
+	StatusFlags: Status flags that ALL must be present on the target (see got Status.lsl)
+	Radius: Float radius the player must be within. Use negative for inverse. PI_BY_TWO = Player must be in front. -PI_BY_TWO = Player must be behind
+*/
+#define LocalConf$npc$addSpell(flags, casttime, recast, range, name, minrange, targSex, targFX, statusFlags, viableRoles, radius) \
+	SPELLS += NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFX, statusFlags, viableRoles, radius)
 
 
 #define LocalConf$grapple( targ ) runMethod((str)LINK_THIS, "got LocalConf", LocalConfMethod$grapple, (list)(targ), TNN)

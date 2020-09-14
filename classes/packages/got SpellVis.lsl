@@ -199,7 +199,7 @@ onEvt(string script, integer evt, list data){
 		
 		// Send to class specific visuals
 		if( l2i(p, 0) == -2 )
-			gotClassAtt$spellStart(l2s(p, 1), ct+1);
+			gotClassAtt$spellStart(l2s(p, 1), (ct+1), l2s(data, 1));
 		// Send to global thongmanager
 		else if( llList2String(p, fxp$particles) != "" )
 			ThongMan$particles(ct+1, l2i(p, fxp$prim), l2s(p, fxp$particles));

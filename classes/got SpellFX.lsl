@@ -10,9 +10,10 @@
 #define SpellFXMethod$remInventory 5	// [(arr)assets]
 #define SpellFXMethod$fetchInventory 6	// (arr)assets || (str)asset - Owner only, attempts an inventory give
 
-#define SpellFXFlag$SPI_FULL_ROT 1		// Don't limit rotation to Z
-#define SpellFXFlag$SPI_TARG_IN_REZ 2	// Compiles the hex value of the first 8 characters of target's character key as the rez value. Used in hunter arrows.
-#define SpellFXFlag$SPI_SPAWN_FROM_CASTER 4	// Use the caster for offsets, not target
+#define SpellFXFlag$SPI_FULL_ROT 0x1			// Don't limit rotation to Z
+#define SpellFXFlag$SPI_TARG_IN_REZ 0x2			// (PC only) Compiles the hex value of the first 8 characters of target's character key as the rez value. Used in hunter arrows.
+#define SpellFXFlag$SPI_SPAWN_FROM_CASTER 0x4	// (PC only) Use the caster for offsets, not target
+#define SpellFXFlag$SPI_IGNORE_HEIGHT 0x8		// Use the given Z coordinate instead of multiplying it by the user
 
 
 #define SpellFX$spawn(obj, targ) runMethod((string)LINK_ALL_OTHERS, "got SpellFX", SpellFXMethod$spawn, [obj, targ], TNN)

@@ -22,8 +22,11 @@
 #define getRandomBreastJiggle() \
 	l2s(got$BREAST_JIGGLES, llFloor(llFrand(6)))
 
+
 // Triggers a breast jiggle on a target
 #define triggerBreastJiggle( targ ) AnimHandler$targAnim(targ, l2s(got$BREAST_JIGGLES, llFloor(llFrand(6))), true)
+
+#define triggerButtJiggle( targ ) AnimHandler$targAnim(targ, l2s(got$BUTT_JIGGLES, llFloor(llFrand(2))), true)
 
 // Trigger a breast jiggle on a target but only for one breast
 #define triggerBreastJiggleSided( targ ) AnimHandler$targAnim(targ, l2s((list)\
@@ -182,7 +185,7 @@ integer var = 0; \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 6);
 	
-// Same as above but only gets flags
+// Same as above but only gets status flags
 #define parseFlags(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \

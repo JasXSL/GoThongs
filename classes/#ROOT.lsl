@@ -48,7 +48,7 @@
 #define Root$getTarget(targ, cb) runMethod(targ, "#ROOT", RootMethod$getTarget, [], cb)
 #define Root$targetCoop(targ, hud) runMethod((str)targ, "#ROOT", RootMethod$targetCoop, (list)hud, TNN)
 
-// This is a custom call that bypasses XOBJ. Send it on AOE_CHAN and it sends back "GHD"+json_array(HUDs)
+// This is a custom call that bypasses XOBJ. Send it on AOE_CHAN and it sends back "GHD"+json_array(HUDs) on the same channel
 #define Root$getHUDSLight(targ) llRegionSayTo(targ, AOE_CHAN, "GHD")
 
 #endif

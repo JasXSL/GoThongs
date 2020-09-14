@@ -43,12 +43,14 @@ onEvt(string script, integer evt, list data){
             cooldown = l2f(data,0);
             cooldown_full = l2f(data,1);
 			attachments = llJson2List(l2s(data, 2));
+			debugUncommon("Got ini data: "+(str)cooldown+" :: "+(str)cooldown_full+" :: "+mkarr(attachments));
 			
         }
 		
     }
 	
 	else if((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame){
+	
 		list split = llParseString2List(llList2String(data,0), [";"], []);
 		string type = llList2String(split, 0);
 		string val = llList2String(split, 1);

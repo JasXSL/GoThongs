@@ -4,7 +4,7 @@
 #define NPCSpellsMethod$setSpells 1			// Array of spell objects, see below
 #define NPCSpellsMethod$interrupt 2			// (int)force
 #define NPCSpellsMethod$startCast 3			// (int)id - Returns true/false
-#define NPCSpellsMethod$wipeCooldown 4		// (int)id - -1 is all
+#define NPCSpellsMethod$wipeCooldown 4		// (int/str)id - -1 is all
 #define NPCSpellsMethod$setOutputStatusTo 5	// Sets players that are currently targeting this monster
 #define NPCSpellsMethod$setConf 6			// (float)max_spells_per_sec
 #define NPCSpellsMethod$silence 7		// (int)silence - Silence
@@ -38,8 +38,9 @@
 #define NPCS$SPELL_TARG_FX 7		// FX Flags needed on target, 0 ignores
 #define NPCS$SPELL_TARG_STATUS 8	// Status flags needed on target, 0 ignores
 #define NPCS$SPELL_TARG_ROLE 9		// Bitwise combination (use role2flag) of viable specs
+#define NPCS$SPELL_ROT 10			// Float radius. Use negative for inverse. PI_BY_TWO = I must be in front of the target, -PI_BY_TWO = I must be behind
 
-#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags, viableRoles) llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags)+(viableRoles))
+#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags, viableRoles, rot) llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags)+(viableRoles)+(rot))
 
 // Spell is the spell index, targ is the target (converted to owner key if attached), real is either same as targ or the HUD itself
 #define NPCSpellsEvt$SPELL_CAST_START 1				// (int)spell, (key)targ, (key)real, (str)spellName
@@ -52,7 +53,7 @@
 #define NPCSpells$setConf(conf)	runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setConf, conf, TNN)
 #define NPCSpells$interrupt( force ) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$interrupt, (list)(force), TNN)
 #define NPCSpells$startCast(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$startCast, [id], TNN)
-#define NPCSpells$wipeCooldown(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$wipeCooldown, [id], TNN)
+#define NPCSpells$wipeCooldown(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$wipeCooldown, (list)(id), TNN)
 #define NPCSpells$setOutputStatusTo(targs) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setOutputStatusTo, targs, TNN)
 #define NPCSpells$silence(silenced) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$silence, [silenced], TNN)
 #define NPCSpells$customCast(flags, casttime, name, targ) runMethod((str)LINK_THIS, "got NPCSpells", NPCSpellsMethod$customCast, [flags, casttime, name, targ], TNN)

@@ -23,6 +23,7 @@ spawnEffects(){
 		}
 		
 		if(exists){
+		
 			// Now we can spawn
             string name = llList2String(data, 0);
             vector pos_offset = (vector)llList2String(data, 1);
@@ -33,21 +34,29 @@ spawnEffects(){
 				startParam = 1;
 			
 			boundsHeight(llGetKey(), b)
-			if( RF&Monster$RF_ANIMESH ){
-				pos_offset.z = hoverHeight;
+			vector footPos = llGetRootPosition();
+			if( RF&Monster$RF_ANIMESH )
+				footPos.z -= hoverHeight;
+				
+			if( ~flags&SpellFXFlag$SPI_IGNORE_HEIGHT ){
+				if( RF&Monster$RF_ANIMESH ){
+					pos_offset.z *= hoverHeight;
+					
+				}
+				else
+					pos_offset.z = pos_offset.z*b+b/2;
 			}
-			else{
-				pos_offset.z = pos_offset.z*b+b/2;
-			}			
+			
             
 			vector vrot = llRot2Euler(llGetRootRotation());
-			if(~flags&SpellFXFlag$SPI_FULL_ROT)
+			if( ~flags&SpellFXFlag$SPI_FULL_ROT )
 				vrot = <0,0,-vrot.x>;
 			rotation rot = llEuler2Rot(vrot);
 			
-			vector to = llGetRootPosition()+pos_offset*rot;
+			vector to = footPos+pos_offset*rot;
 			
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
+			
 		}
 	}
 	

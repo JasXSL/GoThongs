@@ -379,10 +379,23 @@ integer preCheck(key sender, list package, integer team){
 		else if( c == fx$COND_CASTER_ANGLE ){
 		
 			myAngZ(sender, ang)
-			if( llGetAgentSize(sender) != ZERO_VECTOR || l2i(llGetObjectDetails(sender, [OBJECT_ATTACHED_POINT]),0) ){
-				myAngX(sender, a)
-				ang = a;
+			myAngX(sender, a)
+			
+			int n = -1;
+			if( llGetAgentSize(sender) != ZERO_VECTOR ){
+			
+				parseMonsterFlags(sender, flags)
+				n = flags;
+				
 			}
+			
+			// Use X angle if:
+			if( 
+				n == -1 || // Avatar
+				n & Monster$RF_ANIMESH ||	// Animesh
+				l2i(llGetObjectDetails(sender, [OBJECT_ATTACHED_POINT]),0) // Attached
+			)ang = a;
+			
 			
 			vector tpos = prPos(sender);
 			vector gpos = llGetRootPosition();

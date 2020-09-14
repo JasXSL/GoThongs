@@ -125,7 +125,7 @@
 	#define fx$TAUNT 35							// (bool)inverse - NPC ONLY, resets everyone but this player's aggro. If inverse is set, reset this player's aggro only
 	#define fx$REM 36							// Accepts the same arguments as FX$rem at got FX.lsl
 	#define fx$PULL 37							// (vec)pos, (float)speed - PC only. (Use PF_TRIGGER_IMMEDIATE) Instant effect but is cleared on effect fade for duration effects
-	#define fx$SPAWN_VFX 38						// (str)name, (vec)posOffset, (rot)rotoffset, (int)flags, (int)startParam - PC only. Spawns a visual effect from the SpellFX container on the HUD
+	#define fx$SPAWN_VFX 38						// (str)name, (vec)posOffset, (rot)rotoffset, (int)flags, (int)startParam - PC only. Spawns a visual effect from the SpellFX container on the HUD. Flags are defined in got SpellFX.lsl
 	#define fx$REGION_SAY 39					// (int)chan, (str)message, (int)flags - Does what it says on the box
 		#define fx$RSFlag$to_owner 0x1				// RegionSayTo to owner
 		// You can use the following consts

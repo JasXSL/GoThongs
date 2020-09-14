@@ -41,13 +41,13 @@
 	Events (these are preprocessor macros:
 	#define onInit( int live ) | Raised on state entry and when portal initializes
 	#define onSpellSetup() | Add spells. Use:
-		LocalConf$npc$addSpell( int flags, float casttime, float recast, float range, string name, float minrange, int targSex, int targFX, int targStatusFlags);
+		LocalConf$npc$addSpell( int flags, float casttime, float recast, float range, string name, float minrange, int targSex, int targFX, int targStatusFlags, int viableRoles, float radius);
 	#define onAggroChange( key pre, key new ) | Aggro has changed
 	#define onDeath() | NPC has died
 
-	#define onSpellStart( int spell, key targ )
-	#define onSpellInterrupt( int spell, key targ )
-	#define onSpellFinish( int spell, key targ )
+	#define onSpellStart( str spell, key targ )
+	#define onSpellInterrupt( str spell, key targ )
+	#define onSpellFinish( str spell, key targ )
 	#define timerEvent( str id, str data )
 	#define onEvent(string script, integer evt, list data)
 	#define afterEvent(string script, integer evt, list data)
@@ -371,15 +371,15 @@ onEvt(string script, integer evt, list data){
 
 		#ifdef onSpellStart
         if( evt == NPCSpellsEvt$SPELL_CAST_START )
-            onSpellStart(l2i(data, 0), l2s(data, 2));
+            onSpellStart(l2s(data, 3), l2s(data, 2));
 		#endif
         #ifdef onSpellFinish
 		if( evt == NPCSpellsEvt$SPELL_CAST_FINISH )
-            onSpellFinish(l2i(data, 0), l2s(data, 2));
+            onSpellFinish(l2s(data, 3), l2s(data, 2));
 		#endif
 		#ifdef onSpellInterrupt
         if( evt == NPCSpellsEvt$SPELL_CAST_INTERRUPT )
-            onSpellInterrupt(l2i(data, 0), l2s(data, 2));
+            onSpellInterrupt(l2s(data, 3), l2s(data, 2));
 		#endif
     }
 
