@@ -9,6 +9,7 @@
 #define ProjectileDesc$speed 2					// Base speed multiplier
 #define ProjectileDesc$wiggleIntensity 3		// Wiggle the projectile. Recommended value is 0.5, intensity will be randomized with -+50%
 #define ProjectileDesc$heightOffset 4
+#define ProjectileDesc$arc 5					// Similar to wiggle but creates an arc
 
 #define ProjectileEvt$gotTarget 1		// (key)target
 #define ProjectileEvt$targetReached 2	// (key)target - You now have 2 sec to do something before the object removes

@@ -19,7 +19,7 @@ list CACHE;
 
 #define nrToIndex(nr) nr*CSTRIDE
 //#define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
-#define difDmgMod() llPow(0.9, DIF)
+#define difDmgMod() SpellAux$difficultyDamageDoneMofidier(DIF)
 
 integer DIF;	// difficulty
 

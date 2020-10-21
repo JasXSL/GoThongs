@@ -107,8 +107,9 @@ int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
 
 integer DIF = 1;	// 
 // old ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.462)
-#define difMod() ((1.+(llPow(2, (float)DIF*.92)+DIF*3)*0.1)-0.489)
 
+// Difficulty damage modifier
+#define difMod() Status$difficultyDamageTakenModifier(DIF)
 
 
 // Runs conversion
@@ -702,12 +703,13 @@ float cM;		// cache Mana
 float cA;		// cache Arousal
 float cP;		// cache Pain
 integer cC;		// cache Clothes (armor)
+integer cD;		// Cache difficulty
 
 // output stats
 // ic = ignore cache check
 OS( int ic ){ 
 
-	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR && PF == SF )
+	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR && PF == SF && DIF == cD )
 		return;
 			
 	cH = HP;
@@ -761,7 +763,7 @@ OS( int ic ){
 	integer a = ARMOR;
 	if( FXF & fx$F_SHOW_GENITALS )
 		a = 0;
-	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)(GF|(RO<<16))+"$"+(str)t+"$"+(str)US+"$"+(str)a);
+	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)(GF|(RO<<16)|(DIF<<18))+"$"+(str)t+"$"+(str)US+"$"+(str)a);
 	
 	// Team change goes after because we need to update description first
 	if(pre != t){
@@ -987,6 +989,7 @@ default {
 			raiseEvent(StatusEvt$difficulty, DIF);
 			
 			if(DIF != pre){
+			
 				list names = [
 					"Casual", 
 					"Normal", 
@@ -997,6 +1000,8 @@ default {
 				];
 				
 				Alert$freetext(LINK_THIS, "Difficulty set to "+llList2String(names, DIF), TRUE, TRUE);
+				OS(FALSE);
+				
 			}
 		
 		}

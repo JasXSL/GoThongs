@@ -1,5 +1,6 @@
 // Fxs
 /*
+	These are ACTIVE effects. When building passives, use got FXCcmpiler.lsl
 	
 	A note about the values that say multiply_by
 	This is an offset from zero. So if you wanted to reduce damage taken by 30%, you would set the value to -0.3

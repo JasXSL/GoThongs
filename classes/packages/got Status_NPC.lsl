@@ -372,7 +372,7 @@ outputStats( integer f ){
 #define onEvt(script, evt, data) \
 	if( script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players) ){ \
         PLAYERS = data; \
-		if(AR){ \
+		if( AR > 0 && portalConf$live ){ \
 			ptSet("A", 1, TRUE); \
 		} \
     } \
@@ -858,14 +858,21 @@ default
 	// Drop aggro from this
     else if( METHOD == StatusMethod$monster_dropAggro ){
 	
-		key player = method_arg(0);
-		integer complete = l2i(PARAMS, 0);
-		integer pos = llListFindList(AG, [player]);
-		if(~pos){
-			if(complete == 3)AG = llListRandomize(AG, AGGRO_STRIDE);
-			else if(complete == 2)AG = llListReplaceList(AG, [llFrand(10)], pos-1, pos-1);
-			else if(complete)AG = llDeleteSubList(AG, pos-1, pos+AGGRO_STRIDE-2);
-			else AG = llListReplaceList(AG, [llList2Integer(AG, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
+		// sending ALL will reset all aggro
+		if( method_arg(0) == "ALL" ){
+			AG = [];
+		}
+		else{
+		
+			key player = method_arg(0);
+			integer complete = l2i(PARAMS, 0);
+			integer pos = llListFindList(AG, [player]);
+			if(~pos){
+				if(complete == 3)AG = llListRandomize(AG, AGGRO_STRIDE);
+				else if(complete == 2)AG = llListReplaceList(AG, [llFrand(10)], pos-1, pos-1);
+				else if(complete)AG = llDeleteSubList(AG, pos-1, pos+AGGRO_STRIDE-2);
+				else AG = llListReplaceList(AG, [llList2Integer(AG, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
+			}
 		}
 		ag("",0);
 		

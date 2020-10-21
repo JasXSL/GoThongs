@@ -1,5 +1,10 @@
 #ifndef _gotFXCompiler
 #define _gotFXCompiler
+/*
+	These are PASSIVE effects.
+	When building active effects sent to got FX, see _lib_fx.lsl in the root folder
+
+*/
 
 #define FXCFlag$STUNNED 1
 

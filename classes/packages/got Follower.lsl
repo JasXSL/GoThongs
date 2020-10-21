@@ -192,29 +192,40 @@ lookAt( vector pos ){
 
 
 onEvt(string script, integer evt, list data){
+
     if(script == "got Monster"){
-		if(evt == MonsterEvt$state){
+	
+		if( evt == MonsterEvt$state )
 			STATE = l2i(data, 0);
-			if(STATE != MONSTER_STATE_IDLE)
-				BFL = BFL&~BFL_WALKING;
+
+		else if( evt == MonsterEvt$inRange && BFL&BFL_WALKING ){
+		
+			BFL = BFL&~BFL_WALKING;
+			MaskAnim$stop("walk");
+			
 		}
-		else if(evt == MonsterEvt$runtimeFlagsChanged)
+		
+		else if( evt == MonsterEvt$runtimeFlagsChanged )
 			MONSTER_FLAGS = l2i(data, 0);
 		
     }
 	
 	else if(script == "got Status"){
-		if(evt == StatusEvt$flags){
+	
+		if( evt == StatusEvt$flags )
 			STATUS_FLAGS = l2i(data, 0);		
-		}
-		else if(evt == StatusEvt$dead){
+		
+		else if( evt == StatusEvt$dead ){
+		
 			STATUS_FLAGS = STATUS_FLAGS|StatusFlag$dead;		// Prevents sliding after death
-			if(l2i(data, 0) && MONSTER_FLAGS&Monster$RF_NO_DEATH){
+			if( l2i(data, 0) && MONSTER_FLAGS&Monster$RF_NO_DEATH )
 				multiTimer(["REVIVE", "", 15, FALSE]);
-			}
-			else if(!l2i(data, 0))
+			
+			else if( !l2i(data, 0) )
 				multiTimer(["REVIVE"]);
+				
 		}
+		
 	}
 	
 	
@@ -222,8 +233,9 @@ onEvt(string script, integer evt, list data){
 
 
 onSettings(list settings){ 
+
 	integer flagsChanged;
-	while(settings){
+	while( settings ){
 		integer idx = l2i(settings, 0);
 		list dta = llList2List(settings, 1, 1);
 		settings = llDeleteSubList(settings, 0, 1);
@@ -248,19 +260,26 @@ onSettings(list settings){
 
 
 timerEvent(string id, string data){
-	if(id == "tick"){
+
+	if( id == "tick" ){
+	
 		// Only allow when follower is idle
-		if(stopOnCheck())
+		if( stopOnCheck() )
 			return;
 		
 		
 		vector point = targetPos();
-		if(point == ZERO_VECTOR){
-			if(BFL&BFL_HAS_TARGET){
+		if( point == ZERO_VECTOR ){
+		
+			if( BFL&BFL_HAS_TARGET ){
+			
 				raiseEvent(FollowerEvt$targetLost, "");
 				BFL = BFL&~BFL_HAS_TARGET;
+				
 			}
+			
 			return;
+			
 		}
 		
 		BFL = BFL|BFL_HAS_TARGET;
@@ -277,7 +296,7 @@ timerEvent(string id, string data){
 		
 			list los = llCastRay(gpos+<0,0,1>, point+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 			
-			if(l2i(los, -1) == 0){
+			if( l2i(los, -1) == 0 ){
 			
 				vector dir = llVecNorm(<point.x, point.y, 0>-<gpos.x, gpos.y, 0>);
 				success = moveInDir(dir, dist/2);	// Move faster if far away
@@ -306,10 +325,12 @@ timerEvent(string id, string data){
 
 		}
 		
-		if(!success && BFL&BFL_WALKING){
+		if( !success && BFL&BFL_WALKING ){
+		
 			BFL = BFL&~BFL_WALKING;
 			llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
 			MaskAnim$stop("walk");
+			
 		}
 		
 	}

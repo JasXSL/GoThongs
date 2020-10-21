@@ -4,6 +4,7 @@
 // Monsters
 #define LocalConfMethod$ini 0					// Sends out the LocalConfEvt$iniData event
 
+
 #define LocalConfMethod$startSpell 1			// (int)id
 #define LocalConfMethod$interruptSpell 2		// (int)id
 #define LocalConfMethod$finishSpell 3			// (int)id

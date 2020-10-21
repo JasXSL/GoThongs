@@ -283,7 +283,7 @@ default{
     else if( METHOD == NPCIntMethod$rapeMe ){
 
 
-		if( RF & Monster$RF_INVUL && !(RF&(Monster$RF_IS_BOSS|Monster$RF_ALWAYS_RAPE)) )
+		if( RF & Monster$RF_INVUL && !(RF&(Monster$RF_IS_BOSS|Monster$RF_ALWAYS_R)) )
 			return;
 			
         parseDesc(id, resources, status, fx, sex, team, mf, void);

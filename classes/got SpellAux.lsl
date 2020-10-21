@@ -22,4 +22,7 @@
 
 #define SpellAux$tunnel( wrapper, targets, range, tunnelFlags ) runMethod((str)LINK_ROOT, "got SpellAux", SpellAuxMethod$tunnel, (list)wrapper + mkarr(targets) + range + tunnelFlags, TNN)
 
+
+#define SpellAux$difficultyDamageDoneModifier( DIF ) llPow(0.9, DIF)
+
 #endif

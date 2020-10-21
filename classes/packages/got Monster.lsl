@@ -181,14 +181,20 @@ anim(string anim, integer start){
 	}
 }
 
-toggleMove(integer on){
-    if(on && ~BFL&BFL_MOVING && ~BFL&BFL_STOPON && ~getRF()&Monster$RF_IMMOBILE){
+toggleMove( integer on ){
+
+    if( on && ~BFL&BFL_MOVING && ~BFL&BFL_STOPON && ~getRF()&Monster$RF_IMMOBILE ){
+	
         BFL = BFL|BFL_MOVING;
         anim("walk", true);
-    }else if(!on && BFL&BFL_MOVING){
+		
+    }
+	else if( !on && BFL&BFL_MOVING ){
+	
         BFL = BFL&~BFL_MOVING;
         anim("walk", false);
         llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
+		
     }
 }
 
@@ -550,28 +556,35 @@ onEvt(string script, integer evt, list data){
 		setAttackCooldown();
 	}
 
-    if(script == "got Portal" && evt == evt$SCRIPT_INIT){
+    if( script == "got Portal" && evt == evt$SCRIPT_INIT ){
+	
         rezpos = llGetRootPosition();
         
+		if( !portalConf$live )
+			return;
         LocalConf$ini();
 		multiTimer(["INI", "", 5, FALSE]);	// Some times localconf fails, I don't know why
+		
     }
     
 	// Tunnels legacy into the new command
-    if(script == "got LocalConf" && evt == LocalConfEvt$iniData){
+    if( script == "got LocalConf" && evt == LocalConfEvt$iniData ){
+	
 		multiTimer(["INI"]);
 		list out = [];	// Strided list
 		integer i;
-		for(i=0; i<count(data); i++){
-			if(isset(l2s(data,i))){
+		for( ; i<count(data); i++ ){
+		
+			if( isset(l2s(data,i)) )
 				out+= [i]+llList2List(data, i, i);
-			}
+			
 		}
 		
 		// Description should be applied first if received from localconf. 
 		// Custom updates sent directly through Monster$updateSettings should be sent after initialization to prevent overwrites
 		string override = portalConf$desc;
-		if(isset(override)){
+		if( isset(override) ){
+		
 			list dt = llJson2List(override);
 			override = "";
 			list_shift_each(dt, v,
@@ -579,12 +592,17 @@ onEvt(string script, integer evt, list data){
 				if(llGetListEntryType(d, 0) == TYPE_INTEGER)
 					out += llList2List(d, 0, 1);
 			)
+			
 		}
 		
 		Monster$updateSettings(out);
+		
     }
 	
-    else if(((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame) || (script == "got LocalConf" && evt==LocalConfEvt$emulateAttack)){
+    else if(
+		((script == "ton MeshAnim" || script == "jas MaskAnim") && evt == MeshAnimEvt$frame) || 
+		(script == "got LocalConf" && evt==LocalConfEvt$emulateAttack)
+	){
         
 		list split = llParseString2List(llList2String(data,0), [";"], []);
         string task = llList2String(split, 0);
@@ -598,7 +616,7 @@ onEvt(string script, integer evt, list data){
     
     else if(script == "got Status"){
 	
-        if(evt == StatusEvt$dead){
+        if( evt == StatusEvt$dead ){
 		
             if( ~BFL&BFL_DEAD && llList2Integer(data,0) ){
                 BFL = BFL|BFL_DEAD;
@@ -651,8 +669,9 @@ attack(){
 
 // Settings received
 onSettings(list settings){ 
+
 	integer flagsChanged;
-	while(settings){
+	while( settings ){
 		integer idx = l2i(settings, 0);
 		list dta = llList2List(settings, 1, 1);
 		settings = llDeleteSubList(settings, 0, 1);
@@ -691,19 +710,22 @@ onSettings(list settings){
 	}
 	
 	// Limits
-	if(speed<=0)
+	if( speed <= 0 )
 		speed = 1;
-	if(hitbox<=0)
+	if( hitbox <= 0 )
 		hitbox = 3;
     
 	if( flagsChanged )
 		raiseEvent(MonsterEvt$runtimeFlagsChanged, (string)getRF());
 	
-	if(~BFL&BFL_INITIALIZED){
+	if( ~BFL&BFL_INITIALIZED ){
+	
 		BFL = BFL|BFL_INITIALIZED; 
 		multiTimer([TIMER_FRAME, "", .25, TRUE]);
 		raiseEvent(MonsterEvt$confIni, "");
+		
 	}
+	
 }
 
 default{
