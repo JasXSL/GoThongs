@@ -14,20 +14,65 @@ purge(){
     }
 }
 
-default
-{
+list quickQn;	// Holds names of spawned objects with custom data
+list quickQd;	// time, data		// Holds time of spawn and data for above. Use above index multiplied by 2
+
+removeFromQuickQ( integer index ){
+	
+	quickQn = llDeleteSubList(quickQn, index, index);
+	quickQd = llDeleteSubList(quickQn, index*2, index*2+1);
+
+}
+
+default{
+
     state_entry(){
-        memLim(1.5);
+	
+		llListen(SpellFX$customDataChan, "", "", "");
+		llSetTimerEvent(30);	// Checks for quickQ timeout
+		
     }
+	
+	listen( integer ch, string n, key id, string msg ){
+		idOwnerCheck
+		
+		// GET data for the name of the sender
+		if( msg == "G" ){
+			
+			// returns E if no data found
+			string out = "E";
+			integer pos = llListFindList(quickQn, (list)n);
+			if( ~pos ){
+				out = l2s(quickQd, pos*2+1);
+				removeFromQuickQ(pos);
+			}
+			llRegionSayTo(id, ch, out);
+			
+		}
+	
+	}
+
+	
+	timer(){
+		
+		integer i;
+		for(; i < count(quickQn) && count(quickQn); ++i ){
+			
+			float timeout = l2f(quickQd, i*2);
+			if( llGetTime()-timeout > 30 ){
+				
+				removeFromQuickQ(i);			
+				--i;
+				
+			}
+		
+		}
+		
+	}
+
     
     #include "xobj_core/_LM.lsl" 
-    /*
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    
+
     if(method$isCallback){
         return;
     }
@@ -87,6 +132,7 @@ default
             rotation rot_offset = (rotation)llList2String(data, 2);
 			integer flags = llList2Integer(data, 3);
 			integer startParam = l2i(data, 4);
+			string quickQ = l2s(data, 5);
 			
 			if(startParam == 0)
 				startParam = 1;
@@ -97,40 +143,33 @@ default
 				t = llGetOwner();
             
 			
+			float zOffset = pos_offset.z;
+			pos_offset.z = 0;
+			
 			float b;	// Bounds height. 0 = ignore
-			if( ~flags&SpellFXFlag$SPI_IGNORE_HEIGHT ){
+			if( flags&SpellFXFlag$SPI_IGNORE_HEIGHT )
+				zOffset = 0;
 				
-				vector as = llGetAgentSize(t);
-				if( as ){
 				
-					pos_offset.z *= as.z;
-					
-				}
-				else{
-					boundsHeight(t, height)
-					b = height;
-					parseDesc(t, resources, status, fx, sex, team, monsterflags, _a)
-					if( monsterflags & Monster$RF_ANIMESH  )
-						b /= 2;
-					pos_offset.z *= b;
-				}			
-			}
-            
 			vector vrot = llRot2Euler(prRot(t));
-			if( ~flags&SpellFXFlag$SPI_FULL_ROT )
+			if( ~flags & SpellFXFlag$SPI_FULL_ROT )
 				vrot = <0,0,vrot.z>;
 			
-			if( flags&SpellFXFlag$SPI_TARG_IN_REZ )
+			if( flags & SpellFXFlag$SPI_TARG_IN_REZ )
 				startParam = (int)("0x"+llGetSubString(targ,0,7));
 			
 			rotation rot = llEuler2Rot(vrot);
-			//qd("Vrot: "+(str)vrot);
-			//qd("Pos offset "+(str)pos_offset);
-			vector offset = <0,0,b/2>+(pos_offset*rot);
-			//qd("Offset computed: "+(str)offset);
-			//qd("Target position: "+(str)prPos(targ));
-			vector to = prPos(t)+offset;
+
 			
+			vector to = getTargetPosOffset(t, zOffset+0.5)+pos_offset*rot;
+						
+			if( isset(quickQ) ){
+				
+				quickQn += name;
+				quickQd += (list)llGetTime() + quickQ;
+				
+			}
+						
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
 
         }
