@@ -19,7 +19,7 @@ list CACHE;
 
 #define nrToIndex(nr) nr*CSTRIDE
 //#define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
-#define difDmgMod() SpellAux$difficultyDamageDoneMofidier(DIF)
+#define difDmgMod() SpellAux$difficultyDamageDoneModifier( DIF )
 
 integer DIF;	// difficulty
 
@@ -63,10 +63,12 @@ integer fxFlags = 0;
 	$T0$	Target of spell (if not AoE) Only differs from _TA_ in self cast
 	$TARG$	Target of wrapper
 	$SELF$	Script owner
+	$HT$	Active HUD-target.
 	$otI$	Integered version of original target
 	$tI$	Same but for wrapper target
 	$sI$	Same but for sender HUD
 	$soI$	Same but for sender agent
+	
 */
 string t0;	// First target of a targeted spell
 
@@ -78,6 +80,7 @@ string runMath( string FX, integer index, key targ ){
 	FX = implode(targ, explode("$TARG$", FX));
 	FX = implode(t0, explode("$T0$", FX));
 	FX = implode((str)llGetKey(), explode("$SELF$", FX));
+	FX = implode((str)HUD_TARG, explode("$HT$", FX));
 	
 	// these can not be math vars because of float limitations
 	FX = implode((str)((int)("0x"+t0)), explode("$otI$", FX));

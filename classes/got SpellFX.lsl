@@ -19,7 +19,7 @@
 // Channel that can be used to remove custom data
 #define SpellFX$customDataChan (playerChan(llGetOwner())+80085)
 
-#define SpellFX$getCustomData() llRegionSayTo(mySpawner(), SpellFx$customDataChan, "G")
+#define SpellFX$getCustomData() llRegionSayTo(mySpawner(), SpellFX$customDataChan, "G")
 
 
 

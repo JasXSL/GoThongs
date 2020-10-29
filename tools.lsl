@@ -177,6 +177,9 @@ if(l2i(_data, 0)) \
 // class role is stored in sex flags using bits 16 & 17
 #define getRoleFromSex( sex ) \
 	((sex>>16)&3)
+// difficulty is stored in sex flags using bits 18 & 19
+#define getDifficultyFromSex( sex ) \
+	((sex>>18)&7)
 	
 #define parseArmor(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
@@ -257,6 +260,31 @@ float getTargetHeight( key t ){
 	if( monsterflags & Monster$RF_ANIMESH  )
 		b /= 2;
 	return b;
+	
+}
+
+// Tries to get target position based on an offset percentage where 0 is bottom of feet and 1 is top of head
+vector getTargetPosOffset( key t, float offset ){
+	
+	if( prAttachPoint(t) )
+		t = llGetOwnerKey(t);
+		
+	vector pos = prPos(t);
+	vector as = llGetAgentSize(t);
+    if( as )
+		return pos+<0,0,-as.z/2+as.z*offset>;
+		
+	
+	
+	list desc = explode("$", prDesc(t));
+	float hAdd = l2f(desc,StatusDesc$npc$HEIGHT_ADD)/10;
+	
+	list bounds = llGetBoundingBox(t);
+	vector av = l2v(bounds, 0);
+	vector bv = l2v(bounds, 1);
+	
+	
+	return pos+<0,0,(llFabs(av.z)+llFabs(bv.z))*offset+hAdd>;
 	
 }
 

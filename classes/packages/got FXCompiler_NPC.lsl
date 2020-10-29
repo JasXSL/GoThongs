@@ -1,18 +1,17 @@
-#define USE_EVENTS
+//#define USE_EVENTS
 #define IS_NPC
 #include "got/_core.lsl"
 #include "../got FXCompiler_Shared.lsl"
 integer TEAM = TEAM_NPC;
 
 list CACHE_SFX;				// [(float)time, (arr)data]Spell FX to spawn when received
-float hoverHeight;			// Hover height. Primarily used for animesh
-int RF;
 
 // Spawn instant spell visuals that we have
 spawnEffects(){
 	
 	integer i;
-	for(i=0; i<count(CACHE_SFX) && CACHE_SFX != []; i+=2){
+	for( ; i<count(CACHE_SFX) && count(CACHE_SFX); i+=2 ){
+	
 		float time = l2f(CACHE_SFX, i);
 		list data = llJson2List(l2s(CACHE_SFX, i+1));
 		integer exists = llGetInventoryType(l2s(data, 0)) == INVENTORY_OBJECT;
@@ -32,28 +31,31 @@ spawnEffects(){
 			integer startParam = l2i(data, 4);
 			if(startParam == 0)
 				startParam = 1;
-			
-			boundsHeight(llGetKey(), b)
-			vector footPos = llGetRootPosition();
-			if( RF&Monster$RF_ANIMESH )
-				footPos.z -= hoverHeight;
 				
-			if( ~flags&SpellFXFlag$SPI_IGNORE_HEIGHT ){
-				if( RF&Monster$RF_ANIMESH ){
-					pos_offset.z *= hoverHeight;
-					
-				}
-				else
-					pos_offset.z = pos_offset.z*b+b/2;
-			}
+			key targ = llGetKey();	// Person to target the fx with
+
+			// Person to spawn the item from
+			key t = llGetKey();
+			if( flags & SpellFXFlag$SPI_SPAWN_FROM_CASTER )
+				t = llGetOwner();
+			
+			float zOffset = pos_offset.z;
+			pos_offset.z = 0;
+				
+			if( flags&SpellFXFlag$SPI_IGNORE_HEIGHT )
+				zOffset = 0;
+				
+			if( flags&SpellFXFlag$SPI_TARG_IN_REZ )
+				startParam = (int)("0x"+llGetSubString((str)targ,0,7));
 			
             
-			vector vrot = llRot2Euler(llGetRootRotation());
+			vector vrot = llRot2Euler(prRot(t));
 			if( ~flags&SpellFXFlag$SPI_FULL_ROT )
 				vrot = <0,0,-vrot.x>;
 			rotation rot = llEuler2Rot(vrot);
 			
-			vector to = footPos+pos_offset*rot;
+			vector to = getTargetPosOffset(t, zOffset+0.5)+pos_offset*rot;
+			
 			
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
 			
@@ -78,14 +80,6 @@ onSettings(list settings){
 		speed = 1;
 
 }
-
-onEvt( string sc, int evt, list data ){
-	
-	if( sc == "got Monster" && evt == MonsterEvt$runtimeFlagsChanged )
-		RF = l2i(data, 0);
-
-}
-
 
 integer current_visual;
 
@@ -133,11 +127,13 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
         else if(t == fx$TAUNT)
 			Status$monster_taunt(caster, l2i(fx,1));
 		
-		else if(t == fx$SPAWN_VFX){
+		else if( t == fx$SPAWN_VFX ){
+		
 			CACHE_SFX += [llGetTime(), mkarr(llDeleteSubList(fx,0,0))];
 			if( llGetInventoryType(l2s(fx, 1)) != INVENTORY_OBJECT )
 				SpellFX$fetchInventory(l2s(fx,1));
 			spawnEffects();
+			
 		}
     }
     

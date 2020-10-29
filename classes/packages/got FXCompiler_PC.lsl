@@ -55,7 +55,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
         
 		
 		else if( t == fx$CLASS_VIS )
-			gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2));
+			gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2), l2s(fx, 3));
 		
 		else if( t == fx$REDUCE_CD ){
 			SpellMan$reduceCD(llDeleteSubList(fx, 0, 0));
@@ -193,7 +193,7 @@ addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, 
 		
 		else if( t == fx$CLASS_VIS ){
 		
-            gotClassAtt$spellStart(l2s(fx,0), l2f(fx, 1));
+            gotClassAtt$spellStart(l2s(fx,0), l2f(fx, 1), l2s(fx, 2));
 			jump fxContinue;
 			
 		}
