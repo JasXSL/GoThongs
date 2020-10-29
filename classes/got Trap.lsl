@@ -10,12 +10,14 @@
 #define TrapMethod$end 2			// void - Force end
 #define TrapMethod$useQTE 3			// (int)numTaps/speed, preDelay, buttonDelay, flags - Use a quicktime event. 0 numTaps disables. See got Evts -> Evts$qFlags
 #define TrapMethod$anim 4			// (str)anim, (bool)start - Start or stop an animation on the victim
+#define TrapMethod$frame 5			// (str)data - Triggers a legacy MeshAnim$frame event on the trap
 
 #define TrapEvent$triggered 1
 #define TrapEvent$seated 2
 #define TrapEvent$unseated 3		// (key)sitter
 #define TrapEvent$qteButton 4		// (bool)correct - A QTE button has been pushed
 #define TrapEvent$reset 5			// Trap has come off cooldown
+
 
 
 #define Trap$useQTE(numTaps) runMethod((str)LINK_THIS, "got Trap", TrapMethod$useQTE, [numTaps], TNN)
@@ -28,5 +30,14 @@
 #define Trap$end(targ) runMethod((str)targ, "got Trap", TrapMethod$end, [], TNN)
 #define Trap$startAnim(targ, anim) runMethod((str)targ, "got Trap", TrapMethod$anim, [anim, TRUE], TNN)
 #define Trap$stopAnim(targ, anim) runMethod((str)targ, "got Trap", TrapMethod$anim, [anim, FALSE], TNN)
+
+
+// Index of the INI_DATA raised by localConf event
+#define TrapConf$triggerCooldown 0		// (float) time between triggers
+#define TrapConf$finishCooldown 1		// (float) cooldown after releasing a player
+#define TrapConf$attach 2				// (arr) items to attach (uses the pink box in the hud)
+#define TrapConf$baseAnim 3				// (str) anim to override baseanim. Default baseanim is the first animation matching the pattern "<anything>_<not_number>". Baseanim is triggered on the player.
+#define TrapConf$animeshAnim 4			// (str) baseAnim for the trap as an animesh object
+
 
 #endif

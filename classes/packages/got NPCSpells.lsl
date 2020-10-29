@@ -420,7 +420,7 @@ ptEvt(string id){
 						dist>=minrange && 
 						llList2Integer(ray, -1) == 0 && 
 						!(status&StatusFlags$NON_VIABLE) && 
-						~fx&fx$UNVIABLE &&
+						~fx&(fx$UNVIABLE|fx$F_INVUL) &&
 						(!sexReq || (sex&sexReq) == sexReq) &&
 						(!roleReq || roleReq&role2flag(getRoleFromSex(sex))) &&
 						(!fxReq || (fx&fxReq) == fxReq) &&

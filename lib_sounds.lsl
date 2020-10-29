@@ -5,6 +5,7 @@
 // trigger random squish
 #define squishSound() llTriggerSound(randElem((list)"72d65db8-31fe-375b-8716-89e3963fbf7d"+"90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd"+"f9194db3-9606-2264-3cde-765430179069"), llFrand(0.25)+0.25)
 #define tentSlapSound() llTriggerSound(randElem((list)"79448c2b-b60f-ceb9-e05e-cd1d3a27cfc0"+"0e925339-fc8b-d7fc-0c2d-91a168134137"+"ffc6431e-9b21-cafd-9158-e22e7b328b86"+"81ae340e-56c2-72d4-9011-832ed81a3f9f"), llFrand(0.5)+0.5)
+#define spankSound() llTriggerSound(randElem((list)"f8dad0f8-2ffc-ccbf-d115-8a8808722690"+"dcbfcb36-b84d-809f-c07b-cb0ab61d3cd8"+"76716856-edc6-6d7c-dbc9-7ec23723c6f6"), llFrand(0.5)+0.5)
 
 
 
@@ -27,6 +28,54 @@
 #define gotSoundLib$gnoll$takehit "def51018-d4a0-a6af-492b-b34e25c04ee5"
 #define gotSoundLib$gnoll$attack "be42c330-f776-325a-059d-7edcf1328b8c"
 #define gotSoundLib$gnoll$death "86c3ac10-bbd1-51ee-0bcf-660190b020e9"
+
+
+#define gotSoundLib$firesprite$aggro "77df7327-a8a1-4158-1c2b-461574ffa588"
+#define gotSoundLib$firesprite$takehit "31a1f9b4-4d1a-21c6-eb4d-76b04f5a485e"
+#define gotSoundLib$firesprite$attack "e3db24cb-b107-fe89-b675-9fe572c5ce54"
+#define gotSoundLib$firesprite$death "eee95075-2e10-a2b0-f702-281f2594c047"
+
+#define gotSoundLib$watersprite$aggro "e099fd20-6d28-1ea3-401a-a2eb790e0930"
+#define gotSoundLib$watersprite$takehit "33763d1c-1b0b-e610-049d-bcb44f9f8428"
+#define gotSoundLib$watersprite$attack "4b7e43f1-575f-7a91-8d0c-f77fddd4f018"
+#define gotSoundLib$watersprite$death "482ca408-7219-8e13-774b-ad4eb23ef9f1"
+
+#define gotSoundLib$icesprite$aggro "dfb42fc7-8257-0038-3b36-2e497f966500"
+#define gotSoundLib$icesprite$takehit "f4ea04dd-2535-d915-a5e5-281b8d27040b"
+#define gotSoundLib$icesprite$attack "9c61aa88-1661-f309-b212-a761c6622fb8"
+#define gotSoundLib$icesprite$death "8eb38844-852a-c354-a658-0e7f2849cc39"
+
+#define gotSoundLib$earthsprite$aggro "8e6de4f0-44c3-8476-7275-823209475e47"
+#define gotSoundLib$earthsprite$takehit "99af8bf7-bcd5-64a4-a8a2-23cebb7e9c35"
+#define gotSoundLib$earthsprite$attack "b83decd7-abf9-999a-a03b-8007c7783e80"
+#define gotSoundLib$earthsprite$death "b2cb67ba-568d-ab1a-6bff-ed08a54a7b5d"
+
+#define gotSoundLib$windsprite$aggro "c2886de8-b3d5-70d9-e1a6-a6fc474f4997"
+#define gotSoundLib$windsprite$takehit "32e49bd1-6644-60c4-1d17-71a58fc9926b"
+#define gotSoundLib$windsprite$attack "33b4114b-40cf-590e-c268-c54799ebb837"
+#define gotSoundLib$windsprite$death "90aab779-07a7-47af-ef56-7ccd30e6a1aa"
+
+#define gotSoundLib$earthprimal$aggro "db71790a-f9de-3b1d-84f9-a0e088dcfceb"
+#define gotSoundLib$earthprimal$takehit "10c7106a-bea8-11b8-1bf8-4a709ac2b99a"
+#define gotSoundLib$earthprimal$attack "d3cb6764-eea9-20ad-42e6-a71b300fbb23"
+#define gotSoundLib$earthprimal$death "f0e4f4ce-da9b-365f-21e1-877ec718c093"
+
+#define gotSoundLib$waterprimal$aggro "abbf8ff9-58cd-b416-ede1-a91875439461"
+#define gotSoundLib$waterprimal$takehit "97fb7512-d6fd-a622-52ad-111884c7791c"
+#define gotSoundLib$waterprimal$attack "083c3b88-e341-8ff4-1083-bff58b42016b"
+#define gotSoundLib$waterprimal$death "8e6af0e4-1c61-6355-179e-a2ff812d9a93"
+
+#define gotSoundLib$airprimal$aggro "5c875e44-eb23-1b75-dcc8-3b47c13f2469"
+#define gotSoundLib$airprimal$takehit "de19e8f6-3b7a-3ed4-2151-3f8f1239bcf8"
+#define gotSoundLib$airprimal$attack "1d444a39-d2dd-b253-c424-fbd01eaf21d2"
+
+
+#define gotSoundLib$target_dummy$takehit "de19e8f6-3b7a-3ed4-2151-3f8f1239bcf8"
+#define gotSoundLib$target_dummy$attack "47e18f68-27cc-f790-f882-f70e752904d9"
+#define gotSoundLib$target_dummy$death "a30e9deb-b73b-0d8a-f161-3c6ca9a697ff"
+
+
+
 
 #define gotSoundLib$zapbot$aggro "35c275ae-66a3-0b42-3a4c-f9efa049de5e"
 #define gotSoundLib$zapbot$aggro_lost "c6b08c80-eae3-4a75-f30f-d34c1b95f66e"
@@ -177,6 +226,11 @@
 #define gotSoundLib$shambler$takehit "d6f195c2-3d23-a2ad-f95b-876ef28ba2d7"
 #define gotSoundLib$shambler$attack "2eccdd2b-0869-19e3-e628-fc27585df8c6"
 #define gotSoundLib$shambler$death "846c425d-3284-e055-4166-8de781c1a0cf"
+
+#define gotSoundLib$hand$aggro "9ac32e2d-7d22-c08e-01f7-839f83be0fd5"
+#define gotSoundLib$hand$takehit "3d5ba4f0-90aa-77bb-8aca-d5d819677867"
+#define gotSoundLib$hand$attack "d72f822e-1790-7d68-5653-b01f0768f009"
+#define gotSoundLib$hand$death "55fc591a-e551-bdc8-0011-ad5db9c25526"
 
 
 #define gotSoundLib$quadropus$aggro "7313b7bd-864d-75e5-b309-01531cbd7591"

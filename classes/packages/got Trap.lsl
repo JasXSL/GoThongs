@@ -1,3 +1,20 @@
+/*
+	
+	This script is bad and clustered. Here is some documentation:
+		
+		
+	- To use a quicktime event use Trap$useQTE(numTaps) or one of the conf qtes
+	- Animations will be picked automatically for the player using "<anything>_<not_numeric>" as the base animation. And cycling between "<anything>_<numeric>"
+		This means it will not support animesh by default. For animesh you must setup the animations manually in the INI_DATA
+		After setting manual animations the subsequent animations will be calculated by the user animations
+	- Seat will automatically use a prim named SEAT with sit target <0,0,0.01> ZERO_ROTATION
+	- If no such prim is set it instead uses the root prim but does not assign a sit target. You must do that in localconf in that case.
+	- Uses the prim "SPLAT" for splats. These work with legacy frame animations. For animesh you must emulate these frame events with TrapMethod$frame. Use "*" as data for automatic animation progression.
+	
+
+
+*/
+
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -19,6 +36,7 @@ key sitter;
 string base_anim;				// Loop
 integer max_anims = 0;
 integer cur_anim;
+string animesh_anim;
 
 integer QTE;					// QTE taps
 int QTE_FLAGS;
@@ -31,6 +49,7 @@ list PLAYERS;
 
 integer P_SPLAT;
 onEvt(string script, integer evt, list data){
+
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
 		PLAYERS = data;
         LocalConf$ini();
@@ -40,9 +59,18 @@ onEvt(string script, integer evt, list data){
 	
         if( evt == LocalConfEvt$iniData ){
 		
-            cooldown = l2f(data,0);
-            cooldown_full = l2f(data,1);
-			attachments = llJson2List(l2s(data, 2));
+            cooldown = l2f(data,TrapConf$triggerCooldown);
+            cooldown_full = l2f(data,TrapConf$finishCooldown);
+			attachments = llJson2List(l2s(data, TrapConf$attach));
+			string d = l2s(data, TrapConf$baseAnim);
+			if( isset(d) )
+				base_anim = d;
+			
+			d = l2s(data, TrapConf$animeshAnim);
+			if( isset(d) )
+				animesh_anim = d;
+			
+			fetchSubAnims();
 			debugUncommon("Got ini data: "+(str)cooldown+" :: "+(str)cooldown_full+" :: "+mkarr(attachments));
 			
         }
@@ -55,16 +83,37 @@ onEvt(string script, integer evt, list data){
 		string type = llList2String(split, 0);
 		string val = llList2String(split, 1);
 		string sub = llList2String(split, 2);
-		if(type == FRAME_ANIM){
+		
+		if( type == FRAME_ANIM ){
+		
 			string anim = val;
-			if(val == "*" && base_anim != "" && max_anims){
-				anim = base_anim+"_"+(string)(cur_anim+1);
+			str obj_anim;
+			
+			if( val == "*" && max_anims ){
+			
+				if( base_anim )
+					anim = base_anim+"_"+(string)(cur_anim+1);
+				if( animesh_anim )
+					animesh_anim = base_anim+"_"+(string)(cur_anim+1);
+				
 				cur_anim++;
-				if(cur_anim>=max_anims)cur_anim = 0;
+				if( cur_anim >= max_anims )
+					cur_anim = 0;
+					
 			}
-			if(anim != "" && llGetPermissions()&PERMISSION_TRIGGER_ANIMATION &&  ~TRAP_FLAGS & Trap$fsFlags$noAnims ){
-				llStartAnimation(anim); 
+			if( ~TRAP_FLAGS & Trap$fsFlags$noAnims ){
+			
+				if( anim != "" && llGetPermissions() & PERMISSION_TRIGGER_ANIMATION )
+					llStartAnimation(anim); 
+				if( obj_anim ){
+				
+					llStopObjectAnimation(animesh_anim);
+					llStartObjectAnimation(animesh_anim);
+					
+				}
+				
 			}
+			
 			
 			llLinkParticleSystem(P_SPLAT, [
                 PSYS_PART_MAX_AGE,.4, 
@@ -101,12 +150,18 @@ onEvt(string script, integer evt, list data){
 
             ]);
 		}
-		if(type == FRAME_AUDIO){
-			if(val == "*")val = randElem((["e47ba69b-2b81-1ead-a354-fe8bb1b7f554", "9f81c0cb-43fc-6a56-e41e-7f932ceff1dc"]));
-			if(llJsonValueType(val, []) == JSON_ARRAY)val = randElem(llJson2List(val));
+		if( type == FRAME_AUDIO ){
+		
+			if( val == "*" )
+				val = randElem((["e47ba69b-2b81-1ead-a354-fe8bb1b7f554", "9f81c0cb-43fc-6a56-e41e-7f932ceff1dc"]));
+			if( llJsonValueType(val, []) == JSON_ARRAY )
+				val = randElem(llJson2List(val));
 			float vol = (float)sub;
-			if(vol<=0)vol = .5+llFrand(.5);
-			if(val)llTriggerSound(val, vol);
+			if( vol<=0 )
+				vol = .5+llFrand(.5);
+			if( val )
+				llTriggerSound(val, vol);
+				
 		}
 	}
 }
@@ -128,6 +183,24 @@ timerEvent(string id, string data){
 	
 }
 
+// Automatically fetches sub animations
+fetchSubAnims(){
+	
+	max_anims = 0;
+	if( base_anim == "" )
+		return;
+		
+	int i;
+	for( ; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i ){
+	
+		string name = llGetInventoryName(INVENTORY_ANIMATION, i);
+		if( llGetSubString(name, 0, llStringLength(base_anim)-1) == base_anim && name != base_anim )
+			++max_anims;
+		
+	}
+	
+}
+
 key getSitter(){
 	links_each( nr, name,
 		key t = llAvatarOnLinkSitTarget(nr);
@@ -144,34 +217,31 @@ default{
 		memLim(1.5);
         raiseEvent(evt$SCRIPT_INIT, "");
         links_each(nr, name,
-            if(name == "SEAT"){
+		
+            if( name == "SEAT" ){
+			
                 P_SEAT = nr;
                 llLinkSitTarget(P_SEAT, <0,0,.01>, ZERO_ROTATION);
+				
             }
-			else if(name == "SPLAT")
+			else if( name == "SPLAT" )
 				P_SPLAT = nr;
+				
         )
 		string base;
 		integer i;
-		for( i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION) && base_anim == ""; i++ ){
+		for( ; i<llGetInventoryNumber(INVENTORY_ANIMATION) && base_anim == ""; ++i ){
+		
 			string name = llGetInventoryName(INVENTORY_ANIMATION, i);
 			list spl = llParseString2List(name, ["_"], []);
-			if(llList2Integer(spl, -1)>0)base_anim = llDumpList2String(llDeleteSubList(spl, -1, -1), "_");
-			else base = name;
+			if( llList2Integer(spl, -1) > 0 )
+				base_anim = llDumpList2String(llDeleteSubList(spl, -1, -1), "_");
+			else 
+				base = name;
+			
 		}
 		base_anim = base;
-		
-		if(base_anim){
-		
-			for(i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION); i++){
-			
-				string name = llGetInventoryName(INVENTORY_ANIMATION, i);
-				if( llGetSubString(name, 0, llStringLength(base_anim)-1) == base_anim && name != base_anim )
-					max_anims++;
-				
-			}
-				
-		}
+		fetchSubAnims();
 		
     }
     
@@ -179,7 +249,7 @@ default{
     
     changed(integer change){
 		
-        if(change&CHANGED_LINK){
+        if( change & CHANGED_LINK ){
 		
 			key sitter = getSitter();
             if( sitter ){
@@ -224,6 +294,12 @@ default{
 	run_time_permissions(integer perm){
 
 		if(base_anim != "" && perm & PERMISSION_TRIGGER_ANIMATION &&  ~TRAP_FLAGS & Trap$fsFlags$noAnims ){
+			
+			if( animesh_anim ){
+				llStopObjectAnimation(animesh_anim);
+				llStartObjectAnimation(animesh_anim);
+				
+			}
 			
 			llStopAnimation("sit");
 			llStartAnimation(base_anim);
@@ -329,6 +405,9 @@ default{
 		debugCommon("Using QTE "+(str)QTE)
 		
 	}
+	
+	if( METHOD == TrapMethod$frame )
+		onEvt("ton MeshAnim", MeshAnimEvt$frame, PARAMS);
 	
 	if( METHOD == TrapMethod$end ){
 		

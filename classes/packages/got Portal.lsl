@@ -20,7 +20,16 @@ integer BFL;
 #define BFL_PERSISTENT 0x20
 
 #define BFL_INI 11
-#define checkIni() if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_IS_DEBUG && ~BFL&BFL_INITIALIZED){BFL=BFL|BFL_INITIALIZED; raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); debugUncommon("Raising script init"); raiseEvent(PortalEvt$spawner, (str)requester); raiseEvent(PortalEvt$desc_updated, INI_DATA); raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS)); }
+//~BFL&BFL_IS_DEBUG && 
+#define checkIni() \
+	if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_INITIALIZED){ \
+		BFL=BFL|BFL_INITIALIZED; \
+		raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); \
+		debugUncommon("Raising script init"); \
+		raiseEvent(PortalEvt$spawner, (str)requester); \
+		raiseEvent(PortalEvt$desc_updated, INI_DATA); \
+		raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS)); \
+	}
 
 // Fetches desc from spawner
 #define fetchDesc() llRegionSayTo(spawner, playerChan(spawner), "SP")

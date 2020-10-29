@@ -175,11 +175,15 @@ onEvt(string script, integer evt, list data){
     
     if( script == "got Portal" && evt == evt$SCRIPT_INIT ){
         
-		PP(0, (list)PRIM_TEMP_ON_REZ + TRUE);
-        BFL = BFL|BFL_LIVE;
-		begin();
-		ptSet("resit", 2, TRUE);
-        
+		
+		BFL = BFL&~BFL_LIVE;
+		if( portalConf$live ){
+			PP(0, (list)PRIM_TEMP_ON_REZ + TRUE);
+			BFL = BFL|BFL_LIVE;
+			begin();
+			ptSet("resit", 2, TRUE);
+			
+        }
     }
     
 }
@@ -226,10 +230,7 @@ default{
 		
 		llSetStatus(STATUS_PHANTOM, TRUE);
 		
-		integer i;
-        list names = llGetObjectAnimationNames();
-        for(i=0; i<count(names); ++i )
-            llStopObjectAnimation(l2s(names, i));
+		stopAllObjectAnimations()
 
         
     }
@@ -272,10 +273,13 @@ default{
 				llStopAnimation(anim);
 			)
 			
+			llStopObjectAnimation(ANIM+"_a");
+			llStartObjectAnimation(ANIM+"_a");
             if( ANIM )
                 llStartAnimation(ANIM+"_t");
             setThrustTimer();
-            
+            raiseEvent(gotAnimeshSceneEvt$start, "");
+			
         }
         
     }
@@ -325,12 +329,14 @@ default{
                 
             }
             
-            llStartObjectAnimation(ANIM+"_a");
+            
             if( 
                 llAvatarOnSitTarget() != NULL_KEY && 
                 llGetPermissions()&PERMISSION_TRIGGER_ANIMATION 
             ){
                 llStartAnimation(ANIM+"_t");
+				llStartObjectAnimation(ANIM+"_a");
+				raiseEvent(gotAnimeshSceneEvt$start, "");
             }
 			
         }

@@ -193,8 +193,16 @@ default{
             
             // This object is in my inventory
             if(llGetInventoryType(name) == INVENTORY_OBJECT){
-                db3$setOther(LevelStorage$custom, [-1], mkarr(out));
-                custom_saved++;
+				
+				for( i=0; i < count(CUSTOM_TABLES); ++i ){
+				
+					if( db3$setOther(l2s(CUSTOM_TABLES, i), [-1], mkarr(out)) != "0" ){
+						++custom_saved;
+						return;
+					}
+					
+				}
+			
             }
             // This is a start point
             else if(llGetSubString(name, 0, 12) == "_STARTPOINT_P"){

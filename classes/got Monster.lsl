@@ -51,7 +51,7 @@
 #define Monster$RF_IS_BOSS 0x200		// 512 Shows up in the boss bar
 #define Monster$RF_FLYING 0x400			// 1024 Travels in a linear fashion to enemy groin height without following the ground
 #define Monster$RF_360_VIEW 0x800		// 2048 Does not get shorter aggro range when players are behind it
-#define Monster$RF_FOLLOWER 0x1000		// Follower mode enabled
+#define Monster$RF_FOLLOWER 0x1000		// 4096 Follower mode enabled
 #define Monster$RF_ANIMESH 0x2000		// 8192 This is an animesh monster
 #define Monster$RF_HUMANOID 0x4000		// This is a humanoid (allow certain monster interactions)
 #define Monster$RF_MINOR 0x8000			// This monster should not drop loot

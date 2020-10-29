@@ -28,6 +28,8 @@
 	#define cf$APTITUDE 1
 	#define cf$SEX 0 (sex flags)
 	
+	#define cf$sitCheck(targ) - Return true/false if the seated player was accepted. Lets you overwrite the default check.
+	
 	#define cf$USE_GRAPPLE	(Enables the grapple functions)
 	#define cf$GRAPPLE_FLAGS				// Grapple settings flags = left/right failable
 	#define cf$GRAPPLE_DURATION				// Grapple max duration = 300
@@ -36,7 +38,8 @@
 	#define cf$GRAPPLE_STAGES				// QTE stages, alternatively speed for quick grapples. = 30
 	#define cf$GRAPPLE_MONSTERFLAGS			// Flags to set when grapple starts and unset when it ends = Monster$RF_IMMOBILE|Monster$RF_PACIFIED|Monster$RF_NOROT|Monster$RF_NO_SPELLS
 	
-
+	#define cf$DUMMY_MODE	// Enables dummy mode where you can sit on it
+	
 
 	Events (these are preprocessor macros:
 	#define onInit( int live ) | Raised on state entry and when portal initializes
@@ -66,9 +69,9 @@
 	
 	Built in:
 		key GRAPPLE_TARG						// Holds the grapple target
-		function grappleStart( key id ) 		// Starts the grapple 
+		function grappleStart( key id, int fxflags ) 		// Starts the grapple 
 		function grappleEnd()					// Stops any active grapple
-		integer grappleClosestConal( float arc, float range, int flags )		// Tries to grapple the closest player within arc and range
+		integer grappleClosestConal( float arc, float range, int fxflags )		// Tries to grapple the closest player within arc and range
 	
 	#define body // put into default
 
@@ -180,6 +183,7 @@
 		Monster$RF_NO_SPELLS
 #endif
 
+
 #ifdef cf$USE_GRAPPLE
 	key GRAPPLE_TARG;
 	
@@ -286,8 +290,9 @@ key AGGRO;
 #ifdef FX_PRIM
 	int P_FX;
 #endif
+int LIVE;
 
-ini(){
+ini( int live ){
 
 	stopAllObjectAnimations()
 	llStopSound();
@@ -301,8 +306,9 @@ ini(){
             llStopObjectAnimation(n);
     }
 
+	LIVE = portalConf$live;
 	#ifdef onInit
-		onInit(portalConf$live);
+		onInit(LIVE && live);
 	#endif
 
 }
@@ -322,7 +328,7 @@ onEvt(string script, integer evt, list data){
 
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
 
-        ini();
+        ini(TRUE);
         NPCSpells$setSpells(SPELLS);
 
     }
@@ -420,7 +426,7 @@ default{
 		#endif
 		
 		
-		ini();
+		ini(FALSE);
     }
 
     timer(){ multiTimer([]); }
@@ -433,8 +439,11 @@ default{
 			key sitTarg = llAvatarOnSitTarget();
 			if( sitTarg ){
 				
-				if( sitTarg == llGetOwnerKey(GRAPPLE_TARG) && !DEAD ){
-					
+				#ifdef cf$sitCheck
+				if( cf$sitCheck(sitTarg) ){
+				#else
+				if( (sitTarg == llGetOwnerKey(GRAPPLE_TARG) || !LIVE) && !DEAD ){
+				#endif
 					multiTimer(["_g_fail"]);
 					llRequestPermissions(sitTarg, PERMISSION_TRIGGER_ANIMATION); 
 					
@@ -451,7 +460,9 @@ default{
 	run_time_permissions( integer perm ){
 		if( perm & PERMISSION_TRIGGER_ANIMATION ){
 			
+			#ifndef cf$DUMMY_MODE
 			Evt$startQuicktimeEvent(GRAPPLE_TARG, cf$GRAPPLE_STAGES, cf$GRAPPLE_PREDELAY, "QTE", cf$GRAPPLE_BUTTON_DELAY, cf$GRAPPLE_FLAGS);
+			#endif
 			#ifdef grappleOnPermissions
 			grappleOnPermissions();
 			#endif
