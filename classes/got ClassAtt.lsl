@@ -16,6 +16,7 @@
 #define gotClassAttEvt$spellEnd 2				// (var)customData, (int)success, (key)target | If success is -1 it timed out
 #define gotClassAttEvt$stance 3					// (str)stance || "" for reset
 #define gotClassAttEvt$dead 4					// (int)dead
+#define gotClassAttEvt$spec 5					// (int)spec index
 
 
 #define gotClassAtt$raiseEvent(evt, args) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)evt+args, TNN)
@@ -29,6 +30,7 @@
 #define gotClassAtt$spellEnd(customData, success, spellVisData) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$spellEnd+ (customData) + (success) + (spellVisData), TNN)
 #define gotClassAtt$stance(stance) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$stance+stance, TNN)
 #define gotClassAtt$dead(dead) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$dead+dead, TNN)
+#define gotClassAtt$spec(spec) runMethod(llGetOwner(), "got ClassAtt", gotClassAttMethod$raiseEvent, (list)gotClassAttEvt$spec+spec, TNN)
 
 
 

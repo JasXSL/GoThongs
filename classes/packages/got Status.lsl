@@ -621,8 +621,12 @@ onEvt( string script, integer evt, list data ){
 		Status$setDifficulty(l2i(data, BSUD$DIFFICULTY));
 		RO = l2i(data, BSUD$THONG_ROLE);
 		US = l2i(data, BSUD$SETTING_FLAGS);
+		integer ts = l2i(data, BSUD$THONG_SPEC);
+		if( TS != ts ){
+			gotClassAtt$spec(ts);
+		}
 		TI = l2i(data, BSUD$THONG_CLASS_ID);
-		TS = l2i(data, BSUD$THONG_SPEC);
+		TS = ts;
 		
 		OS(TRUE);
 		
