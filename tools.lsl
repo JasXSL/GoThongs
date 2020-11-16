@@ -103,8 +103,8 @@ rotation got_n2r( rotation Q ){
 	monsterflags : int variable name to create and store monster runtime flags in. When used on a PC, these are the settings flags from got Bridge.lsl
 	armor : int variable name to create and store armor data in (use Status$splitArmor, see got Status.lsl for more info)
 */
-#define parseDescString(input, hud, resources, status, fx, sex, team, monsterflags, armor) \
-integer resources; integer status; integer fx; integer team; integer sex; integer monsterflags; int armor; \
+#define parseDescString(input, hud, resources, status, fx, sex, team, monsterflags, armor, classData) \
+integer resources; integer status; integer fx; integer team; integer sex; integer monsterflags; int armor; int classData; \
 { \
 list _split = explode("$", input); \
 resources = l2i(_split,StatusDesc$npc$RESOURCES); \
@@ -122,12 +122,13 @@ if(hud){ /* HUD */ \
 	team = l2i(_split, StatusDesc$pc$TEAM); \
 	monsterflags = l2i(_split,StatusDesc$pc$SETTINGS);\
 	armor = l2i(_split,StatusDesc$pc$ARMOR); \
+	classData = l2i(_split,StatusDesc$pc$CLASS); \
 }\
 }
 
 
-#define parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor) \
-parseDescString(prDesc(targ), prAttachPoint(targ), resources, status, fx, sex, team, monsterflags, armor) \
+#define parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor, classData) \
+parseDescString(prDesc(targ), prAttachPoint(targ), resources, status, fx, sex, team, monsterflags, armor, classData) \
 
 
 
@@ -180,6 +181,15 @@ if(l2i(_data, 0)) \
 // difficulty is stored in sex flags using bits 18 & 19
 #define getDifficultyFromSex( sex ) \
 	((sex>>18)&7)
+	
+// Takes the classData int from parseDesc and returns the class ID
+#define getClassIdFromClassData( cData ) \
+	((cData>>4)&0xFFFF)
+
+// Takes the classData int from parseDesc and returns spec index (on the HUD, it starts at 0 for the left, so for assassin Ninja is #0)
+#define getSpecIndexFromClassData( cData ) \
+	(cData&0xF)
+
 	
 #define parseArmor(targ, var) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
@@ -256,7 +266,7 @@ float getTargetHeight( key t ){
 		
 	boundsHeight(t, b)
 	
-	parseDesc(t, resources, status, fx, sex, team, monsterflags, armor)
+	parseMonsterFlags(t, monsterflags)
 	if( monsterflags & Monster$RF_ANIMESH  )
 		b /= 2;
 	return b;

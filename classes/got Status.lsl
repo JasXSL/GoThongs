@@ -68,8 +68,10 @@
 #define StatusDesc$pc$FX 2
 #define StatusDesc$pc$SEX 3					// Bits: 0bXXXXXXXXXXXXXXXX(16>>0) = sex flags, 0bXX0000000000000000(2>>16) = role, 0bXXX00000000000000000000(3>>18) = difficulty
 #define StatusDesc$pc$TEAM 4
-#define StatusDesc$pc$SETTINGS 5
+#define StatusDesc$pc$SETTINGS 5			// 
 #define StatusDesc$pc$ARMOR 6
+#define StatusDesc$pc$CLASS 7				// first 4 bits on the right are spec index, then 16 bits for class ID
+	
 
 #define StatusDesc$npc$TEAM 2
 #define StatusDesc$npc$RESOURCES 3

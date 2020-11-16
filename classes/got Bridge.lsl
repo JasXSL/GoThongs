@@ -102,6 +102,8 @@
 		#define BSUD$SFLAG_BUTT_ANIMS 0x4		// enable breast anims
 	#define BSUD$THONG_CLASS_ID 15				// ID of thong class such as 1 for assassin
 	#define BSUD$THONG_ROLE 16					// Role of thong. Use ROLE_* definition from _core
+	#define BSUD$THONG_SPEC 17					// Thong spec index
+	
 		
 #define Bridge$userData() db3$get("got Bridge", [BridgeShared$userData])
 

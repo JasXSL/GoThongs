@@ -57,6 +57,7 @@ integer SFp = 0;	// Sttus flags pre
 int CF;			// Spell cast flags
 integer GF;	// Genital flags
 
+
 // FX
 integer FXF = 0;				// FX flags
 float paDT = 1; 				// damage taken modifier (only from PASSIVES)
@@ -104,6 +105,8 @@ list TG; 		// Targeting: (key)id, (int)flags
 
 int RO;			// Thong role
 int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
+int TI;			// Thong class ID		
+int TS;			// Thong spec index
 
 integer DIF = 1;	// 
 // old ((1.+(llPow(2, (float)DIF*.7)+DIF*3)*0.1)-0.462)
@@ -618,7 +621,10 @@ onEvt( string script, integer evt, list data ){
 		Status$setDifficulty(l2i(data, BSUD$DIFFICULTY));
 		RO = l2i(data, BSUD$THONG_ROLE);
 		US = l2i(data, BSUD$SETTING_FLAGS);
-		OS(false);
+		TI = l2i(data, BSUD$THONG_CLASS_ID);
+		TS = l2i(data, BSUD$THONG_SPEC);
+		
+		OS(TRUE);
 		
 	}
 		
@@ -763,7 +769,7 @@ OS( int ic ){
 	integer a = ARMOR;
 	if( FXF & fx$F_SHOW_GENITALS )
 		a = 0;
-	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)(GF|(RO<<16)|(DIF<<18))+"$"+(str)t+"$"+(str)US+"$"+(str)a);
+	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)(GF|(RO<<16)|(DIF<<18))+"$"+(str)t+"$"+(str)US+"$"+(str)a+"$"+(str)(TS|((TI&0xFFFF)<<4)));
 	
 	// Team change goes after because we need to update description first
 	if(pre != t){
