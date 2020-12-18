@@ -5,7 +5,7 @@
 															// Animations with the base anim plus _1 _2 etc will be automatically used as thrusts
 	#define gotAnimeshScene$cPos "pos"						// (vec)pos. Where to put the player.
 	#define gotAnimeshScene$cRot "rot"						// (rot)rotation. How to rotate the player
-	#define gotAnimeshScene$cHeight "height"				// (float)height. Height above ground to put player
+	#define gotAnimeshScene$cHeight "height"				// (float)height. Height above ground to put the scene
 	#define gotAnimeshScene$cSound "sound"					// (arr)thrust_sounds (MUST be array). use [] for none, do not include to use default squish
 	#define gotAnimeshScene$cSoundVolMin "volMin"			// (float)min squish vol
 	#define gotAnimeshScene$cSoundVolMax "volMax"			// (float)max squish vol

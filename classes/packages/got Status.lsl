@@ -798,9 +798,11 @@ OS( int ic ){
 	if( FXF&fx$F_NOROT )
 		controls = controls|CONTROL_ROT_LEFT|CONTROL_ROT_RIGHT;
 	
-    if(PC != controls){
+    if( PC != controls ){
+	
         PC = controls;
         Root$statusControls(controls);
+		
     }
 	
     if( PF != SF ){

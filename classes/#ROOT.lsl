@@ -15,6 +15,8 @@
 #define RootMethod$getTarget 11					// void - Callbacks the key of your current target
 #define RootMethod$refreshPlayers 69			// void - Sends the players and coop_hud event. Good for debugging.
 #define RootMethod$targetCoop 12				// (key)hud_id - Tries to target a coop player by HUD ID
+#define RootMethod$blockControls 13				// (bool)block - Blocks or unblocks controls. Tied to the prim that sends this command.
+
 
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed
@@ -47,6 +49,7 @@
 #define Root$forceRefresh(targ, id) runMethod(targ, "#ROOT", RootMethod$refreshTarget, [id], TNN)
 #define Root$getTarget(targ, cb) runMethod(targ, "#ROOT", RootMethod$getTarget, [], cb)
 #define Root$targetCoop(targ, hud) runMethod((str)targ, "#ROOT", RootMethod$targetCoop, (list)hud, TNN)
+#define Root$blockControls(block, cb) runMethod((str)llGetOwner(), "#ROOT", RootMethod$blockControls, (list)block, cb)
 
 // This is a custom call that bypasses XOBJ. Send it on AOE_CHAN and it sends back "GHD"+json_array(HUDs) on the same channel
 #define Root$getHUDSLight(targ) llRegionSayTo(targ, AOE_CHAN, "GHD")

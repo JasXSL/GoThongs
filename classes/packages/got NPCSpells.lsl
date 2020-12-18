@@ -252,7 +252,7 @@ startCast(integer spid, key targ, integer isCustom){
 		) && !isCustom
 	)return;
 
-	parseDesc(targ, resources, status, fx, sex, team, rf, arm);
+	parseDesc(targ, resources, status, fx, sex, team, rf, arm, _a);
     if( status&StatusFlags$NON_VIABLE && !isCustom )
 		return;
 	// Data comes from parseDesc, 0 is the attach point.
@@ -391,6 +391,14 @@ ptEvt(string id){
 				int statusReq = l2i(d, NPCS$SPELL_TARG_STATUS);
 				int roleReq = l2i(d, NPCS$SPELL_TARG_ROLE);
 				float angle = l2f(d, NPCS$SPELL_ROT);
+				
+				integer sInverse = statusReq < 0;
+				if( sInverse )
+					statusReq = -statusReq;
+				integer fInverse = fxReq < 0;
+				if( fInverse )
+					fxReq = -fxReq;
+				
                 
                 // Default to aggro_target
                 list p = [aggro_target];
@@ -408,12 +416,11 @@ ptEvt(string id){
                     list ray = llCastRay(llGetRootPosition()+<0,0,1+hAdd()>, ppos, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
 					
 					// Get some info about the target
-					parseDesc(targ, resources, status, fx, sex, team, rf, arm);
+					parseDesc(targ, resources, status, fx, sex, team, rf, arm, _a);
 					// Todo: Make it react to non-animesh NPCs some time? Worth keeping rotation to only X?
 					
 					myAngX(targ, ang)
-					
-					
+															
                     if(
 						(range<=0 || dist<range) && 
 						(~flags&NPCS$FLAG_IGNORE_TANK || targ != aggro_target) && 
@@ -423,8 +430,8 @@ ptEvt(string id){
 						~fx&(fx$UNVIABLE|fx$F_INVUL) &&
 						(!sexReq || (sex&sexReq) == sexReq) &&
 						(!roleReq || roleReq&role2flag(getRoleFromSex(sex))) &&
-						(!fxReq || (fx&fxReq) == fxReq) &&
-						(!statusReq || (status&statusReq) == statusReq) &&
+						(!fxReq || ((fx&fxReq) == fxReq) == !fInverse) &&
+						(!statusReq || ((status&statusReq) == statusReq) == !sInverse) &&
 						team != TEAM &&
 						(angle == 0 || (angle < 0 && llFabs(ang) > -angle) || (angle > 0 && llFabs(ang) < angle))
 					){

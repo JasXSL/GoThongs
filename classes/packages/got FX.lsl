@@ -903,14 +903,15 @@ default{
 					integer pid_rem = pID(slice);
 					
 					// Raise dispel int-event
-					if(is_dispel){
+					if( is_dispel ){
 						integer f = pFlags(slice);
 						
 						// Undispelable
-						if(f&PF_NO_DISPEL)
+						if( f&PF_NO_DISPEL )
 							jump delContinue;
 						
 						onEvt("", INTEVENT_DISPEL, [pid_rem, id]);
+						
 					}
 					
 					// Raise remove int-event if not a remove

@@ -304,13 +304,16 @@ ptEvt( string id ){
 			
 		// Currently pressing
 		if( BFL&BFL_LR ){
-			// Multiply by fx
+		
+			// Divide by fx
 			float f = fxMod;
 			if( fxMod <= 0 )
 				f = 0.1;
+				
 			amount /= f;
 			if( QTE_FLAGS & Evts$qFlags$LR_CAN_FAIL )	// Slow down fail because it starts at 40%
 				amount *= 0.6;
+				
 		}else{
 			// Fade speed is always half speed
 			amount = -amount/2;			
@@ -398,7 +401,7 @@ targScan( list sensed ){
 		vector tpos = l2v(dta, 2);
 		if( (llGetSubString(desc, 0, 2) == "$M$" || l2i(dta, 1)) && llVecDist(gpos, tpos) < SENSE_RANGE ){
 			
-			parseDescString(desc, prAttachPoint(targ), resources, status, fx, sex, team, monsterflags, armor)
+			parseDescString(desc, prAttachPoint(targ), resources, status, fx, sex, team, monsterflags, armor, _unused)
 			
 			// Ignore dead and no_target
 			if( ~fx&fx$F_NO_TARGET && ~status&StatusFlag$dead ){
@@ -731,14 +734,20 @@ default{
 	if( METHOD == EvtsMethod$startQuicktimeEvent ){
 	
 		debugCommon("Start received: "+mkarr(PARAMS)+" from "+SENDER_SCRIPT)
-		QTE_STAGES = floor(l2i(PARAMS, 0)*fxMod);
-		if( QTE_STAGES < 1 && l2i(PARAMS, 0) > 0 )
-			QTE_STAGES = 1;
+		QTE_STAGES = l2i(PARAMS, 0);
 		QTE_DELAY = l2f(PARAMS, 2);
-			
 		QTE_FLAGS = l2i(PARAMS, 3);
 		
+		// fxMod is handled in the ticker for LR
+		if( ~QTE_FLAGS & Evts$qFlags$LR )
+			QTE_STAGES = floor(l2i(PARAMS, 0)*fxMod);
+		
+		if( QTE_STAGES < 1 && l2i(PARAMS, 0) > 0 )
+			QTE_STAGES = 1;
+		
+		
 		// QTE_STAGES has a default on LR. Use -1 to end
+		
 		if( QTE_STAGES == 0 && QTE_FLAGS&Evts$qFlags$LR )
 			QTE_STAGES = 30;
 		

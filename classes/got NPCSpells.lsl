@@ -36,7 +36,7 @@
 #define NPCS$SPELL_MIN_RANGE 5		// Minimum range of target 
 #define NPCS$SPELL_TARG_SEX 6		// Sex flags needed on target, 0 ignores 
 #define NPCS$SPELL_TARG_FX 7		// FX Flags needed on target, 0 ignores
-#define NPCS$SPELL_TARG_STATUS 8	// Status flags needed on target, 0 ignores
+#define NPCS$SPELL_TARG_STATUS 8	// Status flags needed on target, 0 ignores, use negative for inverse
 #define NPCS$SPELL_TARG_ROLE 9		// Bitwise combination (use role2flag) of viable specs
 #define NPCS$SPELL_ROT 10			// Float radius. Use negative for inverse. PI_BY_TWO = I must be in front of the target, -PI_BY_TWO = I must be behind
 

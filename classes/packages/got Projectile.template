@@ -78,7 +78,7 @@ fire(){
 		SPEED = l2f(data, ProjectileDesc$speed);
 		WIGGLE_POW = l2f(data, ProjectileDesc$wiggleIntensity);
 		HEIGHT_OFFSET = l2f(data, ProjectileDesc$heightOffset);
-		ARC = l2f(data, ProjectileDesc$ARC);
+		ARC = l2f(data, ProjectileDesc$arc);
 
 		if(SPEED <= 0)
 			SPEED = 1;

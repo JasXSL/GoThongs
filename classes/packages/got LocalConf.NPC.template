@@ -55,7 +55,7 @@
 	#define onEvent(string script, integer evt, list data)
 	#define afterEvent(string script, integer evt, list data)
 	#define onCallback(str sender_script, int method, list params, string CB, key id)	// Callback received
-	#define onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
+	#define onInternalMethod( sender_script, method, params, id ) list onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
 	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
 	
 	
@@ -221,7 +221,7 @@
 			hud, 
 			llGetKey(), 
 			"[9,0,0,0,["+
-				(str)cf$GRAPPLE_DURATION+",1,\"_Q\",["+
+				(str)cf$GRAPPLE_DURATION+","+(str)(PF_DETRIMENTAL|PF_NO_DISPEL)+",\"_Q\",["+
 					mkarr((list)fx$SET_FLAG + (fx$F_QUICKRAPE|fxFlags))+","+
 					mkarr((list)fx$FORCE_SIT+llGetKey()+1)+
 				"]"+
@@ -260,7 +260,7 @@
             float dist = l2f(huds, i);
             if( (llFabs(ang) < arc || dist < .5 ) && dist < range && !l2i(ray, -1) ){
                 
-                parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor)
+                parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor, _a)
                 if( _attackableV(status, fx) ){
                     
 					grappleStart(targ, grappleFlags);

@@ -22,9 +22,11 @@ key TARG_FOCUS;			// Player focus target
 
 key ROOT_LEVEL;			// Current level being played
 
-integer BFL;
+int BFL;
 #define BFL_WILDCARD 0x1
 
+
+list CBLCK;	// Control-blocking prims
 
 
 
@@ -40,11 +42,13 @@ integer BFL;
 // Timer to handle double clicks and click hold
 timerEvent(string id, string data){
 
-    if(llGetSubString(id, 0, 1) == "H_"){
+    if( llGetSubString(id, 0, 1) == "H_" ){
+	
         integer d = (integer)data;
         d++;
         raiseEvent(evt$BUTTON_HELD_SEC, mkarr(([(integer)llGetSubString(id, 2, -1), d])));
         multiTimer([id, d, 1, FALSE]);
+		
     }
     else if(id == "T"){
 	
@@ -77,6 +81,28 @@ timerEvent(string id, string data){
 		Level$bind(llGetOwner());
 		
 	}
+	
+	else if( id == "CB" ){
+		
+		int del;
+		int i;
+		for(; i < count(CBLCK) && count(CBLCK); ++i ){
+			
+			if( llKey2Name(l2k(CBLCK, i)) == "" ){
+				
+				CBLCK = llDeleteSubList(CBLCK, i, i);
+				--i;
+				++del;
+				
+			}
+			
+		}
+		
+		if( del )
+			controls();
+	
+	}
+	
 }
 
 
@@ -107,7 +133,7 @@ integer setTarget(key t, key icon, integer force, integer team){
 	// Try to fetch from description
 	if( team == -1 ){
 	
-		parseDesc(t, resources, status, fx, sex, te, junk, _a);
+		parseDesc(t, resources, status, fx, sex, te, junk, _a, _b);
 		team = te;
 		
 	}
@@ -175,8 +201,39 @@ list getPlayers(){
 
 #define savePlayers() raiseEvent(RootEvt$players, mkarr(getPlayers()))
 
-default 
-{
+int CTRLS;
+controls(){
+	
+	multiTimer(["CB"]);
+	
+	if( count(CBLCK) ){
+	
+		if( llGetPermissions() & PERMISSION_TAKE_CONTROLS )
+			llReleaseControls();
+			
+		multiTimer(["CB", 0, 1, TRUE]);
+			
+	}
+	else{
+	
+		if( ~llGetPermissions() & PERMISSION_TAKE_CONTROLS )
+			llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
+	
+		else{
+	
+			integer ct = CTRLS;
+			if( !ct )
+				ct = CONTROL_UP|CONTROL_DOWN|CONTROL_ML_LBUTTON;
+			llTakeControls(ct, TRUE, FALSE);
+			
+		}
+		
+	}
+	
+}
+
+default{
+
     // Initialize on attach
     on_rez(integer rawr){  
         llResetScript();
@@ -277,7 +334,7 @@ default
 			setTarget("", "", TRUE, 0);
 		}
 		// Boss
-		else if(llGetSubString(ln, 0,4) == "BOSS_"){
+		else if( llGetSubString(ln, 0,4) == "BOSS_" ){
 		
 			string boss = l2s(llGetLinkPrimitiveParams(llDetectedLinkNumber(0), [PRIM_DESC]), 0);
 			if( boss == llGetKey() )
@@ -287,12 +344,11 @@ default
 			if( pos == -1 )
 				pos = llListFindList(COOP_HUDS, [(key)boss]);
 
-			if( ~pos ){
+			if( ~pos )
 				setTarget(l2s(COOP_HUDS, pos), l2s(PLAYER_TEXTURES, pos), TRUE, -1);
-			}
-			else{
+			else
 				Status$monster_attemptTarget(boss, TRUE);	
-			}
+			
 			
 		}
 			
@@ -319,21 +375,29 @@ default
 				Evts$getTextureDesc(targ, desc);
 			else
 				NPCInt$getTextureDesc(targ, desc);
+				
         }
         raiseEvent(evt$TOUCH_START, llList2Json(JSON_ARRAY, [llDetectedLinkNumber(0), llDetectedKey(0), llDetectedTouchFace(0)]));
+		
     }
 
     
-    control(key id, integer level, integer edge){
-        if(level&edge){ // Pressed
+    control( key id, integer level, integer edge ){
+	
+        if( level&edge ){ // Pressed
+		
             pressStart = llGetTime();
             raiseEvent(evt$BUTTON_PRESS, (string)(level&edge));
-            if(llGetTime()-lastclick < .5){
+            if( llGetTime()-lastclick < .5 ){
+			
                 raiseEvent(evt$BUTTON_DOUBLE_PRESS, (string)(level&edge&lcb));
                 lcb = 0;
+				
             }else{
+			
                 lastclick = llGetTime();
                 lcb = (level&edge);
+				
             }
             
             integer i;
@@ -343,18 +407,24 @@ default
             }
         }
         
-        if(~level&edge){
+        if( ~level&edge ){
+		
             raiseEvent(evt$BUTTON_RELEASE, llList2Json(JSON_ARRAY, [(~level&edge),(llGetTime()-pressStart)]));
             integer i;
-            for(i=0; i<32; i++){
-                integer pow = llCeil(llPow(2,i));
-                if(~level&edge&pow)multiTimer(["H_"+(string)pow]);
+            for( ; i<32; ++i ){
+			
+                integer pow = 1<<i;
+                if( ~level&edge&pow )
+					multiTimer(["H_"+(string)pow]);
+					
             }
+			
         } 
     }
     
     run_time_permissions(integer perms){
-        if(perms&PERMISSION_TAKE_CONTROLS)llTakeControls(CONTROL_UP|CONTROL_DOWN|CONTROL_ML_LBUTTON, TRUE, FALSE);
+        if( perms&PERMISSION_TAKE_CONTROLS )
+			controls();
     }
     
     
@@ -382,13 +452,13 @@ default
     // Here's where you receive callbacks from running methods
     if(method$isCallback){
 		
-		if(id == "" && SENDER_SCRIPT == llGetScriptName() && METHOD == stdMethod$setShared){
+		if( id == "" && SENDER_SCRIPT == llGetScriptName() && METHOD == stdMethod$setShared ){
 			// Reset all other scripts
 			resetAllOthers();
 			multiTimer(["INI", "", 2, FALSE]);	// Post reset timer
 		}
 		
-		if(CB == "ATTACHED"){
+		if( CB == "ATTACHED" ){
 		
 			integer pos = llListFindList(PLAYERS, [(str)llGetOwnerKey(id)]);
 			if( ~pos ){
@@ -408,11 +478,11 @@ default
     
     // Internal means the method was sent from within the linkset
     if(method$internal){
-        if(METHOD == RootMethod$statusControls){
-            if(~llGetPermissions()&PERMISSION_TAKE_CONTROLS)return;
-            llTakeControls((integer)method_arg(0), TRUE, FALSE);
-        }
-        else if(METHOD == RootMethod$setParty){
+	
+        if( METHOD == RootMethod$statusControls )
+            controls();
+
+        else if( METHOD == RootMethod$setParty ){
 			
 			string pre = mkarr(PLAYERS);
 			
@@ -463,6 +533,21 @@ default
 	
 		if( METHOD == RootMethod$reset )
 			llResetScript();
+			
+			
+		else if( METHOD == RootMethod$blockControls ){
+			
+			integer block = l2i(PARAMS, 0);
+			integer pos = llListFindList(CBLCK, (list)id);
+			if( pos == -1 && block )
+				CBLCK += id;
+			else if( ~pos && !block )
+				CBLCK = llDeleteSubList(CBLCK, pos, pos);
+			controls();
+			
+		}
+			
+			
 		else if( METHOD == RootMethod$manageAdditionalPlayer ){
 		
 			integer rem = llList2Integer(PARAMS, 1);

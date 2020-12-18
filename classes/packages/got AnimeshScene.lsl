@@ -358,7 +358,8 @@ default{
         float h = (float)j(params, gotAnimeshScene$cHeight);
         if( h ){
             
-            list ray = llCastRay(llGetPos()+<0,0,.5>, llGetPos()-<0,0,10>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+			vector apos = prPos(llGetOwner());
+            list ray = llCastRay(apos, apos-<0,0,10>, RC_DEFAULT);
             if( l2i(ray, -1) == 1 ){
                 
                 llSetRegionPos(l2v(ray, 1)+<0,0,h>);

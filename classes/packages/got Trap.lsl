@@ -377,7 +377,7 @@ default{
 			method_arg(0), 
 			llGetKey(), 
 			"[0,0,0,0,["+
-				(string)dur+",65,\"_Q\",["+
+				(string)dur+",321,\"_Q\",["+
 					mkarr((list)fx$SET_FLAG+f)+","+
 					mkarr((list)fx$FORCE_SIT+seat+1)+
 					att+
