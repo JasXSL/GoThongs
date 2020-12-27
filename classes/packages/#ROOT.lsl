@@ -423,8 +423,10 @@ default{
     }
     
     run_time_permissions(integer perms){
+	
         if( perms&PERMISSION_TAKE_CONTROLS )
 			controls();
+			
     }
     
     
@@ -479,8 +481,12 @@ default{
     // Internal means the method was sent from within the linkset
     if(method$internal){
 	
-        if( METHOD == RootMethod$statusControls )
-            controls();
+        if( METHOD == RootMethod$statusControls ){
+            
+			CTRLS = l2i(PARAMS, 0);
+			controls();
+			
+		}
 
         else if( METHOD == RootMethod$setParty ){
 			
