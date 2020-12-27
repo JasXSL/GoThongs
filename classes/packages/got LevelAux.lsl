@@ -9,12 +9,14 @@ integer points_saved;
 integer custom_saved;
 key backup_restore;
 key backup;
+key fetchWindlights;
 
 #define HUD_TABLES Level$HUD_TABLES
 #define CUSTOM_TABLES Level$CUSTOM_TABLES
 
 // (str)name, (vec)pos
 list MONSTERS_KILLED;
+list toSet;	// Windlights to set
 
 
 #define onEvt(script, evt, data) \
@@ -108,8 +110,57 @@ list getAssetByIndex(integer customAsset, integer globalIndex){
 default{
 
     state_entry(){ 
+	
 		raiseEvent(evt$SCRIPT_INIT, ""); 
 		ptSet("KILLQUE", 2, TRUE); 
+		
+		integer N;
+        // fetchWindlights((list)"[TOR] Night - Anwar" + "Nacon's Natural Sunset: C");
+        links_each( nr, name,
+            
+            string desc = l2s(llGetLinkPrimitiveParams(nr, (list)PRIM_DESC), 0);
+            if( ~llSubStringIndex(desc, "WL$") ){
+                
+                list spl = explode("$$", desc);
+                integer i;
+                for(; i < count(spl); ++i ){
+                    
+                    list sub = explode("$", l2s(spl, i));
+                    if( l2s(sub, 0) == "WL" ){
+                        
+                        string wl = llToLower(l2s(sub, 1));
+						
+						// Windlight is already a key
+						if( (key)wl ){}
+						else{
+						
+							integer pos = llListFindList(toSet, (list)wl);
+							if( ~pos )
+								toSet = llListReplaceList(toSet, [
+									implode(",", explode(",", l2s(toSet, pos+1)) + nr )
+								], pos+1, pos+1);
+							else
+								toSet += (list)wl + nr;
+
+						}
+						i = count(spl);
+						
+                    }
+                    
+                }
+                
+            }
+            ++N;
+        
+        )
+		
+        fetchWindlights = llHTTPRequest(
+			"https://jasx.org/api/windlight/?SKY="+
+				llEscapeURL(implode(",", llList2ListStrided(toSet, 0, -1, 2))),
+			[],
+			""
+		);
+		
 	}
     
     timer(){ ptRefresh(); }
@@ -119,6 +170,63 @@ default{
 		
 		if( id == backup )
 			llOwnerSay(body);
+		
+		if( id == fetchWindlights ){
+			
+			integer i;
+			body = j(body, "SKY");
+			if( !isset(body) )
+				return;
+				
+			for(; i < count(toSet); i += 2 ){
+				
+				key uuid = j(body, l2s(toSet, i));
+				if( uuid ){
+					
+					list prims = explode(",", l2s(toSet, i+1));
+					integer pid;
+					for(; pid < count(prims); ++pid ){
+						
+						integer prim = l2i(prims, pid);
+						list desc = explode(
+							"$$", 
+							l2s(
+								llGetLinkPrimitiveParams(prim, (list)PRIM_DESC),
+								0
+							)
+						);
+						
+						integer d;
+						for( ; d < count(desc); ++d ){
+							
+							list spl = explode("$", l2s(desc, d));
+							if( l2s(spl, 0) == "WL" ){
+								
+								spl = llListReplaceList(spl, (list)uuid, 1, 1);
+								desc = llListReplaceList(desc, (list)implode("$", spl), d, d);
+								
+							}    
+							
+						}
+						
+						string out = implode("$$", desc);
+						if( llStringLength(out) > 127 )
+							llOwnerSay("ERROR: Prim desc too long: '"+out+"' Please report this here: https://github.com/JasXSL/GoThongs/issues/343");
+						else
+							llSetLinkPrimitiveParamsFast(prim, (list)PRIM_DESC + out);
+						
+					}
+					
+					
+				}
+				else
+					llOwnerSay("MISSING WINDLIGHT: "+l2s(toSet, i));
+				
+				
+			}
+			toSet = [];
+					
+		}
 		
 		if( id != backup_restore )
 			return;
