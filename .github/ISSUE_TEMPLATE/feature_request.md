@@ -1,10 +1,1 @@
----
-name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: ''
-assignees: ''
-
----
-
-Describe what you'd like to see here!
+### Please put feature requests and ideas in the Discussions tab!
