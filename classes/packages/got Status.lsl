@@ -34,7 +34,7 @@ integer BFL = 1;
 #define BFL_QTE 0x100			// In a quicktime event
 #define BFL_SOFTLOCK_AROUSAL 0x200	// Arousal will not regenerate
 #define BFL_SOFTLOCK_PAIN 0x400		// Pain will not regenerate
-
+#define BFL_NO_BREAKFREE 0x800		// Not allowed to use the revive
 
 int ARMOR = Status$FULL_ARMOR;				// Full armor
 int A_ARM = 0;						// Currently targeted armor slot. Shuffled each armor break.
@@ -287,8 +287,9 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		updateCombatTimer();
 		
     }
+	
 	// Healing
-	else if( !re ){
+	if( !re ){
 		
 		// Healing taken multiplier
 		float fmht = 1;
@@ -297,6 +298,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 			fmht *= l2f(fmHT, pos*2+1);
 		if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(atkr))) )
 			fmht *= l2f(fmHT, pos*2+1);
+			
 		am*= fmht*paHT;
 		
 	}
@@ -540,6 +542,9 @@ onDeath( string customAnim, key killer ){
 		multiTimer([TIMER_COOP_BREAKFREE, 0, 20, FALSE]);
 			
 	}
+	if( BFL&BFL_NO_BREAKFREE )
+		dur = 0;
+	
 	if(dur){
 	
 		multiTimer([TIMER_BREAKFREE, 0, dur, FALSE]);
@@ -1209,6 +1214,14 @@ default {
 		OS(TRUE);
 		
 	} 
+	
+	else if( METHOD == StatusMethod$toggleBreakfree ){
+		
+		BFL = BFL&~BFL_NO_BREAKFREE;
+		if( !l2i(PARAMS, 0) )
+			BFL = BFL|BFL_NO_BREAKFREE;
+		
+	}
 	
 	if( METHOD == StatusMethod$damageArmor ){
 	

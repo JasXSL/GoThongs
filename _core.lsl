@@ -1,6 +1,8 @@
 #ifndef _GOT_CORE
 #define _GOT_CORE
 
+#include "xobj_core/libraries/lazyPandaLib.lsl"
+
 // We're not using tokens because listeners are limited by party
 #define DISREGARD_TOKEN
 #define SupportcubeCfg$listenOverride 3912896

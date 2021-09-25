@@ -15,12 +15,16 @@ list PLAYERS;
 list PLAYER_HUDS;
 list PLAYER_FLAGS;
 int FLAGS;
-list LINK_ORDER;
+
+list POS_OFFSETS;				// Same index as the players
+list ROT_OFFSETS;				// Same index as the players
 
 list TO_PLAY;					// (key)id, (str)anim
 
+
 int BFL;
 #define BFL_PUBLIC 0x1		// Allow anyone to sit
+
 
 #define setAnimTimer() ptSet("anim", llFrand(ANIM_MAX_TIME-ANIM_MIN_TIME)+ANIM_MIN_TIME, FALSE)
 onEvt(string script, integer evt, list data){
@@ -55,13 +59,18 @@ onEvt(string script, integer evt, list data){
 			
 		// Players that should sit on this. Root prim is always 0 and 
 		list players = llJson2List(l2s(data, 0));
+		list posOffsets = llJson2List(l2s(data, 6));
+		list rotOffsets = llJson2List(l2s(data, 7));
+		
 		startAnim(
 			players,
 			player_flags,
 			anim_duration,
 			anim_min_time,
 			anim_max_time,
-			flags
+			flags,
+			posOffsets,
+			rotOffsets
 		);
 
     }
@@ -88,7 +97,7 @@ forceSit( string targ ){
 			"\"forceSat\","+
 			"["+
 				"[13,"+(str)f+"],"+
-				"[31,\""+(str)llGetLinkKey(l2i(LINK_ORDER, pos))+"\",0]"+
+				"[31,\""+(str)llGetKey()+"\",0]"+
 			"]"+
 		"],"+
 		"[],[],[],0,0,1"+
@@ -96,7 +105,7 @@ forceSit( string targ ){
 
 }
 
-startAnim( list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags ){
+startAnim( list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags, list posOffsets, list rotOffsets ){
 
 
 	if( anim_duration < 5.0 )
@@ -106,23 +115,14 @@ startAnim( list players, list player_flags, float anim_duration, float anim_min_
 	if( anim_max_time < anim_min_time )
 		anim_max_time = anim_max_time;
 	
-	
+	POS_OFFSETS = posOffsets;
+	ROT_OFFSETS = rotOffsets;
 	PLAYER_FLAGS = player_flags;
 	ANIM_MIN_TIME = anim_min_time;		// Min time between animation triggers
 	ANIM_MAX_TIME = anim_max_time;		// Max time between animation trigger
 	ANIM_DURATION = anim_duration;		// Total seconds to animate
 	FLAGS = flags;
 	TARGETS = players;
-	
-	// Prim order, root is always the first player
-	LINK_ORDER = [1,0,0,0,0,0,0,0];
-	links_each( nr, name,
-	
-		int desc = l2i(llGetLinkPrimitiveParams(nr, (list)PRIM_DESC), 0);
-		if( nr != 1 && name == "POSEBALL" ){
-			LINK_ORDER = llListReplaceList(LINK_ORDER, (list)nr, desc, desc);
-		}
-	)
 	
 	// Assign players to their prims
 	list_shift_each(players, targ,
@@ -157,6 +157,7 @@ anim( string anim ){
 	TO_PLAY = [];
 	integer i;
 	for(; i<count(TARGETS); ++i ){
+	
 		TO_PLAY += l2s(TARGETS, i);
 		str suffix = "_a";
 		if( i == 1 )
@@ -164,24 +165,40 @@ anim( string anim ){
 		else if( i )
 			suffix = "_t"+(str)i;
 		TO_PLAY += (anim+suffix);
+		
 	}
 	
     reqNextAnim();
     
 }
 
+integer getPlayerLink( key id ){
+
+	integer i;
+	for(i = 1; i <= llGetNumberOfPrims(); ++i ){
+		
+		if( llGetLinkKey(i) == id )
+			return i;
+		
+	}
+	return 0;
+
+}
+
 // Checks if all poseballs are seated and unsits non players
 integer allSeated(){
-
 
 	// Unsit unauthorized avatars
 	links_each(nr, name,
 		
-		string t = llAvatarOnLinkSitTarget(nr);
-		int pos = llListFindList(TARGETS, (list)t);
+		string id = llGetLinkKey(nr);
+		if( llGetAgentSize(id) ){
 		
-		if( pos == -1 )
-			llUnSit(t);
+			int pos = llListFindList(TARGETS, (list)id);
+			if( pos == -1 )
+				llUnSit(id);
+			
+		}
 
     )
 	
@@ -191,8 +208,10 @@ integer allSeated(){
 	// See if all targets are present
 	int i;
 	for(; i<count(TARGETS); ++i ){
+	
 		if( prRoot(l2k(TARGETS, i)) != llGetKey() )
 			return FALSE;
+			
 	}
     
     return true;
@@ -205,6 +224,27 @@ onSeatChange(){
 	// All players are seated
     if( allSeated() ){
         
+		// Update position
+		integer i;
+		for( ; i < count(TARGETS); ++i ){
+			
+			key targ = l2k(TARGETS, i);
+			integer ln = getPlayerLink(targ);
+			if( ln ){
+				
+				vector scale = llGetAgentSize(targ);
+				vector pos = (vector)l2s(POS_OFFSETS, i);
+				rotation rot = (rotation)l2s(ROT_OFFSETS, i);
+			
+				float fAdjust = ((((0.008906 * scale.z) + -0.049831) * scale.z) + 0.088967) * scale.z;
+				llSetLinkPrimitiveParamsFast(ln, (list)
+					PRIM_POSITION + (pos+ <0.0, 0.0, 0.4> - (llRot2Up(rot) * fAdjust)) +
+					PRIM_ROT_LOCAL + rot
+				);
+				
+			}
+		}
+		
         anim(ANIM_BASE);				// Start the idle animations
         setAnimTimer();					// Set timer for active animations
         ptUnset("fail");				// Success, do not fail
@@ -220,8 +260,7 @@ onSeatChange(){
 		// This has already started so now delete
         if( ANIM_STARTED )
             end();
-		
-            
+  
     }
 	
 }
@@ -254,10 +293,13 @@ ptEvt( string id ){
 	// Start active animation
     if( id == "anim" ){
         
-        anim(ANIM_BASE+"_"+(str)(ANIM_STEP+1));
-        if( ++ANIM_STEP >= ANIM_MAX_STEPS )
-            ANIM_STEP = 0;
-
+		if( ANIM_MAX_STEPS ){
+		
+			anim(ANIM_BASE+"_"+(str)(ANIM_STEP+1));
+			if( ++ANIM_STEP >= ANIM_MAX_STEPS )
+				ANIM_STEP = 0;
+				
+		}
 		raiseEvent(gotPlayerPoserEvt$animStep, (str)ANIM_STEP);
 		setAnimTimer();
 		
@@ -273,10 +315,9 @@ ptEvt( string id ){
 		for(; i<count(TARGETS); ++i ){
 			
 			key targ = l2k(TARGETS, i);
-			int link = l2i(LINK_ORDER, i);
-			if( llAvatarOnLinkSitTarget(link) == NULL_KEY ){
+			if( prRoot(targ) != llGetKey() )
 				forceSit(targ);
-			}
+			
 			
 		}
 			
@@ -294,13 +335,10 @@ default{
         
         PLAYERS = [(string)llGetOwner()];
         
-		// Set sit targets
-        links_each(nr, name,
 		
-            if( nr == 1 || name == "POSEBALL" )
-                llLinkSitTarget(nr, <0,0,.01>, ZERO_ROTATION);
-                
-        )
+		links_each( nr, name,
+			llLinkSitTarget(nr, <0,0,.01>, ZERO_ROTATION);
+		)
         
 		// Automatically fetch animations
         integer i;
@@ -318,6 +356,7 @@ default{
             }
             
         }
+		
         
         memLim(1.5);
 		// Get permissions if somebody is sitting on this
@@ -353,12 +392,15 @@ default{
 	if( method$byOwner ){
 			
 		if( METHOD == gotPlayerPoserMethod$test ){
+		
 			list players = llJson2List(method_arg(0)); 
 			list player_flags = llJson2List(method_arg(1));
 			float anim_duration = l2f(PARAMS, 2);
 			float anim_min_time = l2f(PARAMS, 3); 
 			float anim_max_time = l2f(PARAMS, 4);
 			int flags = l2i(PARAMS, 5);
+			list posOffsets = llJson2List(method_arg(6));
+			list rotOffsets = llJson2List(method_arg(7));
 			
 			startAnim( 
 				players, 
@@ -366,7 +408,9 @@ default{
 				anim_duration, 
 				anim_min_time, 
 				anim_max_time, 
-				flags
+				flags,
+				posOffsets,
+				rotOffsets
 			);
 			
 		}

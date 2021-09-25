@@ -29,6 +29,10 @@
 #define gotSoundLib$gnoll$attack "be42c330-f776-325a-059d-7edcf1328b8c"
 #define gotSoundLib$gnoll$death "86c3ac10-bbd1-51ee-0bcf-660190b020e9"
 
+#define gotSoundLib$vibbee$aggro "e40db27c-414c-22b6-14c5-aaee8f020233"
+#define gotSoundLib$vibbee$takehit "d09a158b-5b72-b38f-3835-3eb813aeb684"
+#define gotSoundLib$vibbee$attack "274010a7-ca53-2fa5-a7db-e9bdd5f4bd62"
+#define gotSoundLib$vibbee$death "c364020a-8ad2-b69b-3c7f-92e01746b8b7"
 
 #define gotSoundLib$firesprite$aggro "77df7327-a8a1-4158-1c2b-461574ffa588"
 #define gotSoundLib$firesprite$takehit "31a1f9b4-4d1a-21c6-eb4d-76b04f5a485e"

@@ -16,8 +16,6 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		Status$refreshCombat();
 		
 	int stacks = getStacks(pid, FALSE);
-	
-	
 
 	list fxs = llJson2List(fxobjs);
     while(llGetListLength(fxs)){

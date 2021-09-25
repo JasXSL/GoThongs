@@ -15,7 +15,12 @@ vector _POS;
 rotation _ROT;
 
 // if pos is ZERO_VECTOR it positions at the first player's feet by raycasting
-spawnScene( string name, float duration, float min_speed, float max_speed, list players, vector pos, rotation rot, list pflags ){
+spawnScene( string name, float duration, float min_speed, float max_speed, list players, vector pos, rotation rot, list pflags, list posOffs, list rotOffs ){
+	
+	if( duration < 5 )
+		duration = 5;
+	else if( duration > 120 )
+		duration = 120;
 	
 	key pl = l2k(players, 0);
 	if( pos == ZERO_VECTOR ){
@@ -23,12 +28,15 @@ spawnScene( string name, float duration, float min_speed, float max_speed, list 
 		pos = prPos(pl);
 		if( pos == ZERO_VECTOR )
 			return;
+			
 		list ray = llCastRay(pos, pos-<0,0,10>, (list)RC_REJECT_TYPES+(RC_REJECT_AGENTS|RC_REJECT_PHYSICAL));
 		if( l2i(ray, -1) != 1 )
 			return;
+			
 		pos = l2v(ray, 1);
+		
 		vector sc = llGetAgentSize(llGetOwnerKey(pl));
-		pos.z += sc.z/2;
+		pos.z += sc.z/2+.1;
 		
 	}
 	
@@ -42,7 +50,9 @@ spawnScene( string name, float duration, float min_speed, float max_speed, list 
 		max_speed,
 		duration,
 		0,
-		mkarr(pflags)
+		mkarr(pflags),
+		mkarr(posOffs),
+		mkarr(rotOffs)
 	];
 	
 	gotPISpawner$spawnTarg(LINK_THIS, name, pos, rot, mkarr(desc), FALSE, TRUE, "");
@@ -60,11 +70,6 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 		)
 		
 		_DUR = l2f(PARAMS, 1);
-		if( _DUR < 5 )
-			_DUR = 5;
-		else if( _DUR > 120 )
-			_DUR = 120;
-			
 		_POS = (vector)method_arg(2);
 		_ROT = (rotation)method_arg(3);
 		int no_instigator = l2i(PARAMS, 4);
@@ -82,8 +87,7 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 				return;
 			
 		}
-		
-		
+				
 		// Not enough players
 		if( count(viable) < 2 ){		
 			return;
@@ -114,7 +118,9 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 				llList2List(viable, 0, 1), 
 				_POS, 
 				_ROT,
-				[0,0]
+				[0,0],
+				[],
+				[0,"<0,0,1,0>"]
 			);
 			return;
 			
@@ -135,6 +141,7 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 		
 		integer i;
 		for(; i<count(PARAMS); ++i ){
+		
 			string block = l2s(PARAMS, i);
 			spawnScene( 
 				j(block, "scene" + 0), 
@@ -144,11 +151,28 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 				llJson2List(j(block, "players")), 
 				_POS, 
 				_ROT,
-				llJson2List(j(block, "scene" + 3))
-			);
-		}
+				llJson2List(j(block, "scene" + 3)),
+				llJson2List(j(block, "scene" + 5)),
+				llJson2List(j(block, "scene" + 6))
 				
+			);
+			
+		}
 		
+	}
+	
+	if( method$byOwner && METHOD == gotPiSpawnerMethod$testInteraction ){
+		
+		float dur = l2f(PARAMS, 1);
+		list players = llDeleteSubList(PARAMS, 0, 1);
+		if( !count(players) ){
+			qd("No players");
+			return;
+		}
+		
+		_DUR = dur;
+		Bridge$testPVPScene(l2i(PARAMS, 0), players);
+	
 	}
 
 }

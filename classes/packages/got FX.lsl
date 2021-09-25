@@ -396,11 +396,13 @@ integer preCheck(key sender, list package, integer team){
 				l2i(llGetObjectDetails(sender, [OBJECT_ATTACHED_POINT]),0) // Attached
 			)ang = a;
 			
-			
 			vector tpos = prPos(sender);
 			vector gpos = llGetRootPosition();
 			tpos.z = gpos.z;
-			add = llFabs(ang) < l2f(dta, 0) || llVecDist(tpos, gpos) < 0.5;
+			add = llFabs(ang) < l2f(dta, 0);
+			
+			if( llVecDist(tpos, gpos) < 0.5 || sender == "s" )
+				add = !inverse;
 		
 		}
 		else if( c == fx$COND_TEAM )
@@ -414,7 +416,6 @@ integer preCheck(key sender, list package, integer team){
 		// User defined conditions
         else
 			add = checkCondition(sender, c, dta, flags, team);
-		
 		
 		// If we're inverse, then flip add
         if(inverse)
@@ -494,6 +495,7 @@ default{
         if( METHOD == FXMethod$run ){
 			
 			string sender = method_arg(0);						// UUID of FX sender
+			
 			// Convert sender to "s" if self
 			if( sender == llGetOwner() || sender == "" || sender == llGetKey() )
 				sender = "s";
@@ -786,9 +788,12 @@ default{
 					// Send the packages to FXCompiler
 					if( sender == "s" )
 						sender = llGetOwner();
+							
+					if( send ){
 						
-					if( send )
 						llMessageLinked(LINK_THIS, TASK_FXC_PARSE, llList2Json(JSON_ARRAY, send), sender);
+						
+					}
 					
 				}
 			}
@@ -821,7 +826,7 @@ default{
 			
 			// These are indexes of PACKAGES, sorted descending so they can be shifted without issue
 			list find = llListSort(find(names, senders, tags, pids, flags, TRUE), 1, FALSE);	
-
+			
 			// Jump since we can't have continues
 			@delContinue;
 			while( find != [] && (amount < 0 || nr_affected < amount)){

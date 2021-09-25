@@ -22,7 +22,9 @@
 		2 : (float)anim_max_time | Max time between animation triggers
 		3 : (float)duration | Total duration of scene. Min 5
 		4 : (int)flags | See below
-		5 : (arr)strip_players
+		5 : (arr)player_flags
+		6 : (arr)pos_offsets,
+		7 : (arr)rot_offsets
 		
 	Example:
 	list conf = [
@@ -36,8 +38,8 @@
 */
 
 
-// ex: debugj got PlayerPoser, 1, [["cf2625ff-b1e9-4478-8e6b-b954abde056b","984845e6-1d42-471f-8234-12883eaf8c7a"],[0,0],10,0.6,1]
-#define gotPlayerPoserMethod$test 1			// list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags
+// Note, this can only be run through a script due to JSON
+#define gotPlayerPoserMethod$test 1			// list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags, (arr)pos_offsets, (arr)rot_offsets
 
 
 #define gotPlayerPoserEvt$animStep 1		// (int)step | An animation step has triggered
@@ -45,5 +47,21 @@
 #define gotPlayerPoserEvt$end 3				// void | The poser is shutting down and deleting itself
 
 //#define gotPlayerPoserFlag$
+
+#define gotPlayerPoser$test( players, player_flags, duration, min_repeat_time, max_repeat_time, flags, pos_offsets, rot_offsets) \
+	runOmniMethod("got PlayerPoser", gotPlayerPoserMethod$test, (list) \
+		mkarr(players) + \
+		mkarr(player_flags) + \
+		duration + \
+		min_repeat_time + \
+		max_repeat_time + \
+		flags + \
+		mkarr(pos_offsets) + \
+		mkarr(rot_offsets) \
+	, TNN)
+	
+	
+
+
 
 #endif

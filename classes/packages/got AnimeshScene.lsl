@@ -210,6 +210,8 @@ updatePos( vector pos, rotation rot ){
     
 }
 
+int NO_DIE;
+
 default{
     
     state_entry(){
@@ -255,10 +257,12 @@ default{
 				BFL = BFL|BFL_STARTED;
 				
             }
-            else{
+            else if( !NO_DIE ){
+			
                 ptUnset("thr");
 				if( portalConf$live )
 					llDie();
+					
             }
         }
         
@@ -294,6 +298,21 @@ default{
 	if( method$byOwner && METHOD == gotAnimeshSceneMethod$orient ){
         updatePos( (vector)method_arg(0), (rotation)method_arg(1) );
     }
+	
+	if( method$byOwner && METHOD == gotAnimeshSceneMethod$stop ){
+	
+		NO_DIE = true;
+		key ast = llAvatarOnSitTarget();
+		if( ast ){
+		
+			PP(0, (list)PRIM_TEMP_ON_REZ + FALSE);
+			llOwnerSay("@unsit=y");
+			llUnSit(ast);
+			ptUnset("resit");
+			
+		}
+		
+	}
     
 	
     if( !method$internal )

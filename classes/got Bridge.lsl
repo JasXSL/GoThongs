@@ -21,7 +21,9 @@
 
 #define BridgeMethod$addEnchant 21		// (str)token, (int)amount - Adds an enchant to your inventory. Token can be obtained from the mod panel.
 #define BridgeMethod$addThong 22		// (str)token - Adds a thong to your inventory. Token can be obtained from the mod panel. This only works if the user does not have this thong already.
-#define BridgeMethod$getPVPScene 23		// (arr)[[uuid,flags]...], placeholder
+#define BridgeMethod$getPVPScene 23		// (arr)[[uuid,flags]...] - Fetches a PVP scene by UUIDs
+#define BridgeMethod$testPVPScene 24	// (int)id, (arr)players - Fetches a particular scene by ID. Scene must be public or owned by you.
+
 
 
 #define Bridge$refreshThong() runMethod((string)LINK_SET, "got Bridge", BridgeMethod$refreshThong, [], TNN)
@@ -55,6 +57,7 @@
 #define Bridge$monstersKilled(targ, data) runMethod((str)targ, "got Bridge", BridgeMethod$monstersKilled, data, TNN)
 
 #define Bridge$getPVPScene(players, no_instigator) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$getPVPScene, (list)mkarr((list)players)+no_instigator, TNN)
+#define Bridge$testPVPScene(id, players) runMethod((str)LINK_ROOT, "got Bridge", BridgeMethod$testPVPScene, (list)id + mkarr((list)players), TNN)
 
 
 #define BridgeEvt$data_change 1			// Thong data changed:

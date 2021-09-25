@@ -4,11 +4,13 @@
 	#define SOUNDS (list)sounds				- Auto play a random sound each thrust
 	#define particles (void func)			- Triggers the particles() function. You can use l2i(PARTS, 0-3) alongside prims named PARTS, PARTS1, PARTS2, PARTS3 to get the link number of the particle prims.
 	#define PART_DELAY (float)=0.2			- Delay after a thrust to call function above
+	#define SOUND_DELAY (float)=0.0
 	#define onThrust (void func)			- Triggered when an animStep is raised
 	#define onStart (void func)				- Raised when all players are seated
 	#define onEnd (void func)				- Raised when the scene ends
 	#define ptEvent (void func)				- str id - Raised when a timer ends. You can use ptSet (see libJasPre.lsl in XOBJ)
 	#define stateEntry (optional)			- This is injected into state entry
+	
 	
 	Globals:
 	PLAYERS - List of players
@@ -28,6 +30,9 @@ list PARTS = [0,0,0,0];
 
 #ifndef PART_DELAY
 	#define PART_DELAY 0.2
+#endif
+#ifndef SOUND_DELAY
+	#define SOUND_DELAY 0.01
 #endif
 
 list PLAYERS;
@@ -50,8 +55,7 @@ onEvt(string script, integer evt, list data){
 			#endif
 
 			#ifdef SOUNDS
-            list sounds = SOUNDS;
-            llTriggerSound(randElem(sounds), llFrand(.5)+.5);
+            ptSet("snd", SOUND_DELAY, FALSE);
             #endif
 			
 			#ifdef particles
@@ -78,6 +82,14 @@ ptEvt( string id ){
     #endif
 	#ifdef ptEvent
 		ptEvent(id);
+	#endif
+	#ifdef SOUNDS
+	if( id == "snd" ){
+	
+		list sounds = SOUNDS;
+        llTriggerSound(randElem(sounds), llFrand(.5)+.5);
+		
+	}
 	#endif
 	
 }
