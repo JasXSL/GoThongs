@@ -28,7 +28,6 @@ integer BFL;
 		debugUncommon("Raising script init"); \
 		raiseEvent(PortalEvt$spawner, (str)requester); \
 		raiseEvent(PortalEvt$desc_updated, INI_DATA); \
-		raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS)); \
 	}
 
 // Fetches desc from spawner
@@ -140,15 +139,17 @@ default{
 		// Let the spawner know it can rez next
 		llRegionSayTo(mySpawner(), playerChan(mySpawner()), "PN");
         if(mew != 0){
+		
 			integer p = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(p);
             multiTimer([]);
 			setText((str)mew);
             Remoteloader$load(cls$name, p, 2);
 			return;
+			
         }
 		setText("");
-        llResetScript();
+		
     }
     state_entry(){
 	
@@ -163,7 +164,9 @@ default{
 		llListen(AOE_CHAN, "", "", "");
         pin = llCeil(llFrand(0xFFFFFFF));
         llSetRemoteScriptAccessPin(pin);
+		Root$getPlayers("INI");
 		
+        memLim(1.5);
 		
         if(!llGetStartParameter())
 			return;
@@ -264,21 +267,23 @@ default{
 			setText(mkarr(text));
 			
 			// Putting it below will cause trouble with double inits
-			Root$getPlayers("INI");
 			multiTimer(["INI", "", 5, TRUE]);
 			
 			list_shift_each(get_objects, val,
 				Spawner$getAsset(val);
 			)
+			
         } 
+		
         if(required == []){
+		
 			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
             BFL = BFL|BFL_SCRIPTS_INITIALIZED;
             checkIni()
+			
         }
 		
 		
-        memLim(1.5);
     }
     
     timer(){
@@ -308,13 +313,22 @@ default{
     if(method$isCallback){
         if(!method$byOwner)return;
         
-        if(SENDER_SCRIPT == "#ROOT" && METHOD == RootMethod$getPlayers && CB == "INI" && llGetStartParameter() == 2){
+        if( SENDER_SCRIPT == "#ROOT" && METHOD == RootMethod$getPlayers && CB == "INI" ){
+		
+			
             PLAYERS = llJson2List(method_arg(0));
+			PLAYER_HUDS = llJson2List(method_arg(1));
+			debugUncommon("Got players "+mkarr(PLAYERS));
+			debugUncommon("Got HUDS "+mkarr(PLAYER_HUDS));
+			raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
+			raiseEvent(PortalEvt$players, mkarr(PLAYERS));
+			
+			if( llGetStartParameter() != 2 )
+				return;
+				
 			//qd("PLAYERS from root: "+mkarr(PLAYERS));
 			multiTimer(["INI"]);
 			BFL = BFL|BFL_GOT_PLAYERS;
-			PLAYER_HUDS = llJson2List(method_arg(1));
-			debugUncommon("Got players "+mkarr(PLAYERS));
 			debugUncommon(BFL);
 			checkIni()
 			
@@ -482,7 +496,10 @@ default{
 			checkIni()
 		}
 		else if(METHOD == PortalMethod$debugPlayers){
-			qd(mkarr(PLAYERS));
+			
+			Root$getPlayers("INI");
+			qd(mkarr(PLAYERS));			
+			
 		}
 		else if(METHOD == PortalMethod$removeBySpawnround && method_arg(0) == SPAWNROUND){
 			remove();

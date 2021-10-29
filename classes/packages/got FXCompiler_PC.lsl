@@ -120,24 +120,48 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
         else if(t == fx$RESET_COOLDOWNS){
             SpellMan$resetCooldowns(l2i(fx,1), l2i(fx,2));
 		}
-        else if(t == fx$FORCE_SIT){
+        else if( t == fx$FORCE_SIT ){
+		
             string out = "@sit:"+l2s(fx,1)+"=force";
-            if(llList2Integer(fx, 2))out+=",unsit=n";
+            if( !l2i(fx, 2) )
+				out+=",unsit=n";
             llOwnerSay(out);
+			
         }
 		else if(t == fx$PARTICLES){
 			ThongMan$particles(l2f(fx,1), llList2Integer(fx,2), llList2String(fx,3));
 		}
 		else if(t == fx$PULL && ~CACHE_FLAGS&fx$F_NO_PULL){
-			if((vector)l2s(fx,1) == ZERO_VECTOR){
+		
+			vector pos = (vector)l2s(fx, 1);
+			if( pos == ZERO_VECTOR ){
+			
 				raiseEvent(FXCEvt$pullEnd, "");
 				llStopMoveToTarget();
+				
 			}else{
+			
 				raiseEvent(FXCEvt$pullStart, "");
 				llSleep(.1);
-				llMoveToTarget((vector)l2s(fx,1), llList2Float(fx,2));
+				int fromSender = l2i(fx, 3);
+				float speed = l2f(fx, 2);
+				if( fromSender ){
 				
+					key c = caster;
+					if( prAttachPoint(c) )
+						c = llGetOwnerKey(c);
+					vector r = llGetRootPosition();
+					vector pp = prPos(c);
+					pp.z = 0;
+					rotation between = llRotBetween(<1,0,0>, llVecNorm(<r.x, r.y, 0>-pp));
+					pos *= between;
+					pos += r;
+					
+				}
+				
+				llMoveToTarget(pos, speed);
 			}
+			
 		}
 		else if(t == fx$SPAWN_VFX){
 			SpellFX$spawnInstant(mkarr(llDeleteSubList(fx,0,0)), llGetOwner());

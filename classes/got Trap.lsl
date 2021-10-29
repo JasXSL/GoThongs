@@ -36,8 +36,8 @@
 #define TrapConf$triggerCooldown 0		// (float) time between triggers
 #define TrapConf$finishCooldown 1		// (float) cooldown after releasing a player
 #define TrapConf$attach 2				// (arr) items to attach (uses the pink box in the hud)
-#define TrapConf$baseAnim 3				// (str) anim to override baseanim. Default baseanim is the first animation matching the pattern "<anything>_<not_number>". Baseanim is triggered on the player.
-#define TrapConf$animeshAnim 4			// (str) baseAnim for the trap as an animesh object
+#define TrapConf$baseAnim 3				// (str) anim to override baseanim. Default baseanim is the first animation matching the pattern "<anything>_<not_number>". Baseanim is triggered on the player. Use "_NONE_" for none
+#define TrapConf$animeshAnim 4			// (str) baseAnim for the trap as an animesh object. Use "_NONE_" for none
 
 
 #endif

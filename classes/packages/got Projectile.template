@@ -24,11 +24,7 @@ relies on the following functions and definitions
 	#include "got/classes/packages/got Projectile.template"
 	
 	description:
-	0 = ARC
-	1 = flags (not yet used)
-	2 = speed
-	3 = wiggleIntensity
-	4 = height offset
+	see got Projectile.lsl
 	
 	spawn using:
 	Projectile$quickSpawn(obj, targ, startpos, startrot)

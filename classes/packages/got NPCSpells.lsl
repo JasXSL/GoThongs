@@ -392,6 +392,7 @@ ptEvt(string id){
 				int roleReq = l2i(d, NPCS$SPELL_TARG_ROLE);
 				float angle = l2f(d, NPCS$SPELL_ROT);
 				
+				
 				integer sInverse = statusReq < 0;
 				if( sInverse )
 					statusReq = -statusReq;
@@ -438,7 +439,17 @@ ptEvt(string id){
                         
 						if( flags&NPCS$FLAG_REQUEST_CASTSTART ){
                             // Request start cast
-							runMethod((str)LINK_ROOT, spells_set_by_script, LocalConfMethod$checkCastSpell, [llList2Integer(r, i), targ], "SPELL;"+llList2String(r,i)+";"+(string)targ);
+							runMethod(
+								(str)LINK_ROOT, 
+								spells_set_by_script, 
+								LocalConfMethod$checkCastSpell, 
+								[
+									llList2Integer(r, i), 
+									targ,
+									l2s(d, NPCS$SPELL_NAME)
+								], 
+								"SPELL;"+llList2String(r,i)+";"+(string)targ
+							);
                         }
                         else{
 						

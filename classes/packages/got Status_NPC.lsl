@@ -315,6 +315,11 @@ outputStats( integer f ){
 	 \
 	float mhp = maxHP; \
 	integer team = TEAM; \
+	float hpPerc = HP/maxHP; \
+	if( hpPerc > 1 || maxHP == -1 ) \
+		hpPerc = 1; \
+	else if( hpPerc < 0 ) \
+		hpPerc = 0; \
 	while(settings){ \
 		integer idx = l2i(settings, 0); \
 		list dta = llList2List(settings, 1, 1); \
@@ -352,8 +357,9 @@ outputStats( integer f ){
 		if( idx == MLC$sex ) \
 			sex = dtaInt; \
 	} \
-	if(mhp == -1 || HP>maxHP) \
-		HP = maxHP; \
+	if( maxHP < 1 ) \
+		maxHP = 1; \
+	HP = maxHP*hpPerc; \
 	if(AR > 0){ \
 		ptSet("A", 2, TRUE); \
 	}else{ \
@@ -446,7 +452,7 @@ outputStats( integer f ){
 		} \
 	} \
     else if( id == "A" && ~BFL&BFL_NOAGGRO ){ \
-		parseDesc(AT, resources, status, fx, sex, team, monsterFlags, armor); \
+		parseDesc(AT, resources, status, fx, sex, team, monsterFlags, armor, _c); \
 		if( \
 			AT != "" && \
 			( \
@@ -531,7 +537,7 @@ default
 			integer type = llDetectedType(total);
 			
 			// These can not be relied on for PC
-			parseDesc(k, resources, status, fx, sex, team, mf, armor);
+			parseDesc(k, resources, status, fx, sex, team, mf, armor, _c);
 			vector ppos = prPos(k);
 			float dist =llVecDist(ppos, root);
 			float range = AR;
@@ -682,7 +688,7 @@ default
 							fmdt *= l2f(fmDT, pos*2+1);
 								
 						amount*=fmdt;
-						parseDesc(attacker, _r, _s, _f, _st, team, _mo, _a)
+						parseDesc(attacker, _r, _s, _f, _st, team, _mo, _a, _c)
 						if( attacker != "" && team != TEAM )
 							ag(attacker, llFabs(amount));
 						

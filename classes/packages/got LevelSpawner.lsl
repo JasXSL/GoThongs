@@ -87,14 +87,41 @@ ptEvt( string id ){
 
 }
 
+checkPerms(){
+	integer i;
+	for(; i < llGetInventoryNumber(INVENTORY_OBJECT); ++i ){
+		
+		str name = llGetInventoryName(INVENTORY_OBJECT, i);
+		integer mask = llGetInventoryPermMask(name, MASK_NEXT);
+		if( ~mask & PERM_TRANSFER )
+			qd("Warning, level '"+name+"' is no trans");
+		if( ~mask & PERM_COPY )
+			qd("Warning, level '"+name+"' is no copy");
+		if( ~mask & PERM_MODIFY )
+			qd("Warning, level '"+name+"' is no mod");
+		
+	}
+}
+
 default{
 
 	state_entry(){
 		PRELOADED_TEXTURE = randElem(TEXTURES);
 		llSetTexture(PRELOADED_TEXTURE, ALL_SIDES);
+		
+		checkPerms();
 	}
 
 	timer(){ptRefresh();}
+	
+	changed( integer change ){
+		
+		if( ~change & CHANGED_INVENTORY )
+			return;
+			
+		checkPerms();
+	
+	}
     
     #include "xobj_core/_LM.lsl"
     /*
@@ -106,8 +133,7 @@ default{
     */
     
     if(method$isCallback)return;
-    
-    
+
     if( METHOD == LevelSpawnerMethod$spawnLevel && method$byOwner ){
 	
 		string level = method_arg(0);

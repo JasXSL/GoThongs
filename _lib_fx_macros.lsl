@@ -5,7 +5,7 @@
 #define fxlib$removeMySpellByName(target, name) FX$send((str)target, llGetKey(), "[38,0,0,0,[0,24,\"\",[[10,\""+name+"\",0,1]]]]", 0)
 #define fxlib$removeSpellByNameWithEvent(target, name) FX$send((str)target, "", "[0,0,0,0,[0,0,\"\",[[10,\""+name+"\",1]],[],[],[],0,0,0]]", 0)
 
-#define fxlib$forceSit(targ, on, allowUnsit, duration) FX$send(targ, llGetKey(), "[0,0,0,0,["+(str)duration+",0,\"forceSat\",[[31,\""+(str)on+"\","+(str)allowUnsit+"]]]]", 0)
+#define fxlib$forceSit(targ, on, allowUnsit, duration) FX$send(targ, llGetKey(), "[0,0,0,0,["+(str)duration+",0,\"forceSat\",[[31,\""+(str)on+"\","+(str)((int)allowUnsit)+"]]]]", 0)
 #define fxlib$remForceSit(targ) fxlib$removeSpellByName(targ, "forceSat")
 
 #define fxlib$dealDamageOn(target, damage, color, team, hfxFlags) FX$send(target, llGetKey(), "[9,0,0,0,[0,1,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\","+(str)(hfxFlags)+"]],[],[],[],0,0,0]]", team)

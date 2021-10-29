@@ -304,6 +304,7 @@ vector getTargetPosOffset( key t, float offset ){
 
 // Same as above but checks by UUID. Should work on monsters as well
 int _attackableHUD(key HUD){
+
 	list _data = llGetObjectDetails(HUD, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); 
 	list _split = explode("$", l2s(_data, 1)); 
 	integer status = l2i(_split, 5); 
@@ -313,6 +314,22 @@ int _attackableHUD(key HUD){
 		fx = l2i(_split, 2);
 	}
 	return _attackableV(status, fx);
+	
+}
+
+// Same as above but checks by UUID. Should work on monsters as well
+int _attackableAndNotInvulHUD(key HUD){
+
+	list _data = llGetObjectDetails(HUD, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); 
+	list _split = explode("$", l2s(_data, 1)); 
+	integer status = l2i(_split, 5); 
+	integer fx = l2i(_split, 7);
+	if(l2i(_data, 0)){
+		status = l2i(_split, 1);
+		fx = l2i(_split, 2);
+	}
+	return _attackableV(status, fx) && ~fx&fx$F_INVUL;
+	
 }
 
 

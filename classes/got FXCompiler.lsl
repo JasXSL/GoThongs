@@ -57,6 +57,7 @@
 	#define FXCUpd$QTE_MOD 37			// (PC)(float)divisor - Increases or decreases nr of clicks you have to do in a quick time event. -0.5 = half as many, 1 = twice as many
 	#define FXCUpd$COMBAT_HP_REGEN 38	// (float)multi - Allows HP regen to continue in combat. Default 1 (gets subtracted in got Status)
 	
+
 // Settings that are are not multiplicative
 #define FXCUpd$non_multi (list) \
 	FXCUpd$FLAGS + \

@@ -19,11 +19,11 @@
 #include "got/_core.lsl"
 
 #define TIMER_CD_RESET "a"			// Timer between allowing triggers
-#define TIMER_TRIGGER_RESET "b"		// Retrigger timer
+#define TIMER_TRIGGER_RESET "b"		// Retrigger timer. Starts after the victim unsits.
 
 integer BFL;
-#define BFL_CD 1
-#define BFL_TRIGGERED 2
+#define BFL_CD 1					// 
+#define BFL_TRIGGERED 2				// 
 
 float cooldown = 2;             	// Time between trigger attempts
 float cooldown_full = 20;        	// Delay after trigger is successful
@@ -69,6 +69,11 @@ onEvt(string script, integer evt, list data){
 			d = l2s(data, TrapConf$animeshAnim);
 			if( isset(d) )
 				animesh_anim = d;
+				
+			if( base_anim == "_NONE_" )
+				base_anim = "";
+			if( animesh_anim == "_NONE_" )
+				animesh_anim = "";
 			
 			fetchSubAnims();
 			debugUncommon("Got ini data: "+(str)cooldown+" :: "+(str)cooldown_full+" :: "+mkarr(attachments));
@@ -91,7 +96,7 @@ onEvt(string script, integer evt, list data){
 			
 			if( val == "*" && max_anims ){
 			
-				if( base_anim )
+				if( base_anim  )
 					anim = base_anim+"_"+(string)(cur_anim+1);
 				if( animesh_anim )
 					animesh_anim = base_anim+"_"+(string)(cur_anim+1);
@@ -282,8 +287,23 @@ default{
 				debugCommon("Player unsat");
 				Evts$stopQuicktimeEvent(VICTIM);
                 raiseEvent(TrapEvent$unseated, "[\""+(string)VICTIM+"\"]");
+				
+				// Stop all our animations on unsit
+				integer i;
+				for(; i < llGetInventoryNumber(INVENTORY_ANIMATION); ++i ){
+				
+					if( llGetPermissions()&PERMISSION_TRIGGER_ANIMATION && llGetPermissionsKey() == VICTIM )
+						llStopAnimation(llGetInventoryName(INVENTORY_ANIMATION, i));
+				
+				}
+				
+				
 				if( cooldown_full > 0 )
 					multiTimer([TIMER_TRIGGER_RESET, "", cooldown_full, FALSE]);
+				else{
+					raiseEvent(TrapEvent$reset, "");
+					BFL = BFL&~BFL_TRIGGERED;	// Reset cooldown immediately
+				}
 				fxlib$removeSpellByName(VICTIM, "_Q");
 				
             }
@@ -340,11 +360,16 @@ default{
 	}
 
     if( METHOD == TrapMethod$forceSit ){
+		
+		debugUncommon("Force sit received "+mkarr(PARAMS));
 	
-		if( BFL&(BFL_CD|BFL_TRIGGERED) )
+		if( BFL&(BFL_CD|BFL_TRIGGERED) ){
+			debugUncommon("Rejected because CD or triggered. BFL -> "+(str)BFL);
 			return;
+		}
 			
-		if( cooldown>0 ){
+		// Attempt cooldown
+		if( cooldown > 0 ){
 		
 			BFL = BFL|BFL_CD;
 			multiTimer([TIMER_CD_RESET, "", cooldown, FALSE]);

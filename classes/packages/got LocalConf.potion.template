@@ -23,6 +23,10 @@
 	
 	Optional:
 	#define onEvent( script, evt, data ) onEvent( script, evt, data ) -> Event handler
+	#define onInit() onInit() -> Raised on state entry
+	
+	#define body // inject code under default
+	
 	
 */
 #define USE_EVENTS
@@ -142,6 +146,10 @@ default{
     
     on_rez( integer mew ){ llResetScript(); }
     
+	#ifdef body
+	body
+	#endif
+	
     state_entry(){
         
         PLAYERS = [(string)llGetOwner()];
@@ -192,6 +200,10 @@ default{
 		#endif
 		#ifdef pConf$RAISE_LEVEL_EVENT_DROP
 			_pFlags = _pFlags|PotionsFlag$raise_drop_event;
+		#endif
+		
+		#ifdef onInit
+		onInit();
 		#endif
 		
 		

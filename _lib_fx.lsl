@@ -125,7 +125,7 @@
 	#define fx$PARTICLES 34						// (float)duration, (int)prim, (arr)particles - PC_ONLY - See ThongMan$particles
 	#define fx$TAUNT 35							// (bool)inverse - NPC ONLY, resets everyone but this player's aggro. If inverse is set, reset this player's aggro only
 	#define fx$REM 36							// Accepts the same arguments as FX$rem at got FX.lsl
-	#define fx$PULL 37							// (vec)pos, (float)speed - PC only. (Use PF_TRIGGER_IMMEDIATE) Instant effect but is cleared on effect fade for duration effects
+	#define fx$PULL 37							// (vec)pos, (float)speed, (bool)awayFromSender - PC only. (Use PF_TRIGGER_IMMEDIATE) Instant effect but is cleared on effect fade for duration effects. If awayFromSender is TRUE it multiplies the vector by the sender Z rotation and adds your current position
 	#define fx$SPAWN_VFX 38						// (str)name, (vec)posOffset, (rot)rotoffset, (int)flags, (int)startParam, (str)customData(PC_ONLY) - Spawns a visual effect from the SpellFX container on the HUD. Flags are defined in got SpellFX.lsl customData can be requested by regionsaying 
 	#define fx$REGION_SAY 39					// (int)chan, (str)message, (int)flags - Does what it says on the box
 		#define fx$RSFlag$to_owner 0x1				// RegionSayTo to owner

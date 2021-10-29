@@ -5,7 +5,6 @@
 // Projectile description array index
 #define ProjectileDesc$preventDefault 0			// Prevents default behavior
 #define ProjectileDesc$flags 1					// 
-	//
 #define ProjectileDesc$speed 2					// Base speed multiplier
 #define ProjectileDesc$wiggleIntensity 3		// Wiggle the projectile. Recommended value is 0.5, intensity will be randomized with -+50%
 #define ProjectileDesc$heightOffset 4

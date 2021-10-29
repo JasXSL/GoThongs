@@ -38,11 +38,11 @@
 #define StatusMethod$toggleBossFight 18			// (bool)fight - Received from GUI, toggles boss fight on or off
 #define StatusMethod$setTeam 19					// (int)team - PC/NPC
 
-#define StatusMethod$debug 20			// void - Outputs your resources in human readable format
-#define StatusMethod$kill 21			// (str)customRapeName - Kills the player or npc immediately. If customRapeName is supplied, that will be used for rape
-#define StatusMethod$playerSceneDone 22	// void - Player scene was finished
-#define StatusMethod$damageArmor 23		// (int)damage
-#define StatusMethod$toggleBreakfree 24			// (bool)on - Enables or disables ability to revive when going down
+#define StatusMethod$debug 20				// void - Outputs your resources in human readable format
+#define StatusMethod$kill 21				// (str)customRapeName - Kills the player or npc immediately. If customRapeName is supplied, that will be used for rape
+#define StatusMethod$playerSceneDone 22		// void - Player scene was finished
+#define StatusMethod$damageArmor 23			// (int)damage
+#define StatusMethod$toggleBreakfree 24		// (bool)on - Enables or disables ability to revive when going down
 
 // Monster only
 #define StatusMethod$monster_dropAggro 100		// (key)target/"ALL", (int)complete - Drops aggro. If complete is 0, it removes the player from aggro list. If 1 it preserves the aggro until the enemy is seen/deals damage again, like if 2 players are fighting and the tank gets out of LOS it will not remove the aggro next time it sees the tank. If 2 it will just reset the aggro number to 1. If 3, it shuffles all aggro

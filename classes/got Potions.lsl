@@ -1,7 +1,7 @@
 #ifndef _Potions
 #define _Potions
 
-#define PotionsMethod$setPotion 1		// (str)name, (key)texture, (int)charges, (int)flags, (float)cooldown, (obj)spellData
+#define PotionsMethod$setPotion 1		// (str)name, (key)texture, (int)charges, (int)flags, (float)cooldown, (obj)spellData, (str)description, (str)prim_name
 #define PotionsMethod$resetCooldown 2	// 
 #define PotionsMethod$remove 3			// (int)allow_drop, (int)force_remove_no_drop
 #define PotionsMethod$use 4				// 

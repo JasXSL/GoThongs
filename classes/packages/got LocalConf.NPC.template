@@ -57,7 +57,7 @@
 	#define onCallback(str sender_script, int method, list params, string CB, key id)	// Callback received
 	#define onInternalMethod( sender_script, method, params, id ) list onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
 	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
-	
+	#define int onCheckCastSpell( key victim, str spellName )
 	
 	Enabled by cf$USE_GRAPPLE
 	Optional user defined:
@@ -164,7 +164,7 @@
 	#define cf$GRAPPLE_FLAGS (Evts$qFlags$LR|Evts$qFlags$LR_CAN_FAIL)
 #endif
 #ifndef cf$GRAPPLE_DURATION
-	#define cf$GRAPPLE_DURATION 300
+	#define cf$GRAPPLE_DURATION 60
 #endif
 #ifndef cf$GRAPPLE_STAGES
 	#define cf$GRAPPLE_STAGES 30
@@ -180,7 +180,8 @@
 		Monster$RF_IMMOBILE|\
 		Monster$RF_PACIFIED|\
 		Monster$RF_NOROT|\
-		Monster$RF_NO_SPELLS
+		Monster$RF_NO_SPELLS|\
+		Monster$RF_NOAGGRO
 #endif
 
 
@@ -196,9 +197,17 @@
 		
 		if( GRAPPLE_TARG ){
 			
+			int sitting = llAvatarOnSitTarget() == GRAPPLE_TARG;
+			
 			raiseEvent(LocalConfEvt$grappleEnd, GRAPPLE_TARG);
-			fxlib$removeSpellByName(GRAPPLE_TARG, "_Q");
-			Evts$stopQuicktimeEvent(GRAPPLE_TARG);
+			
+			fxlib$removeMySpellByName(GRAPPLE_TARG, "_Q");
+			
+			debugUncommon("Still sitting: "+(str)sitting);
+			
+			if( sitting )
+				Evts$stopQuicktimeEvent(GRAPPLE_TARG);
+			
 			if( llAvatarOnSitTarget() )
 				llUnSit(llAvatarOnSitTarget());
 			
@@ -281,8 +290,6 @@
 
 
 int BFL;
-list PLAYERS;
-list PLAYER_HUDS;
 integer TEAM;
 list SPELLS = [];
 int DEAD;
@@ -313,19 +320,15 @@ ini( int live ){
 
 }
 
-
+Portal$playerLists
 onEvt(string script, integer evt, list data){
-
+	
 	#ifdef onEvent
 		onEvent( script, evt, data );
 	#endif
 
-    if( Portal$isPlayerListIfStatement )
-        PLAYERS = data;
-
-    if( Portal$hif )
-        PLAYER_HUDS = data;
-
+	Portal$handlePlayers();
+    
     if(script == "got Portal" && evt == evt$SCRIPT_INIT){
 
         ini(TRUE);
@@ -553,7 +556,14 @@ default{
 			];
             raiseEvent(LocalConfEvt$iniData, mkarr(INI_DATA));
 		}
+		
+		#ifdef onCheckCastSpell
+		if( METHOD == LocalConfMethod$checkCastSpell )
+			CB_DATA = (list)onCheckCastSpell( method_arg(1), method_arg(2) );
+		#endif
+		
     }
+	
 	
 	#ifdef cf$USE_GRAPPLE
 	if( METHOD == LocalConfMethod$grapple ){
