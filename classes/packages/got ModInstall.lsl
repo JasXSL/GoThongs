@@ -133,7 +133,7 @@ default{
             check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 4)), FALSE) && 	// SpellFX
             check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 5)), FALSE) && 	// Monsters
             check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 6)), FALSE) && 	// Rapes
-			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 7)), FALSE) && 	// Weapons
+			check(-1, llJson2List(llList2String(MANIFEST, 7)), FALSE) && 	// Weapons (also includes stance animation)
 			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 8)), FALSE) &&	// LTB
 			check(INVENTORY_OBJECT, llJson2List(llList2String(MANIFEST, 9)), FALSE)		// PVP Poses
         );

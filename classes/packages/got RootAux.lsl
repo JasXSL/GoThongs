@@ -198,6 +198,8 @@ timerEvent(string id, string data){
 		list LTB = llJson2List(l2s(MANIFEST, 8));
 		list pvpScenes = llJson2List(l2s(MANIFEST, 9));
 		
+
+		
 		if(
 			!check(0, attachments, TRUE) ||
 			!check(INVENTORY_OBJECT, levels, FALSE) ||
@@ -205,7 +207,7 @@ timerEvent(string id, string data){
 			!check(INVENTORY_OBJECT, spell_effects, FALSE) ||
 			!check(INVENTORY_OBJECT, monsters, FALSE) ||
 			!check(INVENTORY_OBJECT, rapes, FALSE) ||
-			!check(INVENTORY_OBJECT, weapons, FALSE) ||
+			!check(0, weapons, FALSE) ||
 			!check(INVENTORY_OBJECT, LTB, FALSE) ||
 			!check(INVENTORY_OBJECT, pvpScenes, FALSE)
 		){

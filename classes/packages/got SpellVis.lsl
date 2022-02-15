@@ -437,7 +437,8 @@ setAbilitySpinner( integer abil, float startPercent, float duration, integer rev
 	// Shows the cast/cdbar
     llSetLinkPrimitiveParamsFast(llList2Integer(ABILS, abil), [ PRIM_COLOR, 2, color, 0.75 ]);
     llSetLinkTextureAnim(llList2Integer(ABILS, abil), 0, 2, 4,32, 0,32, total);
-    llSleep(.05);
+    //llSleep(.05);
+	//qd((str)abil+" ["+llGetLinkName(l2i(ABILS, abil))+"]. Spinner sf: "+(str)startFrame+" tf: "+(str)totalFrames+" FPS: "+(str)total);
     llSetLinkTextureAnim(llList2Integer(ABILS, abil), ANIM_ON|flags, 2, 4,32, startFrame, totalFrames, total);
 }
 
@@ -744,7 +745,7 @@ default {
 
     // Show/hide spells
     else if(METHOD == SpellVisMethod$toggle){
-    
+
         integer show = l2i(PARAMS, 0);
         integer i;  list out;
 		// Hide

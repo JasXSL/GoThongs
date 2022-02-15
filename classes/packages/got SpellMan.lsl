@@ -200,10 +200,12 @@ onEvt(string script, integer evt, list data){
 	else if(script == "got Status"){
 		if(evt == StatusEvt$flags)
 			STATUS_FLAGS = llList2Integer(data,0);
-		else if(evt == StatusEvt$dead){
+		/*
+		else if( evt == StatusEvt$dead ){
 			COOLDOWNS = COOLDOWNS_DEFAULT;
 			pushCooldowns();
 		}
+		*/
 		else if(evt == StatusEvt$resources){
 			CACHE_MANA = llList2Float(data, 2);
 		}
