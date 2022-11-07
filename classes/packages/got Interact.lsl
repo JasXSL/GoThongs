@@ -10,7 +10,7 @@
     - book$id - Loads a book
 */
 #define InteractConf$usePrimSwim
-#define InteractConf$maxRate 0.5
+#define InteractConf$maxRate 0.25
 #define InteractConf$soundOnFail "ea0ab603-63f5-6377-21bb-552aa4ba334f"
 #define InteractConf$soundOnSuccess "31086022-7f9a-65d1-d1a7-05571b8ea0f2"
 #define InteractConf$ignoreUnsit
@@ -25,7 +25,7 @@ list PLAYER_HUDS;
 
 key level = "";
 integer CROSSHAIR;
-integer onInteract(key obj, string task, list params){
+integer onInteract(key obj, string task, list params, vector pos){
 
     if( task == "book" ){
 	
@@ -41,7 +41,7 @@ integer onInteract(key obj, string task, list params){
 		if(l2s(params, 0) == "ROOT"){
 			t = prRoot(obj);
 		}
-		LocalConf$stdInteract(t, llGetOwner(), ([real_key, mkarr(params)]));	
+		LocalConf$stdInteract(t, llGetOwner(), ([real_key, mkarr(params), pos]));
 		
 	}
     else if( task == "LVIN" ){

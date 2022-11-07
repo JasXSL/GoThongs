@@ -17,7 +17,7 @@
 
 #define Passives$FLAG_REM_ON_CLEANUP 0x1				// Removes the passive on cleanup
 
-#define Passives$set(targ, name, passives, flags) runMethod((string)targ, "got Passives", PassivesMethod$set, [name, mkarr(passives), flags], TNN)
+#define Passives$set(targ, name, passives, flags) runMethod((string)targ, "got Passives", PassivesMethod$set, [name, mkarr((list)passives), flags], TNN)
 // Same as above but uses a string instead of a list
 #define Passives$setString(targ, name, passives, flags) runMethod((string)targ, "got Passives", PassivesMethod$set, [name, passives, flags], TNN)
 

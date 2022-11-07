@@ -27,9 +27,14 @@
 	#define cf$HOVER_HEIGHT 0 (Used for levitating monsters and animesh. Offsets the bottom of the monster)
 	#define cf$APTITUDE 1
 	#define cf$SEX 0 (sex flags)
+
+	// FX KEEPALIVE
+	#define cf$FX_KEEPALIVE ["Prim"]		// Keeps spawning temporary prims if they despawn. Useful for visual effects that should be precached for speed
+	#define cf$FX_KEEPALIVE_NO_AUTO_KILL 	// Disables auto kill of keepalive when this NPC dies
 	
+	// GRAPPLES
 	#define cf$sitCheck(targ) - Return true/false if the seated player was accepted. Lets you overwrite the default check.
-	
+		
 	#define cf$USE_GRAPPLE	(Enables the grapple functions)
 	#define cf$GRAPPLE_FLAGS				// Grapple settings flags = left/right failable
 	#define cf$GRAPPLE_DURATION				// Grapple max duration = 300
@@ -51,12 +56,13 @@
 	#define onSpellStart( str spell, key targ )
 	#define onSpellInterrupt( str spell, key targ )
 	#define onSpellFinish( str spell, key targ )
-	#define timerEvent( str id, str data )
+	#define timerEvt( str id, str data )
 	#define onEvent(string script, integer evt, list data)
 	#define afterEvent(string script, integer evt, list data)
 	#define onCallback(str sender_script, int method, list params, string CB, key id)	// Callback received
 	#define onInternalMethod( sender_script, method, params, id ) list onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
 	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
+	#define onObjectRez( key id )
 	#define int onCheckCastSpell( key victim, str spellName )
 	
 	Enabled by cf$USE_GRAPPLE
@@ -184,8 +190,17 @@
 		Monster$RF_NOAGGRO
 #endif
 
+#ifdef cf$FX_KEEPALIVE
+	#ifndef onObjectRez
+		// Must enable onObjectRez if not already
+		#define onObjectRez(id)
+	#endif
+	list KEEPALIVE;
+	list KEEPALIVE_PRIMS;
+#endif
 
 #ifdef cf$USE_GRAPPLE
+	bool _G_EN = TRUE;			// Grapple code enabled
 	key GRAPPLE_TARG;
 	
 	grappleEnd(){
@@ -364,6 +379,7 @@ onEvt(string script, integer evt, list data){
 	
     
     else if( script == "got Status" && evt == StatusEvt$dead ){
+	
 		DEAD = l2i(data, 0);
 		if( !DEAD )
 			return;
@@ -373,6 +389,10 @@ onEvt(string script, integer evt, list data){
 		#ifdef cf$USE_GRAPPLE
 			grappleEnd();
 		#endif
+		#ifndef cf$FX_KEEPALIVE_NO_AUTO_KILL
+			LocalConf$killMyKeepalives();
+		#endif
+		
 	}
 	
 
@@ -399,6 +419,39 @@ onEvt(string script, integer evt, list data){
 }
 
 timerEvent( string id, string data ){
+
+	#ifdef cf$FX_KEEPALIVE
+	if( id == "_KA" ){
+		
+		float t = llGetTime();
+		integer i;
+		for(; i < count(KEEPALIVE); ++i ){
+			
+			// If the entry is not a float or if it has timed out, then we can check if it exists and try to rez again
+			if( llGetListEntryType(KEEPALIVE_PRIMS, i) != TYPE_FLOAT || llGetTime() - l2f(KEEPALIVE_PRIMS, i) > 10.0 ){
+				
+				// Try a new rez
+				if( llKey2Name(l2k(KEEPALIVE_PRIMS, i)) == "" ){
+					
+					KEEPALIVE_PRIMS = llListReplaceList(KEEPALIVE_PRIMS, (list)llGetTime(), i, i);
+					_portal_spawn_std(
+						l2s(KEEPALIVE, i), 
+						llGetPos()-<0,0,9>, 
+						ZERO_ROTATION, 
+						ZERO_VECTOR, 
+						FALSE, 
+						FALSE, 
+						FALSE
+					); 
+					
+				}
+				
+			}
+		
+		}
+	
+	}
+	#endif
 	
 	#ifdef cf$USE_GRAPPLE
 	if( id == "_g_fail" || id == "_g_end" )
@@ -427,6 +480,14 @@ default{
 				P_FX = nr;
 		)
 		#endif
+		#ifdef cf$FX_KEEPALIVE
+			KEEPALIVE = cf$FX_KEEPALIVE;	
+			KEEPALIVE_PRIMS = KEEPALIVE;	// Ugly but fast way of making it the same length as keepalive
+			llListen(KEEPALIVE_CHAN, "", "", "");
+			LocalConf$killMyKeepalives();
+			multiTimer(["_KA", 0, 1, TRUE]);	// Keepalive timer
+		#endif
+		
 		
 		
 		ini(FALSE);
@@ -437,6 +498,9 @@ default{
 	// Grapple anim handler
 	#ifdef cf$USE_GRAPPLE
 	changed( integer change ){ 
+		if( !_G_EN )
+			return;
+	
 		if( change & CHANGED_LINK ){ 
 			
 			key sitTarg = llAvatarOnSitTarget();
@@ -461,6 +525,9 @@ default{
 		}
 	}
 	run_time_permissions( integer perm ){
+		if( !_G_EN )
+			return;
+			
 		if( perm & PERMISSION_TRIGGER_ANIMATION ){
 			
 			#ifndef cf$DUMMY_MODE
@@ -476,6 +543,21 @@ default{
 		
 	#ifdef body
 	body
+	#endif
+	
+	#ifdef onObjectRez 
+	object_rez( key id ){
+		#ifdef cf$FX_KEEPALIVE
+			string name = llKey2Name(id);
+			integer pos = llListFindList(KEEPALIVE, (list)name);
+			if( ~pos ){
+				// Kill old
+				llRegionSayTo(l2k(KEEPALIVE_PRIMS, pos), KEEPALIVE_CHAN, "KILL");
+				KEEPALIVE_PRIMS = llListReplaceList(KEEPALIVE_PRIMS, (list)id, pos, pos);
+			}
+		#endif
+		onObjectRez(id);
+	}
 	#endif
 
     #include "xobj_core/_LM.lsl"
@@ -563,6 +645,13 @@ default{
 		#endif
 		
     }
+	
+	if( method$byOwner ){
+		#ifdef cf$USE_GRAPPLE
+		if( METHOD == LocalConfMethod$grappleEnable )
+			_G_EN = (int)method_arg(0);
+		#endif
+	}
 	
 	
 	#ifdef cf$USE_GRAPPLE

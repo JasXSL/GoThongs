@@ -362,10 +362,12 @@ default{
 		
 		// JasX HUD input
 		if(chan == 2){ 
+		
 			if(llGetSubString(message, 0, 8) == "settings:"){
 				integer sex = (int)j(llGetSubString(message, 9, -1), "sex");
 				Status$setSex(sex); 
 			}
+			
 			return; 
 		} 
 		

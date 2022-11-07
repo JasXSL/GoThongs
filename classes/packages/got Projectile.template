@@ -9,6 +9,7 @@ relies on the following functions and definitions
 	#define IMPACT_SOUNDS (list)"e05be787-dadb-dd29-0846-1c9f9e8143ea"+1	// uuid, volume
 	#define USE_HITFX
 	#define HITFX_FLAGS 0
+	#define HITFX_COLOR
 	#define ON_LOAD
 
 	// loop particles
@@ -152,8 +153,15 @@ STEP(){
 		#endif
 			
 		#ifdef USE_HITFX
+		string color = 
+		#ifdef HITFX_COLOR
+			HITFX_COLOR
+		#else
+			"<-1,-1,-1>"
+		#endif
+		;
 		if( l2i(llGetObjectDetails(TARGET, (list)OBJECT_ATTACHED_POINT), 0) || llGetAgentSize(TARGET) != ZERO_VECTOR )
-			fxlib$hitFX(TARGET, "<-1,-1,-1>", HITFX_FLAGS);
+			fxlib$hitFX(TARGET, color, HITFX_FLAGS);
         else
 			NPCInt$hitfx(TARGET);
 		#endif

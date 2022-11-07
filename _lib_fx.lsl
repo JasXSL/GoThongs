@@ -38,7 +38,7 @@
 		#define fxhfColor$cold "<.5,.8,1>"
 	
 	
-	#define fx$ANIM 7							// [(str)anim(or array), (int)start, (bool)ignore_immediate, (int)flags] | If ignore immediate is set, it will not be run on instant effects or ticks.
+	#define fx$ANIM 7							// [(str)anim(or array), (int)start, (bool)ignore_immediate, (int)flags, (float)duration] | If ignore immediate is set, it will not be run on instant effects or ticks.
 	#define fx$DODGE 8							// (float)chance_to_add - Adds a chance to dodge bad spells unless undodgable
 	//#define fx$DEBUG 9							// [(str)message]
 	#define fx$REM_BY_NAME 10					// [(str)name, (int)raise_event, (bool)only_by_caster]

@@ -15,8 +15,9 @@
 	if( Portal$plif ) \
 		PLAYERS = data; \
 	if( Portal$hif ) \
-		PLAYER_HUDS = data
-
+		PLAYER_HUDS = data;
+	
+	
 #define Portal$handlePlayerLists() Portal$handlePlayers()
 
 // Portal sends an evt$SCRIPT_INIT after all dependencies have been loaded with data being a json array of players

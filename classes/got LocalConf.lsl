@@ -12,7 +12,8 @@
 #define LocalConfMethod$checkCastSpell 5		// (int)id, (key)targ, expects callback true on success
 #define LocalConfMethod$stdInteract 6			// (key)sender, (key)object, (var)data - A player has interacted with the object. You can input anything you want as variables
 #define LocalConfMethod$generic 7 				// Generic method, put any data you want in it. Effect will vary between implementations
-#define LocalConfMethod$grapple 8				// key targ - Used with template to start a grapple (needs to be compiled with grapples)
+#define LocalConfMethod$grapple 8				// key targ - Used with NPC template to start a grapple (needs to be compiled with grapples)
+#define LocalConfMethod$grappleEnable 9			// (bool)on - Used with NPC template to enable/disable grapple code.
 
 #define LocalConf$startSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$startSpell, [id], TNN)
 #define LocalConf$interruptSpell(id) runMethod((string)LINK_THIS, "got LocalConf", LocalConfMethod$interruptSpell, [id], TNN)
@@ -23,6 +24,7 @@
 // Useful for monster scripts that aren't named LocalConf
 #define LocalConf$stdInteractByScript(targ, script, sender, data) runMethod(targ, script, LocalConfMethod$stdInteract, [sender]+data, TNN)
 #define LocalConf$generic(targ, params) runMethod((str)(targ), "got LocalConf", LocalConfMethod$generic, (list)params, TNN)
+#define LocalConf$grappleEnable(targ, on) runMethod((str)(targ), "got LocalConf", LocalConfMethod$grappleEnable, (list)(on), TNN)
 
 
 #define LocalConfEvt$iniData 1		// Separate from evt$SCRIPT_INIT in that this is raised on demand and contains script custom data
@@ -39,7 +41,8 @@
 list localConfAnims;
 string localConfIdle;					
 #define localConfCacheAnims() integer i; for(i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION); i++){string n = llGetInventoryName(INVENTORY_ANIMATION, i); if(localConfIdle){if(n != localConfIdle && llGetSubString(n, 0, llStringLength(localConfIdle)-1) == localConfIdle){localConfAnims+=n;}}else if(llGetSubString(n, -2, -1) == "_1"){localConfIdle = llGetSubString(n, 0, -3); i=0;}}
-									
+				
+		
 /*
 	Flags: Defined in got NPCSpells NPCS$FLAG_*
 	Casttime: Float in seconds
@@ -58,6 +61,12 @@ string localConfIdle;
 
 #define LocalConf$grapple( targ ) runMethod((str)LINK_THIS, "got LocalConf", LocalConfMethod$grapple, (list)(targ), TNN)
  
+ 
+// Keepalive is built into got LocalConf NPC and handles temp on rez effect prims, spawning them automatically when they fade, and letting them auto expire when their rezzer dies.
+// Send a message to all keepalive prims. Params will get converted to a JSON array and can use + notation
+#define LocalConf$sendKeepalive( params ) llRegionSay(KEEPALIVE_CHAN, mkarr((list)params))
+#define LocalConf$killMyKeepalives() llRegionSay(KEEPALIVE_CHAN, "KILL")
+
 
 
 #endif

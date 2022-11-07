@@ -93,8 +93,10 @@ updateText(){
 		string middle =  "❤️ "+(str)perc+" ❤️";
 		text+= middle;
 			
-		if( BFL&BFL_CASTING && CAST_END_TIME != CAST_START_TIME ){
+		if( BFL&BFL_CASTING && CAST_END_TIME != CAST_START_TIME && ~spell_flags&NPCS$FLAG_HIDDEN ){
 		
+			
+			
 			list d = llJson2List(llList2String(CACHE, spell_id));
 			if( spell_id == -1 )
 				d = CUSTOMCAST;

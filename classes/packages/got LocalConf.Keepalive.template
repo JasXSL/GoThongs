@@ -1,0 +1,60 @@
+/*
+	Dependencies:
+	#include "got/_core.lsl"
+
+	// Events
+	#define onInit()
+	#define onData( list data )			// Data received from parent
+	#define timerEvt( id, data ) 		// Timer event
+
+*/
+
+
+timerEvent( string id, string data ){
+
+	#ifdef timerEvt
+		timerEvt(id, data);
+	#endif
+    
+}
+
+default{
+    
+    on_rez( integer mew ){
+        
+        if( mew )
+            llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, TRUE]);
+        llResetScript();
+        
+    }
+    
+    state_entry(){
+        
+        llListen(KEEPALIVE_CHAN, "", mySpawner(), "");
+		#ifdef onInit
+			onInit();
+		#endif
+        
+    }
+    
+    listen( integer c, string n, key id, string message ){
+		// Built in kill switch
+		if( message == "KILL" ){
+			llDie();
+			return;
+		}
+		
+		#ifdef onData
+			onData(llJson2List(message));
+		#endif
+
+    }
+    
+    
+    timer(){
+        multiTimer([]);    
+    }
+
+}
+
+

@@ -25,6 +25,8 @@ integer CFLAGS;
 
 list SOUNDS = ["72d65db8-31fe-375b-8716-89e3963fbf7d","90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd","f9194db3-9606-2264-3cde-765430179069"];
 
+float cTick;
+
 ptEvt( str id ){
     
     if( id == "thr" && llAvatarOnSitTarget() != NULL_KEY && max_steps ){
@@ -47,6 +49,26 @@ ptEvt( str id ){
         
         
     }
+	
+	if( id == "MV" ){
+	
+		float delta = 0;
+		if( cTick > 0 )
+			delta = llGetTime()-cTick;
+		cTick = llGetTime();
+		if( LEVEL&CONTROL_UP )
+			zOffs += 0.1*delta;
+		else
+			zOffs -= 0.1*delta;
+		
+		if( zOffs < -1 )
+			zOffs = -1;
+		else if( zOffs > 1 )
+			zOffs = 1;
+		updatePos();
+		
+	}
+	
 	if( id == "resit" )
 		seat();
     
@@ -54,7 +76,7 @@ ptEvt( str id ){
 
 begin(){
 	
-	if( BFL&BFL_LIVE && BFL_HAS_CONF ){
+	if( BFL&BFL_LIVE && BFL&BFL_HAS_CONF ){
 		seat();
 	}
 }
@@ -175,34 +197,43 @@ onEvt(string script, integer evt, list data){
     
     if( script == "got Portal" && evt == evt$SCRIPT_INIT ){
         
-		
 		BFL = BFL&~BFL_LIVE;
 		if( portalConf$live ){
+		
 			PP(0, (list)PRIM_TEMP_ON_REZ + TRUE);
 			BFL = BFL|BFL_LIVE;
+			updateMonsterPos();	// Portal may override our initial pos set. Do it again here.
 			begin();
 			ptSet("resit", 2, TRUE);
 			
         }
     }
+	
     
 }
 
-updatePos( vector pos, rotation rot ){
+vector POS;
+rotation ROT;
+float zOffs;
+
+updatePos(){
     
-    llSitTarget(pos, rot);
+	vector pos = POS;
+	pos.z += zOffs;
+	
+    llSitTarget(pos, ROT);
     links_each( nr, name,
         
         vector size = llGetAgentSize(llGetLinkKey(nr));
         if( size ){
-            
+
             float fAdjust = ((((0.008906 * size.z) + -0.049831) * size.z) + 0.088967) * size.z;
             llSetLinkPrimitiveParamsFast(nr, 
                 (list)PRIM_POS_LOCAL + 
-                (pos + <0.0, 0.0, 0.4> - (llRot2Up(rot) * fAdjust)) +
-                PRIM_ROT_LOCAL + rot
+                (pos + <0.0, 0.0, 0.4> - (llRot2Up(ROT) * fAdjust)) +
+                PRIM_ROT_LOCAL + ROT
             );
-            llRequestPermissions(llGetLinkKey(nr), PERMISSION_TRIGGER_ANIMATION);
+            //llRequestPermissions(llGetLinkKey(nr), PERMISSION_TRIGGER_ANIMATION); -- This was causing problems with the new adjustment hotkeys. Not sure why this is here.
 
         }
         
@@ -211,6 +242,26 @@ updatePos( vector pos, rotation rot ){
 }
 
 int NO_DIE;
+int LEVEL;
+int EDGE;
+float HEIGHT; // Offset from ground to put animation. Needed here because it gets start data before portal loads and sets position.
+
+updateMonsterPos(){
+
+	if( HEIGHT != 0 && llAvatarOnSitTarget() == NULL_KEY ){
+		
+		vector apos = prPos(llGetOwner());
+		list ray = llCastRay(apos, apos-<0,0,10>, RC_DEFAULT);
+		if( l2i(ray, -1) == 1 ){
+			
+			llSetRegionPos(l2v(ray, 1)+<0,0,HEIGHT>);
+			
+		}
+		
+	}
+	
+}
+
 
 default{
     
@@ -251,9 +302,9 @@ default{
                 
                 if( t != llGetOwner() )
                     return llUnSit(t);
-                
+              
 				ptUnset("resit");
-                llRequestPermissions(llAvatarOnSitTarget(), PERMISSION_TRIGGER_ANIMATION);
+                llRequestPermissions(llAvatarOnSitTarget(), PERMISSION_TRIGGER_ANIMATION|PERMISSION_TAKE_CONTROLS);
 				BFL = BFL|BFL_STARTED;
 				
             }
@@ -285,10 +336,39 @@ default{
             raiseEvent(gotAnimeshSceneEvt$start, "");
 			
         }
+		
+		if( perm & PERMISSION_TAKE_CONTROLS ){
+			llTakeControls(CONTROL_UP|CONTROL_DOWN, TRUE, FALSE);
+		}
         
     }
     
+	
+	control( key id, integer level, integer edge ){
+		
+		if( ~level & edge& (CONTROL_UP|CONTROL_DOWN) ){
+			ptUnset("MV");
+			cTick = 0;
+		}
+		if( level & edge & (CONTROL_UP|CONTROL_DOWN) ){
+			ptSet("MV", 0.1, TRUE);
+		}
+		
+		
+		LEVEL = level;
+		EDGE = edge;
+		
+	}
+	
+	
     #include "xobj_core/_LM.lsl"
+	
+	if( method$byOwner && METHOD == 0 ){
+		llOwnerSay("Resetting");
+		llResetScript();
+	}
+	
+	
 	
 	if( method$byOwner && METHOD == gotAnimeshSceneMethod$killByName && method_arg(0) == llGetObjectName() ){
 		llOwnerSay("@unsit=y");
@@ -296,7 +376,9 @@ default{
 	}
 		
 	if( method$byOwner && METHOD == gotAnimeshSceneMethod$orient ){
-        updatePos( (vector)method_arg(0), (rotation)method_arg(1) );
+		POS = (vector)method_arg(0);
+		ROT = (rotation)method_arg(1);
+        updatePos();
     }
 	
 	if( method$byOwner && METHOD == gotAnimeshSceneMethod$stop ){
@@ -360,9 +442,11 @@ default{
 			
         }
         
-        if( (vector)j(params, gotAnimeshScene$cPos) )
-            updatePos( (vector)j(params, gotAnimeshScene$cPos), (rotation)j(params, gotAnimeshScene$cRot));
-        
+        if( (vector)j(params, gotAnimeshScene$cPos) ){
+			POS = (vector)j(params, gotAnimeshScene$cPos);
+			ROT = (rotation)j(params, gotAnimeshScene$cRot);
+            updatePos();
+        }
         if( isset(j(params, gotAnimeshScene$cSpeedMin)) )
             speed_min = (float)j(params, gotAnimeshScene$cSpeedMin);
         if( isset(j(params, gotAnimeshScene$cSpeedMax)) )
@@ -374,22 +458,11 @@ default{
             vol_max = (float)j(params, gotAnimeshScene$cSoundVolMax);
         
         
-        float h = (float)j(params, gotAnimeshScene$cHeight);
-        if( h ){
-            
-			vector apos = prPos(llGetOwner());
-            list ray = llCastRay(apos, apos-<0,0,10>, RC_DEFAULT);
-            if( l2i(ray, -1) == 1 ){
-                
-                llSetRegionPos(l2v(ray, 1)+<0,0,h>);
-                
-            }
-            
-        }
+        HEIGHT = (float)j(params, gotAnimeshScene$cHeight);
+        updateMonsterPos();
         
         if( isset(j(params, gotAnimeshScene$cFlags)) )
             CFLAGS = (int)j(params, gotAnimeshScene$cFlags);
-        
         
             
         if( llJsonValueType(params, (list)gotAnimeshScene$cSound) == JSON_ARRAY )

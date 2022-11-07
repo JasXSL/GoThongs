@@ -76,7 +76,7 @@ onEvt(string script, integer evt, list data){
 				animesh_anim = "";
 			
 			fetchSubAnims();
-			debugUncommon("Got ini data: "+(str)cooldown+" :: "+(str)cooldown_full+" :: "+mkarr(attachments));
+			debugUncommon("Got ini data: "+(str)cooldown+" :: "+(str)cooldown_full+" :: "+mkarr(attachments)+ " :: " +base_anim +" :: "+ animesh_anim);
 			
         }
 		
@@ -397,7 +397,7 @@ default{
 		if( count(attachments) )
 			att = ","+mkarr((list)fx$ATTACH+attachments);
 		
-		debugCommon("Force setting for "+(str)dur);
+		debugCommon("Force sitting "+llKey2Name(method_arg(0))+" on this for "+(str)dur+" seconds");
         FX$send(
 			method_arg(0), 
 			llGetKey(), 

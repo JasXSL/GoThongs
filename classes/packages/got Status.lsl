@@ -590,9 +590,10 @@ onEvt( string script, integer evt, list data ){
 				BFL = BFL|BFL_CHALLENGE_MODE;
 			
 		}
+		/*
 		else if( evt == evt$BUTTON_PRESS && l2i(data, 0)&CONTROL_UP && BFL&BFL_AVAILABLE_BREAKFREE && SF&StatusFlag$dead )
 			Status$fullregen();
-		
+		*/
         // Force update on targeting self, otherwise it requests
         else if( evt == RootEvt$targ && llList2Key(data, 0) == llGetOwner() )
 			OS( TRUE );
@@ -1023,9 +1024,13 @@ default {
 		
 		}
 		else if(METHOD == StatusMethod$setSex){
+
             GF = l2i(PARAMS, 0)&(GENITALS_VAGINA|GENITALS_BREASTS|GENITALS_PENIS);
+			OS(TRUE);
 			raiseEvent(StatusEvt$genitals, GF);
+			
         }
+		
     }
 
 	// Public methods here

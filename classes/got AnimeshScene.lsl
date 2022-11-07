@@ -1,3 +1,4 @@
+#define gotAnimeshSceneMethod$debug 0						// Raises script init
 #define gotAnimeshSceneMethod$begin 1		// (obj)conf
 	#define gotAnimeshScene$cSpeedMin "minSpeed"			// min time between thrusts
 	#define gotAnimeshScene$cSpeedMax "maxSpeed"			// max time between thrusts
@@ -13,10 +14,10 @@
 		#define gotAnimeshScene$cfParts 0x1						// Use particles. Name prims PARTS and PARTS2
 		
 	
-#define gotAnimeshSceneMethod$orient 2				// (vec)pos, (rot)rotation - Quickly update the pos and rot of any sitting player. Good for debug.
-#define gotAnimeshSceneMethod$killByName 3				// (str)name - Kills by name
-#define gotAnimeshSceneMethod$trigger 4				// int visuals - 1 = particles, 2 = sound - Trigger default particles or sounds (splat)
-#define gotAnimeshSceneMethod$stop 5				// Force stops the scene and unsits the target without deleting the object
+#define gotAnimeshSceneMethod$orient 2						// (vec)pos, (rot)rotation - Quickly update the pos and rot of any sitting player. Good for debug.
+#define gotAnimeshSceneMethod$killByName 3					// (str)name - Kills by name
+#define gotAnimeshSceneMethod$trigger 4						// int visuals - 1 = particles, 2 = sound - Trigger default particles or sounds (splat)
+#define gotAnimeshSceneMethod$stop 5						// Force stops the scene and unsits the target without deleting the object
 
 
 #define gotAnimeshSceneEvt$thrust 1					// void - Raised when a thrust starts

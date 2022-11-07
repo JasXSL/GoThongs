@@ -112,7 +112,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
             runMethod((str)LINK_ROOT, "got Alert", AlertMethod$freetext, llList2List(fx, 1, -1), TNN);
         
         else if(t == fx$ANIM && !l2i(fx, 3))
-			AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, 0, l2i(fx, 3));
+			AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, l2f(fx,4), l2i(fx, 3));
  
         else if(t == fx$INTERRUPT)
             SpellMan$interrupt(l2i(fx, 1));

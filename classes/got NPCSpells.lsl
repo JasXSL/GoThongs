@@ -26,6 +26,7 @@
 	#define NPCS$ALLOW_MULTIPLE_CHECKS 0x400	// Use with FLAG_CAST_AT_RNADOM - Even if a player matches, it will still query all
 	#define NPCS$FLAG_IGNORE_TANK 0x800			// Ignores the currently aggroed target
 	#define NPCS$FLAG_IGNORE_HASTE 0x1000		// Ignores haste modifier
+	#define NPCS$FLAG_HIDDEN 0x2000				// hide cast bar
 	
 	#define NPCS$STUN (NPCS$FLAG_ROOT|NPCS$FLAG_PACIFY|NPCS$FLAG_NOROT)
 	

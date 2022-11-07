@@ -16,7 +16,8 @@ integer BFL;
 
 // Target followed
 key TARGET;
-float DISTANCE = 1;
+float BOUNDS = 0.5;		// How far from the point before navigating to it again
+float DISTANCE = 1;		// Distance from player to put the point to go to
 float ANGLE = 1;
 
 integer STATE;
@@ -106,7 +107,21 @@ warp(){
 	BFL = BFL&~BFL_WARP_TIMER;
 }
 
-
+list stripSelfIntersects( list rc, integer stride ){
+	
+	integer rem; integer i;
+	for(; i < count(rc)-1; i += stride ){
+		
+		if( prRoot(l2k(rc, i)) == llGetKey() ){
+			++rem;
+			rc = llDeleteSubList(rc, 0, stride-1);
+		}
+	
+	}
+	
+	return llListReplaceList(rc, (list)(l2i(rc, -1)-rem), -1, -1);
+	
+}
 
 integer moveInDir( vector dir, float speedMulti ){
 
@@ -141,8 +156,9 @@ integer moveInDir( vector dir, float speedMulti ){
         list r = llCastRay(
 			gpos+<0,0,hAdd()+1>*baseRot, 
 			gpos+dir+<0,0,bz>*baseRot, 
-			[RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]
+			[RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY, RC_MAX_HITS, 3]
 		);
+		r = stripSelfIntersects(r, 2);
 
 
         vector hit = l2v(r, 1);
@@ -289,9 +305,13 @@ timerEvent(string id, string data){
 		// Successfully determined a place to go (and not in range)
 		integer success;
 		
-		
+		vector dPoint = prPos(TARGET);
 		float dist = llVecDist(<gpos.x, gpos.y, 0>, <point.x, point.y, 0>);	
-		if( dist > DISTANCE/2 ){
+		float dist2 = llVecDist(<gpos.x, gpos.y, 0>, <dPoint.x, dPoint.y, 0>);	
+		//llSetText((str)dist, <1,1,1>, 1);
+		
+		// Have to be far away from both the target player and the target offset pos
+		if( dist > BOUNDS && dist2 > BOUNDS ){
 		
 		
 			list los = llCastRay(gpos+<0,0,1>, point+<0,0,1>, [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
@@ -378,6 +398,9 @@ default
             TARGET = method_arg(0);
             DISTANCE = l2f(PARAMS, 1);
             ANGLE = l2f(PARAMS, 2);
+			BOUNDS = l2f(PARAMS, 3);
+			if( BOUNDS < 0.5 )
+				BOUNDS = 0.5;
 			multiTimer(["tick", "", .25, TRUE]);
 			Monster$setFlags(Monster$RF_FOLLOWER);
 			//qd("Follower enabled, with DISTANCE: "+(str)DISTANCE+" Dir: "+(str)ANGLE);
@@ -388,6 +411,8 @@ default
 			debugUncommon("Disabling follower");
             TARGET = "";    
 			multiTimer(["tick"]);
+			multiTimer(["WARP"]);
+			
 			Monster$unsetFlags(Monster$RF_FOLLOWER);
 			
 		}

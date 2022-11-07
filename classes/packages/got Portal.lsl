@@ -24,6 +24,7 @@ integer BFL;
 #define checkIni() \
 	if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_INITIALIZED){ \
 		BFL=BFL|BFL_INITIALIZED; \
+		sendPlayers(); \
 		raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); \
 		debugUncommon("Raising script init"); \
 		raiseEvent(PortalEvt$spawner, (str)requester); \
@@ -118,6 +119,11 @@ timerEvent( string id, string data ){
 	else if( id == "A" )
 		fetchDesc();
 	
+}
+
+sendPlayers(){
+	raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
+	raiseEvent(PortalEvt$players, mkarr(PLAYERS));
 }
 
 // Removes this and anything spawned by this if this was a sub level
@@ -320,9 +326,9 @@ default{
 			PLAYER_HUDS = llJson2List(method_arg(1));
 			debugUncommon("Got players "+mkarr(PLAYERS));
 			debugUncommon("Got HUDS "+mkarr(PLAYER_HUDS));
-			raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
-			raiseEvent(PortalEvt$players, mkarr(PLAYERS));
 			
+
+			sendPlayers();
 			if( llGetStartParameter() != 2 )
 				return;
 				
@@ -354,8 +360,7 @@ default{
         }
 		else if( METHOD == PortalMethod$sendPlayers ){
 			
-			raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
-			raiseEvent(PortalEvt$players, mkarr(PLAYERS));
+			sendPlayers();
 			
 		}
 		else if(METHOD == PortalMethod$remove && 

@@ -13,6 +13,7 @@
 #endif
 #define GUI_CHAN(targ) playerChan(llGetOwnerKey(targ))+69 // Chan for rapid GUI calls
 #define AOE_CHAN 0xBEAD
+#define KEEPALIVE_CHAN 393939								// Used in LocalConf NPC template. Tracks temporary spawns.
 
 // Converts floats to ints and back with 2 decimal points
 #define i2f(input) (input/100.)

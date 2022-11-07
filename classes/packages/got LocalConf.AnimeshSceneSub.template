@@ -1,0 +1,52 @@
+/*
+	#define onCustomMessage(message) - The "ASS_" bit will be stripped
+	#define ini()
+	To communicate, send llRegionSay(19378, "ASS_<message>");
+	Builtin ASS_ commands:
+	DESPAWN - Derezzes - llRegionSay(19378, "ASS_DESPAWN");
+*/
+#include "got/_core.lsl"
+
+doIni(){
+	stopAllObjectAnimations();
+	#ifdef ini
+	ini();
+	#endif
+}
+
+default{
+	on_rez(integer bap ){
+		doIni();
+	}
+    state_entry(){
+        
+        llListen(19378, "", "", "");
+        llSetTimerEvent(1);
+        doIni();
+		memLim(1.5);
+		
+    }
+    
+    listen( integer chan, string name, key id, string message ){
+        idOwnerCheck
+        
+        if( message == "ASS_DESPAWN" ){
+            llDie();
+        }
+        #ifdef onCustomMessage
+        else if( llGetSubString(message, 0, 3) == "ASS_" ){
+            onCustomMessage(llGetSubString(message, 4, -1));
+        }
+        #endif
+        
+        
+    }
+
+    timer(){
+        if( llGetStartParameter() && llKey2Name(mySpawner()) == "" ){
+            llDie();
+        }
+    }
+}
+
+
