@@ -1,5 +1,7 @@
 #define USE_EVENTS
+#define USE_DB4
 #include "got/_core.lsl"
+
 
 integer BFL;
 #define BFL_RECENT_CACHE 0x1
@@ -14,8 +16,10 @@ integer BFL;
 integer TEAM = TEAM_PC;
 
 			// Stores nearby entities
-list T;		// 00000000 score0-255, (bitarr)0 friend, (key)id
+list T;		// Bit array 00000000     0, (key)id
+			// 			score0-255  friend
 			// Note that score is only updated when pressing space after moving.
+#define T_STRIDE 2
 
 // Tracks where we were last check. If we moved out of the way, the scoring list must be rebuilt.
 vector cache_pos;
@@ -453,20 +457,26 @@ targScan( list sensed ){
 		return;
 	
 	T = t;
-	
-	list names;
-	integer n;
-	for( ; n < count(T); n += 2 )
-		names += llKey2Name(l2k(T, n+1));
-	
-	// Write to this DB
-	llSetLinkMedia(LINK_THIS, 0, [
-		Evts$NEAR_DB_MEDIA, "https://"+mkarr(llList2List(T, 0, 19)), // Store 10 players
-		PRIM_MEDIA_AUTO_PLAY, false,
-		PRIM_MEDIA_PERMS_INTERACT, PRIM_MEDIA_PERM_NONE,
-		PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_NONE
-	]);
 
+	// Something has changed so we will rewrite the DB
+	string ch = db4$getTableChar(db4table$npcNear);
+	int tblMax = db4$getMaxFast(ch);
+	for( i = 0; i < count(t)/2 || i < tblMax; ++i ){
+		
+		if( i < count(t)/2 ){
+			list dta = llList2List(t, i*T_STRIDE, i*T_STRIDE+1);
+			// Replace
+			if( i+1 < tblMax )	// +1 needed because 0 is always the hud itself (set in #ROOT on table creation)
+				db4$replaceFast(ch, i+1, dta);
+			// Insert
+			else
+				db4$insertFast(ch, dta);
+		}
+		else
+			db4$deleteFast(ch, i+1);
+		
+	}
+	
 }
 
 default{
@@ -629,11 +639,7 @@ default{
 			
 		}
 		
-		list names;
-		integer n;
-		for(; n<count(sc); ++n )
-			names += llKey2Name(l2k(sc, n));
-		
+
 		// No targets passed filter
 		if( !count(sc) )
 			return;

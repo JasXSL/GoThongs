@@ -1,5 +1,5 @@
 #define USE_EVENTS
-
+#define USE_DB4
 #include "got/_core.lsl"
 
 integer BFL;
@@ -397,6 +397,7 @@ output(){
 onEvt(string script, integer evt, list data){
     
     if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
+		data = Bridge$userData();
         data = llJson2List(l2s(data, BSUD$WDATA));
 		data = llJson2List(l2s(data, 2));
 		Passives$set(LINK_THIS, "_WEAPON_", data, 0);				

@@ -42,9 +42,17 @@
 	#define cf$GRAPPLE_BUTTON_DELAY			// Grapple button delay = 0
 	#define cf$GRAPPLE_STAGES				// QTE stages, alternatively speed for quick grapples. = 30
 	#define cf$GRAPPLE_MONSTERFLAGS			// Flags to set when grapple starts and unset when it ends = Monster$RF_IMMOBILE|Monster$RF_PACIFIED|Monster$RF_NOROT|Monster$RF_NO_SPELLS
+		
+	#define cf$DUMMY_MODE	// Enables dummy mode where you can sit on it to test grapple. For hookup clients this also removes the aggro check requirement
 	
-	#define cf$DUMMY_MODE	// Enables dummy mode where you can sit on it
-	
+	// Hookups (see below)
+	#define cf$hup$HOST (str)poseName 				// Used together with cf$USE_GRAPPLE to note that this monster can use combined grapples. poseName is used in clients to figure out how to offset.
+	#define cf$hup$CLIENT [poseName, pos, rot, (str)clientIdleAnim, (str)pcIdleAnim, (str)hostIdleAnim, (float)resync_time]		// Marks this as a grapple client, allowing it to butt into host grapples. If resync is greater than 0, it restarts the animation after this amount of seconds.
+		#define hup$testClient( poseName, host, hud )			// Optional definition that lets you add additional testing if you should be able to join the host. The following are auto checked:
+													// Pose name supported, position free, HP is at least 20.
+	onHookup( string name, bool started, bool isHost ) // Required in both host and client. Raised when hookup starts or ends.
+	#define hup$onPreAccept() fn					// Optional. Used to turn off custom script functions. Triggered when an attempt is made to hook to a source.
+	#define hup$IGNORE_Z							// Ignores z location for hookup. Good for flying NPCs.
 
 	Events (these are preprocessor macros:
 	#define onInit( int live ) | Raised on state entry and when portal initializes
@@ -64,6 +72,7 @@
 	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
 	#define onObjectRez( key id )
 	#define int onCheckCastSpell( key victim, str spellName )
+	#define onListen(integer chan, string name, key id, string message)
 	
 	Enabled by cf$USE_GRAPPLE
 	Optional user defined:
@@ -90,6 +99,8 @@
 	P_FX | int | (Optional) Searches for a prim named "FX" and maps that to global P_FX. Requires #define FX_PRIM
 
 */
+
+
 
 // timerEvent was renamed timerEvt in the template. This warns for any legacy scripts
 #ifdef timerEvent
@@ -170,7 +181,7 @@
 	#define cf$GRAPPLE_FLAGS (Evts$qFlags$LR|Evts$qFlags$LR_CAN_FAIL)
 #endif
 #ifndef cf$GRAPPLE_DURATION
-	#define cf$GRAPPLE_DURATION 60
+	#define cf$GRAPPLE_DURATION 300
 #endif
 #ifndef cf$GRAPPLE_STAGES
 	#define cf$GRAPPLE_STAGES 30
@@ -199,7 +210,53 @@
 	list KEEPALIVE_PRIMS;
 #endif
 
+
+
+
+#if defined cf$hup$CLIENT || defined cf$hup$HOST
+	resetHUP(){
+	
+		onHookup("", FALSE, HUP_POS != ZERO_VECTOR);
+		BFR = BFR&~BFR_IN_GRAPPLE;
+		HUP_TARG = "";
+		hup$global(hup$task$end, []);
+		if( HUP_A_NPC )
+			objAnimOff(HUP_A_NPC);
+			
+		#ifdef cf$hup$CLIENT
+		// Client go back to what it was doing
+		if( HUP_POS != ZERO_VECTOR && !DEAD ){
+		
+			llSetRegionPos(HUP_POS);
+			HUP_POS = ZERO_VECTOR;
+			Monster$unsetFlags(cf$GRAPPLE_MONSTERFLAGS);
+			
+		}	
+		HUP_VICTIM = "";
+		#endif
+		multiTimer(["HUPC"]);
+
+	}
+	vector HUP_POS;		// Where to go back to after finishing. Also used to detect client or host
+	key HUP_TARG;		// Host or client. The combo NPC.
+	str HUP_A_NPC;		// NPC idle animation, both client and host
+#endif
+
+#ifdef cf$hup$HOST
+	str HUP_A_PC;	// PC idle animation
+	
+#endif
+
+#ifdef cf$hup$CLIENT
+	#ifndef cf$hup$SYNC
+		#define cf$hup$SYNC 0
+	#endif
+	list THREAT;		// Tracks global aggro. Stores HUDs as strings
+	key HUP_VICTIM;		// HUD of grappled player
+#endif
+
 #ifdef cf$USE_GRAPPLE
+	
 	bool _G_EN = TRUE;			// Grapple code enabled
 	key GRAPPLE_TARG;
 	
@@ -209,25 +266,27 @@
 			grappleOnEnd();
 		#endif
 		
+		// end hookup
+		#if defined cf$hup$CLIENT || defined cf$hup$HOST
+		
+			resetHUP();
+			
+		#endif
 		
 		if( GRAPPLE_TARG ){
-			
-			int sitting = llAvatarOnSitTarget() == GRAPPLE_TARG;
-			
+						
 			raiseEvent(LocalConfEvt$grappleEnd, GRAPPLE_TARG);
 			
 			fxlib$removeMySpellByName(GRAPPLE_TARG, "_Q");
 			
-			debugUncommon("Still sitting: "+(str)sitting);
-			
-			if( sitting )
-				Evts$stopQuicktimeEvent(GRAPPLE_TARG);
+			Evts$stopQuicktimeEvent(GRAPPLE_TARG);
 			
 			if( llAvatarOnSitTarget() )
 				llUnSit(llAvatarOnSitTarget());
 			
 		}
 		
+		BFR = BFR&~BFR_IN_GRAPPLE;
 		GRAPPLE_TARG = "";
 		Monster$unsetFlags(cf$GRAPPLE_MONSTERFLAGS);
 		
@@ -237,7 +296,11 @@
 	}
 	
 	grappleStart( key hud, integer fxFlags ){
+	
+		if( BFR & BFR_IN_GRAPPLE )
+			return;
 		
+		BFR = BFR|BFR_IN_GRAPPLE;
 		GRAPPLE_TARG = hud;
 		Monster$setFlags(cf$GRAPPLE_MONSTERFLAGS);
 		multiTimer(["_g_fail", 0, 3, FALSE]);
@@ -260,6 +323,9 @@
 	}
 	
 	int grappleClosestConal( float arc, float range, int grappleFlags ){
+		// Already in a grapple
+		if( BFR & BFR_IN_GRAPPLE )
+			return FALSE;
 	
 		vector pos = llGetPos();
         list huds = [];
@@ -272,6 +338,7 @@
         )
         huds = llListSort(huds, 2, TRUE);
         
+		debugRare(mkarr(PLAYER_HUDS));
         integer i;
         for(; i<count(huds); i += 2 ){
             key targ = l2k(huds, i+1);
@@ -285,17 +352,20 @@
             if( (llFabs(ang) < arc || dist < .5 ) && dist < range && !l2i(ray, -1) ){
                 
                 parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor, _a)
-                if( _attackableV(status, fx) ){
+                if( _attackableV(status, fx) && ~llGetAgentInfo(llGetOwnerKey(targ)) & AGENT_SITTING ){
                     
+					debugRare("Starting grapple on "+llKey2Name(llGetOwnerKey(targ)));
 					grappleStart(targ, grappleFlags);
                     return TRUE;
 					
                 }
+				debugRare("Unable to grapple "+llKey2Name(llGetOwnerKey(targ))+", not attackable or sitting");
                 
             }
         
         }
 		
+		debugRare("No grapples passed filter");
 		return FALSE;
 	
 	}
@@ -304,11 +374,13 @@
 #endif
 
 
+int BFR;	// Bitflags runtime. Bitflags handled by this template.
 int BFL;
 integer TEAM;
 list SPELLS = [];
 int DEAD;
 key AGGRO;
+float HP = 1.0;
 #ifdef FX_PRIM
 	int P_FX;
 #endif
@@ -351,49 +423,65 @@ onEvt(string script, integer evt, list data){
 
     }
 
-    else if(script == "got Status" && evt == StatusEvt$team)
-        TEAM = l2i(data, 0);
-
-    else if( script == "got Status" && evt == StatusEvt$monster_gotTarget ){
-
-		key pre = AGGRO;
-        AGGRO = l2s(data, 0);
+	if( script == "got Status" ){
+		if( evt == StatusEvt$team )
+			TEAM = l2i(data, 0);
 		
-		if( AGGRO != pre ){
+		else if( evt == StatusEvt$monster_hp_perc )
+			HP = l2f(data, 0);
+
+		else if( evt == StatusEvt$monster_gotTarget ){
+
+			key pre = AGGRO;
+			AGGRO = l2s(data, 0);
 			
-			// Optional combat stance
-			if( llGetInventoryType("combat") == INVENTORY_ANIMATION ){
-				if( AGGRO )
-					llStartObjectAnimation("combat");
-				else
-					llStopObjectAnimation("combat");
+			if( AGGRO != pre ){
+				
+				// Optional combat stance
+				if( llGetInventoryType("combat") == INVENTORY_ANIMATION ){
+					if( AGGRO )
+						llStartObjectAnimation("combat");
+					else
+						llStopObjectAnimation("combat");
+				}
+				#ifdef onAggroChange
+					onAggroChange( pre, AGGRO );
+				#endif
 			}
-			#ifdef onAggroChange
-				onAggroChange( pre, AGGRO );
-			#endif
-		}
+			
 		
+		}
+		else if( evt == StatusEvt$dead ){
+		
+			DEAD = l2i(data, 0);
+			if( !DEAD )
+				return;
+				
+			#ifdef onDeath
+				onDeath();
+			#endif
+			// If we use grapple, we can have HUP handled in grappleend
+			#if defined cf$USE_GRAPPLE
+				grappleEnd();
+			// Otherwise we need to reset HUP here
+			#elif defined cf$hup$CLIENT || defined cf$hup$HOST		
+				resetHUP();
+			#endif
+			#ifndef cf$FX_KEEPALIVE_NO_AUTO_KILL
+				LocalConf$killMyKeepalives();
+			#endif
+			
+		}
+		#ifdef cf$hup$CLIENT
+		else if( evt == StatusEvt$monster_aggro ){
+			THREAT = data;
+		}
+		#endif
 		
 	}
-	
 	
     
-    else if( script == "got Status" && evt == StatusEvt$dead ){
-	
-		DEAD = l2i(data, 0);
-		if( !DEAD )
-			return;
-		#ifdef onDeath
-			onDeath();
-		#endif
-		#ifdef cf$USE_GRAPPLE
-			grappleEnd();
-		#endif
-		#ifndef cf$FX_KEEPALIVE_NO_AUTO_KILL
-			LocalConf$killMyKeepalives();
-		#endif
-		
-	}
+    
 	
 
 	else if( script == "got NPCSpells" ){
@@ -419,6 +507,29 @@ onEvt(string script, integer evt, list data){
 }
 
 timerEvent( string id, string data ){
+	
+	#ifdef cf$hup$CLIENT
+	if( id == "HUP_FAIL" ){
+		// Failed to hookup to host
+		Monster$unsetFlags(cf$GRAPPLE_MONSTERFLAGS);
+		BFR = BFR&~BFR_IN_GRAPPLE;
+	}
+	#endif
+	
+	#if defined cf$hup$CLIENT || defined cf$hup$HOST
+	if( id == "HUPC" ){
+	
+		if( llKey2Name(HUP_TARG) == "" ){
+			
+			#ifdef cf$USE_GRAPPLE
+				grappleEnd();
+			#else
+				resetHUP();
+			#endif
+		
+		}
+	}
+	#endif
 
 	#ifdef cf$FX_KEEPALIVE
 	if( id == "_KA" ){
@@ -470,6 +581,7 @@ default{
     state_entry(){
 
         PLAYERS = [(string)llGetOwner()];
+		//PLAYER_HUDS = [(key)"2fad5aa7-c2d3-51fd-e1cd-551e2d289fab"];
         memLim(1.5);
 		#ifdef onSpellSetup
 		onSpellSetup();
@@ -488,6 +600,9 @@ default{
 			multiTimer(["_KA", 0, 1, TRUE]);	// Keepalive timer
 		#endif
 		
+		#if defined cf$hup$CLIENT || defined cf$hup$HOST
+			llListen(HOOKUP_CHAN, "", "", "");
+		#endif
 		
 		
 		ini(FALSE);
@@ -507,10 +622,11 @@ default{
 			if( sitTarg ){
 				
 				#ifdef cf$sitCheck
-				if( cf$sitCheck(sitTarg) ){
+				if( cf$sitCheck(sitTarg) )
 				#else
-				if( (sitTarg == llGetOwnerKey(GRAPPLE_TARG) || !LIVE) && !DEAD ){
+				if( (sitTarg == llGetOwnerKey(GRAPPLE_TARG) || !LIVE) && !DEAD )
 				#endif
+				{
 					multiTimer(["_g_fail"]);
 					llRequestPermissions(sitTarg, PERMISSION_TRIGGER_ANIMATION); 
 					
@@ -518,29 +634,233 @@ default{
 				else
 					llUnSit(sitTarg);
 				
-			}else if( GRAPPLE_TARG )
+			}
+			else if( GRAPPLE_TARG )
 				grappleEnd();
 			
-			
 		}
+		
 	}
+	
 	run_time_permissions( integer perm ){
 		if( !_G_EN )
 			return;
 			
 		if( perm & PERMISSION_TRIGGER_ANIMATION ){
 			
-			#ifndef cf$DUMMY_MODE
-			Evt$startQuicktimeEvent(GRAPPLE_TARG, cf$GRAPPLE_STAGES, cf$GRAPPLE_PREDELAY, "QTE", cf$GRAPPLE_BUTTON_DELAY, cf$GRAPPLE_FLAGS);
+			if( LIVE )
+				Evt$startQuicktimeEvent(GRAPPLE_TARG, cf$GRAPPLE_STAGES, cf$GRAPPLE_PREDELAY, "QTE", cf$GRAPPLE_BUTTON_DELAY, cf$GRAPPLE_FLAGS);
+			#ifdef cf$DUMMY_MODE
+				GRAPPLE_TARG = l2k(PLAYER_HUDS, llListFindList(PLAYERS, [(str)AST]));
 			#endif
 			#ifdef grappleOnPermissions
-			grappleOnPermissions();
+				grappleOnPermissions();
+			#endif
+			#ifdef cf$hup$HOST
+				debugUncommon("HUP :: Host :: Searching clients. Grapple targ "+llKey2Name(GRAPPLE_TARG));
+				hup$global(hup$task$hostStart, cf$hup$HOST + GRAPPLE_TARG);
 			#endif
 			
 		}
 	}
 	#endif
 		
+	#if defined cf$hup$CLIENT || defined cf$hup$HOST || defined onListen
+	listen( integer c, string n, key id, string msg ){
+		
+		// Handle hookups
+		#if defined cf$hup$CLIENT || defined cf$hup$HOST
+		if( c == HOOKUP_CHAN ){
+			
+			debugUncommon("HUP :: Msg -> "+msg);
+			
+			if( llGetSubString(msg, 0, 2) != hup$TASK_BASE )
+				return;
+								
+			string task = llGetSubString(msg, 3, 3);
+			list data = llJson2List(llGetSubString(msg, 4, -1));
+			
+			if( task == hup$task$end && HUP_TARG == id ){
+				
+				// If we can grapple we run end grapple
+				#ifdef cf$USE_GRAPPLE
+					grappleEnd();
+				// Otherwise end only hup
+				#else
+					resetHUP();
+				#endif
+				
+			}
+				
+			
+			#ifdef cf$hup$CLIENT
+				string name = l2s(data, 0);
+				key victim = l2s(data, 1);
+				
+				list tmp = cf$hup$CLIENT;	// anim, pos, rot
+				integer hupPos = llListFindList(tmp, (list)name);	
+					
+				list posData = llGetObjectDetails(id, (list)OBJECT_POS + OBJECT_ROT);
+				vector startPos = l2v(posData, 0);
+				rotation startRot = l2r(posData, 1);
+				vector offs = l2v(tmp, hupPos+1);
+					
+				offs *= startRot;
+				
+				
+				
+				// Host is looking for a client
+				if( task == hup$task$hostStart && HUP_TARG == "" ){
+					
+					if( 
+						hupPos == -1 		// We do not support this animation
+						|| DEAD										// we are dead
+						|| HP < 0.25								// HP is too low for this one
+						|| BFR & BFR_IN_GRAPPLE						// Already involved in a grapple
+					){
+						debugRare("Reject pos, dead, hp, bfr");
+						return;
+					}
+					#ifndef cf$DUMMY_MODE
+					if( llListFindList(THREAT, [(str)victim]) == -1 ){
+						debugRare("Reject player not on threat");
+						return;
+					}
+					#endif
+					
+					#ifdef hup$testClient
+					if( !hup$testClient(name, id, victim) ){
+						debugRare("Reject custom");
+						return;
+					}
+					#endif
+					
+					// See if pos is available
+					// Draw a line straight to the end pos to make sure that it is free
+					list ray = llCastRay(startPos, startPos+offs, RC_DEFAULT);
+					if( l2i(ray, -1) > 0 ){
+						debugRare("Reject FWD");
+						return;
+					}
+					ray = llCastRay(startPos+offs, startPos+offs-<0,0,5>, RC_DEFAULT);
+					// Must have a floor
+					if( l2i(ray, -1) < 1 ){
+						debugRare("Reject no floor");
+						return;
+					}
+					
+					#ifndef hup$IGNORE_Z
+					vector v = l2v(ray, 1);
+					// Want floor to be within 0.5m of target pos
+					float want = startPos.z-cf$HOVER_HEIGHT+offs.z;
+					if( llFabs(v.z-want) > 0.5 ){
+						debugRare("Reject floor far "+(str)(want-v.z));
+						return;
+					}
+					#endif
+					
+					HUP_TARG = id;
+					HUP_VICTIM = victim;
+					
+					#ifdef hup$onPreAccept
+					hup$onPreAccept();
+					#endif
+					
+					Monster$setFlags(cf$GRAPPLE_MONSTERFLAGS);
+					multiTimer(["HUP_FAIL", 0, 3, FALSE]);		// Set fail timeout
+
+					hup$send(id, hup$task$clientAck, "");
+					
+					
+				}
+				// Host accepted us
+				else if( task == hup$task$hostAck && HUP_TARG != "" ){
+					
+					str name = l2s(data, 0);
+					HUP_TARG = id;
+					HUP_VICTIM = victim;
+					str cb = l2s(data, 2);
+					HUP_POS = llGetPos();			// Store our start position
+					onHookup(name, TRUE, FALSE);	// Client defined code
+					multiTimer(["HUP_FAIL"]);		// Stop fail
+					multiTimer(["HUPC", 0, 1, TRUE]);		// Hup ticker. Checks if grapple is ongoing etc.
+					BFR = BFR|BFR_IN_GRAPPLE;
+
+					HUP_POS = llGetPos();
+					llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
+					llSleep(.1);
+					llSetRegionPos(offs+startPos);
+					llRotLookAt(l2r(tmp, hupPos+2)*startRot, 1,1);
+						
+					hup$send(id, hup$task$clientStart, llList2List(tmp, hupPos+4, hupPos+6));
+					HUP_A_NPC = l2s(tmp, hupPos+3);
+					if( HUP_A_NPC ){
+						float sync = l2f(tmp, hupPos+6);						
+						if( sync ){
+							objAnimOff(HUP_A_NPC);
+							llSleep(sync);
+						}
+						objAnimOn(HUP_A_NPC);
+					}
+					
+				}
+			#endif
+			
+			#ifdef cf$hup$HOST
+				// Client accepted.
+				if( task == hup$task$clientAck && HUP_TARG == "" ){
+					
+					HUP_TARG = id;	// Store client ID
+					hup$send(id, hup$task$hostAck, cf$hup$HOST + GRAPPLE_TARG + l2s(data, 0));
+					debugRare("Host accept "+llKey2Name(HUP_TARG));
+					multiTimer(["HUPC", 0, 1, TRUE]);
+					
+				}
+				// Switch to hookup animation
+				if( task == hup$task$clientStart ){
+					
+					HUP_A_PC = l2s(data, 0);
+					HUP_A_NPC = l2s(data, 1);
+					float sync = l2f(data, 2);
+					if( sync > 0 ){
+						if( HUP_A_PC )
+							animOff(HUP_A_PC);
+						if( HUP_A_NPC )
+							objAnimOff(HUP_A_NPC);
+						llSleep(sync);
+					}
+					if( HUP_A_PC )
+						animOn(HUP_A_PC);
+					if( HUP_A_NPC ){
+						objAnimOn(HUP_A_NPC);
+					}
+					onHookup("", TRUE, TRUE);
+					
+				}
+				// Hookup "thrust" animation received
+				if( task == hup$task$clientAnim ){
+					
+					str anim = l2s(data, 0);
+					if( anim )
+						animOn(anim);
+					anim = l2s(data, 1);
+					if( anim ){
+						objAnimOff(anim);
+						objAnimOn(anim);
+					}
+				}			
+			#endif
+			
+		}
+		#endif
+		
+		#ifdef onListen
+			onListen(c, n, id, msg);
+		#endif
+		
+	}
+	#endif
+	
 	#ifdef body
 	body
 	#endif

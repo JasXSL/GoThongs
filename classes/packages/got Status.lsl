@@ -1,5 +1,6 @@
 #define USE_EVENTS
 //#define DEBUG DEBUG_UNCOMMON
+#define USE_DB4
 #include "got/_core.lsl"
 
 #define saveFlags() \
@@ -243,7 +244,7 @@ dArm( int amount ){
 		Passives$rem(LINK_THIS, "_SS_");
 	// Stripped
 	else if( pre && !ARMOR )
-		Passives$set(LINK_THIS, "_SS_", (list)0+fx$F_SHOW_GENITALS, 0);
+		Passives$set(LINK_THIS, "_SS_", 0 + fx$F_SHOW_GENITALS, 0);
 		
 		
 	raiseEvent(StatusEvt$armor, (str)ARMOR);
@@ -624,6 +625,7 @@ onEvt( string script, integer evt, list data ){
 	
 	else if( script == "got Bridge" && evt == BridgeEvt$userDataChanged ){
 		
+		data = Bridge$userData();
 		Status$setDifficulty(l2i(data, BSUD$DIFFICULTY));
 		RO = l2i(data, BSUD$THONG_ROLE);
 		US = l2i(data, BSUD$SETTING_FLAGS);

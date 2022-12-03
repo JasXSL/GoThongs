@@ -42,6 +42,34 @@ list localConfAnims;
 string localConfIdle;					
 #define localConfCacheAnims() integer i; for(i=0; i<llGetInventoryNumber(INVENTORY_ANIMATION); i++){string n = llGetInventoryName(INVENTORY_ANIMATION, i); if(localConfIdle){if(n != localConfIdle && llGetSubString(n, 0, llStringLength(localConfIdle)-1) == localConfIdle){localConfAnims+=n;}}else if(llGetSubString(n, -2, -1) == "_1"){localConfIdle = llGetSubString(n, 0, -3); i=0;}}
 				
+
+
+// Bitflags used in LocalConf.NPC.template in the BFR int
+#define BFR_IN_GRAPPLE 0x1			// We are in a grapple either as a host or a client (see hookups in got LocalConf.NPC.template)
+
+/*
+	Hookup (hup) extension to the grapple system
+	- Allows you to combine monster grapples
+	- Host is the NPC that triggers an initial grapple
+	- Client is the assistant
+	
+	The below tasks are usually run in order on HOOKUP_CHAN
+*/
+// Hookup configuration
+#define hup$TASK_BASE "HUP"
+	#define hup$task$hostStart "A"		// (str)name, (key)victim_hud - We grappled a player
+	#define hup$task$clientAck "B"			// (str)callback - Target accepted sender
+	#define hup$task$hostAck "C"			// (str)name, (key)victim_hud, (str)callback - Send to target, you are clear to begin.
+	#define hup$task$clientStart "D"		// (str)npc_idle_anim, (str)player_idle_anim, (float)sync - Setup the idle animations and begin.
+	#define hup$task$clientAnim "E"			// (str)npc_anim, (str)pc_anim - Trigger an active animation on the player and sender.
+	#define hup$task$end "F"				// - Sent by either the target or sender and forces the event to end.
+	
+
+#define hup$send(targ, task, data) llRegionSayTo(targ, HOOKUP_CHAN, hup$TASK_BASE+task+mkarr((list)data))
+#define hup$global(task, data) llRegionSay(HOOKUP_CHAN, hup$TASK_BASE+task+mkarr((list)data))
+// Shortcut
+#define hup$clientAnim( npc, pc ) hup$send(HUP_TARG, hup$task$clientAnim, (npc) + (pc))
+				
 		
 /*
 	Flags: Defined in got NPCSpells NPCS$FLAG_*

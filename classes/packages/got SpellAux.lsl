@@ -1,3 +1,4 @@
+#define USE_DB4
 #define PMATH_CONSTS _C
 #define USE_EVENTS
 #define IGNORE_CALLBACKS
@@ -36,7 +37,6 @@ float cMHP = 100;
 float cMMP = 50;
 float cArmor = 250;
 
-int P_EVT;	// Stores event prim
 
 list PLAYERS;
 
@@ -91,7 +91,7 @@ string runMath( string FX, integer index, key targ ){
 
 	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
     list split = llParseString2List(FX, ["$MATH$","$M$"], []);
-	parseDesc(targ, resources, status, fxf, sex, team, monsterflags, _a)
+	parseDesc(targ, resources, status, fxf, sex, team, monsterflags, _a, _b)
 	list res = splitResources(resources);
 	int ehp = (int)(l2f(res, 0)*100);
 	
@@ -251,18 +251,20 @@ onEvt(string script, integer evt, list data){
 	
 	else if(script == "got SpellMan" && evt == SpellManEvt$recache){
 		CACHE = [];
-
+		
+		str tmpCh = db4$getTableChar(db4table$gotBridgeSpellsTemp);
+		str ch = db4$getTableChar(db4table$gotBridgeSpells);
 		integer i;
-		for(i=0; i<5; i++){
+		for( ; i<5; ++i ){
 			
-			list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
+			list d = db4$getFast(tmpCh, i);
 			if(d == [])
-				d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
+				d = db4$getFast(ch, i);
 			
-			CACHE+= llList2String(d, 2); // Wrapper
-			CACHE+= llList2String(d, 9); // Selfcast
-			CACHE+= llList2Float(d, 6); // Range
-			CACHE+= llList2Integer(d, 5); // Flags
+			CACHE+= llList2String(d, BSSAA$fxwrapper); // Wrapper
+			CACHE+= llList2String(d, BSSAA$selfcast); // Selfcast
+			CACHE+= llList2Float(d, BSSAA$range); // Range
+			CACHE+= llList2Integer(d, BSSAA$target_flags); // Flags
 
 		}
 		
@@ -288,25 +290,28 @@ onEvt(string script, integer evt, list data){
 		if( llFrand(1) < befuddle-1 && (str)SPELL_TARGS != "AOE" && (count(SPELL_TARGS) > 1 || l2s(SPELL_TARGS, 0) != "1") ){
 			
 			vector rpos = llGetRootPosition();
-			list players = llJson2List(llGetSubString(l2s(llGetLinkMedia(P_EVT, 0, (list)Evts$NEAR_DB_MEDIA), 0), 8, -1));
 			list viable = (list)"";
-			int i;
-			for( ; i<count(players); i += 2 ){
 			
-				key t = l2s(players, i+1);
-				smartHealDescParse(t, resources, status, fx, team)
-				if( _attackableV(status, fx) && llVecDist(prPos(t), rpos ) < r )
-					viable += t;
-			
-			}
-			players = [];
-			
+			string ch = db4$getTableChar(db4table$npcNear);
+			db4$eachFast(ch, row,
+				
+				key t = l2k(row, 2);
+				if( t != llGetKey() ){
+				
+					smartHealDescParse(t, resources, status, fx, team)
+					if( _attackableV(status, fx) && llVecDist(prPos(t), rpos ) < r )
+						viable += t;
+						
+				}
+				
+			)
+				
 			string targ = randElem(viable);
-			if( targ == "" )
-				SPELL_TARGS = (list)LINK_ROOT;
-			else
+			if( targ )
 				SPELL_TARGS = (list)targ;
-			
+			else
+				SPELL_TARGS = (list)LINK_ROOT;
+				
 			bfDmg = 0.5;
 			
 		}
@@ -383,12 +388,6 @@ default{
 
 	state_entry(){
 		PLAYERS = [(str)llGetOwner()];
-		links_each( nr, name,
-			
-			if( name == Evts$PRIM_NAME )
-				P_EVT = nr;
-				
-		)
 	}
 
 	#define LM_PRE \

@@ -1,3 +1,6 @@
+/*
+	Lives in cyan box
+*/
 list PLAYERS;
 list PLAYER_HUDS;
 #define USE_EVENTS
@@ -156,6 +159,24 @@ onEvt(string script, integer evt, list data){
 			Status$damageArmor(targ, -1000);
 		)
 		
+	}
+	else if( script == "got FXCompiler" && evt == FXCEvt$hitFX ){
+		
+		str color = l2s(data, 0);
+		integer flags = l2i(data, 1);
+		
+		ThongMan$hit(color);
+		// Also flags and stuff here
+		if( ~flags&fxhfFlag$NOSOUND ){
+		
+			list sounds = (list)"71224087-bce9-d63f-f582-ccba8bb21e85" + "b78573df-e593-b717-301c-ed55e8ad4916" + "1d724698-4223-d381-f38c-d9c86986684d";
+			llTriggerSound(randElem(sounds), .5+llFrand(.5));
+			
+		}
+		
+		if( ~flags&fxhfFlag$NOANIM )
+			AnimHandler$anim("[\"got_takehit_highpri\",\"got_takehit\"]", TRUE, 0, 0, 0);
+	
 	}
 		
 }

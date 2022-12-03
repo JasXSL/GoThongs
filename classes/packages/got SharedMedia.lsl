@@ -1,4 +1,5 @@
 #define USE_EVENTS
+#define USE_DB4
 #include "got/_core.lsl"
 
 #define BOOK_URL "https://jasx.org/lsl/got/hud2/book2.php"
@@ -54,8 +55,9 @@ checkPos(){
 onEvt(string script, integer evt, list data){
 
     if( script == "got Bridge" && evt == BridgeEvt$userDataChanged ){
-	
-        list dta = llJson2List(llList2String(data, 1)); // Browser conf
+		
+		data = Bridge$userData();
+        list dta = llJson2List(llList2String(data, BSUD$BROWSER)); // Browser conf
         if(llList2Float(dta, 1)>0){
             b_scale = llList2Float(dta, 1);
             b_size = BROWSER_SIZE*b_scale;

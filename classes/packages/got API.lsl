@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -206,6 +207,13 @@ default{
 		);
 		
 		
+	}
+	
+	if( method$byOwner && METHOD == GotAPIMethod$dumpLSD ){
+		list keys = llLinksetDataListKeys(0,-1);
+        integer i;
+        for( i = 0; i < count(keys); ++i )
+            llOwnerSay(l2s(keys, i)+" >> "+llLinksetDataRead(l2s(keys, i)));
 	}
 
 	if(method$byOwner && METHOD == GotAPIMethod$list && !(method$isCallback)){

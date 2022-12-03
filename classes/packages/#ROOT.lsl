@@ -1,3 +1,4 @@
+#define USE_DB4
 #define SCRIPT_IS_ROOT
 #define USE_EVENTS
 #define ALLOW_USER_DEBUG 1
@@ -255,13 +256,17 @@ default{
 			text += "\n\n  ⚠️ YOU HAVE TOO MANY ATTACHMENTS ⚠️\nThis may cause errors";
 		llDialog(llGetOwner(), text, [], 123);
 
-        clearDB3();
+		// Drop all linkset data
+		llLinksetDataReset();
+		
         PLAYERS = [(str)llGetOwner()];
         
         // pre full reset
         runOmniMethod("jas Supportcube", SupportcubeMethod$killall, [], TNN);
+		
         // Start listening
         initiateListen(); 
+		
 		llListen(AOE_CHAN, "", "", "");
         if(llGetAttached())
             llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
@@ -270,23 +275,29 @@ default{
 		ThongMan$reset();
 		multiTimer(["TI", 0, 2, TRUE]);
 		
+		// Remove DB3 tables
+		/*
+		links_each(nr, name,
+			integer s;
+			for(; s < llGetLinkNumberOfSides(nr); ++s)
+				llClearLinkMedia(nr, s);
+		)
+		llOwnerSay("Media cleared");
+		*/
+		
 		// Create schema before resetting the other scripts
-		list tables = [
-			BridgeSpells$name+"0",
-			BridgeSpells$name+"1",
-			BridgeSpells$name+"2",
-			BridgeSpells$name+"3",
-			BridgeSpells$name+"4",
-			BridgeSpells$name+"_temp0",
-			BridgeSpells$name+"_temp1",
-			BridgeSpells$name+"_temp2",
-			BridgeSpells$name+"_temp3",
-			BridgeSpells$name+"_temp4",
-			"got Bridge"
-		];
-		db3$addTables(tables);
+		db4$createTableLocal(db4table$gotBridge);
+		db4$createTableLocal(db4table$gotBridgeSpells);
+		db4$createTableLocal(db4table$gotBridgeSpellsTemp);		// Handled by one of the spell scripts
+		db4$createTableLocal(db4table$npcNear);					// handled by got Evts
+		
+		db4$insert(db4table$npcNear, 0 + llGetKey());		// Us being first is needed to save memory in smart heal. See got Evts for more.
 		
 		Root$attached();
+		
+		// Reset all other scripts and set a start timer
+		resetAllOthers();
+		multiTimer(["INI", "", 2, FALSE]);	// Post reset timer
     }
     
     
@@ -453,13 +464,7 @@ default{
     
     // Here's where you receive callbacks from running methods
     if(method$isCallback){
-		
-		if( id == "" && SENDER_SCRIPT == llGetScriptName() && METHOD == stdMethod$setShared ){
-			// Reset all other scripts
-			resetAllOthers();
-			multiTimer(["INI", "", 2, FALSE]);	// Post reset timer
-		}
-		
+
 		if( CB == "ATTACHED" ){
 		
 			integer pos = llListFindList(PLAYERS, [(str)llGetOwnerKey(id)]);

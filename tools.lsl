@@ -231,6 +231,7 @@ integer var = l2i(_split, 7);
 list _split = explode("$", l2s(llGetObjectDetails(targ, (list)OBJECT_DESC), 0)); \
 integer var = l2i(_split, 5); 
 	
+// Note: HP/MP/ARS/PAIN is a percentage between 0 and 1.0
 #define parseResources(targ, hp, mp, ars, pain) \
 list _data = llGetObjectDetails(targ, [OBJECT_ATTACHED_POINT, OBJECT_DESC]); \
 list _split = explode("$", l2s(_data, 1)); \

@@ -4,6 +4,7 @@
 	Also handles the stat numbers
 
 */
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -32,7 +33,7 @@ integer UI = TRUE;
 onEvt(string script, integer evt, list data){
     
 	if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
-        SPOKEN = llList2Integer(data, BSUD$LANG);
+        SPOKEN = l2i(Bridge$userData(), BSUD$LANG);
     }
 	
 	else if( script == "got GUI" && evt == GUIEvt$toggle ){

@@ -1,4 +1,5 @@
 #define USE_EVENTS
+#define USE_DB4
 #include "got/_core.lsl"
  
 // Abil prims
@@ -120,14 +121,17 @@ onEvt(string script, integer evt, list data){
 		
         // Set textures
         list set = [];
+		
+		str tmpCh = db4$getTableChar(db4table$gotBridgeSpellsTemp);
+		str ch = db4$getTableChar(db4table$gotBridgeSpells);
 
         integer i;
-        for(i=0; i<5; i++){
+        for( ;  i < 5; ++i ){
             
-            list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
-            if(d == [])
-                d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
-				
+			list d = db4$getFast(tmpCh, i);
+			if(d == [])
+				d = db4$getFast(ch, i);
+			
             string visuals = llList2String(d, BSSAA$fx); // Visuals
             list p = llJson2List(j(visuals, 3));
 			while( count(p) < 2 )
@@ -156,7 +160,7 @@ onEvt(string script, integer evt, list data){
 				CACHE_GCD = CACHE_GCD | (1 << i);
 			
 			setSpellCharges(i, l2i(d,BSSAA$charges));
-            CACHE_MANA_COST += llList2Float(d, 3);
+            CACHE_MANA_COST += llList2Float(d, BSSAA$mana);
 			
 			
         }

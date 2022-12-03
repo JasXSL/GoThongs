@@ -43,3 +43,5 @@ Temporary Items
 .apdisk
 *.bak
 *.bup
+
+classes/packages/got Bridge.lsl

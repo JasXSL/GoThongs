@@ -80,10 +80,6 @@ integer getStacks( integer pid, integer absolute ){
 	
 }
 
-#ifndef IS_NPC
-	int P_EVTS;
-#endif
-
 default 
 {
 	#ifdef IS_NPC 
@@ -96,13 +92,6 @@ default
 		if(change&(CHANGED_INVENTORY|CHANGED_ALLOWED_DROP)){
 			spawnEffects();
 		}
-	}
-	#else
-	state_entry(){ 
-		links_each(nr, name,
-			if( name == Evts$PRIM_NAME )
-				P_EVTS = nr;
-		)
 	}
 	#endif
 	
@@ -137,11 +126,13 @@ default
 		if( nr != TASK_FXC_PARSE )
 			return;
 				
-		
 		integer actions;
 		list input = llJson2List(s);
-		if(input == [])return;
-		while(input){
+		s = "";
+		if( input == [] )
+			return;
+			
+		while( input ){
 		
 			integer action = l2i(input,0); 
 			actions = actions|action;
@@ -153,7 +144,7 @@ default
 			integer timesnap = l2i(input, 6);
 			string additional = l2s(input, 7); 
 			input = llDeleteSubList(input, 0, FXCPARSE$STRIDE-1); 
-			
+						
 			// Stacks first
 			if( action&FXCPARSE$ACTION_ADD ){
 				integer s = stacks; 

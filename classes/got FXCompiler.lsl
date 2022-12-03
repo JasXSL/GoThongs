@@ -123,26 +123,25 @@
 		if( targs&FXAF$SMART_HEAL ){ \
 			\
 			float s = llGetTime(); \
-			key targ; float chp = 1; \
-			list targs = llJson2List(llGetSubString(l2s(llGetLinkMedia(P_EVTS, 0, (list)Evts$NEAR_DB_MEDIA), 0), 8, -1)); \
-			targs += (list)0 + llGetKey(); /* Owner is never in nearby array */ \
-			/* Targs is strided, see got Evts: list T */ \
-			int n; \
-			for(; n < count(targs); n = n+2 ){ \
-				key hud = l2k(targs, n+1); \
+			list targ; float chp = 1; \
+			string ch = db4$getTableChar(db4table$npcNear); \
+			db4$eachFast(ch, row, \
+				key hud = l2k(row, 2); /* 1 because 0 is always ID */ \
 				smartHealDescParse(hud, resources, status, fx, team) \
 				if( team == TEAM && !(status&StatusFlags$NON_VIABLE) && !(fx&fx$UNVIABLE) ){ \
 					float hp = (float)(resources>>21&127)/127.0; \
-					if( (hp <= chp || targ == "") && llVecDist(llGetPos(), prPos(hud)) <= 10 ){ \
-						targ = hud; \
+					if( (hp <= chp || targ == []) && llVecDist(llGetPos(), prPos(hud)) <= 10 ){ \
+						if( hp < chp ) \
+							targ = []; \
+						targ += hud; \
 						chp = hp; \
 					} \
 				} \
-			} \
-			targs = []; \
-			if( targ != "" && targ != llGetKey() )\
-				FX$send(targ, llGetKey(), l2s(fx,1), TEAM); \
-			if( targ != "" && targ == llGetKey() ) \
+			) \
+			key t = randElem(targ); \
+			if( t != "" && t != llGetKey() )\
+				FX$send(t, llGetKey(), l2s(fx,1), TEAM); \
+			if( t != "" && t == llGetKey() ) \
 				FX$run("", l2s(fx,1)); \
 		}
 #else

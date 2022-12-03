@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -672,18 +673,21 @@ default{
 		//SpellAux$cache();
 		raiseEvent(SpellManEvt$recache, "");
 		
-		GCD = (float)db3$get("got Bridge", ([BridgeShared$data, 2]));
-		if(GCD<=0)GCD = 1.5;
+		GCD = l2f(Bridge$thongData(), BSS$GCD);
+		if( GCD <= 0 )
+			GCD = 1.5;
 		
+		str tmpCh = db4$getTableChar(db4table$gotBridgeSpellsTemp);
+		str ch = db4$getTableChar(db4table$gotBridgeSpells);
 		integer i;
-		for( i=0; i<5; i++ ){
+		for( ; i < 5; ++i ){
 			
-			list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
+			list d = db4$getFast(tmpCh, i);
 			if(d == [])
-				d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
+				d = db4$getFast(ch, i);
 			
 			
-			if( (integer)llList2Integer(d,5)&SpellMan$NO_GCD )
+			if( (integer)llList2Integer(d,BSSAA$target_flags)&SpellMan$NO_GCD )
 				GCD_FREE = GCD_FREE | (1<<i);
 			
 			CACHE+= llList2Float(d, BSSAA$mana);     // Cost
@@ -807,9 +811,19 @@ default{
     }
 	
     if(METHOD == SpellManMethod$replace){
-		DB3$setOther(BridgeSpells$name+"_temp"+(str)((int)method_arg(0)+1), [], method_arg(1));
-		if(l2i(PARAMS, 2))
+		
+		int spell = l2i(PARAMS, 0)+1;	// (Argument uses -1 for ability 5)
+		// Add 1 extra to spell because DB4 starts at 0
+		list spdata = llJson2List(method_arg(1));
+		string ch = db4$getTableChar(db4table$gotBridgeSpellsTemp);
+		
+		if( spdata == [] )
+			db4$deleteFast(ch, spell);
+		else
+			db4$replaceFast(ch, spell, spdata);
+		if( l2i(PARAMS, 2) )
 			SpellMan$rebuildCache();
+			
 	}
 	
     

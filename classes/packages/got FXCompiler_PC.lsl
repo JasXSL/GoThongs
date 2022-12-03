@@ -1,3 +1,4 @@
+#define USE_DB4
 #include "got/_core.lsl"
 #include "../got FXCompiler_Shared.lsl"
 integer TEAM = TEAM_PC;
@@ -17,6 +18,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		
 	int stacks = getStacks(pid, FALSE);
 
+	
 	list fxs = llJson2List(fxobjs);
     while(llGetListLength(fxs)){
         list fx = llJson2List(llList2String(fxs,0));
@@ -51,7 +53,6 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 				resource_updates += SMBUR$buildMana(l2f(fx,1)*st, pname, l2i(fx,2));
 		}
         
-		
 		else if( t == fx$CLASS_VIS )
 			gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2), l2s(fx, 3));
 		
@@ -91,21 +92,11 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 		}
 		
 		else if( t == fx$HITFX ){
-		
-            ThongMan$hit(l2s(fx,1));
-            // Also flags and stuff here
-            integer flags = llList2Integer(fx,2);
-            if( ~flags&fxhfFlag$NOSOUND ){
 			
-				list sounds = (["71224087-bce9-d63f-f582-ccba8bb21e85", "b78573df-e593-b717-301c-ed55e8ad4916", "1d724698-4223-d381-f38c-d9c86986684d"]);
-                llTriggerSound(randElem(sounds), .5+llFrand(.5));
-				
-            }
-			
-            if( ~flags&fxhfFlag$NOANIM )
-                AnimHandler$anim(mkarr((["got_takehit_highpri", "got_takehit"])), TRUE, 0, 0, 0);
-			
-			raiseEvent(FXCEvt$hitFX, mkarr(([l2s(fx, 1), l2i(fx, 2), caster])));
+			// This is handled in rootaux
+			str color = l2s(fx,1);
+			int flags = l2i(fx,2);
+			raiseEvent(FXCEvt$hitFX, mkarr((list)color + flags + caster));
 			
         }
         else if(t == fx$HUD_TEXT)
@@ -179,6 +170,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 				RLV$addSprint(l2f(fx, 1));
 				
 		}
+		
     }
 	
     // Send updated hp/mana and stuff

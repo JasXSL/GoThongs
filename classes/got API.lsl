@@ -42,6 +42,8 @@
 
 #define GotAPIMethod$list 0			// Owner only, outputs currently bound APIs in chat
 #define GotAPIMethod$getStats 1		// Gets current effect modifiers (both passive and active in a human readable form)
+#define GotAPIMethod$dumpLSD 2		// Outputs all linkset data into chat
+
 
 // output actions
 #define GotAPI$actionIni 1			// void | Sent to everyone

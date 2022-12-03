@@ -1,8 +1,14 @@
+/*
+	Handles:
+	- Enemy targeting
+	- Quicktime events
+	- Spell textures
+	Lies in the EVTS prim (blue box)
+*/
 #ifndef _gotEvts
 #define _gotEvts
 
-#define Evts$PRIM_NAME "EVTS"
-#define Evts$NEAR_DB_MEDIA PRIM_MEDIA_HOME_URL
+#define db4table$npcNear "npcNear"			// Stores [(int)id,(int)settings,(key)uuid] - Entry 0 is ALWAYS 0,0,llGetKey() and handled in #ROOT
 
 #define EvtsMethod$cycleEnemy 1				// (bool)friends - Get a nearby enemy
 #define EvtsMethod$startQuicktimeEvent 2	/* Starts a quick time event. Sends a callback with the first arg being one of the below tasks and the CB specified.
@@ -39,6 +45,7 @@
 #define Evts$getTextureDesc(player, pid) runMethod((str)player, "got Evts", EvtsMethod$getTextureDesc, (list)pid, TNN)
 #define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_SET, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)
 
+// Converts a spell description by doing math for stack multiplier etc
 string evtsStringitizeDesc( string desc, int stacks ){
 	
 	list out = llParseString2List(desc, [], ["<|", "|>"]);

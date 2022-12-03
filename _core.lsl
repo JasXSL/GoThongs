@@ -14,6 +14,8 @@
 #define GUI_CHAN(targ) playerChan(llGetOwnerKey(targ))+69 // Chan for rapid GUI calls
 #define AOE_CHAN 0xBEAD
 #define KEEPALIVE_CHAN 393939								// Used in LocalConf NPC template. Tracks temporary spawns.
+#define HOOKUP_CHAN 0xDE1DE1								// Used for combo grapples. See got LocalConf.NPC.template
+
 
 // Converts floats to ints and back with 2 decimal points
 #define i2f(input) (input/100.)
@@ -115,8 +117,6 @@
 #include "./classes/got PISpawner.lsl"
 #include "./classes/got AniAnim.lsl"
 #include "./classes/got AnimeshScene.lsl"
-
-
 
 
 // Helper function to run code on all players. Requires players to be stored in a global list named PLAYERS

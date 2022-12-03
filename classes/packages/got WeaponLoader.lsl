@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -179,12 +180,17 @@ onEvt(string script, integer evt, list data){
 	if( script == "got Bridge" && evt == BridgeEvt$thong_initialized )
 		multiTimer(["INI", 0, 4, FALSE]);
 		
-    if(script == "got Bridge" && evt == BridgeEvt$userDataChanged)
-        loadWeapon(data);   
+    if( script == "got Bridge" && evt == BridgeEvt$userDataChanged )
+        loadWeapon(Bridge$userData());   
     // thong data changed
     else if(script == "got Bridge" && evt == BridgeEvt$data_change){
-		TFLAGS = l2i(data, 3);
+		
+		TFLAGS = l2i(
+			db4$get(db4table$gotBridge, db4table$gotBridge$data), 
+			BSS$FLAGS
+		);
 		reloadWeapon();
+		
 	}
 	
 	if( script == "got SpellMan" && evt == SpellManEvt$complete ){
@@ -227,12 +233,14 @@ onEvt(string script, integer evt, list data){
 	if( script == "got SpellMan" && evt == SpellManEvt$recache ){
 		
 		SPELL_STANCES = SPELL_FLAGS = [];
+		string tmpChr = db4$getTableChar(db4table$gotBridgeSpellsTemp);
+		string chr = db4$getTableChar(db4table$gotBridgeSpells);
 		integer i;
-        for( i=0; i<5; ++i ){
+        for( ; i<5; ++i ){
             
-            list d = llJson2List(db3$get(BridgeSpells$name+"_temp"+(str)i, []));
-            if(d == [])
-                d = llJson2List(db3$get(BridgeSpells$name+(str)i, []));
+            list d = db4$getFast(tmpChr, i);
+            if( d == [] )
+                d = db4$getFast(chr, i);
             SPELL_STANCES += l2s(d, BSSAA$stance);
 			SPELL_FLAGS += l2i(d, BSSAA$target_flags);
 
@@ -258,6 +266,7 @@ loadWeapon( list data ){
     list wdata = llJson2List(l2s(data, BSUD$WDATA));
     string rhand = l2s(wdata, 0);
     string lhand = l2s(wdata, 1);
+	
     WFLAGS = l2i(wdata, 4);
     
     W_MAINHAND_SLOT = l2i(wdata, 6);
@@ -305,9 +314,11 @@ loadWeapon( list data ){
 	
 	// At least 1 weapon prim has changed so we need to re-spawn
 	if(rhand != RHAND || lhand != LHAND){
+	
         RHAND = rhand;
         LHAND = lhand;
         spawnWeapons();
+		
     }
 
 	BFL = BFL|BFL_LOADED;
@@ -320,10 +331,12 @@ reloadWeapon(){
 	if(~BFL&BFL_LOADED)
 		return;
 		
-	if(unsheatable && ~BFL&BFL_SHEATHED){ 
+	if( unsheatable && ~BFL&BFL_SHEATHED ){ 
+	
 		spawnWeapons();	
         BFL = BFL|BFL_SHEATHED;
 		updateStance();
+		
     }
 	
     raiseEvent(WeaponLoaderEvt$sheathed, (str)((BFL&BFL_SHEATHED)>0));
@@ -438,7 +451,7 @@ default{
         */
         
 		// Uncomment for debug
-        loadWeapon(llJson2List(Bridge$userData()));
+        loadWeapon(Bridge$userData());
             
         if(llGetAttached()){
             llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION|PERMISSION_OVERRIDE_ANIMATIONS);
