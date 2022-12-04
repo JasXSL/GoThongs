@@ -1,6 +1,12 @@
 #ifndef _ROOT
 #define _ROOT
 
+#define db4table$ext$target "_TAR"				// Stored outside of DB4. Holds the current HUD target.
+#define db4table$ext$focus "_FOC"				// Stored outside of DB4. Holds the current HUD focus target.
+
+#define Root$target llLinksetDataRead(db4table$ext$target)
+#define Root$focus llLinksetDataRead(db4table$ext$focus)
+
 #define RootMethod$reset 0						// Reset script
 #define RootMethod$statusControls 1				// (int)controls - Additional controls for root to take
 #define RootMethod$debugHuds 2					// void - Owner-says a JSON array of the coop HUDs

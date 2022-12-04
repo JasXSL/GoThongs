@@ -1,9 +1,17 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
+#define LSD_STOR_A "NPCA"	// Stores spell icons in LSD. The PID is added to this.
+							// A JSON array is stored like: [(int)PID, (key)texture, (int)added, (int)duration, (int)stacks, (int)flags]
+#define LSD_STOR_D "NPCD"	// Coupled to NPCI and using the same index. Stores descriptions.
+
 list OST; // Output status to (key)id, (int)flags
-#define SPSTRIDE 5
-list SPI;   // Spell Icons [(int)PID, (csv)"(key)texture, (int)added, (int)duration, (int)stacks", (str)desc, (str)senderKey[0-8], (int)flags]
+#define SPSTRIDE 3
+list SPI;   // Spell Icons [(int)PID, (int)senderKey[0-8], (int)flags]
+#define SPI_PID 0				// Package ID. Used when fetching descriptions
+#define SPI_SENDER_KEY 1		// Stored as an int based on the first 8 hex characters
+#define SPI_FLAGS 2				// 
+
 integer T_CHAN;
 list PLAYERS;
 integer BFL;
@@ -32,32 +40,42 @@ vector groundPoint(){
 
 }
 
-// Turns an 8 byte character into a key if they are targeting you
-string getTargetingPlayer( string stub ){
+// Takes an integerlized character and tries to convert it to a player that is targeting us directly
+string getTargetingPlayer( int stub ){
 
 	int i;
-	for( ;i<count(OST); i+= 2 ){
-		if( llGetSubString(l2s(OST, i), 0, 7) == stub && l2i(OST, i+1)&NPCInt$targeting  )
+	for( ;i<count(OST); i += 2 ){
+	
+		integer n = (int)("0x"+l2s(OST, i));
+		if( n == stub && l2i(OST, i+1) & NPCInt$targeting  )
 			return l2s(OST, i);
+			
 	}
 	return "";
 	
 }
 sendTextures( string target ){
+
 	if(target == "")
 		return;
 		
-		
-	string t = llGetSubString(target, 0, 7);
-	string out = "";
+	int t = (int)("0x"+llGetSubString(target, 0, 7));
+	str out = "[";
+	
 	integer i;
-    for( ; i<count(SPI); i+=SPSTRIDE ){
-		int f = l2i(SPI, i+4);
-		if( ~f&PF_DETRIMENTAL || l2s(SPI, i+3) == t || f&PF_FULL_VIS )		// Show beneficial effects and sender effects
-			out+= l2s(SPI, i)+","+l2s(SPI,i+1)+","+l2s(SPI,i+4)+",";
+    for( ; i < count(SPI); i += SPSTRIDE ){
+		
+		int f = l2i(SPI, i+SPI_FLAGS);
+		int pid = l2i(SPI, i+SPI_PID);
+		int u = l2i(SPI, i+SPI_SENDER_KEY);
+		if( ~f & PF_DETRIMENTAL || u == t || f & PF_FULL_VIS ){		// Show beneficial effects and sender effects and effects with full vis flags
+			out += llGetSubString(llLinksetDataRead(LSD_STOR_A+(str)pid), 1, -2)+",";
+		}
 	}
-	out = llDeleteSubString(out, -1, -1);	// Remove trailing comma
+	out = llDeleteSubString(out,-1,-1);
+	out += "]";
 	GUI$setSpellTextures(target, out);
+	
 }
 
 ptEvt(string id){
@@ -186,67 +204,113 @@ default{
     ){
                 
         if( METHOD == NPCIntMethod$addTextureDesc ){
-        
-            SPI += [
-                l2i(PARAMS, 0), 
-                method_arg(1)+","+method_arg(3)+","+method_arg(4)+","+method_arg(5), 
-                method_arg(2),
-				method_arg(6),
-				l2i(PARAMS, 7)
-            ];
 			
-			if( l2i(PARAMS, 7) ){
-				sendTextures(getTargetingPlayer(method_arg(6)));
+			// Method args
+			//  pid, texture, desc, added, duration, stacks, casterSubstr(8), (int)flags
+			
+			// LSD_STOR_A
+			// (int)PID, (key)texture, (int)added, (int)duration, (int)stacks, (int)flags
+			
+			// Shortened charkey
+			int ck = (int)("0x"+method_arg(6));
+			int pid = l2i(PARAMS, 0);
+			int flags = l2i(PARAMS, 7);
+			
+			// This is stored in LSD and sent raw to the player targeting us
+			list full = (list)
+				pid +				// PID
+				l2s(PARAMS, 1) + 	// texture
+				l2i(PARAMS, 3) + 	// added
+				l2i(PARAMS, 4) +	// duration
+				l2i(PARAMS, 5) +	// stacks
+				flags				// packageFlags
+			;
+			llLinksetDataWrite(LSD_STOR_A+(str)pid, mkarr(full));		// Store raw that should be sent to users
+			llLinksetDataWrite(LSD_STOR_D+(str)pid, l2s(PARAMS, 2));		// Store desc
+			
+			// PID, sender, flags
+            SPI += (list)
+                pid +					// PID
+				ck +					// Sender stub
+				flags 					// packageFlags
+            ;
+			
+			// If detrimental and not force send to everybody, only update the caster
+			if( flags & PF_DETRIMENTAL && ~flags & PF_FULL_VIS ){
+				sendTextures(getTargetingPlayer(ck));
 				return;
 			}
+			
         }
         else if(METHOD == NPCIntMethod$remTextureDesc){
         
-            integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(SPI, [pid]);
+            integer pid = l2i(PARAMS, 0);
+            integer pos = llListFindList(llList2ListStrided(SPI, 0,-1, SPSTRIDE), (list)pid);
             if( pos == -1 )
                 return;
-            int detrimental = l2i(SPI, pos+4);
-			str casterStub = l2s(SPI, pos+3);
+				
+			pos *= SPSTRIDE;
+			
 			SPI = llDeleteSubList(SPI, pos, pos+SPSTRIDE-1);
-			if( detrimental ){
-				sendTextures(getTargetingPlayer(casterStub));
+			llLinksetDataDelete(LSD_STOR_A+(str)pid);
+			llLinksetDataDelete(LSD_STOR_D+(str)pid);
+			
+			// See if can get away with only updating the caster
+			int flags = l2i(SPI, pos+SPI_FLAGS);
+			if( flags & PF_DETRIMENTAL && ~flags & PF_FULL_VIS ){
+				sendTextures(getTargetingPlayer(l2i(SPI, pos+SPI_SENDER_KEY)));
 				return;
 			}
-            
             
         }
         // Stacks changed
         else{
-        
-            integer pid = (integer)method_arg(0);
-            integer pos = llListFindList(SPI, [pid]);
+			// (int)PID, (int)added, (float)duration, (int)stacks
+			
+            integer pid = l2i(PARAMS, 0);
+            integer pos = llListFindList(llList2ListStrided(SPI, 0,-1, SPSTRIDE), (list)pid);
             if( pos == -1 )
                 return;
-            
-            list spl = llCSV2List(l2s(SPI, pos+1));
-            spl = llListReplaceList(spl, [(int)method_arg(1),(int)method_arg(2),(int)method_arg(3)], 1, -1);
-            SPI = llListReplaceList(SPI, [implode(",", spl)], pos+1,pos+1);
-            
-			// Detrimental should only be sent to sender
-			if( l2i(SPI, pos+4) ){
-				sendTextures(getTargetingPlayer(l2s(SPI, pos+3)));
+            pos *= SPSTRIDE;
+			
+			
+			// [(int)PID, (key)texture, (int)added, (int)duration, (int)stacks, (int)flags]
+			list data = llJson2List(llLinksetDataRead(LSD_STOR_A+(str)pid));
+			data = llListReplaceList(data, (list)
+				l2i(PARAMS, 1) + 	// Added
+				l2i(PARAMS, 2) + 	// Duration
+				l2i(PARAMS, 3),		// Stacks
+				2, 4
+			);
+			llLinksetDataWrite(LSD_STOR_A+(str)pid, mkarr(data));
+			
+			// See if we can send this only to the caster
+			int flags = l2i(SPI, pos+SPI_FLAGS);
+			if( flags & PF_DETRIMENTAL && ~flags & PF_FULL_VIS ){
+			
+				sendTextures(getTargetingPlayer(l2i(SPI, pos+SPI_SENDER_KEY)));
 				return;
+				
 			}
 			
         }
 		
-		// Nobody to output status to
+		// See if we need to update everybody
+		
+		// Nobody is targeting us
 		if( !count(OST) )
 			return;
                 
+		// We have sent one too recently. 
         if( BFL&BFL_TEX_SENT ){
             
+			// Set that we want to update when the cooldown finishes.
             BFL = BFL|BFL_TEX_QUEUE;
             return;
             
         }
         
+		// Set a timer to send, and a cooldown
         BFL = BFL|BFL_TEX_SENT;
 		ptSet("OT", .01, FALSE);    // Send textures
         ptSet("OQ", oqTime, FALSE);
@@ -260,14 +324,11 @@ default{
         if( id == "" )
             id = llGetOwner();
         
-        integer pid = (integer)method_arg(0);
-        integer pos = llListFindList(SPI, [pid]);
-        if( pos == -1 )
-            return;
-		
-		int stacks = l2i(llCSV2List(l2s(SPI, pos+1)), 3);
+        integer pid = l2i(PARAMS, 0);
+		string data = llLinksetDataRead(LSD_STOR_A+(str)pid);
+		int stacks = (int)j(data, 4);
         llRegionSayTo(llGetOwnerKey(id), 0, evtsStringitizeDesc(
-			l2s(SPI, pos+2),
+			llLinksetDataRead(LSD_STOR_D+(str)pid),
 			stacks
 		));
         
@@ -286,7 +347,7 @@ default{
 		if( RF & Monster$RF_INVUL && !(RF&(Monster$RF_IS_BOSS|Monster$RF_ALWAYS_R)) )
 			return;
 			
-        parseDesc(id, resources, status, fx, sex, team, mf, void);
+        parseDesc(id, resources, status, fx, sex, team, mf, void, _a);
 
         if( team == TEAM )
             return;

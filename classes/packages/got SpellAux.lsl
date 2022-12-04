@@ -293,9 +293,9 @@ onEvt(string script, integer evt, list data){
 			list viable = (list)"";
 			
 			string ch = db4$getTableChar(db4table$npcNear);
-			db4$eachFast(ch, row,
+			db4$eachFast(ch, index, row,
 				
-				key t = l2k(row, 2);
+				key t = l2k(row, 1);
 				if( t != llGetKey() ){
 				
 					smartHealDescParse(t, resources, status, fx, team)

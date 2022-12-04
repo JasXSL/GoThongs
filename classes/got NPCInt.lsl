@@ -14,7 +14,7 @@
 	#define NPCInt$focusing 0x2			// focusing as well
 	
 #define NPCIntMethod$stacksChanged 16	// NPC Only, use got Evts for PC. (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
-#define NPCIntMethod$addTextureDesc 9	// PC uses EvtMethod$addTextureDesc | pid, texture, desc, added, duration, stacks, casterSubstr(8), (int)flags - Adds a spell icon
+#define NPCIntMethod$addTextureDesc 9	// PC uses EvtMethod$addTextureDesc | pid, texture, desc, added, duration, stacks, casterSubstr(8), (int)packageFlags - Adds a spell icon
 #define NPCIntMethod$remTextureDesc 10	// PC uses EvtMethod$remTextureDesc | (key)texture						
 #define NPCIntMethod$getTextureDesc 11	// (int)pos, (key)texture - Gets info about a spell by pos
 #define NPCIntMethod$takehit 1		// void - Triggers monster take hit visual

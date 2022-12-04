@@ -84,36 +84,34 @@
 
 	
 // table: gotBridge, row: data - Contains thong data except spells
-	// Note: column 0 will be row index (db4table$gotBridge$data)
-	#define BSS$BONUS_STATS 1			// (arr)stats - Unused. Replaced with passives?
-	#define BSS$LEVEL 2					// (int)lv
-	#define BSS$GCD 3					// (float)global cooldown in seconds
-	#define BSS$FLAGS 4					// (int) Thong flags (package flags, used only by got WeaponLoader, see TFLAGS in got WeaponLoader.lsl)
+	#define BSS$BONUS_STATS 0			// (arr)stats - Unused. Replaced with passives?
+	#define BSS$LEVEL 1					// (int)lv
+	#define BSS$GCD 2					// (float)global cooldown in seconds
+	#define BSS$FLAGS 3					// (int) Thong flags (package flags, used only by got WeaponLoader, see TFLAGS in got WeaponLoader.lsl)
 #define Bridge$thongData() db4$get(db4table$gotBridge, db4table$gotBridge$data)
 	
 //table: gotBridge, row: userData - Contains user data
-	// Note: column 0 will be row index (db4table$gotBridge$userData)
-	#define BSUD$FLAGS 1				// int Flags
-	#define BSUD$BROWSER 2				// (arr)[pos, scale]
-	#define BSUD$GOLD 3					// int Copper
-	#define BSUD$LANG 4					// int Language bitwise
-	#define BSUD$DIFFICULTY 5			// int Difficulty
-	#define BSUD$W_SCALE 6				// float Mainhand scale offset
-	#define BSUD$W_MH_OFFSET 7			// vec Mainhand offset
-	#define BSUD$W_BACK_MH_OFFSET 8		// vec Mainhand back offset
-	#define BSUD$W_OH_OFFSET 9			// vec Offhand offset
-	#define BSUD$W_BACK_OH_OFFSET 10		// vec Offhand back offset
-	#define BSUD$WDATA 11				// arr Weapondata
-	#define BSUD$ENCHANTS 12			// arr Passives
-	#define BSUD$IGNORE_TOKEN 13		// bool ignore - Don't reload the website
-	#define BSUD$DEFAULT_STANCE 14		// Default stance of thong, overrides all weapon stances
-	#define BSUD$SETTING_FLAGS 15		// user Setting flags
+	#define BSUD$FLAGS 0				// int Flags
+	#define BSUD$BROWSER 1				// (arr)[pos, scale]
+	#define BSUD$GOLD 2					// int Copper
+	#define BSUD$LANG 3					// int Language bitwise
+	#define BSUD$DIFFICULTY 4			// int Difficulty
+	#define BSUD$W_SCALE 5				// float Mainhand scale offset
+	#define BSUD$W_MH_OFFSET 6			// vec Mainhand offset
+	#define BSUD$W_BACK_MH_OFFSET 7		// vec Mainhand back offset
+	#define BSUD$W_OH_OFFSET 8			// vec Offhand offset
+	#define BSUD$W_BACK_OH_OFFSET 9		// vec Offhand back offset
+	#define BSUD$WDATA 10				// arr Weapondata
+	#define BSUD$ENCHANTS 11			// arr Passives
+	#define BSUD$IGNORE_TOKEN 12		// bool ignore - Don't reload the website
+	#define BSUD$DEFAULT_STANCE 13		// Default stance of thong, overrides all weapon stances
+	#define BSUD$SETTING_FLAGS 14		// user Setting flags
 		#define BSUD$SFLAG_BREAST_ANIMS 0x1		// enable breast anims
 		#define BSUD$SFLAG_PVP_SEX 0x2			// Enable player on player sex scenes
 		#define BSUD$SFLAG_BUTT_ANIMS 0x4		// enable breast anims
-	#define BSUD$THONG_CLASS_ID 16				// ID of thong class such as 1 for assassin
-	#define BSUD$THONG_ROLE 17					// Role of thong. Use ROLE_* definition from _core
-	#define BSUD$THONG_SPEC 18					// Thong spec index
+	#define BSUD$THONG_CLASS_ID 15				// ID of thong class such as 1 for assassin
+	#define BSUD$THONG_ROLE 16					// Role of thong. Use ROLE_* definition from _core
+	#define BSUD$THONG_SPEC 17					// Thong spec index
 	
 		
 #define Bridge$userData() db4$get(db4table$gotBridge, db4table$gotBridge$userData)
@@ -127,20 +125,19 @@
 
 
 // table: db4table$gotBridgeSpells, column definitions
-	// Note: index 0 is the row index
-	#define BSSAA$texture 1
-	#define BSSAA$id 2
-	#define BSSAA$fxwrapper 3
-	#define BSSAA$mana 4
-	#define BSSAA$cooldown 5
+	#define BSSAA$texture 0
+	#define BSSAA$id 1
+	#define BSSAA$fxwrapper 2
+	#define BSSAA$mana 3
+	#define BSSAA$cooldown 4
 	
 	// Generic flags: caster = 1, victim = 2, friends = 4, opponents = 8, dispeller = 0x10, no_facing = 0x20, aoe = 0x40, no_gcd = 0x80, no_crit = 0x100, no_swim = 0x200, 0x400 = hide
-	#define BSSAA$target_flags 6
+	#define BSSAA$target_flags 5
 	
-	#define BSSAA$range 7
-	#define BSSAA$casttime 8
-	#define BSSAA$fx 9
-	#define BSSAA$selfcast 10
-	#define BSSAA$charges 11
-	#define BSSAA$stance 12
+	#define BSSAA$range 6
+	#define BSSAA$casttime 7
+	#define BSSAA$fx 8
+	#define BSSAA$selfcast 9
+	#define BSSAA$charges 10
+	#define BSSAA$stance 11
 	

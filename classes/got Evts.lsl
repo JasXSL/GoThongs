@@ -1,4 +1,9 @@
 /*
+	Todo:
+	- Use LSD to store the texture rows? Don't send link messages?
+	- Use LSD to store who you are targeting
+	
+
 	Handles:
 	- Enemy targeting
 	- Quicktime events
@@ -8,8 +13,10 @@
 #ifndef _gotEvts
 #define _gotEvts
 
-#define db4table$npcNear "npcNear"			// Stores [(int)id,(int)settings,(key)uuid] - Entry 0 is ALWAYS 0,0,llGetKey() and handled in #ROOT
-
+#define db4table$npcNear "npcNear"			// Stores [(int)settings,(key)uuid] - Entry 0 is ALWAYS 0,llGetKey() and handled in #ROOT
+#define db4table$spellIcons "spIcon"		// Stores (int)packageID, (key)texture, (int)added(timesnap), (int)duration(10ths of second), (int)stacks, (int)flags - See got Evts
+											// 0-7 is for effects the HUD owner is affected by
+											// 100-107 is for effects your target is affected by
 #define EvtsMethod$cycleEnemy 1				// (bool)friends - Get a nearby enemy
 #define EvtsMethod$startQuicktimeEvent 2	/* Starts a quick time event. Sends a callback with the first arg being one of the below tasks and the CB specified.
 	(int)numButtons, 		- Nr butttons needed to be pressed. In LR_CAN_FAIL mode this sets the speed of the bar growing, default 30% per second
@@ -29,21 +36,23 @@
 #define EvtsMethod$remTextureDesc 4	// (key)texture						
 #define EvtsMethod$getTextureDesc 5	// (int)pid, (key)player - Gets info about a spell by pos
 #define EvtsMethod$stacksChanged 6	// (int)PID, (int)added, (float)duration, (int)stacks - Sent when stacks have changed.
-	
+#define EvtsMethod$setTargeting 7	// (int)flags - Same as StatusMethod$setTargeting, but for any response to targeting players
+
 #define EvtsEvt$QTE 1						// (int)numButtons - Quick time event, 0 for off
 
 	
 	
 
-#define Evts$cycleEnemy(friends) runMethod((string)LINK_SET, "got Evts", EvtsMethod$cycleEnemy, (list)(friends), TNN)
+#define Evts$cycleEnemy(friends) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$cycleEnemy, (list)(friends), TNN)
 #define Evt$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [numButtons, preDelay, buttonDelay, flags], callback)
 #define Evts$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags) Evt$startQuicktimeEvent(targ, numButtons, preDelay, callback, buttonDelay, flags)
 #define Evts$stopQuicktimeEvent(targ) runMethod((str)targ, "got Evts", EvtsMethod$startQuicktimeEvent, [-1], TNN);
 
-#define Evts$addTextureDesc(pid, texture, desc, added, duration, stacks, pflags) runMethod((string)LINK_SET, "got Evts", EvtsMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks, pflags], TNN)
-#define Evts$remTextureDesc(pid) runMethod((string)LINK_SET, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
+#define Evts$addTextureDesc(pid, texture, desc, added, duration, stacks, pflags) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks, pflags], TNN)
+#define Evts$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$remTextureDesc, [pid], TNN)
 #define Evts$getTextureDesc(player, pid) runMethod((str)player, "got Evts", EvtsMethod$getTextureDesc, (list)pid, TNN)
-#define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_SET, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)
+#define Evts$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got Evts", EvtsMethod$stacksChanged, [pid, added, duration, stacks], TNN)
+#define Evts$setTargeting(targ, on) runMethod(targ, "got Evts", EvtsMethod$setTargeting, [on], TNN)
 
 // Converts a spell description by doing math for stack multiplier etc
 string evtsStringitizeDesc( string desc, int stacks ){

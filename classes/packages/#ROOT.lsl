@@ -35,7 +35,8 @@ list CBLCK;	// Control-blocking prims
 
 #define refreshTarget() \
 	setTarget(TARG, TARG_ICON, TRUE, -1);
-	
+
+
 
 // If you want to use listen override, it ends up here
 // onListenOverride(integer chan, key id, string message){}
@@ -58,8 +59,7 @@ timerEvent(string id, string data){
 
 		if( llKey2Name(TARG_FOCUS) == "" ){
 			
-			TARG_FOCUS = llGetKey();
-			raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
+			setFocus(llGetKey());
 			
 		}
 		
@@ -116,6 +116,12 @@ timerEvent(string id, string data){
 		PLAYER_TEXTURES = data;
 
 
+setFocus( key id ){
+	TARG_FOCUS = id;
+	llLinksetDataWrite(db4table$ext$focus, (str)TARG_FOCUS);
+	raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
+}
+
 integer setTarget(key t, key icon, integer force, integer team){
 	
 	// We are already targeting this and it's not a force
@@ -144,7 +150,7 @@ integer setTarget(key t, key icon, integer force, integer team){
 	if( TARG_IS_PC ){
 		if( TARG == llGetKey() )
 			TARG = (str)LINK_ROOT;
-		Status$setTargeting(TARG, -NPCInt$targeting);
+		Evts$setTargeting(TARG, -NPCInt$targeting);
 	}else{
 		NPCInt$setTargeting(TARG, -NPCInt$targeting);
 	}
@@ -165,14 +171,12 @@ integer setTarget(key t, key icon, integer force, integer team){
 		// Need to clear from previous NPC
 		if( !l2i(llGetObjectDetails(TARG_FOCUS, (list)OBJECT_ATTACHED_POINT), 0) )
 			NPCInt$setTargeting(TARG_FOCUS, -NPCInt$focusing);
-		TARG_FOCUS = t;
-		raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
+		setFocus(t);
 		tflags = tflags|NPCInt$focusing;
 		
 	}
-	
-	
-    
+
+	llLinksetDataWrite(db4table$ext$target, (str)TARG);
     raiseEvent(RootEvt$targ, mkarr(([t, icon, team])));		
 	
 	// Check if target still exists
@@ -185,7 +189,7 @@ integer setTarget(key t, key icon, integer force, integer team){
 		ta = (string)LINK_THIS;
 		
 	if( TARG_IS_PC )
-		Status$setTargeting(ta, tflags);
+		Evts$setTargeting(ta, tflags);
     else
 		NPCInt$setTargeting(ta, tflags);
 	
@@ -273,7 +277,7 @@ default{
 
 		savePlayers(); 
 		ThongMan$reset();
-		multiTimer(["TI", 0, 2, TRUE]);
+		multiTimer(["TI", 0, 2, TRUE]);	// Checks if the level has been unset
 		
 		// Remove DB3 tables
 		/*
@@ -290,6 +294,7 @@ default{
 		db4$createTableLocal(db4table$gotBridgeSpells);
 		db4$createTableLocal(db4table$gotBridgeSpellsTemp);		// Handled by one of the spell scripts
 		db4$createTableLocal(db4table$npcNear);					// handled by got Evts
+		db4$createTableLocal(db4table$spellIcons);				// Handled by got Evts, used in GUI
 		
 		db4$insert(db4table$npcNear, 0 + llGetKey());		// Us being first is needed to save memory in smart heal. See got Evts for more.
 		
@@ -297,7 +302,8 @@ default{
 		
 		// Reset all other scripts and set a start timer
 		resetAllOthers();
-		multiTimer(["INI", "", 2, FALSE]);	// Post reset timer
+		multiTimer(["INI", "", 1, FALSE]);	// Post reset timer
+		
     }
     
     
@@ -520,8 +526,7 @@ default{
             
 			if( llListFindList(COOP_HUDS, [(str)TARG_FOCUS]) == -1 ){
 			
-				TARG_FOCUS = llGetKey();
-				raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
+				setFocus(llGetKey());
 				
 			}
 			

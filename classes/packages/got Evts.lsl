@@ -3,6 +3,7 @@
 #include "got/_core.lsl"
 
 
+
 integer BFL;
 #define BFL_RECENT_CACHE 0x1
 #define BFL_QTE_PRESSED 0x2 // QTE button pressed
@@ -30,12 +31,21 @@ int P_BUTTONS;
 int P_BAR;
 
 #define SPSTRIDE 7
+// Note: if you change this stride, you have to update in got GUI too, and that must be -1 to this stride
 list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)flags]
+/*
+	PID : Package ID
+	Texture : uuid
+	Desc : Click description
+	Added : timesnap (9figure unix time in 10ths of a second)
+	Duration: duration in 10th of a second
+	Stacks : nr stacks
+	Flags : flags
+*/
 
-
-list TARGETED_BY;	// Players currently actively targeting you
-
+list TG; 			// [(str)id, (int)flags] Flags are in got NPCInt. Tracks target and/or focus target. Players currently actively targeting you
 list PLAYER_HUDS;
+
 
 onEvt( string script, integer evt, list data ){
 
@@ -82,12 +92,6 @@ onEvt( string script, integer evt, list data ){
 			
 			qteButtonTouched(pos);
 		}
-		
-	}
-	else if( evt == StatusEvt$targeted_by && script == "got Status" ){
-		
-		TARGETED_BY = data;
-		ptSet("OP", .2, FALSE);
 		
 	}
 	else if( script == "got Status" && evt == StatusEvt$dead && l2i(data, 0) && QTE_STAGES > 0 ){
@@ -237,16 +241,27 @@ ptEvt( string id ){
 		
 	}
 	// Set spell textures
-	else if(id == "OP"){
+	else if( id == "OP" ){
 	
+		str ch = db4$getTableChar(db4table$spellIcons);
 		// Always send to self
+		int max = llGetListLength(SPELL_ICONS)/SPSTRIDE;
+		if( max > 8 )
+			max = 8;
+			
 		integer i; list out;
-		for( ; i<llGetListLength(SPELL_ICONS) && i/SPSTRIDE < 8; i+=SPSTRIDE )
-			out+= llDeleteSubList(llList2List(SPELL_ICONS, i, i+SPSTRIDE-1), 2, 2);
-		GUI$setMySpellTextures(out);
+		for( ; i < max; ++i ){
+			
+			integer n = i*SPSTRIDE;
+			list add = llDeleteSubList(llList2List(SPELL_ICONS, n, n+SPSTRIDE-1), 2, 2); // Description is not needed. But send rest;
+			out += add;
+			db4$replaceFast(ch, i, add);
+			
+		}
+		GUI$setMySpellTextures(max);
 	
 		// Textures sent too recently
-		if( BFL&BFL_TEXTURES_SENT || !count(TARGETED_BY) ){
+		if( BFL&BFL_TEXTURES_SENT || !count(TG) ){
 		
 			BFL = BFL|BFL_TEXTURES_SCHEDULED;
 			return;
@@ -255,15 +270,16 @@ ptEvt( string id ){
 			
 		BFL = BFL_TEXTURES_SENT;
 		
-		string s = llDumpList2String(out,",");
-		for( i=0; i<count(TARGETED_BY); i+= 2 ){
-			
-			integer n = l2i(TARGETED_BY, i+1);
-			if( n&NPCInt$targeting )
-				GUI$setSpellTextures(l2s(TARGETED_BY, i), s);
+		string s = mkarr(out);
 		
+		for( i=0; i<count(TG); i+= 2 ){
+			
+			integer n = l2i(TG, i+1);
+			if( n&NPCInt$targeting ){
+				GUI$setSpellTextures(l2s(TG, i), s);
+			}
 		}
-		ptSet("OPE", count(TARGETED_BY)*0.25, FALSE);
+		ptSet("OPE", count(TG)*0.25, FALSE);
 		
     }
 	// Texture send cooldown
@@ -323,8 +339,6 @@ ptEvt( string id ){
 			amount = -amount/2;			
 		}
 		
-		
-			
 		float time = llGetTime();
 		float delta = time-QTE_DELTA;
 		QTE_DELTA = time;
@@ -806,6 +820,46 @@ default{
 		));
 		
     }
+	
+	else if( METHOD == EvtsMethod$setTargeting ){
+		
+		integer flags = llList2Integer(PARAMS, 0); 				// Target if positive, untarget is negative
+		integer pos = llListFindList(TG, [(str)id]);		// See if already targeting
+		integer remove;
+		if( flags < 0 ){
+			
+			flags = llAbs(flags);
+			remove = TRUE;
+			
+		}
+		
+		integer cur = l2i(TG, pos+1);
+		
+		// Remove from existing
+		if( ~pos && remove )
+			cur = cur&~flags;
+		// Add either new or existing
+		else if( 
+			(~pos && !remove && (cur|flags) != flags ) ||
+			( pos == -1 && !remove )
+		)cur = cur|flags;
+		// Cannot remove what does not exist
+		else
+			return;
+		
+		// Exists, update target status
+		if( ~pos && cur )
+			TG = llListReplaceList(TG, (list)cur, pos+1, pos+1);
+		// Exists, delete
+		else if( ~pos && !cur )
+			TG = llDeleteSubList(TG, pos, pos+1);
+		// Insert new
+		else
+			TG = TG + (str)id + cur;
+
+		ptSet("OP", .2, FALSE);
+		
+	}
 
     // Public code can be put here
 

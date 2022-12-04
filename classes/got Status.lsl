@@ -25,7 +25,7 @@
 	#define SMBUR$buildPain(pain, spellName, flags) [SMBUR$pain, 3, f2i(pain), spellName, flags]
 	
 #define StatusMethod$fullregen 5		// NULL
-#define StatusMethod$setTargeting 6		// (int)flags, see got NPCInt
+//#define StatusMethod$setTargeting 6		// Move to got Evts (int)flags, see got NPCInt - targeting PCs is handled by got Evts
 #define StatusMethod$get 7				// returns [STATUS_FLAGS, FXFLAGS, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), (int)sex_flags, (int)team]
 #define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, (arr)damage_taken_mod, (arr)healing_taken_mod]
 										// First argument is a strided array of [str package_name, int key2int(caster), float multiplier]
@@ -104,7 +104,7 @@
 #define StatusEvt$monster_aggro 13			// [player1, player2...] - Players who have aggroed the monster in order of max aggro
 #define StatusEvt$team 14					// (int)team - Team has been updated
 #define StatusEvt$interacted 15				// (key)id - Another player has interacted with you
-#define StatusEvt$targeted_by 16			// (key)id, (int)flags - List of players targeting me. PC only
+//#define StatusEvt$targeted_by 16			// (key)id, (int)flags - List of players targeting me. PC only
 #define StatusEvt$armor 17					// (int)armor - Raised when armor has been damaged. Armor is between 0 and 50
 	#define Status$armorSlot$HEAD 0		// 
 	#define Status$armorSlot$CHEST 1
@@ -205,7 +205,7 @@ if( var*amount != 0.0 ){ \
 */
 
 // This is only for PC. NPC uses got NPCInt instead
-#define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
+//#define Status$setTargeting(targ, on) runMethod(targ, "got Status", StatusMethod$setTargeting, [on], TNN)
 
 #define Status$batchUpdateResources(attacker, SMBUR) runMethod((str)LINK_ROOT, "got Status", StatusMethod$batchUpdateResources, (list)(attacker)+SMBUR, TNN)
 #define Status$batchUpdateResourcesTarg(target, attacker, SMBUR) runMethod((str)target, "got Status", StatusMethod$batchUpdateResources, (list)attacker+SMBUR, TNN)

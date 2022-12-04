@@ -102,7 +102,6 @@ float PAIN = 0;
 
 list OST; 				// Output status to
 list PLAYERS;
-list TG; 		// Targeting: (key)id, (int)flags
 
 int RO;			// Thong role
 int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
@@ -1083,48 +1082,6 @@ default {
 		
 	}
 	
-    else if( METHOD == StatusMethod$setTargeting ){
-		
-		integer flags = llList2Integer(PARAMS, 0); 				// Target or untarget
-		integer pos = llListFindList(TG, [(str)id]);		// See if already targeting
-		integer remove;
-		if( flags < 0 ){
-			
-			flags = llAbs(flags);
-			remove = TRUE;
-			
-		}
-		
-		integer cur = l2i(TG, pos+1);
-		
-		// Remove from existing
-		if( ~pos && remove )
-			cur = cur&~flags;
-		// Add either new or existing
-		else if( 
-			(~pos && !remove && (cur|flags) != flags ) ||
-			( pos == -1 && !remove )
-		)cur = cur|flags;
-		// Cannot remove what does not exist
-		else
-			return;
-		
-		// Exists, update
-		if( ~pos && cur )
-			TG = llListReplaceList(TG, [cur], pos+1, pos+1);
-		// Exists, delete
-		else if( ~pos && !cur )
-			TG = llDeleteSubList(TG, pos, pos+1);
-		// Insert new
-		else
-			TG += [(str)id, cur];
-
-		// Immediately send stats
-		OS( TRUE );
-		raiseEvent(StatusEvt$targeted_by, mkarr(TG));
-		
-	}
-    
     else if(
 		METHOD == StatusMethod$fullregen || 
 		(METHOD == StatusMethod$coopInteract && SF&StatusFlag$coopBreakfree)

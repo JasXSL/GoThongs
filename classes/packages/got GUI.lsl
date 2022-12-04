@@ -1,3 +1,4 @@
+#define USE_DB4
 #define LM_NO_CALLBACKS
 #define USE_EVENTS
 //#define DEBUG DEBUG_UNCOMMON
@@ -45,14 +46,16 @@ int P_ARMOR;
 #define ARMOR_SCALE <0.032596, 0.032596, 0.025960>
 #define ARMOR_POS <-0.068990, 0.174857, 0.265924>
 
-list SPELL_UPDATE_QUEUE;	// (key)id, (csv)data 
-#define SUQSTRIDE 2
-
+// Targets to update next tick
+int SPICON_UPD;
+#define SPICON_SELF 0x1
+#define SPICON_TARG 0x2
+int TARG_SPICON_LEN;		// How many spell icons the target has
+int SELF_SPICON_LEN;		// How many spell icons we have
 integer TEAM = TEAM_PC;
 
-key TARG;
+
 list PLAYER_HUDS;
-key TARG_FOCUS;
 #define FOCUS_BORDER <0.820, 0.820, 0.820>
 
 // Bar textures
@@ -85,21 +88,12 @@ key boss;				// ID of boss (used if boss is a monster)
 #define toggle(show) GUI$toggle(show)
 #define ini() toggle(TRUE)
 
-// Data is 
-#define updateSpellIcons(id, data)  \
-	integer pos = llListFindList(SPELL_UPDATE_QUEUE, [id]); \
-	if(~pos) \
-		SPELL_UPDATE_QUEUE = llListReplaceList(SPELL_UPDATE_QUEUE, [data], pos+1, pos+1); \
-	else \
-		SPELL_UPDATE_QUEUE += [id, data]; 
-
 #define onEvt(script, evt, data) \
     if(script == "#ROOT"){ \
         if(evt == RootEvt$targ){ \
             key targ = l2s(data, 0); \
 			key texture = l2s(data, 1); \
 			integer team = l2i(data, 2); \
-			TARG = targ; \
 			int bar = l2i(BARS, BAR_TARGET); \
 			list out = [ \
 				PRIM_LINK_TARGET, BARS$getPortrait(bar),  \
@@ -161,13 +155,19 @@ key boss;				// ID of boss (used if boss is a monster)
 				} \
 			} \
 			llSetLinkPrimitiveParamsFast(0, out); \
+			TARG_SPICON_LEN = 0;\
+			if( targ == llGetKey() ) \
+				SPICON_UPD = SPICON_UPD | SPICON_SELF; \
+			else \
+				SPICON_UPD = SPICON_UPD | SPICON_TARG; \
+			\
         } \
 		else if(evt == RootEvt$coop_hud){ \
 			PLAYER_HUDS = llListReplaceList(data, [llGetKey()], 0,0); \
 			toggle(TRUE); \
 		} \
 		else if( evt == RootEvt$focus ){ \
-			TARG_FOCUS = l2s(data, 0); \
+			key TARG_FOCUS = Root$focus; \
 			list out = []; integer i; \
 			for( ; i<count(PLAYER_HUDS); ++i ){ \
 				vector color = <0,0,0>; \
@@ -208,7 +208,7 @@ default {
 		if(~BFL&BFL_TOGGLED)
 			return;
 			
-		list statuses = (list)TARG+PLAYER_HUDS+boss;
+		list statuses = (list)Root$target + PLAYER_HUDS + boss;
 		list statuses_flags;
 		list statuses_sex;
 		list statuses_fx;
@@ -251,7 +251,7 @@ default {
 				}
 				
 				if( i == 0 && (mf&Monster$RF_NO_TARGET || s&StatusFlag$dead) )
-					Root$clearTargetIfIs(LINK_THIS, TARG);
+					Root$clearTargetIfIs(LINK_THIS, Root$target);
 				
 			}
 			
@@ -351,51 +351,56 @@ default {
 		
 		// Updates spell icons
 		integer snap = timeSnap();
-		@execIconUpdateContinue;
-		while(count(SPELL_UPDATE_QUEUE)){
+		while( SPICON_UPD ){
+						
+			// If we are targeting ourself, we can do both at once
+			int isTarg = SPICON_UPD & SPICON_TARG;
+			int isSelf = SPICON_UPD & SPICON_SELF;
+			int idx;	// Where to start from in db4table$spellIcons. Own icons start at 0, target at 100
+			list bars;	// Bars that must be updated
+			int max;	// How many textures to pull from DB
 			
-			key id = l2k(SPELL_UPDATE_QUEUE, 0);										// User ID
-			list data = [];		// CSV stringified strided list of [pid, sender_key, time_added_ms, duration_ms, stacks, flags]
-			// Data exists
-			if( l2s(SPELL_UPDATE_QUEUE, 1) )
-				data = llCSV2List(l2s(SPELL_UPDATE_QUEUE, 1));
-			SPELL_UPDATE_QUEUE = llDeleteSubList(SPELL_UPDATE_QUEUE, 0, SUQSTRIDE-1);
-
-			// Select the bars that must be updated
-			list bars; 																	// Offset for linknumbers
-			integer stride = 6;															// Stride of data
+			// Self gets priority in case we are targeting ourself
+			if( isSelf ){
 			
-			if( id == "" )
-				id = llGetKey();
+				bars += 0;									// Add self bar icons
+				SPICON_UPD = SPICON_UPD &~ SPICON_SELF;		// Mark that we have updated ourself
+				max = SELF_SPICON_LEN;						// How many textures we have?
 				
-			// These aren't bars so we can't use id2bars
-			if( id == llGetKey() )
-				bars+=0;
+			}
+			else{
+			
+				idx = 100;									// Target starts at index 100
+				max = TARG_SPICON_LEN;						// How many textures?
+				SPICON_UPD = SPICON_UPD &~ SPICON_TARG;		// Mark that we have updated the target
+				bars += 1;									// Add target bar icons
 				
-			if( id == TARG )
+			}
+			
+			// Also update target if we target ourself
+			if( Root$target == llGetKey() )
 				bars += 1;
-				
-			if( !count(bars) )
-				jump execIconUpdateContinue;
-
-			//integer n = (integer)val;
+			
 			
 			integer slot; 																// Index of icon slot
-			list block = [];															// A block of data to set
+			list block;																	// A block of prim params to set
 			integer x;																	// Iterator for nrs to add blocks
 			
 			
+			str ch = db4$getTableChar(db4table$spellIcons);
 			// Cycle over the icons 
 			integer i;
-			for( ; i<llGetListLength(data); i+=stride ){
+			for( ; i < max; ++i ){
 				
-				key texture = llList2Key(data, i+1);
-				integer added = llList2Integer(data, i+2);
-				integer duration = llList2Integer(data, i+3);
+				list data = db4$getFast(ch, idx+i);
+
+				key texture = llList2Key(data, 1);
+				integer added = llList2Integer(data, 2);
+				integer duration = llList2Integer(data, 3);
 				float dur = (float)duration/10;
-				integer stacks = llList2Integer(data, i+4);
-				string description = llList2String(data, i);		// PID
-				int flags = l2i(data, i+5);
+				integer stacks = llList2Integer(data, 4);
+				string description = llList2String(data, 0);		// PID
+				int flags = l2i(data, 5);
 				
 				// Make sure the effect hasn't already expired
 				if( duration+added > timeSnap() ){
@@ -433,7 +438,7 @@ default {
 					for(x=0; x<count(bars); x++){
 					
 						integer link = getFxPrim((8*l2i(bars,x)+slot));
-						llSetLinkTextureAnim(link, 0, 2, 0, 0, 0, 0, 0);
+						//llSetLinkTextureAnim(link, 0, 2, 0, 0, 0, 0, 0);
 						llSetLinkTextureAnim(link, ANIM_ON, 2, 16, 16, start, end-start, end/dur);
 						
 						out+= [PRIM_LINK_TARGET,link]+block;
@@ -516,8 +521,10 @@ default {
 		//return;
 
         toggle(FALSE);
+		//toggle(TRUE);	// Todo: remove
+		
 		GCHAN = GUI_CHAN(llGetOwner());
-		llListen(GCHAN, "", "", "");
+		//llListen(GCHAN, "", "", "");
 		llListen(GCHAN+1, "", "", "");
 		llSetTimerEvent(0.5); // tick status bars
 		//toggle(TRUE);
@@ -526,9 +533,20 @@ default {
     } 
 	
 	listen(integer chan, string name, key id, string message){
-		if(chan == GCHAN+1 && id == TARG){
-			updateSpellIcons(id, message);
+	
+		if( chan == GCHAN+1 && id == Root$target ){
+			
+			list data = llJson2List(message);
+			int stride = 6;
+			int i;
+			TARG_SPICON_LEN = count(data)/stride;
+			string ch = db4$getTableChar(db4table$spellIcons);
+			for(; i < TARG_SPICON_LEN; ++i )
+				db4$replaceFast(ch, 100+i, llList2List(data, i*stride, i*stride+stride-1));
+			SPICON_UPD = SPICON_UPD | SPICON_TARG;
+			
 		}
+		
 	}
 
     // This is the standard linkmessages
@@ -561,7 +579,8 @@ default {
 
 	// Updates status and stuff
 	if(method$internal && METHOD == GUIMethod$setSpellTextures){
-		updateSpellIcons(id, llList2CSV(PARAMS));
+		SPICON_UPD = SPICON_UPD | SPICON_SELF;
+		SELF_SPICON_LEN = l2i(PARAMS, 0);
 		return;
     }
 	
@@ -758,7 +777,7 @@ default {
 					barscale.y = 0.08394;
 					colors = [1,2,3,4];
 				}
-				if( l2k(PLAYER_HUDS, i) == TARG_FOCUS )
+				if( l2k(PLAYER_HUDS, i) == Root$focus )
 					border = FOCUS_BORDER;
 				
 				float bgAlpha = 1;

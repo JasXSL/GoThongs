@@ -7,7 +7,9 @@
 #define GUIMethod$toggleSpinner 4		// (int)on, (str)loadingText - Sets a spinner
 //#define GUIMethod$togglePotion 5		// (key)texture || "", (int)stacks - Toggles a potion. If texture is not a key, it hides instead
 //#define GUIMethod$potionCD 7			// (float)cooldown || 0 - Sets cooldown overlay over potion
-#define GUIMethod$setSpellTextures 6	// (arr)textures - Targ: 0 = self, 1 = friend, 2 = target - Sets little spell icons. Data is [(int)PID, (key)texture, (int)time_added_ms, (int)duration_ms, (int)stacks, (int)flags]
+#define GUIMethod$setSpellTextures 6	// (arr)textures/(int)nrTextures - Targ: 0 = self, 1 = friend, 2 = target - 
+										// Sets little spell icons. Data is [(int)PID, (key)texture, (int)time_added_ms, (int)duration_ms, (int)stacks, (int)flags]
+										// Internal calls send (int)nrTextures instead and pulls data from db4table$spellIcons
 #define GUIMethod$toggleQuit 8			// (bool)show
 #define GUIMethod$toggle 10				// (bool)show - opens or Closes the GUI
 #define GUIMethod$toggleBoss 11			// (key)texture OR "" to clear, (bool)manual_hp OR (key)boss - Toggles the boss portrait. If manual_hp is set, only bossHP calls will update the HP
@@ -19,13 +21,11 @@
 #define GUIEvt$toggle 0					// (bool)visible
 
 //#define GUI$myStatus(hp, mana, arousal, pain, flags, fxflags) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$status, [hp, mana, arousal, pain, flags, fxflags], TNN)
-#define GUI$setMySpellTextures(data) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$setSpellTextures, data, TNN)
+#define GUI$setMySpellTextures(nr) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$setSpellTextures, (list)nr, TNN)
 
 // These are excempt from XOBJ for speed purposes. Status updates run on GUI_CHAN
 // Data is an int containing 4x 7bit ints (int)7-bit-hp/man/ars/pain (( Currently only one value is used ))
-//#define GUI$status(targ, data) llRegionSayTo(targ, GUI_CHAN(targ), (str)data)
 // Texture updates run on GUI_CHAN+1
-//#define GUI$status(targ, hp, mana, arousal, pain, flags, fxflags) llRegionSayTo(targ, GUI_CHAN(targ), "A,"+llDumpList2String([hp, mana,arousal,pain,flags,fxflags], ","))
 #define GUI$setSpellTextures(targ, data) llRegionSayTo(targ, GUI_CHAN(targ)+1, data)
 
 #define GUI$toggleQuit(show) runMethod((string)LINK_ROOT, "got GUI", GUIMethod$toggleQuit, [show], TNN)

@@ -125,8 +125,8 @@
 			float s = llGetTime(); \
 			list targ; float chp = 1; \
 			string ch = db4$getTableChar(db4table$npcNear); \
-			db4$eachFast(ch, row, \
-				key hud = l2k(row, 2); /* 1 because 0 is always ID */ \
+			db4$eachFast(ch, index, row, \
+				key hud = l2k(row, 1); \
 				smartHealDescParse(hud, resources, status, fx, team) \
 				if( team == TEAM && !(status&StatusFlags$NON_VIABLE) && !(fx&fx$UNVIABLE) ){ \
 					float hp = (float)(resources>>21&127)/127.0; \
