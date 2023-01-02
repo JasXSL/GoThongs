@@ -1,3 +1,4 @@
+#define USE_DB4
 #include "got/_core.lsl"
 
 integer BFL;

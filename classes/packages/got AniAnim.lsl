@@ -1,3 +1,4 @@
+#define USE_DB4
 #define SCRIPT_ALIASES ["jas MaskAnim"]
 #define USE_EVENTS
 

@@ -1,3 +1,4 @@
+#define USE_DB4
 #include "got/_core.lsl"
 
 integer BFL;
@@ -131,7 +132,14 @@ default{
             vector pos_offset = (vector)llList2String(data, 1);
             rotation rot_offset = (rotation)llList2String(data, 2);
 			integer flags = llList2Integer(data, 3);
-			integer startParam = l2i(data, 4);
+			string sp = l2s(data, 4);
+			integer startParam = (int)sp;
+			
+			// Startparam should become an integerlized version of our key. This is used for AoE projectiles.
+			if( sp == "$aoeI$" )
+				startParam = (int)("0x"+sp);
+				
+			
 			string quickQ = l2s(data, 5);
 			
 			if(startParam == 0)

@@ -1,3 +1,4 @@
+#define USE_DB4
 #include "got/_core.lsl"
 
 // Conf is a 2-strided array of (int)index, (var)data

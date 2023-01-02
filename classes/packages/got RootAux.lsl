@@ -1,8 +1,7 @@
 /*
 	Lives in cyan box
 */
-list PLAYERS;
-list PLAYER_HUDS;
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -129,13 +128,8 @@ cleanup(key id, integer manual){
 }
 
 onEvt(string script, integer evt, list data){
-
-	if( script == "#ROOT" && evt == RootEvt$players )
-		PLAYERS = data;
-	if( script == "#ROOT" && evt == RootEvt$coop_hud )
-		PLAYER_HUDS = data;
 		
-	else if(script == "jas RLV"){
+	if(script == "jas RLV"){
 		if(evt == RLVevt$cam_set && ~BFL&BFL_CAM_SET){
 			BFL = BFL|BFL_CAM_SET;
 			if(llGetAgentInfo(llGetOwner()) & AGENT_MOUSELOOK){
@@ -155,7 +149,7 @@ onEvt(string script, integer evt, list data){
 	
 	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" ){
 		
-		runOnPlayers(targ,
+		runOnDbPlayers(targ,
 			Status$damageArmor(targ, -1000);
 		)
 		
@@ -318,7 +312,6 @@ default{
 	state_entry(){
 	
 		purge();
-		PLAYERS = [llGetOwner()];
 		diagchan = llCeil(llFrand(0xFFFFFFF));
 		memLim(2);
 		llListen(3, "", llGetOwner(), "");
@@ -355,6 +348,7 @@ default{
 			else if(llGetSubString(message, 0, 5) == "player"){
 			
 				integer n = (int)llGetSubString(message, 6, -1);
+				list PLAYER_HUDS = hudGetHuds();
 				if(n >= count(PLAYER_HUDS))
 					return;
 				Root$targetCoop(LINK_ROOT, l2s(PLAYER_HUDS, n));

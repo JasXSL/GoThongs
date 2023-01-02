@@ -35,8 +35,6 @@ if(script == "got Status"){ \
 else if(script == "#ROOT"){ \
 	if(evt == RootEvt$targ) \
 		_NPC_TARG = l2s(data, 0); \
-	else if(evt == RootEvt$players) \
-		PLAYERS = data; \
 }
 
 #define isDead() (STATUS&(StatusFlag$dead|StatusFlag$raped))

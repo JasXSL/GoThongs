@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -147,7 +148,9 @@ default{
                 cur = cur&~flags;
             // Add either new or existing
             else if( 
-                (~pos && !remove && (cur|flags) != flags ) ||
+				// Find if we added a flag that we did not already have
+                (~pos && !remove && flags&(cur^flags) ) ||
+				// Or if this was completely new
                 ( pos == -1 && !remove )
             )cur = cur|flags;
             // Cannot remove what does not exist

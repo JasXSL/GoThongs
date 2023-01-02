@@ -3,6 +3,7 @@
     You can see yours at the game of thongs website mod section
     Don't forget to build the manifest by clicking setup manifest.
 */
+#define USE_DB4
 #define SCRIPT_IS_ROOT
 #define ALLOW_USER_DEBUG 1
 #include "got/_core.lsl"

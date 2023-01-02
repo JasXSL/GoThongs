@@ -31,8 +31,6 @@ list CBLCK;	// Control-blocking prims
 
 
 
-#define sendHUDs() runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, (list)llGetKey(), 0,0), TNN)
-
 #define refreshTarget() \
 	setTarget(TARG, TARG_ICON, TRUE, -1);
 
@@ -204,7 +202,28 @@ list getPlayers(){
 	
 }
 
-#define savePlayers() raiseEvent(RootEvt$players, mkarr(getPlayers()))
+savePlayers(){
+
+	list players = getPlayers();
+	integer i;
+	for(; i < count(players); ++i )
+		llLinksetDataWrite(db4table$ext$players+(str)i, l2s(players, i));
+	llLinksetDataWrite(db4table$ext$root$nrPlayers, (str)count(players));
+	raiseEvent(RootEvt$players, "");
+	
+}
+
+sendHUDs(){
+
+	integer i; integer num = count(getPlayers());
+	for(; i < num; ++i )
+		llLinksetDataWrite(db4table$ext$huds+(str)i, l2s(COOP_HUDS, i));
+		
+	runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, (list)llGetKey(), 0,0), TNN);
+	raiseEvent(RootEvt$coop_hud, "");	// Todo: Have scripts pull HUDs from db instead of here
+	
+}
+
 
 int CTRLS;
 controls(){
@@ -275,7 +294,7 @@ default{
         if(llGetAttached())
             llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
 
-		savePlayers(); 
+		
 		ThongMan$reset();
 		multiTimer(["TI", 0, 2, TRUE]);	// Checks if the level has been unset
 		
@@ -290,15 +309,18 @@ default{
 		*/
 		
 		// Create schema before resetting the other scripts
-		db4$createTableLocal(db4table$gotBridge);
-		db4$createTableLocal(db4table$gotBridgeSpells);
-		db4$createTableLocal(db4table$gotBridgeSpellsTemp);		// Handled by one of the spell scripts
+		db4$createTableLocalNoIndex(db4table$gotBridge);
+		db4$createTableLocalNoIndex(db4table$gotBridgeSpells);
+		db4$createTableLocalNoIndex(db4table$gotBridgeSpellsTemp);		// Handled by one of the spell scripts
 		db4$createTableLocal(db4table$npcNear);					// handled by got Evts
-		db4$createTableLocal(db4table$spellIcons);				// Handled by got Evts, used in GUI
+		db4$createTableLocalNoIndex(db4table$spellIcons);				// Handled by got Evts, used in GUI
+		db4$createTableLocalNoIndex(db4table$status);					// Handled by got Status
 		
 		db4$insert(db4table$npcNear, 0 + llGetKey());		// Us being first is needed to save memory in smart heal. See got Evts for more.
-		
+				
 		Root$attached();
+		
+		savePlayers(); 
 		
 		// Reset all other scripts and set a start timer
 		resetAllOthers();
@@ -456,18 +478,10 @@ default{
     
     #include "xobj_core/_LISTEN.lsl" 
     
-	//#define LM_PRE qd("Ln."+(str)link+" N."+(str)nr+" ID."+(str)id+" :: "+s);
-    // This is the standard linkmessages
-	//#define LM_PRE llOwnerSay((str)llGetTime()+" :: Nr"+(str)nr+" id: "+(str)id+" Text: "+s);
+	
+	
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    
+
     // Here's where you receive callbacks from running methods
     if(method$isCallback){
 
@@ -477,9 +491,7 @@ default{
 			if( ~pos ){
 			
 				//qd("Got HUD from CALLBACK "+llGetDisplayName(llGetOwnerKey(id)));
-				COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
-				raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
-				//qd("Setting HUDs: "+mkarr(COOP_HUDS));
+				COOP_HUDS = llListReplaceList(COOP_HUDS, (list)id, pos, pos);
 				sendHUDs();
 				
 			}
@@ -531,10 +543,9 @@ default{
 			}
 			
 			integer i;
-			for(i=0; i<count(PLAYERS)-1; ++i)
+			for( ; i<count(PLAYERS)-1; ++i )
 				COOP_HUDS += "";
-			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
-						
+				
 			sendHUDs();
 			//qd("Setting HUDs: "+mkarr(COOP_HUDS));
 			
@@ -623,11 +634,10 @@ default{
 		
 		integer pos = llListFindList(PLAYERS, [(str)okey]);
 		if(~pos){
-			COOP_HUDS = llListReplaceList(COOP_HUDS, [id], pos, pos);
+		
+			COOP_HUDS = llListReplaceList(COOP_HUDS, (list)id, pos, pos);
 			sendHUDs();
-			raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS));
-			//qd("Setting HUDs: "+mkarr(COOP_HUDS));
-			//qd("Got HUD from ATTACHED "+llGetDisplayName(llGetOwnerKey(id))+" :: "+llKey2Name(id));
+			
 		}
 		
 	}

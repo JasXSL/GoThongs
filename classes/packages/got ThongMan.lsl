@@ -1,3 +1,4 @@
+#define USE_DB4
 #define SCRIPT_IS_ROOT
 #define ALLOW_USER_DEBUG 1
 #define USE_EVENTS
@@ -64,7 +65,6 @@ updateDefaults(){
         out+=specular+glow;
 		
     )
-	
     llSetLinkPrimitiveParamsFast(0, out);
 	debugUncommon("Update defaults");
 	

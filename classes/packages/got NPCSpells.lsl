@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 //#define DEBUG DEBUG_UNCOMMON
 #include "got/_core.lsl"

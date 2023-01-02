@@ -1,6 +1,6 @@
 // Custom definitions
 // #define onEvtCustom( script, evt, data)
-
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 

@@ -44,8 +44,6 @@ list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)dura
 */
 
 list TG; 			// [(str)id, (int)flags] Flags are in got NPCInt. Tracks target and/or focus target. Players currently actively targeting you
-list PLAYER_HUDS;
-
 
 onEvt( string script, integer evt, list data ){
 
@@ -56,10 +54,6 @@ onEvt( string script, integer evt, list data ){
 	
 		if( evt == RootEvt$targ )
 			cache_targ = l2s(data, 0);
-			
-		else if( evt == RootEvt$coop_hud )
-			PLAYER_HUDS = data;
-			
 		else if( evt == evt$BUTTON_PRESS && QTE_STAGES > 0 ){
 			
 			list map = [
@@ -401,7 +395,7 @@ int getScore( key t ){
 // Updates target lists with sensed players
 targScan( list sensed ){
 
-	sensed += llDeleteSubList(PLAYER_HUDS, 0, 0);	// Do not need owner
+	sensed += llDeleteSubList(hudGetHuds(), 0, 0);	// Do not need owner
 	
 	list t;	// Same syntax as T
 
@@ -835,12 +829,14 @@ default{
 		
 		integer cur = l2i(TG, pos+1);
 		
-		// Remove from existing
+		// Remove flags from existing
 		if( ~pos && remove )
 			cur = cur&~flags;
 		// Add either new or existing
 		else if( 
-			(~pos && !remove && (cur|flags) != flags ) ||
+			// Find if any new bits have been set
+			(~pos && !remove && flags&(flags^cur) ) ||
+			// Or if this was newly added
 			( pos == -1 && !remove )
 		)cur = cur|flags;
 		// Cannot remove what does not exist

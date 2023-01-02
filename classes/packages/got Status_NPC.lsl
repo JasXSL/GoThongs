@@ -4,6 +4,7 @@
 	This script is saturated. You cannot add more features to it.
 	
 */
+#define USE_DB4
 #define USE_EVENTS
 #define IS_NPC
 

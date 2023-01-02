@@ -1,6 +1,7 @@
 /*
     V1
 */
+#define USE_DB4
 #include "got/_core.lsl"
 integer FLAGS;
 key TARGET;

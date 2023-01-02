@@ -1,5 +1,4 @@
-
-
+#define USE_DB4
 #include "got/_core.lsl"
 
 #define TIMER_FADE "a"

@@ -54,8 +54,8 @@ int TARG_SPICON_LEN;		// How many spell icons the target has
 int SELF_SPICON_LEN;		// How many spell icons we have
 integer TEAM = TEAM_PC;
 
-
 list PLAYER_HUDS;
+
 #define FOCUS_BORDER <0.820, 0.820, 0.820>
 
 // Bar textures
@@ -163,7 +163,7 @@ key boss;				// ID of boss (used if boss is a monster)
 			\
         } \
 		else if(evt == RootEvt$coop_hud){ \
-			PLAYER_HUDS = llListReplaceList(data, [llGetKey()], 0,0); \
+			PLAYER_HUDS = llListReplaceList(hudGetHuds(), (list)llGetKey(), 0,0); \
 			toggle(TRUE); \
 		} \
 		else if( evt == RootEvt$focus ){ \
@@ -207,7 +207,7 @@ default {
 		// Tick the updates
 		if(~BFL&BFL_TOGGLED)
 			return;
-			
+		
 		list statuses = (list)Root$target + PLAYER_HUDS + boss;
 		list statuses_flags;
 		list statuses_sex;
@@ -470,7 +470,6 @@ default {
 	
     state_entry(){
 	
-		PLAYER_HUDS = (list)llGetKey();
 
         links_each(nr, name, 
             
@@ -756,7 +755,8 @@ default {
 		integer i;
 		for(i=0; i<4; i++){
 			integer exists = FALSE;
-			if(llGetListLength(PLAYER_HUDS)>i)exists = TRUE;
+			if( Root$numPlayers() > i )
+				exists = TRUE;
 			
 			key texture = l2k(PARTY_ICONS, i);
 			if(texture){}else{texture = "d1f4998d-edb0-4067-da12-d651a3dbe9ac";}

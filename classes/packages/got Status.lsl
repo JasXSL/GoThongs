@@ -53,7 +53,6 @@ integer LV = 1;	// Player level
 // Effects
 integer SF = 0; 	// Status flags
 integer SFp = 0;	// Sttus flags pre
-#define coop_player llList2Key(PLAYERS, 1)
 
 int CF;			// Spell cast flags
 integer GF;	// Genital flags
@@ -101,7 +100,6 @@ float AROUSAL = 0;
 float PAIN = 0;
 
 list OST; 				// Output status to
-list PLAYERS;
 
 int RO;			// Thong role
 int US;			// Usersettings from bridge, see BSUD$SETTING_FLAGS
@@ -531,7 +529,7 @@ onDeath( string customAnim, key killer ){
 	AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
 		
 	float dur = 20;
-	if( isChallenge() && count(PLAYERS) > 1 ){
+	if( isChallenge() && Root$numPlayers() > 1 ){
 	
 		dur = 90;
 		/*
@@ -569,9 +567,7 @@ onEvt( string script, integer evt, list data ){
 
     if(script == "#ROOT"){
 	
-        if( evt == RootEvt$players )
-            PLAYERS = data;
-        else if( evt == evt$TOUCH_START ){
+        if( evt == evt$TOUCH_START ){
             
 			if( ~SF&StatusFlag$dead && ~SF&StatusFlag$raped )
 				return;
@@ -780,18 +776,30 @@ OS( int ic ){
 	integer a = ARMOR;
 	if( FXF & fx$F_SHOW_GENITALS )
 		a = 0;
-	llSetObjectDesc(data+"$"+(str)SF+"$"+(str)FXF+"$"+(str)(GF|(RO<<16)|(DIF<<18))+"$"+(str)t+"$"+(str)US+"$"+(str)a+"$"+(str)(TS|((TI&0xFFFF)<<4)));
+	llSetObjectDesc(
+		data+"$"+
+		(str)SF+"$"+
+		(str)FXF+"$"+
+		(str)(GF|(RO<<16)|(DIF<<18))+"$"+
+		(str)t+"$"+
+		(str)US+"$"+
+		(str)a+"$"+
+		(str)(TS|((TI&0xFFFF)<<4))
+	);
 	
 	// Team change goes after because we need to update description first
-	if(pre != t){
+	if( pre != t ){
 		TEAM = t;
 		
 		raiseEvent(StatusEvt$team, TEAM);
-		runOnPlayers(targ,
-			if(targ == llGetOwner())
+		runOnDbPlayers(targ,
+			
+			if( targ == llGetOwner() )
 				targ = (str)LINK_ROOT;
 			Root$forceRefresh(targ, llGetKey());
+			
 		)
+		
 	}
 	
 	
@@ -913,7 +921,6 @@ default {
 
     state_entry(){
 	
-		PLAYERS = [(string)llGetOwner()];
         Status$fullregen();
         multiTimer([TIMER_REGEN, 0, 1, TRUE]);
         llRegionSayTo(llGetOwner(), 1, "jasx.settings");

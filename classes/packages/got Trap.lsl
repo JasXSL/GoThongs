@@ -14,6 +14,7 @@
 
 
 */
+#define USE_DB4
 
 #define USE_EVENTS
 #include "got/_core.lsl"

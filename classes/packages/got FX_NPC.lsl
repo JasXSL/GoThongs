@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #define IS_NPC
 #define FXConf$useEvtListener

@@ -38,8 +38,6 @@ float cMMP = 50;
 float cArmor = 250;
 
 
-list PLAYERS;
-
 integer SF;			// Status flags
 
 // FX
@@ -57,7 +55,7 @@ float befuddle = 1;		// Chance to cast at a random target
 float bsMul = 1;	// Additional damage when attacking from behind
 integer fxFlags = 0;
 
-#define pmod (1./count(PLAYERS))
+#define pmod (1./(float)llLinksetDataRead(db4table$ext$root$nrPlayers))
 
 /* Constants:
 	$T0$	Target of spell (if not AoE) Only differs from _TA_ in self cast
@@ -68,7 +66,7 @@ integer fxFlags = 0;
 	$tI$	Same but for wrapper target
 	$sI$	Same but for sender HUD
 	$soI$	Same but for sender agent
-	
+	$aoeI$	Used for AoE and replaced by the recipient on spellvis received
 */
 string t0;	// First target of a targeted spell
 
@@ -216,10 +214,7 @@ string runMath( string FX, integer index, key targ ){
 
 onEvt(string script, integer evt, list data){
 
-    if(script == "#ROOT" && evt == RootEvt$players)
-        PLAYERS = data;
-		
-	else if( script == "#ROOT" && evt == RootEvt$targ )
+	if( script == "#ROOT" && evt == RootEvt$targ )
         HUD_TARG = l2s(data,0);
 
 	else if(script == "got Status" && evt == StatusEvt$flags)
@@ -385,10 +380,6 @@ applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 
 
 default{
-
-	state_entry(){
-		PLAYERS = [(str)llGetOwner()];
-	}
 
 	#define LM_PRE \
 	if(nr == TASK_FX){ \

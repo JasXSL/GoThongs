@@ -2,7 +2,6 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
-list PLAYERS;
 integer chan;
 list bindings;			// (key)targ, (int)chan
 list PASSIVES;
@@ -19,15 +18,11 @@ onEvt(string script, integer evt, list data){
 		]));
 		
 		integer i;
-		for(i=0; i<count(bindings); i+= 2)
+		for( ; i < count(bindings); i += 2 )
 			llRegionSayTo(llList2Key(bindings, i), llList2Integer(bindings, i+1), msg);
+			
 	}
-	
-	if( script == "#ROOT" && evt == RootEvt$players )
-		PLAYERS = data;
-		
-	
-	
+
 }
 
 outputBindStatus(key id, integer bound){

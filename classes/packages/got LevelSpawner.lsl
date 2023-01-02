@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -9,7 +10,6 @@ quit(){
 
 key CURRENT_LEVEL;
 int LOADING;
-list PLAYERS;
 key PRELOADED_TEXTURE;
 list TEXTURES = [
 	"4f484ea3-8aa0-f09b-3173-ea61a5221ab4", // Panda VS Skel
@@ -19,7 +19,8 @@ list TEXTURES = [
 	"ff0e1b2e-d9e4-0f78-7a81-4bca426cf6b9",	// Imp lair entrance
 	"042d3ef6-a923-adcf-67e1-085f444c1fe7", // Sun in PanRi
 	"451eff51-5fdb-4430-06ea-c6405538eab6",	// Kitsu & tiger
-	"2779b923-f813-28ac-38dd-19bddc3ac6b6"	// Dei dragon in tavern
+	"2779b923-f813-28ac-38dd-19bddc3ac6b6",	// Dei dragon in tavern
+	"d7cb2c72-651a-a986-333f-c0646b227bf8"	// Dei reindeer and kitsu dragon
 ];
 
 toggleLoadingScreen( int visible ){
@@ -52,8 +53,6 @@ toggleLoadingScreen( int visible ){
 
 onEvt(string script, integer evt, list data){
 
-	if( script == "#ROOT" && evt == RootEvt$players )
-		PLAYERS = data;
 
     if( script == "got RootAux" && evt == RootAuxEvt$cleanup ){
 	
@@ -154,7 +153,7 @@ default{
 		toggleLoadingScreen(TRUE);
 		
 		
-		runOnPlayers(targ,
+		runOnDbPlayers(targ,
 			if( targ != llGetOwner() )
 				LevelSpawner$setLoading(targ);
 		)

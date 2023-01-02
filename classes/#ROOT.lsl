@@ -1,8 +1,15 @@
 #ifndef _ROOT
 #define _ROOT
 
+// ext = stored outside of DB4 for speed reasons
 #define db4table$ext$target "_TAR"				// Stored outside of DB4. Holds the current HUD target.
 #define db4table$ext$focus "_FOC"				// Stored outside of DB4. Holds the current HUD focus target.
+#define db4table$ext$players "_PL"				// Stored as _PL0, _PL1... Use db4table$ext$root$nrPlayers when iterating
+#define db4table$ext$huds "_HU"					// Stored as _HU0, _HU1...
+#define db4table$ext$root$nrPlayers "_NP"		// (int)nr_players
+
+#define Root$numPlayers() ((int)llLinksetDataRead(db4table$ext$root$nrPlayers))
+
 
 #define Root$target llLinksetDataRead(db4table$ext$target)
 #define Root$focus llLinksetDataRead(db4table$ext$focus)

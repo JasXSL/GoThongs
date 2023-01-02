@@ -21,8 +21,6 @@
 #include "got/_core.lsl"
 #define InteractConf$ALLOW_ML_LCLICK
 
-list PLAYER_HUDS;
-
 key level = "";
 integer CROSSHAIR;
 integer onInteract(key obj, string task, list params, vector pos){
@@ -61,17 +59,13 @@ integer onInteract(key obj, string task, list params, vector pos){
 		Status$coopInteract(obj);
 		key hud;
 		integer i;
-		for( ; i<count(PLAYER_HUDS); ++i ){
+		runOnDbHuds(targ, 
 		
-			if( llGetOwnerKey(l2k(PLAYER_HUDS, i)) == obj ){
-			
-				hud = l2k(PLAYER_HUDS, i);
-				i = count(PLAYER_HUDS);
+			if( llGetOwnerKey(targ) == obj )
+				hud = targ;
 				
-			}
-			
-		}
-
+		)
+		
 		list players = additionalAllow+llGetOwner();
 		for(i=0; i<count(players); ++i)
 			runOmniMethodOn(l2s(players, i), "got Level", LevelMethod$playerInteract, (list)obj+hud, TNN);
@@ -88,7 +82,6 @@ string CACHE_TEXT;
 onDesc(key obj, string text){
 
 
-		
 	// CUSTOM works through additionalAllow
     if(text == "CUSTOM"){
 	
@@ -98,9 +91,11 @@ onDesc(key obj, string text){
 		else{
 		
 			text = llGetDisplayName(obj);
+			list PLAYER_HUDS = hudGetHuds();
 			parseDesc(l2k(PLAYER_HUDS, pos), resources, status, fx, sex, team, monsterflags, armor, cData);
 			if( status&StatusFlag$coopBreakfree )
 				text = "Break Free";
+				
 		}
 		
 	}
@@ -136,15 +131,13 @@ evt(string script, integer evt, list data){
         else if( evt == RootEvt$players ){
 		
 			ALLOW_ALL_AGENTS = FALSE;
-            additionalAllow = data;
+            additionalAllow = hudGetPlayers();
             if(llList2Key(additionalAllow, 0) == llGetOwner())
 				additionalAllow = llDeleteSubList(additionalAllow,0,0);
 			else if( l2s(additionalAllow, 0) == "*" )
 				ALLOW_ALL_AGENTS = TRUE;
 			
         }
-		else if( evt == RootEvt$coop_hud )
-			PLAYER_HUDS = data;
 			
     }
 	

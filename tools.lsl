@@ -73,6 +73,46 @@ string toGSCReadable( integer copper ){
 	
 }
 
+// Gets all players from db4
+list hudGetPlayers(){
+
+	list out; integer i;
+	integer max = (int)llLinksetDataRead(db4table$ext$root$nrPlayers);
+	for(; i < max; ++i )
+		out += llLinksetDataRead(db4table$ext$players+(str)i);
+	return out;
+	
+}
+
+list hudGetHuds(){
+
+	list out; integer i;
+	integer max = (int)llLinksetDataRead(db4table$ext$root$nrPlayers);
+	for(; i < max; ++i )
+		out += llLinksetDataRead(db4table$ext$huds+(str)i);
+	return out;
+	
+}
+
+#define runOnDbPlayers(player, code) \
+{ \
+	integer _n = (int)llLinksetDataRead(db4table$ext$root$nrPlayers); integer _i; \
+	for(; _i < _n; ++_i){ \
+		key player = llLinksetDataRead(db4table$ext$players+(str)_n); \
+		code \
+	} \
+}	
+
+#define runOnDbHuds(hud, code) \
+{ \
+	integer _n = (int)llLinksetDataRead(db4table$ext$root$nrPlayers); integer _i; \
+	for(; _i < _n; ++_i){ \
+		key player = llLinksetDataRead(db4table$ext$huds+(str)_n); \
+		code \
+	} \
+}	
+
+
 
 // Converts a Z forward rotation to an X forward rotation for old monster scripts to new monster scripts
 /* 

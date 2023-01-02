@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #define SCRIPT_IS_ROOT
 #define ALLOW_USER_DEBUG 1

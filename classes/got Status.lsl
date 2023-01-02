@@ -1,6 +1,8 @@
 #ifndef _GotStatus
 #define _GotStatus
 
+#define db4table$status "got Status"
+
 #define StatusMethod$debugOut 0				// void - Outputs into chat: [(int)maxHP, (int)maxMana, (int)maxArousal, (int)maxPain]
 
 // debug got Status, 1, 0, 0, 1, -2000 - damage self 20 HP

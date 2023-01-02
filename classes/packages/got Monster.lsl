@@ -1,3 +1,4 @@
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -429,7 +430,7 @@ timerEvent( string id, string data ){
 				){
 					
 					// ParseDesc here to save time
-					parseDesc(chasetarg, resources, status, fx, sex, team, mf, arm);					
+					parseDesc(chasetarg, resources, status, fx, sex, team, mf, arm, _a);					
 					// not attackable
 					if(
 						status&StatusFlags$NON_VIABLE ||

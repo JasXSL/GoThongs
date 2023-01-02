@@ -28,7 +28,13 @@ spawnEffects(){
             vector pos_offset = (vector)llList2String(data, 1);
             rotation rot_offset = (rotation)llList2String(data, 2);
 			integer flags = llList2Integer(data, 3);
-			integer startParam = l2i(data, 4);
+			string sp = l2s(data, 4);
+			integer startParam = (int)sp;
+			
+			// Startparam should become an integerlized version of our key
+			if( sp == "$aoeI$" )
+				startParam = (int)("0x"+(str)llGetKey());
+				
 			if(startParam == 0)
 				startParam = 1;
 				
@@ -55,8 +61,7 @@ spawnEffects(){
 			rotation rot = llEuler2Rot(vrot);
 			
 			vector to = getTargetPosOffset(t, zOffset+0.5)+pos_offset*rot;
-			
-			
+						
             llRezAtRoot(name, to, ZERO_VECTOR, llEuler2Rot(vrot)*rot_offset, startParam);
 			
 		}
@@ -128,7 +133,7 @@ runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap
 			Status$monster_taunt(caster, l2i(fx,1));
 		
 		else if( t == fx$SPAWN_VFX ){
-		
+			
 			CACHE_SFX += [llGetTime(), mkarr(llDeleteSubList(fx,0,0))];
 			if( llGetInventoryType(l2s(fx, 1)) != INVENTORY_OBJECT )
 				SpellFX$fetchInventory(l2s(fx,1));

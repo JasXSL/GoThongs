@@ -94,8 +94,6 @@ float HEIGHT_ADD;
 
 key TARG_FOCUS;
 
-list PLAYERS;					// Me and coop player
-
 integer BFL;
 #define BFL_CASTING 1
 #define BFL_START_CAST 2
@@ -180,11 +178,7 @@ onEvt(string script, integer evt, list data){
             }
             startSpell(nr);
         }
-		
-		// Set players
-		else if(evt == RootEvt$players)
-            PLAYERS = data;
-			
+
 		// Update target cache
 		else if(evt == RootEvt$targ){
 			

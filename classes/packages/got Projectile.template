@@ -11,6 +11,7 @@ relies on the following functions and definitions
 	#define HITFX_FLAGS 0
 	#define HITFX_COLOR
 	#define ON_LOAD
+	#define NO_IMPACT
 
 	// loop particles
 	ini(){} 
@@ -140,36 +141,42 @@ STEP(){
 	}
 	
     if( dist < .3 ){
-	
-        llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
-		boom();
-		llStopSound();
 		
-		#ifdef IMPACT_SOUNDS
-		list sounds = IMPACT_SOUNDS;
-		int i;
-		for(; i<count(sounds); i+= 2 )
-			llTriggerSound(l2s(sounds, i), l2f(sounds, i+1));
-		#endif
-			
-		#ifdef USE_HITFX
-		string color = 
-		#ifdef HITFX_COLOR
-			HITFX_COLOR
+		#ifdef NO_IMPACT
+			llDie();
 		#else
-			"<-1,-1,-1>"
-		#endif
-		;
-		if( l2i(llGetObjectDetails(TARGET, (list)OBJECT_ATTACHED_POINT), 0) || llGetAgentSize(TARGET) != ZERO_VECTOR )
-			fxlib$hitFX(TARGET, color, HITFX_FLAGS);
-        else
-			NPCInt$hitfx(TARGET);
-		#endif
-		llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
-		#ifndef NO_DEATH
-        llSleep(2);
-        llDie();
-		llSleep(2);
+		
+			llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
+			boom();
+			llStopSound();
+			
+			#ifdef IMPACT_SOUNDS
+			list sounds = IMPACT_SOUNDS;
+			int i;
+			for(; i<count(sounds); i+= 2 )
+				llTriggerSound(l2s(sounds, i), l2f(sounds, i+1));
+			#endif
+				
+			#ifdef USE_HITFX
+			string color = 
+			#ifdef HITFX_COLOR
+				HITFX_COLOR
+			#else
+				"<-1,-1,-1>"
+			#endif
+			;
+			if( l2i(llGetObjectDetails(TARGET, (list)OBJECT_ATTACHED_POINT), 0) || llGetAgentSize(TARGET) != ZERO_VECTOR )
+				fxlib$hitFX(TARGET, color, HITFX_FLAGS);
+			else
+				NPCInt$hitfx(TARGET);
+			#endif
+			llSetKeyframedMotion([], [KFM_COMMAND, KFM_CMD_STOP]);
+			#ifndef NO_DEATH
+			llSleep(2);
+			llDie();
+			llSleep(2);
+			#endif
+		
 		#endif
 		
     }

@@ -1,14 +1,10 @@
 /*
 	This script was cloned from got Spawner and uses the same methods. But has custom methods too.
 */
-
+#define USE_DB4
 #define LM_ON_METHOD(METHOD, PARAMS, id, SENDER_SCRIPT, CB) onMethod(METHOD, PARAMS, id, SENDER_SCRIPT, CB)
-#define onEvtCustom( script, evt, data) onEvtCustom( script, evt, data)
 
 #include "got/_core.lsl"
-
-list PLAYERS;
-list PLAYER_HUDS;
 
 float _DUR;
 vector _POS;
@@ -73,6 +69,9 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 		_POS = (vector)method_arg(2);
 		_ROT = (rotation)method_arg(3);
 		int no_instigator = l2i(PARAMS, 4);
+		
+		list PLAYERS = hudGetPlayers();
+		list PLAYER_HUDS = hudGetHuds();
 		
 		list viable = [];	// HUDs found
 		integer i;
@@ -174,18 +173,6 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 		Bridge$testPVPScene(l2i(PARAMS, 0), players);
 	
 	}
-
-}
-
-onEvtCustom( str script, int evt, list data ){
-
-	if( script == "#ROOT" ){
-		if( evt == RootEvt$coop_hud )
-			PLAYER_HUDS = llListReplaceList(data, (list)((str)llGetLinkKey(LINK_ROOT)), 0, 0);
-		else if( evt == RootEvt$players )
-			PLAYERS = data;
-	}
-	
 
 }
 

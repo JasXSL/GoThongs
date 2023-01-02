@@ -27,7 +27,7 @@
 #define NPCInt$stacksChanged(pid, added, duration, stacks) runMethod((string)LINK_ROOT, "got NPCInt", NPCIntMethod$stacksChanged, [pid, added, duration, stacks], TNN)
 #define NPCInt$hitfx(targ) runMethod(targ, "got NPCInt", NPCIntMethod$takehit, [], TNN)
 
-#define NPCInt$rapeMe() runOnPlayers(k, runLimitMethod(k, "got NPCInt", NPCIntMethod$rapeMe, [], TNN, 10);)
+#define NPCInt$rapeMe() runOnDbPlayers(k, runLimitMethod(k, "got NPCInt", NPCIntMethod$rapeMe, [], TNN, 10);)
 
 
 
