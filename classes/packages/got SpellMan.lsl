@@ -9,7 +9,12 @@ int GCD_FREE;    				// Spells that are freed from global cooldown
 integer TEAM = TEAM_PC;
 
 #define CSTRIDE 6
-#define spellCost(data, index) (llList2Float(data, 0)*mcm*llList2Float(sp_mcm,index))
+float spellCost( list data, integer index ){
+	float out = llList2Float(data, 0);
+	if( out > 0 )
+		out *= mcm*llList2Float(sp_mcm,index);
+	return out;
+}
 #define spellCooldown(data, index) (llList2Float(data, 1)*cdm*llList2Float(sp_cdm,index))
 #define spellTargets(data) llList2Integer(data, 2)
 #define spellTargetsByIndex(index) llList2Integer(CACHE, index*CSTRIDE+2)
@@ -237,7 +242,7 @@ integer castSpell(integer nr){
 	// BEFORE QUEUE
 	// Check if I have enough mana BEFORE allowing a queue
     float cost = spellCost(data, nr);
-    if(cost>CACHE_MANA){
+    if( cost > CACHE_MANA ){
         A$(ASpellMan$errInsufficientMana);
         return FALSE;
     }
