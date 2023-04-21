@@ -19,27 +19,81 @@
 	
 		1. FX wrapper is received and parsed in got FX.
 		2. Conditions are checked in got FX and has an optional callback of (int)success with how many packages succeeded in being added.
-		3. Useful package data is parsed and cached in got FX.
-		4. got FX sends TASK_FXC_PARSE on RUN/ADD/REM/STACKS to got FXCompiler. This is a custom task that falls outside of default XOBJ behavior in order to save time.
-		5. got FXCompiler goes over the parsed data and forwards any actions to the appropriate scripts, as well as compiling duration effects.
-		6. got FXCompiler forwards the compiled duration effects to got Passives though TASK_PASSIVES_SET_ACTIVES (or sends custom task TASK_FX if is NPC)
-		7. got Passives merges the active effects with the passive effects and sends TASK_FX. This custom task can be picked up by any script by #define LM_PRE if(nr == TASK_FX){}
+		3. Useful package data is parsed, then stored in lsd (see fxPackage$* for the saved fields).
+		4. got FX sends TASK_FXC_PARSE on RUN/ADD/REM/STACKS to got FXCompiler.
+		5. got FXCompiler goes over the parsed data and forwards any actions to the appropriate scripts, as well as compiling duration effects into linkset data on table hudTable$fxCompilerActives. See _lib_fx for definitions of each index.
+		6. got FXCompiler then sends TASK_FX with an array of changed values. Though you may as well read them every time the event is received to save memory.
+		
+	Passives:
+		For legacy reasons. Passives are converted into actives and now handled by the fx system.
+		
+*/
+
+// Package table index
+// Packages are stored in tables between hudTable$fxStart and hudTable$fxStart+hudTable$fxStart$length
+// Each table has the following constant index
+/*
+	PIX : Package index, an offset from hudTable$fxStart. Starts at 1.
+	To check if a table has been deleted, duration must be 0 and stacks 0
+	This is to prevent race conditions.
+	got FXCompiler does not check anything, but removes the stack value.
+	got FX checks both and removes the duration value
 	
-		The index used for the passives/actives is detailed in got FXCompiler (the FXC$flags)
+	Note that dur and stacks cannot be relied on for deleted packages in passives and fxcompiler
 	
 */
+#define fx$getDurEffect(fxfType) db4$fget(hudTable$fxCompilerActives, fxfType)
+
+
+#define fxPackage$STACKS db4$0        	// int - Nr current stacks. MUST be 1 or more. Used to determine is a package exists or not on a table.
+#define fxPackage$SENDER db4$1         	// key - Sender of package
+#define fxPackage$DUR db4$2            	// float - Package duration. Used alongside stacks to check if a package still exists.
+#define fxPackage$FLAGS db4$3          	// int - Package flags
+#define fxPackage$NAME db4$4           	// str - Name of package
+#define fxPackage$FXOBJS db4$5         	// arr - Effect objects
+#define fxPackage$EVTS db4$6           	// arr - Events
+#define fxPackage$TAGS db4$7           	// arr - Tags
+#define fxPackage$MAX_STACKS db4$8     	// int - Max nr of stacks
+#define fxPackage$ADDED db4$9          	// int - Timesnap of when it was added.
+
+//#define fxPackage$PROC_CD db4$10		// int - Timesnap of how often one of the events can proc. Procs cooldowns are PER PACKAGE, use multiple packages if you want separate proc timers.
+#define fxPackage$PROC db4$100         	// (obj){(str)idx : (int)timesnap} - Object of timesnaps of last procs for package events, or 0 if did not proc yet. 
+
+
+// These are shared between fxcompiler (writes) and fx (reads)
+#define getEventPackageTable(evt, script) hudTable$fxCompilerEvts+evt+"_"+script
+#define getEventPackageIndexes(table) llJson2List(llLinksetDataRead(table))
+
+// Gets a table by index offset from fxStart
+#define getFxPackageTableByIndex(pix) llChar(hudTable$fxStart+pix)
+
+// got FX checks both stacks and dur to see if a package is deleted
+#define fxPackageEach(i,table,code) integer i = 1; for(; i <= hudTable$fxStart$length; ++i ){ \
+    string table = getFxPackageTableByIndex(i); /* pix is 1-indexed */ \
+    if( (int)db4$fget(table, fxPackage$STACKS) && (float)db4$fget(table, fxPackage$DUR) != 0 ){ \
+        code \
+    } \
+}
+
+
+
+
+
+
+
+
 
 #define FXMethod$run 1					// (key)sender, (obj)wrapper[, (float)range, (int)team] - Runs a package on a player - Callbacks nr of successful packages accepted
 #define FXMethod$send FXMethod$run					// (Synonym for above)
 
 #define FXMethod$refresh 2				// Runs a user defined refresh() function to check status updates etc
-#define FXMethod$rem 3					// raiseEvt, name, tag, sender, pid, runOnRem, flags, isDispel, maxNR - Use "" to disregard a value
-										// name, tag, sender, pid can all be arrays as well which are ORed
+#define FXMethod$rem 3					// raiseEvt, name, tag, sender, pix, runOnRem, flags, maxRemove, dispellerUUID, allowPassive - Use "" to disregard a value. dispellerUUID is only needed if this was a dispel through a spell
+										// name, tag, sender, pix can all be arrays as well which are ORed
 										// if flags is an array, it gets ANDed, otherwise flags are ORed. If the flags value is negative, it is NOT. So -PF_DETRIMENTAL = benficial
 #define FXMethod$setPCs 4				// (arr)pc_keys - Set PC keys on send to PC events
 #define FXMethod$setNPCs 5				// (arr)pc_keys - Set NPC keys to send to on NPC events
 #define FXMethod$hasTags 6				// (var)tag(s) - Callbacks TRUE/FALSE if the player has ANY of these tags
-#define FXMethod$addStacks 7			// (int)stacks, name, tag, sender, pid, runOnRem, flags, maxNR, isDispel, duration, (int)trig - Adds x stacks to spells that match the filter. If duration is non-zero, it is also updated.
+#define FXMethod$addStacks 7			// (int)stacks, name, tag, sender, pix, runOnRem, flags, maxNR, isDispel, duration, (int)trig - Adds x stacks to spells that match the filter. If duration is non-zero, it is also updated.
 
 
 //#define FXEvt$runEffect 1				// [(key)caster, (int)stacks, (arr)package, (int)id, (int)flags]
@@ -54,11 +108,11 @@
 #define FX$sendCB(target, sender, wrapper, cb, team) runMethod(target, "got FX", FXMethod$run, ([sender, wrapper, 0, team]), cb)
 #define FX$run(sender, wrapper) runMethod((string)LINK_ROOT, "got FX", FXMethod$run, (list)(sender)+(wrapper), TNN)
 #define FX$refresh() runMethod((string)LINK_SET, "got FX", FXMethod$refresh, [], TNN)
-#define FX$rem(raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel) runMethod((string)LINK_SET, "got FX", FXMethod$rem, ([raiseEvt, name, tag, sender, pid, runOnRem, flags, count, isDispel]), TNN)
-#define FX$addStacks(targ, stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pid, runOnRem, flags, count, isDispel, duration, trig]), TNN)
+#define FX$rem(raiseEvt, name, tag, sender, pix, runOnRem, flags, count, dispellerUUID, allowPassive) runMethod((string)LINK_SET, "got FX", FXMethod$rem, ([raiseEvt, name, tag, sender, pix, runOnRem, flags, count, dispellerUUID, allowPassive]), TNN)
+#define FX$addStacks(targ, stacks, name, tag, sender, pix, runOnRem, flags, count, isDispel, duration, trig) runMethod((string)targ, "got FX", FXMethod$addStacks, ([stacks, name, tag, sender, pix, runOnRem, flags, count, isDispel, duration, trig]), TNN)
 
-#define FX$remByNameCB(targ, name, cb) runMethod((string)targ, "got FX", FXMethod$rem, (list)0 + name + "" + "" + "" + "" + 0 + 0 + 0, cb)
-#define FX$aoe(range, sender, wrapper, team) runLimitMethod((str)AOE_CHAN, "got FX", FXMethod$run, ([sender, wrapper, range, team]), TNN, range) 
+#define FX$remByNameCB(targ, name, cb) runMethod((string)targ, "got FX", FXMethod$rem, (list)0 + name + "" + "" + 0 + 0 + 0 + 0 + "" + FALSE, cb)
+#define FX$aoe(range, sender, wrapper, team) runChanOmniMethod(AOE_CHAN, "got FX", FXMethod$run, (list)(sender) + (wrapper) + (range) + (team), TNN) 
 // Tags can be a JSON array or a single tag
 #define FX$hasTags(targ, tags, cb) runMethod(targ, "got FX", FXMethod$hasTags, (list)(tags), cb)
 
@@ -71,11 +125,6 @@
 
 //#define FXConf$useEvtListener
 // Lets you use the evtListener(string script, integer evt, string data) to perform actions when an event is received
-//#define FXConf$useShared "a"
-// Lets you save the spell packages as a shared array. It will likely risk overflowing if you add more than a handful of spells.
-// If saved, shared will be the strided array [(int)pid, (key)caster, (arr)package, (int)stacks]
-
-
 
 // Note, you'll probably want a sheet to keep track of FX types
 
@@ -108,11 +157,11 @@ string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs,
 // Events are used to run additional wrappers on a target based on script events
 // For internal events use "" as evscript
 // Internal events are quick events restrained to this script
-#define INTEVENT_ONREMOVE 1			// Data is [(int)pid]
-#define INTEVENT_ONADD 2			// Data is [(int)pid] 
-#define INTEVENT_ONSTACKS 3			// Data is [(int)pid, (int)nrStacks]
+#define INTEVENT_ONREMOVE 1			// Data is [(int)pix]
+#define INTEVENT_ONADD 2			// Data is [(int)pix] 
+#define INTEVENT_ONSTACKS 3			// Data is [(int)pix, (int)nrStacks]
 #define INTEVENT_SPELL_ADDED 4		// Data is [(str)name] - Raised whenever a duration spell is added, along with the name. You can use params to check if a name has been added to verify the event
-#define INTEVENT_DISPEL 5			// Data is [(int)PID, (key)dispeller]
+#define INTEVENT_DISPEL 5			// Data is [(int)pix, (key)dispeller]
 #define INTEVENT_DODGE 6			// Data is void  - Event raised when dodged
 #define INTEVENT_PACKAGE_RAN 7		// data is [(str)name] - Raised when a package is ran immediately or through ticks etc
 
@@ -129,8 +178,24 @@ string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs,
 	You can use a target less or equal to 0 to use a parameter from the event as target
 	You can add || in a param for OR, ex: FX_buildEvent(SpellManEvt$complete, "got SpellMan", TARG_VICTIM, 1, wrap, ["2||3"]) spell 2 OR 3 cast
 */
-string FX_buildEvent(integer evtype, string evscript, integer targ, integer maxtargets, string wrapper, list params){
-    return llList2Json(JSON_ARRAY, [evtype, evscript, targ, maxtargets, wrapper, mkarr(params)]);
+#define FXEVT_TYPE 0
+#define FXEVT_SCRIPT 1
+#define FXEVT_TARG 2
+#define FXEVT_MAXTARGS 3
+#define FXEVT_WRAPPER 4
+#define FXEVT_PARAMS 5		// Params that should match the event params. See above for special characters.
+#define FXEVT_PROC_CHANCE 6	// 
+#define FXEVT_FLAGS 7
+#define FXEVT_RANGE 8		// Max range of targets. For legacy reasons AoE can use maxtargs as range.
+#define FXEVT_COOLDOWN 9	// cooldown in seconds. 0.1 second resolution
+
+#define FXEVT$PF_OVERRIDE_PROC_BLOCK 0x2	// Allow it even when fx$NO_PROCS is set
+
+#define fx$buildEvent( evtype, evscript, targ, maxtargets, wrapper, params, procChance, flags, range, cooldown) \
+	mkarr(([evtype, evscript, targ, maxtargets, wrapper, params, procChance, flags, range, cooldown]))
+
+string FX_buildEvent( integer evtype, string evscript, integer targ, integer maxtargets, string wrapper, list params, float procChance, int flags, float range, float cooldown ){
+    return fx$buildEvent(evtype, evscript, targ, maxtargets, wrapper, mkarr(params), procChance, flags, range, cooldown);
 }
 
 // FX are packages containing info about a specific effect. You'll likely want to write your own sheet of various effects
@@ -159,8 +224,6 @@ string FX_buildCondition(integer cond, list vars){
 #define PF_STACK_TIME 0x200				// 512 Adds time to any existing spell instead of resetting to max time
 #define PF_FULL_VIS 0x400				// 1024 Show to all targeters regardless of who added it
 
-// an integer PID gets added on the end when added to FX
-
 #define PACKAGE_DUR 0
 #define PACKAGE_FLAGS 1
 #define PACKAGE_NAME 2
@@ -172,7 +235,7 @@ string FX_buildCondition(integer cond, list vars){
 #define PACKAGE_MAX_STACKS 8			// 
 #define PACKAGE_TICK 9
 
-string FX_buildPackage(float dur, integer flags, string name, list fxobjs, list conditions, list evts, list tags, integer fxMinConditions, integer stacks, float tick){
+string FX_buildPackage( float dur, integer flags, string name, list fxobjs, list conditions, list evts, list tags, integer fxMinConditions, integer stacks, float tick ){
     return llList2Json(JSON_ARRAY, [dur, flags, name, llList2Json(JSON_ARRAY, fxobjs),llList2Json(JSON_ARRAY, conditions),llList2Json(JSON_ARRAY, evts), llList2Json(JSON_ARRAY, tags), fxMinConditions, stacks, tick]);
 }
 

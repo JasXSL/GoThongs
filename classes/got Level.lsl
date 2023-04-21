@@ -75,19 +75,19 @@
 #define LevelDesc$live 2						// void - Present when level is live
 
 
-#define Level$loadDebug(group) runOmniMethod("got Level", LevelMethod$load, [1,group], TNN)
-#define Level$loadSharp(group) runOmniMethod("got Level", LevelMethod$load, [0,group], TNN)
+#define Level$loadDebug(group) runOmniMethod("got Level", LevelMethod$load, (list)1 + (group), TNN)
+#define Level$loadSharp(group) runOmniMethod("got Level", LevelMethod$load, (list)0 + (group), TNN)
 #define Level$targLoadSharp(targ, group) runMethod((str)targ, "got Level", LevelMethod$load, [0,group], TNN)
 #define Level$intLoadSharp(group) runMethod((string)LINK_THIS, "got Level", LevelMethod$load, [0,group], TNN)
 #define Level$loadFinished() runMethod((string)LINK_THIS, "got Level", LevelMethod$loadFinished, [], TNN)
 #define Level$despawn() runOmniMethod("got Level", LevelMethod$despawn, [], TNN)
-#define Level$trigger(user, data) runOmniMethod("got Level", LevelMethod$trigger, [user, data], TNN)
-#define Level$idEvent(evt, id, data, spawnround) runOmniMethod("got Level", LevelMethod$idEvent, [evt, id, data, spawnround], TNN)
+#define Level$trigger(user, data) runOmniMethod("got Level", LevelMethod$trigger, (list)user + data, TNN)
+#define Level$idEvent(evt, id, data, spawnround) runOmniMethod("got Level", LevelMethod$idEvent, (list)(evt) + (id) + (data) + (spawnround), TNN)
 #define Level$loaded(targ, isHUD) runMethod((str)targ, "got Level", LevelMethod$loaded, [isHUD], TNN)
 #define Level$loadPerc(targ, id, perc) runMethod(targ, "got Level", LevelMethod$loadPerc, [id, perc], TNN)
 // ??? These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}
 #define Level$getObjectives() runMethod(ROOT_LEVEL, "got Level", LevelMethod$getObjectives, [], TNN)
-#define Level$bind(player) runLimitMethod(player, "got Level", LevelMethod$bindToLevel, [], TNN, 100)
+#define Level$bind(player) runOmniMethodOn(player, "got Level", LevelMethod$bindToLevel, [], TNN)
 #define Level$getPlayers() runMethod((str)LINK_THIS, "got Level", LevelMethod$getPlayers, [], TNN)
 #define Level$potionUsed(name) runMethod(ROOT_LEVEL, "got Level", LevelMethod$potionUsed, [name], TNN)
 #define Level$potionDropped(name) runMethod(ROOT_LEVEL, "got Level", LevelMethod$potionDropped, [name], TNN)

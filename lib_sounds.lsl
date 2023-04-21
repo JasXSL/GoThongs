@@ -16,7 +16,8 @@
 #define gotSoundLib$goblin$attack "b55d7cc0-a37a-4e96-0b53-2773ff7fe5aa"
 #define gotSoundLib$goblin$death "7bceac87-fc92-ce91-8918-80d949c968e8"
 
-
+#define gotSoundLib$splatter$aggro "83417238-ee74-84fa-4d54-e90d6aa4cf88"
+#define gotSoundLib$splatter$takehit "f12d384c-4c15-a34d-3962-964968a32ff3"
 
 #define gotSoundLib$blueglob$aggro "6b53ba91-3aa8-3e90-3bc2-7063520ce8e2"
 #define gotSoundLib$blueglob$aggro_lost "c6b08c80-eae3-4a75-f30f-d34c1b95f66e"
@@ -38,6 +39,12 @@
 #define gotSoundLib$firesprite$takehit "31a1f9b4-4d1a-21c6-eb4d-76b04f5a485e"
 #define gotSoundLib$firesprite$attack "e3db24cb-b107-fe89-b675-9fe572c5ce54"
 #define gotSoundLib$firesprite$death "eee95075-2e10-a2b0-f702-281f2594c047"
+
+#define gotSoundLib$fireprimal$aggro "d683f8f8-70d5-f342-edd2-6fca527e2c0f"
+#define gotSoundLib$fireprimal$takehit "9a175490-9a3c-7024-dc5e-25df73914ad1"
+#define gotSoundLib$fireprimal$attack "98211081-df54-21d3-8dff-472e2bfcb9ba"
+#define gotSoundLib$fireprimal$death "06a11ccb-ec01-fd25-3c41-d0fd7898b37c"
+
 
 #define gotSoundLib$watersprite$aggro "e099fd20-6d28-1ea3-401a-a2eb790e0930"
 #define gotSoundLib$watersprite$takehit "33763d1c-1b0b-e610-049d-bcb44f9f8428"

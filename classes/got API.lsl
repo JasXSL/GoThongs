@@ -1,6 +1,8 @@
 /*
 	
 	Start by listening to GotAPI$chan(llGetOwner()) or the agent you want to listen to
+	Then send GotAPI$bindThis(targ) to bind the prim your script is in. Targ will likely be yourself.
+	
 	Example listen event:
 	listen(integer chan, string name, key id, string message){
         idOwnerCheck

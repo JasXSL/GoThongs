@@ -181,12 +181,12 @@ onEvt(string script, integer evt, list data){
 		multiTimer(["INI", 0, 4, FALSE]);
 		
     if( script == "got Bridge" && evt == BridgeEvt$userDataChanged )
-        loadWeapon(Bridge$userData());   
+        loadWeapon(llJson2List(hud$bridge$userData()));   
     // thong data changed
     else if(script == "got Bridge" && evt == BridgeEvt$data_change){
 		
-		TFLAGS = l2i(
-			db4$get(db4table$gotBridge, db4table$gotBridge$data), 
+		TFLAGS = (int)j(
+			hud$bridge$thongData(),
 			BSS$FLAGS
 		);
 		reloadWeapon();
@@ -233,14 +233,14 @@ onEvt(string script, integer evt, list data){
 	if( script == "got SpellMan" && evt == SpellManEvt$recache ){
 		
 		SPELL_STANCES = SPELL_FLAGS = [];
-		string tmpChr = db4$getTableChar(db4table$gotBridgeSpellsTemp);
-		string chr = db4$getTableChar(db4table$gotBridgeSpells);
+		string tmpChr = hudTable$spellmanSpellsTemp;
+		string chr = hudTable$bridgeSpells;
 		integer i;
         for( ; i<5; ++i ){
             
-            list d = db4$getFast(tmpChr, i);
+            list d = llJson2List(db4$get(tmpChr, i));
             if( d == [] )
-                d = db4$getFast(chr, i);
+                d = llJson2List(db4$get(chr, i));
             SPELL_STANCES += l2s(d, BSSAA$stance);
 			SPELL_FLAGS += l2i(d, BSSAA$target_flags);
 
@@ -451,7 +451,7 @@ default{
         */
         
 		// Uncomment for debug
-        loadWeapon(Bridge$userData());
+        //loadWeapon(hud$bridge$userData());
             
         if(llGetAttached()){
             llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION|PERMISSION_OVERRIDE_ANIMATIONS);
@@ -508,10 +508,9 @@ default{
 	// Get FX
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
 		integer pre = FX_FLAGS; \
-        FX_FLAGS = llList2Integer(data, FXCUpd$FLAGS); \
-        if((pre&fx$F_DISARM) != (FX_FLAGS&fx$F_DISARM)){ \
+        FX_FLAGS = (int)fx$getDurEffect(fxf$SET_FLAG); \
+        if( (pre&fx$F_DISARM) != (FX_FLAGS&fx$F_DISARM) ){ \
 			if(FX_FLAGS&fx$F_DISARM){ \
 				Weapon$removeAll(); \
 			} \

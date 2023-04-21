@@ -4,7 +4,8 @@
 #include "got/_core.lsl"
 
 #define saveFlags() \
-if(SFp != SF){ \
+if( SFp != SF ){ \
+	db4$freplace(hudTable$status, hudTable$status$flags, SF); \
 	raiseEvent(StatusEvt$flags, llList2Json(JSON_ARRAY, [SF, SFp])); \
 	SFp = SF; \
 }	
@@ -42,7 +43,6 @@ int A_ARM = 0;						// Currently targeted armor slot. Shuffled each armor break.
 
 // Cache
 integer PC;							// Pre constants
-integer PF;							// pre flags
 
 integer TEAM_D = TEAM_PC;			// This is the team set by the HUD itself, can be overridden by fxT
 integer TEAM = TEAM_PC; 			// This is team out
@@ -57,16 +57,14 @@ integer SFp = 0;	// Sttus flags pre
 int CF;			// Spell cast flags
 integer GF;	// Genital flags
 
-
 // FX
 integer FXF = 0;				// FX flags
-float paDT = 1; 				// damage taken modifier (only from PASSIVES)
-list fmDT;						// [int playerID, float amount] From ACTIVEs 0 is wildcard
+list fmDT;						// [int playerID, float amount] Damage taken modifier. 0 (index 1 for value) is from ALL sources.
 float fmMR = 1;					// mana regen
 float fmAT = 1;					// Arousal taken
 float fmPT = 1;					// Pain taken
 float paHT = 1;					// Healing taken from passives
-list fmHT;						// healing taken from actives [int playerID, float amount] From ACTIVE. 0 is wildcard
+list fmHT;						// healing taken from actives [int playerID, float amount] From ACTIVE. 0 is from all sourcea and the all source value is always index 1
 float fmHR = 1;					// HP regen
 float cfmHR = 0.0;				// Combat HP regen multiplier
 float fmPR = 1;					// Pain regen
@@ -91,7 +89,7 @@ integer fxT = -1;	// FX team
 key rLV;	// root level
 #define isChallenge() (llKey2Name(rLV) != "" && BFL&BFL_CHALLENGE_MODE)
 
-list SDTM; 	// Spell damage taken mod [str packageName, key2int(caster), float modifier] Caster of 0 is a wild card
+list SDTM; 	// Spell damage taken mod [(int)caster_(str)packageName, float multiplier] Caster of 0 packages by name from any source instead of a particular sender
 
 // Resources
 float HP = DEFAULT_DURABILITY;
@@ -260,66 +258,78 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
     float pre = HP;
 	am*=spdmtm(sn, atkr);
 	
-	if(fl&SMAFlag$IS_PERCENTAGE)
+	// Percentage is ALWAYS unmodified
+	if( fl&SMAFlag$IS_PERCENTAGE )
 		am*=maxHP();
-	// Damage
-    else if( am < 0 ){
+	// Not percentage and not regen
+    else if( !re ){
 	
-		// Damage taken multiplier
-		float fmdt = 1;
-		integer pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)0);
-		if( ~pos )
-			fmdt *= l2f(fmDT, pos*2+1);
-		if( key2int(atkr) && ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(atkr))) )
-			fmdt *= l2f(fmDT, pos*2+1);
-
-		am*= 
-			(1+((SF&StatusFlag$pained)/StatusFlag$pained)*.1)*
-			(1+((SF&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
-			(1+(FXF&fx$F_SHOW_GENITALS && ~FXF&fx$F_NO_NUDE_PENALTY)*.2)*
-			fmdt*paDT*
-			difMod()
-		;
+		int evt = StatusEvt$hurt;
+		// Damage
+		if( am < 0 ){
 		
-		raiseEvent(StatusEvt$hurt, llRound(am));
-		updateCombatTimer();
+			// Damage taken multiplier
+			float fmdt = 1;
+			integer pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)0);
+			if( ~pos )
+				fmdt *= l2f(fmDT, pos*2+1);
+			if( key2int(atkr) && ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(atkr))) )
+				fmdt *= l2f(fmDT, pos*2+1);
+
+			am*= 
+				(1+((SF&StatusFlag$pained)/StatusFlag$pained)*.1)*
+				(1+((SF&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
+				(1+(FXF&fx$F_SHOW_GENITALS && ~FXF&fx$F_NO_NUDE_PENALTY)*.2)*
+				fmdt*
+				difMod()
+			;
+
+			updateCombatTimer();
+			
+			// Armor damage
+			float mod = fmAC*fmA;
+			if( mod > 0 && am < 0 ){
+			
+				float ARMOR_PER_DMG = 10.0/mod;	// every 10 points of damage reduces armor by 1
+				int aDmg = 
+					llFloor(llFabs(am)/ARMOR_PER_DMG) + 
+					(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))
+				;
+				dArm(aDmg);
+					
+			}
+			
+			Status$handleLifeSteal(am, stl, atkr)
+			
+		}
+		// Healing
+		else{
+			
+			// Healing taken multiplier
+			float fmht = 1;
+			integer pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)0);
+			if( ~pos )
+				fmht *= l2f(fmHT, pos*2+1);
+			if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(atkr))) )
+				fmht *= l2f(fmHT, pos*2+1);
+				
+			am*= fmht;
+			evt = StatusEvt$healed;
+			
+		}
+		
+		// Run conversions
+		if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
+			am *= rCnv(FXC$CONVERSION_HP, am);
+			
+		raiseEvent(evt, mkarr((list)llFabs(am) + sn));
+			
 		
     }
+
 	
-	// Healing
-	if( !re ){
-		
-		// Healing taken multiplier
-		float fmht = 1;
-		integer pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)0);
-		if( ~pos )
-			fmht *= l2f(fmHT, pos*2+1);
-		if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(atkr))) )
-			fmht *= l2f(fmHT, pos*2+1);
-			
-		am*= fmht*paHT;
-		
-	}
-		
-	// Run conversions
-	if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
-		am *= rCnv(FXC$CONVERSION_HP, am);
-	
-	float mod = fmAC*fmA;
-	if( mod > 0 ){
-	
-		float ARMOR_PER_DMG = 10.0/mod;	// every 10 points of damage reduces armor by 1
-		int aDmg = 
-			llFloor(llFabs(am)/ARMOR_PER_DMG) + 
-			(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))
-		;
-		if( am < 0 && aDmg )
-			dArm(aDmg);
-			
-	}
     HP += am;
 	
-	Status$handleLifeSteal(am, stl, atkr)
 	
     if( HP <= 0 ){
 	
@@ -483,18 +493,18 @@ float spdmtm( string sn, key c ){
 		return 1;
     
 	integer cn = key2int(c);
-	
+	str check = (str)cn+"_"+sn;
+	str checkAll = "0_"+sn;
+		
 	float out = 1;
-	
+		
 	integer i;
-    for( i=0; i<llGetListLength(SDTM); i+=3 ){
-	
-        if( 
-			llList2String(SDTM, i) == sn && 
-			( !l2i(SDTM, i+1) || l2i(SDTM, i+1) == cn ) 
-		){
+    for( ; i<llGetListLength(SDTM); i += 2 ){
+		
+		str n = l2s(SDTM, i);
+        if( n == check || n == checkAll ){
             
-			float nr = llList2Float(SDTM, i+2);
+			float nr = llList2Float(SDTM, i+1);
             if( nr <0 )
 				return 0;
             out*= nr;
@@ -525,11 +535,12 @@ onDeath( string customAnim, key killer ){
 	
 	OS( TRUE );
 	raiseEvent(StatusEvt$dead, 1);
+	FX$rem(FALSE, "", "", "", 0, FALSE, PF_DETRIMENTAL, 0, "", FALSE); // Remove all deterimental effects
 	gotClassAtt$dead(1);
 	AnimHandler$anim("got_loss", TRUE, 0, 0, 0);
 		
 	float dur = 20;
-	if( isChallenge() && Root$numPlayers() > 1 ){
+	if( isChallenge() && hud$root$numPlayers() > 1 ){
 	
 		dur = 90;
 		/*
@@ -620,7 +631,7 @@ onEvt( string script, integer evt, list data ){
 	
 	else if( script == "got Bridge" && evt == BridgeEvt$userDataChanged ){
 		
-		data = Bridge$userData();
+		data = llJson2List(hud$bridge$userData());
 		Status$setDifficulty(l2i(data, BSUD$DIFFICULTY));
 		RO = l2i(data, BSUD$THONG_ROLE);
 		US = l2i(data, BSUD$SETTING_FLAGS);
@@ -722,14 +733,17 @@ integer cD;		// Cache difficulty
 // ic = ignore cache check
 OS( int ic ){ 
 
-	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR && PF == SF && DIF == cD )
+	if( !ic && cH == HP && cM == MANA && cA == AROUSAL && cP == PAIN && cC == ARMOR && SFp == SF && DIF == cD )
 		return;
-			
+
+	//qd(mkarr((list)ic + (cH==HP) + (cM==MANA) + (cA==AROUSAL) + (cP==PAIN) + (cC==ARMOR) + (SFp==SF) + (DIF==cD)));
+	
 	cH = HP;
 	cM = MANA;
 	cA = AROUSAL;
 	cP = PAIN;
 	cC = ARMOR;
+	cD = DIF;
 	
 	// Check team
 	integer t = fxT;
@@ -741,7 +755,7 @@ OS( int ic ){
 	
 	
 	
-	
+	integer armTot = (ARMOR&0x3F)+((ARMOR>>6)&0x3F)+((ARMOR>>12)&0x3F)+((ARMOR>>18)&0x3F)+((ARMOR>>24)&0x3F);
 
 	// GUI
 	// Status is on cooldown and team has not changed
@@ -751,15 +765,16 @@ OS( int ic ){
 	}
 	else{
 	
+		// Needs to stay because of legacy reasons
 		raiseEvent(StatusEvt$resources, llList2Json(JSON_ARRAY,[
 			(int)HP, (int)maxHP(), 
 			(int)MANA, (int)maxMana(), 
 			(int)AROUSAL, (int)maxArousal(), 
 			(int)PAIN,(int)maxPain(),
 			HP/maxHP(),
-			(ARMOR&0x3F)+((ARMOR>>6)&0x3F)+((ARMOR>>12)&0x3F)+((ARMOR>>18)&0x3F)+((ARMOR>>24)&0x3F)	// Total points of armor
+			armTot	// Total points of armor
 		]));
-
+		
 		BFL = BFL|BFL_STATUS_SENT;
 		multiTimer(["_", 0, 0.25, FALSE]);
 	}
@@ -791,8 +806,9 @@ OS( int ic ){
 	if( pre != t ){
 		TEAM = t;
 		
+		db4$freplace(hudTable$status, hudTable$status$team, TEAM);
 		raiseEvent(StatusEvt$team, TEAM);
-		runOnDbPlayers(targ,
+		runOnDbPlayers(i, targ,
 			
 			if( targ == llGetOwner() )
 				targ = (str)LINK_ROOT;
@@ -820,12 +836,19 @@ OS( int ic ){
 		
     }
 	
-    if( PF != SF ){
-	
-        PF = SF;
-        saveFlags();
-		
-    }
+    saveFlags();
+
+	// We also need to update LSD
+	string tS = hudTable$status;
+	db4$freplace(tS, hudTable$status$hp, HP);
+	db4$freplace(tS, hudTable$status$mana, MANA);
+	db4$freplace(tS, hudTable$status$arousal, AROUSAL);
+	db4$freplace(tS, hudTable$status$pain, PAIN);
+	db4$freplace(tS, hudTable$status$maxHp, maxHP());
+	db4$freplace(tS, hudTable$status$maxMana, maxMana());
+	db4$freplace(tS, hudTable$status$maxArousal, maxArousal());
+	db4$freplace(tS, hudTable$status$maxPain, maxPain());
+	db4$freplace(tS, hudTable$status$armor, armTot);
 	
 }
 
@@ -922,8 +945,8 @@ default {
     state_entry(){
 	
         Status$fullregen();
+		db4$freplace(hudTable$status, hudTable$status$team, TEAM);	// Set initial value
         multiTimer([TIMER_REGEN, 0, 1, TRUE]);
-        llRegionSayTo(llGetOwner(), 1, "jasx.settings");
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
 		A_ARM = floor(llFrand(4));	// 0-3
 		OS( TRUE );
@@ -945,62 +968,50 @@ default {
 			saveFlags(); \
 		} \
 	} \
+	\
 	if( nr == TASK_FX ){ \
-		list data = llJson2List(s); \
         integer pre = FXF; \
-		FXF = llList2Integer(data, 0); \
-		if((pre&fx$F_BLURRED) != (FXF&fx$F_BLURRED)){ \
+		FXF = (int)fx$getDurEffect(fxf$SET_FLAG); \
+		if( (pre&fx$F_BLURRED) != (FXF&fx$F_BLURRED) ){ \
 			integer divisor = 0; \
-			if(FXF&fx$F_BLURRED) \
+			if( FXF&fx$F_BLURRED ) \
 				divisor = 2; \
 			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force"); \
 		}\
-		if((pre&fx$F_FORCE_MOUSELOOK) != (FXF&fx$F_FORCE_MOUSELOOK)){\
+		if( (pre&fx$F_FORCE_MOUSELOOK) != (FXF&fx$F_FORCE_MOUSELOOK) ){\
 			multiTimer([TIMER_MOUSELOOK, 0, (float)((FXF&fx$F_FORCE_MOUSELOOK)>0)/10, TRUE]); \
 		}\
-        paDT = i2f(l2f(data, FXCUpd$DAMAGE_TAKEN)); \
-        fmMR = i2f(l2f(data, FXCUpd$MANA_REGEN)); \
-		fmPT = i2f(l2f(data,FXCUpd$PAIN_MULTI)); \
-		fmAT = i2f(l2f(data,FXCUpd$AROUSAL_MULTI)); \
+        fmDT = llJson2List(fx$getDurEffect(fxf$DAMAGE_TAKEN_MULTI)); \
+        fmMR = (float)fx$getDurEffect(fxf$MANA_REGEN_MULTI); \
+		fmPT = (float)fx$getDurEffect(fxf$PAIN_MULTI); \
+		fmAT = (float)fx$getDurEffect(fxf$AROUSAL_MULTI); \
 		float perc = HP/maxHP(); \
 		float mperc = MANA/maxMana(); \
-		fmMH = i2f(l2f(data, FXCUpd$HP_MULTIPLIER)); \
-		fmMHn = llList2Integer(data, FXCUpd$HP_ADD); \
-		fmMM = i2f(l2f(data, FXCUpd$MANA_MULTIPLIER)); \
-		fmMMn = llList2Integer(data, FXCUpd$MANA_ADD); \
-		fmMA = i2f(l2f(data, FXCUpd$AROUSAL_MULTIPLIER)); \
-		fmMAn = llList2Integer(data, FXCUpd$AROUSAL_ADD); \
-		fmMP = i2f(l2f(data, FXCUpd$PAIN_MULTIPLIER)); \
-		fmMPn = llList2Integer(data, FXCUpd$PAIN_ADD); \
-		fmHR = i2f(l2f(data, FXCUpd$HP_REGEN)); \
-		cfmHR = i2f(l2f(data, FXCUpd$COMBAT_HP_REGEN))-1.0;\
-		fmPR = i2f(l2f(data, FXCUpd$PAIN_REGEN)); \
-		fmAR = i2f(l2f(data, FXCUpd$AROUSAL_REGEN)); \
-		paHT = i2f(l2f(data, FXCUpd$HEAL_MOD)); \
-		fmAC = i2f(l2f(data, FXCUpd$HP_ARMOR_DMG_MULTI)); \
-		fmA = i2f(l2f(data, FXCUpd$ARMOR_DMG_MULTI)); \
-		fxT = l2i(data, FXCUpd$TEAM); \
-		fxC = llJson2List(l2s(data, FXCUpd$CONVERSION)); \
+		fmMH = (float)fx$getDurEffect(fxf$HP_MULTI); \
+		fmMHn = (int)fx$getDurEffect(fxf$HP_ADD); \
+		fmMM = (float)fx$getDurEffect(fxf$MANA_MULTI); \
+		fmMMn = (int)fx$getDurEffect(fxf$MANA_ADD); \
+		fmMA = (float)fx$getDurEffect(fxf$MAX_AROUSAL_MULTI); \
+		fmMAn = (int)fx$getDurEffect(fxf$MAX_AROUSAL_ADD); \
+		fmMP = (float)fx$getDurEffect(fxf$MAX_PAIN_MULTI); \
+		fmMPn = (int)fx$getDurEffect(fxf$MAX_PAIN_ADD); \
+		fmHR = (float)fx$getDurEffect(fxf$HP_REGEN_MULTI); \
+		cfmHR = (float)fx$getDurEffect(fxf$COMBAT_HP_REGEN)-1.0;\
+		fmPR = (float)fx$getDurEffect(fxf$PAIN_REGEN_MULTI); \
+		fmAR = (float)fx$getDurEffect(fxf$AROUSAL_REGEN_MULTI); \
+		fmHT = llJson2List(fx$getDurEffect(fxf$HEALING_TAKEN_MULTI)); \
+		fmAC = (float)fx$getDurEffect(fxf$HP_ARMOR_DMG_MULTI); \
+		fmA = (float)fx$getDurEffect(fxf$ARMOR_DMG_MULTI); \
+		fxT = (int)fx$getDurEffect(fxf$SET_TEAM); \
+		fxC = llJson2List(fx$getDurEffect(fxf$CONVERSION)); \
 		HP = maxHP()*perc; \
+		SDTM = llJson2List(fx$getDurEffect(fxf$SPELL_DMG_TAKEN_MOD)); \
 		MANA = maxMana()*mperc; \
         OS( TRUE ); \
-    } \
-	else if( nr ==  TASK_SPELL_MODS ){ \
-		SDTM = llJson2List(j(s, 0)); \
-		fmDT = llJson2List(j(s, 1)); \
-		fmHT = llJson2List(j(s, 2)); \
-	}
-	
+    }
+
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl"  
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
-    
     // Here's where you receive callbacks from running methods
     if(method$isCallback){
         return;
@@ -1012,6 +1023,7 @@ default {
 			
 			integer pre = DIF;
 			DIF = llList2Integer(PARAMS, 0);
+			db4$freplace(hudTable$status, hudTable$status$difficulty, DIF);
 			raiseEvent(StatusEvt$difficulty, DIF);
 			
 			if(DIF != pre){
@@ -1035,6 +1047,7 @@ default {
 
             GF = l2i(PARAMS, 0)&(GENITALS_VAGINA|GENITALS_BREASTS|GENITALS_PENIS);
 			OS(TRUE);
+			db4$freplace(hudTable$status, hudTable$status$genitals, GF);
 			raiseEvent(StatusEvt$genitals, GF);
 			
         }
@@ -1177,6 +1190,13 @@ default {
 			*/
 		}
 		saveFlags();
+	}
+	else if( METHOD == StatusMethod$setArmor ){
+		
+		ARMOR = l2i(PARAMS, 0);
+		dArm(0);
+		OS(FALSE);
+	
 	}
 	
     else if(METHOD == StatusMethod$setTeam){

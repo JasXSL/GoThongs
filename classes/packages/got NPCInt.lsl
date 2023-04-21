@@ -2,16 +2,16 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
-#define LSD_STOR_A "NPCA"	// Stores spell icons in LSD. The PID is added to this.
-							// A JSON array is stored like: [(int)PID, (key)texture, (int)added, (int)duration, (int)stacks, (int)flags]
-#define LSD_STOR_D "NPCD"	// Coupled to NPCI and using the same index. Stores descriptions.
 
 list OST; // Output status to (key)id, (int)flags
+
+
 #define SPSTRIDE 3
-list SPI;   // Spell Icons [(int)PID, (int)senderKey[0-8], (int)flags]
-#define SPI_PID 0				// Package ID. Used when fetching descriptions
-#define SPI_SENDER_KEY 1		// Stored as an int based on the first 8 hex characters
-#define SPI_FLAGS 2				// 
+// Note: if you change this stride, you have to update in got GUI too, and that must be -1 to this stride
+list C_SPI;	// cache spellicons. [(int)pix, (key)texture, (str)desc]
+#define SPI_PIX 0				// Package ID. Used when fetching descriptions
+#define SPI_TEXTURE 1			// 
+#define SPI_DESC 2				// 
 
 integer T_CHAN;
 list PLAYERS;
@@ -55,34 +55,38 @@ string getTargetingPlayer( int stub ){
 	return "";
 	
 }
-sendTextures( string target ){
+sendTextures( key target ){
 
-	if(target == "")
-		return;
+	list out;
+	integer i; int max = 8;
+    for( ; i < count(C_SPI); i += SPSTRIDE ){
 		
-	int t = (int)("0x"+llGetSubString(target, 0, 7));
-	str out = "[";
-	
-	integer i;
-    for( ; i < count(SPI); i += SPSTRIDE ){
-		
-		int f = l2i(SPI, i+SPI_FLAGS);
-		int pid = l2i(SPI, i+SPI_PID);
-		int u = l2i(SPI, i+SPI_SENDER_KEY);
-		if( ~f & PF_DETRIMENTAL || u == t || f & PF_FULL_VIS ){		// Show beneficial effects and sender effects and effects with full vis flags
-			out += llGetSubString(llLinksetDataRead(LSD_STOR_A+(str)pid), 1, -2)+",";
+		int pix = l2i(C_SPI, i+SPI_PIX);
+		str table = getFxPackageTableByIndex(pix);
+		str tx = l2s(C_SPI, i+SPI_TEXTURE);
+		str desc = l2s(C_SPI, i+SPI_DESC);
+		int flags = (int)db4$fget(table, fxPackage$FLAGS);
+		key sender = db4$fget(table, fxPackage$SENDER);
+		if( ~flags & PF_DETRIMENTAL || sender == target || flags & PF_FULL_VIS ){		// Show beneficial effects and sender effects and effects with full vis flags
+			out += 
+				(list)pix +
+				tx +
+				(int)db4$fget(table, fxPackage$ADDED) + // time added
+				(float)db4$fget(table, fxPackage$DUR)+ // duration
+				(int)db4$fget(table, fxPackage$STACKS) + // stacks
+				(int)db4$fget(table, fxPackage$FLAGS)
+			;
 		}
+		
 	}
-	out = llDeleteSubString(out,-1,-1);
-	out += "]";
-	GUI$setSpellTextures(target, out);
+	GUI$setSpellTextures(target, mkarr(out));
 	
 }
 
 ptEvt(string id){
     if( id == "OT" ){ \
 		integer i; \
-        for( i = 0; i<count(OST); i+= 2)\
+        for( ; i<count(OST); i += 2 )\
 			if(l2i(OST, i+1)&NPCInt$targeting) \
 				sendTextures(l2s(OST, i)); \
     } \
@@ -117,6 +121,7 @@ default{
         raiseEvent(evt$SCRIPT_INIT, 0);
         T_CHAN = NPCIntChan$targeting(llGetOwner());
         llListen(T_CHAN, "", "", "");
+		db4$freplace(hudTable$npcInt, hudTable$npcInt$directTargeting, "[]");	// Reset
     }
     
     timer(){ptRefresh();}
@@ -172,6 +177,13 @@ default{
 
             //raiseEvent(StatusEvt$targeted_by, mkarr(OST));
             NPCSpells$setOutputStatusTo(OST);
+			list direct;
+			integer i;
+			for(; i < count(OST); i += 2 ){
+				if( l2i(OST, i+1) & NPCInt$targeting )
+					direct += l2k(OST, i);	
+			}
+			db4$freplace(hudTable$npcInt, hudTable$npcInt$directTargeting, mkarr(direct));
             
         }
            
@@ -194,144 +206,67 @@ default{
                     RN = l2s(dta, 0); \
             } \
 			return; \
-        }
+        } \
+		else if( nr == TASK_FXC_PARSE ){ \
+			int i; list entries = llJson2List(s); \
+			s = ""; \
+			int needUpdate; \
+			for(; i < count(entries); i += FXCPARSE$STRIDE ){ \
+				int task = l2i(entries, i); \
+				int pix = l2i(entries, i+1); \
+				int pos = llListFindList(C_SPI, (list)pix); \
+				if( task & FXCPARSE$ACTION_REM ){ \
+					C_SPI = llDeleteSubList(C_SPI, pos, pos+SPSTRIDE-1); \
+					needUpdate = TRUE; \
+				} \
+				else{ \
+					str table = getFxPackageTableByIndex(pix); \
+					list fxs = llJson2List(db4$fget(table, fxPackage$FXOBJS)); \
+					int n; \
+					for(; n < count(fxs); ++n ){ \
+						str fx = l2s(fxs, n); \
+						if( (int)j(fx, 0) == fx$ICON ){ \
+							str desc = j(fx, 2); \
+							str texture = j(fx, 1); \
+							if( ~pos ) \
+								C_SPI = llListReplaceList(C_SPI, (list)texture + desc, pos+1, pos+2); \
+							else \
+								C_SPI += (list)pix + texture + desc; \
+							needUpdate = TRUE; \
+						} \
+					} \
+				} \
+			} \
+			if( needUpdate ){ \
+				BFL = BFL|BFL_TEX_SENT; \
+				ptSet("OT", .01, FALSE);    \
+				ptSet("OQ", oqTime, FALSE); \
+			} \
+		} \
+		
+		
     
     
     #include "xobj_core/_LM.lsl" 
 
 
-    if( 
-        METHOD == NPCIntMethod$addTextureDesc || 
-        METHOD == NPCIntMethod$remTextureDesc || 
-        METHOD == NPCIntMethod$stacksChanged 
-    ){
-                
-        if( METHOD == NPCIntMethod$addTextureDesc ){
-			
-			// Method args
-			//  pid, texture, desc, added, duration, stacks, casterSubstr(8), (int)flags
-			
-			// LSD_STOR_A
-			// (int)PID, (key)texture, (int)added, (int)duration, (int)stacks, (int)flags
-			
-			// Shortened charkey
-			int ck = (int)("0x"+method_arg(6));
-			int pid = l2i(PARAMS, 0);
-			int flags = l2i(PARAMS, 7);
-			
-			// This is stored in LSD and sent raw to the player targeting us
-			list full = (list)
-				pid +				// PID
-				l2s(PARAMS, 1) + 	// texture
-				l2i(PARAMS, 3) + 	// added
-				l2i(PARAMS, 4) +	// duration
-				l2i(PARAMS, 5) +	// stacks
-				flags				// packageFlags
-			;
-			llLinksetDataWrite(LSD_STOR_A+(str)pid, mkarr(full));		// Store raw that should be sent to users
-			llLinksetDataWrite(LSD_STOR_D+(str)pid, l2s(PARAMS, 2));		// Store desc
-			
-			// PID, sender, flags
-            SPI += (list)
-                pid +					// PID
-				ck +					// Sender stub
-				flags 					// packageFlags
-            ;
-			
-			// If detrimental and not force send to everybody, only update the caster
-			if( flags & PF_DETRIMENTAL && ~flags & PF_FULL_VIS ){
-				sendTextures(getTargetingPlayer(ck));
-				return;
-			}
-			
-        }
-        else if(METHOD == NPCIntMethod$remTextureDesc){
-        
-            integer pid = l2i(PARAMS, 0);
-            integer pos = llListFindList(llList2ListStrided(SPI, 0,-1, SPSTRIDE), (list)pid);
-            if( pos == -1 )
-                return;
-				
-			pos *= SPSTRIDE;
-			
-			SPI = llDeleteSubList(SPI, pos, pos+SPSTRIDE-1);
-			llLinksetDataDelete(LSD_STOR_A+(str)pid);
-			llLinksetDataDelete(LSD_STOR_D+(str)pid);
-			
-			// See if can get away with only updating the caster
-			int flags = l2i(SPI, pos+SPI_FLAGS);
-			if( flags & PF_DETRIMENTAL && ~flags & PF_FULL_VIS ){
-				sendTextures(getTargetingPlayer(l2i(SPI, pos+SPI_SENDER_KEY)));
-				return;
-			}
-            
-        }
-        // Stacks changed
-        else{
-			// (int)PID, (int)added, (float)duration, (int)stacks
-			
-            integer pid = l2i(PARAMS, 0);
-            integer pos = llListFindList(llList2ListStrided(SPI, 0,-1, SPSTRIDE), (list)pid);
-            if( pos == -1 )
-                return;
-            pos *= SPSTRIDE;
-			
-			
-			// [(int)PID, (key)texture, (int)added, (int)duration, (int)stacks, (int)flags]
-			list data = llJson2List(llLinksetDataRead(LSD_STOR_A+(str)pid));
-			data = llListReplaceList(data, (list)
-				l2i(PARAMS, 1) + 	// Added
-				l2i(PARAMS, 2) + 	// Duration
-				l2i(PARAMS, 3),		// Stacks
-				2, 4
-			);
-			llLinksetDataWrite(LSD_STOR_A+(str)pid, mkarr(data));
-			
-			// See if we can send this only to the caster
-			int flags = l2i(SPI, pos+SPI_FLAGS);
-			if( flags & PF_DETRIMENTAL && ~flags & PF_FULL_VIS ){
-			
-				sendTextures(getTargetingPlayer(l2i(SPI, pos+SPI_SENDER_KEY)));
-				return;
-				
-			}
-			
-        }
-		
-		// See if we need to update everybody
-		
-		// Nobody is targeting us
-		if( !count(OST) )
-			return;
-                
-		// We have sent one too recently. 
-        if( BFL&BFL_TEX_SENT ){
-            
-			// Set that we want to update when the cooldown finishes.
-            BFL = BFL|BFL_TEX_QUEUE;
-            return;
-            
-        }
-        
-		// Set a timer to send, and a cooldown
-        BFL = BFL|BFL_TEX_SENT;
-		ptSet("OT", .01, FALSE);    // Send textures
-        ptSet("OQ", oqTime, FALSE);
-        
-    }
 
     
     // Get the description of an effect affecting me
-    else if( METHOD == NPCIntMethod$getTextureDesc ){
+    if( METHOD == NPCIntMethod$getTextureDesc ){
     
         if( id == "" )
             id = llGetOwner();
         
-        integer pid = l2i(PARAMS, 0);
-		string data = llLinksetDataRead(LSD_STOR_A+(str)pid);
-		int stacks = (int)j(data, 4);
+        integer pix = l2i(PARAMS, 0);
+		int pos = llListFindList(C_SPI, (list)pix);
+		if( pos == -1 )
+			return;
+		str table = getFxPackageTableByIndex(pix);
+		string data = l2s(C_SPI, pos+SPI_DESC);
+		int stacks = (int)db4$fget(table, fxPackage$STACKS);
         llRegionSayTo(llGetOwnerKey(id), 0, evtsStringitizeDesc(
-			llLinksetDataRead(LSD_STOR_D+(str)pid),
+			data,
 			stacks
 		));
         

@@ -378,8 +378,7 @@ default
     
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		FXFLAGS = l2i(data, FXCUpd$FLAGS); \
+		FXFLAGS = (int)fx$getDurEffect(fxf$SET_FLAG); \
 	} \
 	else if(nr == TASK_MONSTER_SETTINGS){\
 		onSettings(llJson2List(s)); \

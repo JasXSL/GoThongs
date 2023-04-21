@@ -1,6 +1,7 @@
 #ifndef _GOT_CORE
 #define _GOT_CORE
 
+#include "./_tables.lsl"
 #include "xobj_core/libraries/lazyPandaLib.lsl"
 
 // We're not using tokens because listeners are limited by party
@@ -23,9 +24,9 @@
 
 
 // XOBJ root task macros, starting at -1000
-#define TASK_PASSIVES_SET_ACTIVES -1000			// (arr)actives - Sent from got FXCompiler, sends active effects flattened array to be merged with passives  - Replaces PassivesMethod$setActive
-#define TASK_FXC_PARSE -1001					// STRIDED - [(int)action(s), (int)PID, (int)stacks, (int)package_flags, (str)package_name, (arr)fx_objs, (int)timesnap, (var)additional]
-	#define FXCPARSE$STRIDE 8 
+//#define TASK_PASSIVES_UNLINK -1000				// (int)pix - Sent from got FXCompiler 
+#define TASK_FXC_PARSE -1001					// (arr)task0, pix0, task1, pix1... - See got FX for PIX explanation. Task is a bitwise combo of below.
+	#define FXCPARSE$STRIDE 2
 	#define FXCPARSE$ACTION_RUN 0x1					// Var is 0
 	#define FXCPARSE$ACTION_ADD 0x2					// Var is (float)duration
 	#define FXCPARSE$ACTION_REM 0x4					// Var is (bool)overwrite
@@ -38,11 +39,10 @@
 	#define FXEvt$effectStacksChanged 4		// [(key)caster, (int)stacks, (arr)package, (int)id, (float)timesnap]
 */
 #define TASK_REFRESH_COMBAT -1002   		// void - Replaces StatusMethod$refreshCombat
-#define TASK_FX -1003						// Contains FXCEevt$ values. Replaces PassivesEvt$data - All float types are shortened by f2i
+#define TASK_FX -1003						// Contains a JSON array of changed FX active types
 #define TASK_MONSTER_SETTINGS -1004			// See got Monster Monster$updateSettings(settings)
-#define TASK_OFFENSIVE_MODS -1005			// [(arr)[int casterID, float dmg_done_to_caster_id_mod]] | Sent as a root macro because PC handles in SpellAux, NPC handles in monster
 #define TASK_SPELL_VIS -1006				// [(int)spellIndex, (arr)targets] SpellAux handles rezzed spell visuals because of befuddle
-#define TASK_SPELL_MODS -1007				// (arr)spell_dmg_taken_mod, dmg_taken_mod, healing_Taken_mod
+//#define TASK_SPELL_MODS -1007				// (arr)spell_dmg_taken_mod, dmg_taken_mod, healing_Taken_mod
 
 
 // Include the XOBJ framework

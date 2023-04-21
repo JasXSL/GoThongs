@@ -1,25 +1,24 @@
 #ifndef _ROOT
 #define _ROOT
 
-// ext = stored outside of DB4 for speed reasons
-#define db4table$ext$target "_TAR"				// Stored outside of DB4. Holds the current HUD target.
-#define db4table$ext$focus "_FOC"				// Stored outside of DB4. Holds the current HUD focus target.
-#define db4table$ext$players "_PL"				// Stored as _PL0, _PL1... Use db4table$ext$root$nrPlayers when iterating
-#define db4table$ext$huds "_HU"					// Stored as _HU0, _HU1...
-#define db4table$ext$root$nrPlayers "_NP"		// (int)nr_players
 
-#define Root$numPlayers() ((int)llLinksetDataRead(db4table$ext$root$nrPlayers))
+// DB table row definitions
+// Root table
+#define hudTable$root$targ db4$0			// UUID of current target
+#define hudTable$root$focus db4$1			// UUID of focus target
+#define hud$root$targ() db4$fget(hudTable$root, hudTable$root$targ)
+#define hud$root$focus() db4$fget(hudTable$root, hudTable$root$focus)
 
+#define hud$root$numPlayers() db4$getIndex(hudTable$rootPlayers)
+#define hud$root$numHuds() db4$getIndex(hudTable$rootHuds)
 
-#define Root$target llLinksetDataRead(db4table$ext$target)
-#define Root$focus llLinksetDataRead(db4table$ext$focus)
 
 #define RootMethod$reset 0						// Reset script
 #define RootMethod$statusControls 1				// (int)controls - Additional controls for root to take
 #define RootMethod$debugHuds 2					// void - Owner-says a JSON array of the coop HUDs
 //#define RootMethod$setThongIni 3				// (int)has_thong		- Initialize thong
 #define RootMethod$setTarget 4					// (key)target, (key)texture, (int)force_override|(key)pre_targ, (int)team - If pre_targ is a key, it only clears if that is the current target
-#define RootMethod$getPlayers 5					// callbacks [(arr)players, (arr)huds]
+#define RootMethod$getPlayers 5					// (int)channel=0 - callbacks [(arr)players, (arr)huds] - If channel is specified, it instead sends a JSON array to the sender on that channel. Useful if you want to make non-xobj ways of fetching players.
 #define RootMethod$setParty 6					// (key)coop_player, (key)players2... - 
 #define RootMethod$setLevel 7					// void - Returns players
 #define RootMethod$manageAdditionalPlayer 8		// (key)player, (int)rem - Adds or removes a player to be able to interact with the HUD and any monsters you spawn
@@ -43,6 +42,8 @@
 //#define Root$refreshThong(targ) runMethod(targ, "#ROOT", RootMethod$refreshThong, [], TNN)
 //#define Root$setThongIni(on) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$setThongIni, [on], TNN)
 #define Root$getPlayers(cb) runMethod(llGetOwner(), "#ROOT", RootMethod$getPlayers, [], cb)
+#define Root$getPlayersFast(chan) runMethod(llGetOwner(), "#ROOT", RootMethod$getPlayers, [chan], TNN)
+
 #define Root$statusControls(conts) runMethod((string)LINK_ROOT, "#ROOT", RootMethod$statusControls, [conts], TNN)
 // Targets the sender
 #define Root$targetMe(targ, texture, force, team) runMethod(targ, "#ROOT", RootMethod$setTarget, [llGetKey(), texture, force, team], TNN)

@@ -1,3 +1,15 @@
+#ifndef __Bridge
+#define __Bridge
+
+// Index constants for hudTable$bridge
+#define hudTable$bridge$data db4$0						// Data is always put on index 0
+#define hudTable$bridge$userData db4$1					// UserData is always put on index 1
+
+#define hud$bridge$thongData() db4$fget(hudTable$bridge, hudTable$bridge$data)
+#define hud$bridge$userData() db4$fget(hudTable$bridge, hudTable$bridge$userData)
+
+
+
 #define BridgeMethod$refreshThong 1		// Update thong from database
 #define BridgeMethod$getToken 2			// Fetch a login token
 #define BridgeMethod$dialog 3			// (str)message
@@ -71,16 +83,11 @@
 */
 #define BridgeEvt$spells_change 2		// (arr)spells
 #define BridgeEvt$thong_initialized 3	// void - Thong data fetched
-#define BridgeEvt$userDataChanged 4		// (arr)userData, see class User.php fn.getOut
+#define BridgeEvt$userDataChanged 4		// got Bridge userdata LSD storage has changed - see class User.php fn.getOut
 #define BridgeEvt$goldChanged 5			// (int)gold
 #define BridgeEvt$partyIcons 6			// (arr)UUIDs - UUIDs of the party
 #define BridgeEvt$spawningLevel 7		// (str)level - "FINISHED" means you just completed a quest, but did not hand it in yet
 
-#define db4table$gotBridge "got Bridge"					// Bridge metadata is stored in this table
-	#define db4table$gotBridge$data 0						// Data is always put on index 0
-	#define db4table$gotBridge$userData 1					// UserData is always put on index 1
-#define db4table$gotBridgeSpells "gbSpells"				// Spells are stored here indexed 1-5
-#define db4table$gotBridgeSpellsTemp "gbSpellsTemp"		// (Written to by got SpellMan) Temp spells for spell overwrites
 
 	
 // table: gotBridge, row: data - Contains thong data except spells
@@ -88,7 +95,7 @@
 	#define BSS$LEVEL 1					// (int)lv
 	#define BSS$GCD 2					// (float)global cooldown in seconds
 	#define BSS$FLAGS 3					// (int) Thong flags (package flags, used only by got WeaponLoader, see TFLAGS in got WeaponLoader.lsl)
-#define Bridge$thongData() db4$get(db4table$gotBridge, db4table$gotBridge$data)
+
 	
 //table: gotBridge, row: userData - Contains user data
 	#define BSUD$FLAGS 0				// int Flags
@@ -113,8 +120,7 @@
 	#define BSUD$THONG_ROLE 16					// Role of thong. Use ROLE_* definition from _core
 	#define BSUD$THONG_SPEC 17					// Thong spec index
 	
-		
-#define Bridge$userData() db4$get(db4table$gotBridge, db4table$gotBridge$userData)
+
 
 // See Spell Data Readme.txt
 #define Bridge$buildSpellVisual(rezzables, complete_anim, complete_sound, particles, cast_anim, cast_sound) \
@@ -124,7 +130,7 @@
 	llList2Json(JSON_ARRAY, [texture, -1, wrapper, mana, cooldown, targets, range, casttime, fx, selfcastWrapper])
 
 
-// table: db4table$gotBridgeSpells, column definitions
+// hudTable$bridgeSpells row definition
 	#define BSSAA$texture 0
 	#define BSSAA$id 1
 	#define BSSAA$fxwrapper 2
@@ -140,4 +146,5 @@
 	#define BSSAA$selfcast 9
 	#define BSSAA$charges 10
 	#define BSSAA$stance 11
-	
+
+#endif	

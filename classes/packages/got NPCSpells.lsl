@@ -556,15 +556,14 @@ default {
     
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		FXFLAGS = l2i(data, FXCUpd$FLAGS); \
+		FXFLAGS = (int)fx$getDurEffect(fxf$SET_FLAG); \
 		if( RUNTIME_FLAGS & Monster$RF_IS_BOSS ){ \
 			FXFLAGS = FXFLAGS&~(fx$F_STUNNED|fx$F_SILENCED); \
 		} \
-        fxModDmgDone = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
-        fxCTM = i2f(l2f(data, FXCUpd$CASTTIME));  \
-        fxCDM = i2f(l2f(data, FXCUpd$COOLDOWN)); \
-        if(BFL&BFL_CASTING && FXFLAGS&fx$NOCAST) \
+		fxModDmgDone = (float)j(fx$getDurEffect(fxf$DAMAGE_DONE_MULTI), 0); \
+        fxCTM = (float)fx$getDurEffect(fxf$CASTTIME_MULTI);  \
+        fxCDM = (float)fx$getDurEffect(fxf$COOLDOWN_MULTI); \
+        if( BFL&BFL_CASTING && FXFLAGS&fx$NOCAST ) \
             endCast(FALSE, TRUE); \
 	} \
 	else if(nr == TASK_MONSTER_SETTINGS)\
@@ -599,6 +598,7 @@ default {
 		)
 		cooldowns = [];
 	
+		// Todo: LSD
 		CACHE = PARAMS;
 		integer i;
 		for( ; i<llGetListLength(CACHE); ++i ){
@@ -620,11 +620,12 @@ default {
 	
 		list_shift_each(PARAMS, id,
 			
-			ptUnset("CD_"+id);
-			integer n = list2index((list)id);	// Convert to integer if it is a string name
+			integer idx = list2index((list)id);
+			ptUnset("CD_"+(str)idx);
+			integer n = list2index((list)idx);	// Convert to integer if it is a string name
 			
 			if( llListFindList(DISABLED, (list)n) == -1 )
-				DISABLED += (int)id;
+				DISABLED += idx;
 				
 		)
 		
@@ -632,16 +633,29 @@ default {
 	
 	else if( METHOD == NPCSpellsMethod$triggerCooldown ){
 	
-		list_shift_each(PARAMS, id,
+		integer i;
+		for(; i < count(PARAMS); ++i ){
 			
-			if( llListFindList(cooldowns, [(int)id]) == -1 )
-				cooldowns+= (int)id;
+			float recasttime;
+			string id = l2s(PARAMS, i);
+			if( llJsonValueType(id, []) == JSON_ARRAY ){
+				recasttime = (float)j(id, 1);
+				id = j(id, 0);
+			}
+			
+			integer n = list2index((list)id);
+			
+			if( recasttime <= 0 ){
+				list d = llJson2List(llList2String(CACHE, (int)n));
+				recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
+			}
+			if( llListFindList(cooldowns, (list)n) == -1 )
+				cooldowns+= (int)n;
 				
-			list d = llJson2List(llList2String(CACHE, (int)id));
-			float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME)*fxCDM;
-			ptSet("CD_"+id, recasttime, FALSE);
-				
-		)
+			
+			ptSet("CD_"+(str)n, recasttime, FALSE);
+		
+		}
 		
 	}
 	

@@ -6,7 +6,6 @@
 list CACHE;                     // [(float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (int)wrapperflags]
 int GCD_FREE;    				// Spells that are freed from global cooldown        
 
-integer TEAM = TEAM_PC;
 
 #define CSTRIDE 6
 float spellCost( list data, integer index ){
@@ -75,18 +74,14 @@ list sp_cdm = [1,1,1,1,1];	// Cooldown
 
 
 // Cache
-int STATUS_FLAGS;			// Flags from status
 int SPELL_WRAPPER_FLAGS;	// Casted spell's wrapper flags
 int SPELL_CASTED;			// -1 to 3 of casted spell
 int SPF;					// Casted spell's target flags
 
 list SPELL_TARGS;				// List of targets to cast on
-key CACHE_ROOT_TARGET;			// Cache of the player's current target
-integer CACHE_ROOT_TARGET_TEAM;	// Team of target
 integer SPELL_ON_TARG = -1;		// A spell to queue when target is changed
 float CACHE_CASTTIME = 0;
 integer QUEUE_SPELL = -1;		// Spell to cast after finishing the current cast
-float CACHE_MANA;
 
 // Calculated on spell start
 float RANGE_ADD;
@@ -139,7 +134,6 @@ bool visionCheck( list data ){
     float h = llFabs(b.z/2); \
 */
 
-#define recacheTarget() CACHE_ROOT_TARGET = l2k(data,0); CACHE_ROOT_TARGET_TEAM = l2i(data,2)
 // Default event handler
 onEvt(string script, integer evt, list data){
 
@@ -180,46 +174,18 @@ onEvt(string script, integer evt, list data){
         }
 
 		// Update target cache
-		else if(evt == RootEvt$targ){
-			
-			recacheTarget();
-			if( SPELL_ON_TARG != -1 )
-				startSpell(SPELL_ON_TARG);
-		
+		else if( evt == RootEvt$targ && SPELL_ON_TARG != -1 ){
+			startSpell(SPELL_ON_TARG);
 		}
 
     }
-	
-	else if(script == "got FXCompiler" && evt == FXCEvt$spellMultipliers){
-		sp_mcm = llJson2List(llList2String(data,1));
-		sp_ctm = llJson2List(llList2String(data,2));
-		sp_cdm = llJson2List(llList2String(data,3));
-	}
-
-	// Cache status flags
-	else if(script == "got Status"){
-		if(evt == StatusEvt$flags)
-			STATUS_FLAGS = llList2Integer(data,0);
-		/*
-		else if( evt == StatusEvt$dead ){
-			COOLDOWNS = COOLDOWNS_DEFAULT;
-			pushCooldowns();
-		}
-		*/
-		else if(evt == StatusEvt$resources){
-			CACHE_MANA = llList2Float(data, 2);
-		}
-		else if(evt == StatusEvt$team){
-			TEAM = l2i(data,0);
-			recacheTarget();
-		}
-	}
 }
 
 
 
 // This attempts to start casting a spell
 integer castSpell(integer nr){
+
 
 	if( SPELL_ON_TARG == -1 && nr != QUEUE_SPELL )
 		llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", .5);
@@ -231,12 +197,12 @@ integer castSpell(integer nr){
     list data = nrToData(nr);
     // Grab spell flags
 	SPF = spellTargets(data);
-	
+	int TEAM = hud$status$team();
 
 	// BEFORE QUEUE
 	// Check if I have enough mana BEFORE allowing a queue
     float cost = spellCost(data, nr);
-    if( cost > CACHE_MANA ){
+    if( cost > hud$status$mana() ){
         A$(ASpellMan$errInsufficientMana);
         return FALSE;
     }
@@ -290,13 +256,17 @@ integer castSpell(integer nr){
 	else{
 	
 		// Get key of our current target
-		key targ = CACHE_ROOT_TARGET;
+		key targ = hud$root$targ();
+		parseTeam(targ, team)
+		
+		
+		
 		// Check if we have a target
 		integer noTarg = targ == "";
 		// Shorten self target to ""
 		if( targ == llGetOwner() || targ == llGetKey() )
 			targ = ""; 
-
+			
 		if( 
 			targ != "" && // target exists
 			(
@@ -309,12 +279,12 @@ integer castSpell(integer nr){
 				// Friendly target allowed
 				(
 					SPF&TARG_PC && 
-					CACHE_ROOT_TARGET_TEAM == TEAM
+					team == TEAM
 				) ||
 				// Enemy target allowed
 				(
 					SPF&TARG_NPC &&
-					CACHE_ROOT_TARGET_TEAM != TEAM
+					team != TEAM
 				)
 			){
 				SPELL_TARGS = [targ];
@@ -333,7 +303,7 @@ integer castSpell(integer nr){
 				) ||
 				(
 					!focusIsCaster && SPF&TARG_PC &&			// Only friends can be focused 
-					(CACHE_ROOT_TARGET_TEAM != TEAM || noTarg)	// Friendly target is ALWAYS focus, we can use the target for that instead
+					(team != TEAM || noTarg)	// Friendly target is ALWAYS focus, we can use the target for that instead
 				)
 			)SPELL_TARGS = [TARG_FOCUS];
 		}
@@ -367,7 +337,8 @@ integer castSpell(integer nr){
 	
     
 	// If I'm raped or dead
-    if(STATUS_FLAGS&StatusFlags$noCast || (SPF&SpellMan$NO_SWIM && STATUS_FLAGS&StatusFlag$swimming)){
+	integer sf = hud$status$flags();
+    if( sf&StatusFlags$noCast || (SPF&SpellMan$NO_SWIM && sf&StatusFlag$swimming) ){
         A$(ASpellMan$errCantCastNow);
         return FALSE;
     }
@@ -624,20 +595,20 @@ timerEvent(string id, string data){
 	}
 }
 
-
-
 default{
 
     // Timer event
     timer(){multiTimer([]);}
-    
+	    
     #define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		ctm = i2f(l2f(data, FXCUpd$CASTTIME)); \
-        cdm = i2f(l2f(data, FXCUpd$COOLDOWN)); \
-        mcm = i2f(l2f(data, FXCUpd$MANACOST)); \
-        fxflags = llList2Integer(data, FXCUpd$FLAGS); \
+		ctm = (float)fx$getDurEffect(fxf$CASTTIME_MULTI); \
+        cdm = (float)fx$getDurEffect(fxf$COOLDOWN_MULTI); \
+        mcm = (float)fx$getDurEffect(fxf$MANA_COST_MULTI); \
+        fxflags = (int)fx$getDurEffect(fxf$SET_FLAG); \
+		sp_mcm = llJson2List(fx$getDurEffect(fxf$SPELL_MANACOST_MULTI)); \
+		sp_ctm = llJson2List(fx$getDurEffect(fxf$SPELL_CASTTIME_MULTI)); \
+		sp_cdm = llJson2List(fx$getDurEffect(fxf$SPELL_COOLDOWN_MULTI)); \
         if(BFL&BFL_CASTING){ \
             if(fxflags&fx$NOCAST)SpellMan$interrupt(TRUE); \
             else if(fxflags&fx$F_PACIFIED && SPELL_WRAPPER_FLAGS&WF_DETRIMENTAL) \
@@ -647,13 +618,6 @@ default{
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
-    /*
-        Included in all these calls:
-        METHOD - (int)method  
-        PARAMS - (var)parameters 
-        SENDER_SCRIPT - (var)parameters
-        CB - The callback you specified when you sent a task 
-    */ 
     
     // Here's where you receive callbacks from running methods
     if(method$isCallback){
@@ -663,7 +627,7 @@ default{
     }
 	
 	// Allow owner for debug
-	if(METHOD == SpellManMethod$rebuildCache && method$byOwner){
+	if( METHOD == SpellManMethod$rebuildCache && method$byOwner ){
 		CACHE = [];
 		GCD_FREE = 0;
 		COOLDOWNS = COOLDOWNS_DEFAULT;
@@ -672,18 +636,18 @@ default{
 		//SpellAux$cache();
 		raiseEvent(SpellManEvt$recache, "");
 		
-		GCD = l2f(Bridge$thongData(), BSS$GCD);
+		GCD = (float)j(hud$bridge$thongData(), BSS$GCD);
 		if( GCD <= 0 )
 			GCD = 1.5;
 		
-		str tmpCh = db4$getTableChar(db4table$gotBridgeSpellsTemp);
-		str ch = db4$getTableChar(db4table$gotBridgeSpells);
+		str tmpCh = hudTable$spellmanSpellsTemp;
+		str ch = hudTable$bridgeSpells;
 		integer i;
 		for( ; i < 5; ++i ){
 			
-			list d = db4$getFast(tmpCh, i);
+			list d = llJson2List(db4$get(tmpCh, i));
 			if(d == [])
-				d = db4$getFast(ch, i);
+				d = llJson2List(db4$get(ch, i));
 			
 			
 			if( (integer)llList2Integer(d,BSSAA$target_flags)&SpellMan$NO_GCD )
@@ -812,14 +776,12 @@ default{
     if(METHOD == SpellManMethod$replace){
 		
 		int spell = l2i(PARAMS, 0)+1;	// (Argument uses -1 for ability 5)
-		// Add 1 extra to spell because DB4 starts at 0
-		list spdata = llJson2List(method_arg(1));
-		string ch = db4$getTableChar(db4table$gotBridgeSpellsTemp);
-		
-		if( spdata == [] )
-			db4$deleteFast(ch, spell);
+
+		if( method_arg(1) == "" )
+			db4$delete(hudTable$spellmanSpellsTemp, spell);
 		else
-			db4$replaceFast(ch, spell, spdata);
+			db4$replace(hudTable$spellmanSpellsTemp, spell, method_arg(1));
+			
 		if( l2i(PARAMS, 2) )
 			SpellMan$rebuildCache();
 			

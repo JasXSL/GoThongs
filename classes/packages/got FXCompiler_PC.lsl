@@ -1,435 +1,265 @@
-#define USE_DB4
-#include "got/_core.lsl"
-#include "../got FXCompiler_Shared.lsl"
-integer TEAM = TEAM_PC;
-
-
+// Head
+#if FXCOMPILER_SECTION == 0
 
 // ID tag is the first 8 characters of the UUID
 integer current_visual;
+list thongVis;	// PIX of current effects that include thongMan visuals
+
+#endif
 
 
-runEffect(integer pid, integer pflags, string pname, string fxobjs, int timesnap, key caster ){
+// Run
+#if FXCOMPILER_SECTION == 1
 
 	list resource_updates; // Updates for HP/Mana etc
+	int fxFlags = (int)fx$getDurEffect(fxf$SET_FLAG);
+
+	// Shared between PC/NPC, defined in got FXCompiler header file
+	dumpFxInstants()
 	
-	if(pflags&PF_DETRIMENTAL)
-		Status$refreshCombat();
+	else if( 
+		t == fx$DAMAGE_DURABILITY ||
+		t == fx$AROUSE ||
+		t == fx$PAIN ||
+		t == fx$MANA
+	){
 		
-	int stacks = getStacks(pid, FALSE);
-
+		int f = l2i(fx, 1);
+		int st = stacks;
+		if( f&SMAFlag$NO_STACK_MULTI )
+			st = 1;
+		if(t == fx$DAMAGE_DURABILITY)
+			resource_updates += SMBUR$buildDurability(-l2f(fx,0)*st, pname, f, l2f(fx, 2));
+		else if(t == fx$AROUSE)
+			resource_updates += SMBUR$buildArousal(l2f(fx,0)*st, pname, f);
+		else if(t == fx$PAIN)
+			resource_updates += SMBUR$buildPain(l2f(fx,0)*st, pname, f);
+		else if(t == fx$MANA)
+			resource_updates += SMBUR$buildMana(l2f(fx,0)*st, pname, f);
+			
+	}
 	
-	list fxs = llJson2List(fxobjs);
-    while(llGetListLength(fxs)){
-        list fx = llJson2List(llList2String(fxs,0));
-        fxs = llDeleteSubList(fxs,0,0);
-        
-		// Type
-		integer t = llList2Integer(fx, 0);
-		
-		
-		
-        // Shared between PC/NPC, defined in got FXCompiler header file
-		dumpFxInstants()
-		
-		else if( 
-			(t == fx$DAMAGE_DURABILITY ||
-			t == fx$AROUSE ||
-			t == fx$PAIN ||
-			t == fx$MANA)
-		){
-			int st = stacks;
-			if( l2i(fx,2)&SMAFlag$NO_STACK_MULTI )
-				st = 1;
-			if(t == fx$DAMAGE_DURABILITY){
-				resource_updates += SMBUR$buildDurability(-l2f(fx,1)*st, pname, l2i(fx,2), l2f(fx, 3));
-			}
-			else if(t == fx$AROUSE){
-				resource_updates += SMBUR$buildArousal(l2f(fx,1)*st, pname, l2i(fx,2));
-			}
-			else if(t == fx$PAIN)
-				resource_updates += SMBUR$buildPain(l2f(fx,1)*st, pname, l2i(fx,2));
-			else if(t == fx$MANA)
-				resource_updates += SMBUR$buildMana(l2f(fx,1)*st, pname, l2i(fx,2));
-		}
-        
-		else if( t == fx$CLASS_VIS )
-			gotClassAtt$spellStart(l2s(fx,1), l2f(fx, 2), l2s(fx, 3));
-		
-		else if( t == fx$REDUCE_CD ){
-			SpellMan$reduceCD(llDeleteSubList(fx, 0, 0));
-		}
-		
-		else if( t == fx$LOOK_AT || t == fx$ROT_TOWARDS ){
-
-			float r = l2f(fx, 1);
-			vector vec = (vector)l2s(fx, 1);
-			if( l2k(fx, 1) ){
-				vec = prPos(l2k(fx, 1));
-			}
-			
-			if( vec ){
-				vec = vec-llGetRootPosition();
-				vector fwd = vec * <0.0, 0.0, -llSin(PI_BY_TWO * 0.5), llCos(PI_BY_TWO * 0.5)>;
-				fwd.z = 0.0;
-				fwd = llVecNorm(fwd);
-				vector left = fwd * <0.0, 0.0, llSin(PI_BY_TWO * 0.5), llCos(PI_BY_TWO * 0.5)>;
-				rotation rot = llAxes2Rot(fwd, left, fwd % left);
-				vector euler = -llRot2Euler(rot);
-				r = euler.z;
-			}
-			llOwnerSay("@setrot:"+(string)r+"=force");
-			
-		}
-		
-		else if( t == fx$DAMAGE_ARMOR )
-			Status$damageArmor(LINK_ROOT, l2i(fx, 1));
-
-		else if(t == fx$PUSH){
-			vector z = llGetVel();
-			vector apply = (vector)l2s(fx, 1)*llGetMass();//-<0,0,z.z>;
-			llApplyImpulse(apply, FALSE);
-		}
-		
-		else if( t == fx$HITFX ){
-			
-			// This is handled in rootaux
-			str color = l2s(fx,1);
-			int flags = l2i(fx,2);
-			raiseEvent(FXCEvt$hitFX, mkarr((list)color + flags + caster));
-			
-        }
-        else if(t == fx$HUD_TEXT)
-            runMethod((str)LINK_ROOT, "got Alert", AlertMethod$freetext, llList2List(fx, 1, -1), TNN);
-        
-        else if(t == fx$ANIM && !l2i(fx, 3))
-			AnimHandler$anim(llList2String(fx, 1), llList2Integer(fx,2), 0, l2f(fx,4), l2i(fx, 3));
- 
-        else if(t == fx$INTERRUPT)
-            SpellMan$interrupt(l2i(fx, 1));
-        
-        else if(t == fx$RESET_COOLDOWNS){
-            SpellMan$resetCooldowns(l2i(fx,1), l2i(fx,2));
-		}
-        else if( t == fx$FORCE_SIT ){
-		
-            string out = "@sit:"+l2s(fx,1)+"=force";
-            if( !l2i(fx, 2) )
-				out+=",unsit=n";
-            llOwnerSay(out);
-			
-        }
-		else if(t == fx$PARTICLES){
-			ThongMan$particles(l2f(fx,1), llList2Integer(fx,2), llList2String(fx,3));
-		}
-		else if(t == fx$PULL && ~CACHE_FLAGS&fx$F_NO_PULL){
-		
-			vector pos = (vector)l2s(fx, 1);
-			if( pos == ZERO_VECTOR ){
-			
-				raiseEvent(FXCEvt$pullEnd, "");
-				llStopMoveToTarget();
-				
-			}else{
-			
-				raiseEvent(FXCEvt$pullStart, "");
-				llSleep(.1);
-				int fromSender = l2i(fx, 3);
-				float speed = l2f(fx, 2);
-				if( fromSender ){
-				
-					key c = caster;
-					if( prAttachPoint(c) )
-						c = llGetOwnerKey(c);
-					vector r = llGetRootPosition();
-					vector pp = prPos(c);
-					pp.z = 0;
-					rotation between = llRotBetween(<1,0,0>, llVecNorm(<r.x, r.y, 0>-pp));
-					pos *= between;
-					pos += r;
-					
-				}
-				
-				llMoveToTarget(pos, speed);
-			}
-			
-		}
-		else if(t == fx$SPAWN_VFX){
-			SpellFX$spawnInstant(mkarr(llDeleteSubList(fx,0,0)), llGetOwner());
-		}
-		else if(t == fx$ALERT)
-			Alert$freetext(LINK_ROOT, l2s(fx,1), llList2Integer(fx,2), llList2Integer(fx, 3));
-		else if(t == fx$CUBETASKS){
-			RLV$cubeTask(llDeleteSubList(fx, 0, 0));
-		}
-		else if( t == fx$REFRESH_SPRINT ){
-		
-			if( l2f(fx, 1) == 0.0 )
-				RLV$setSprintPercent(LINK_ROOT, 1);
-			else
-				RLV$addSprint(l2f(fx, 1));
-				
-		}
-		
-    }
+	else if( t == fx$CLASS_VIS ){
+		gotClassAtt$spellStart(l2s(fx,0), l2f(fx, 1), l2s(fx, 2));
+	}
 	
-    // Send updated hp/mana and stuff
-    if( resource_updates )
-		Status$batchUpdateResources(caster, resource_updates);
+	else if( t == fx$REDUCE_CD ){
+		SpellMan$reduceCD(fx);
+	}
 	
-}
+	else if( t == fx$LOOK_AT || t == fx$ROT_TOWARDS ){
 
-addEffect( integer pid, integer pflags, str pname, string fxobjs, int timesnap, float duration, key caster ){
-
-    integer stacks = getStacks(pid, FALSE);
-    list fxs = llJson2List(fxobjs);
-
-	@fxContinue;
-    while( fxs ){
-	
-        list fx = llJson2List(llList2String(fxs,0));
-        fxs = llDeleteSubList(fxs,0,0);
-        integer t = l2i(fx, 0);
-		fx = llDeleteSubList(fx, 0, 0);
-        
-        // These are defined in got FXCompiler header script, shared if statements such as flags and multipliers
-		dumpFxAddsShared()
-		
-		// These are PC specific
-		else if( t == fx$ANIM ){
-		
-			AnimHandler$anim(llList2String(fx, 0), llList2Integer(fx,1), 0, 0, l2i(fx,2));
-			jump fxContinue;
-			
-        }
-		else if( t == fx$THONG_VISUAL )
-			fx = (list)mkarr(fx);
-		
-		else if( t == fx$CLASS_VIS ){
-		
-            gotClassAtt$spellStart(l2s(fx,0), l2f(fx, 1), l2s(fx, 2));
-			jump fxContinue;
-			
-		}
-		else if( t == fx$ATTACH ){
-			
-			Rape$addFXAttachments(fx);
-			jump fxContinue;
-			
+		float r = l2f(fx, 0);
+		vector vec = (vector)l2s(fx, 0);
+		if( l2k(fx, 0) ){
+			vec = prPos(l2k(fx, 0));
 		}
 		
-		else if( t == fx$STANCE ){
-			WeaponLoader$fxStance(l2s(fx, 0), TRUE);
+		if( vec ){
+			vec = vec-llGetRootPosition();
+			vector fwd = vec * <0.0, 0.0, -llSin(PI_BY_TWO * 0.5), llCos(PI_BY_TWO * 0.5)>;
+			fwd.z = 0.0;
+			fwd = llVecNorm(fwd);
+			vector left = fwd * <0.0, 0.0, llSin(PI_BY_TWO * 0.5), llCos(PI_BY_TWO * 0.5)>;
+			rotation rot = llAxes2Rot(fwd, left, fwd % left);
+			vector euler = -llRot2Euler(rot);
+			r = euler.z;
 		}
+		llOwnerSay("@setrot:"+(string)r+"=force");
 		
-		
-		else if( t == fx$FORCE_SIT ){
-		
-            string out = "@sit:"+llList2String(fx, 0)+"=force";
-            if( llList2Integer(fx, 1) )
-				out+=",unsit=n";
-            llOwnerSay(out);
-			jump fxContinue;
-			
-        }
-		else if( t == fx$LTB ){
-			
-			BuffVis$add(pid, l2s(fx, 0), l2s(fx,1));
-			jump fxContinue;
-			
-		}
-		
-		// Default behavior
-		addDFX( pid, t, fx );
-
-    }
-
-}
-
-remEffect( integer pid, integer pflags, string pname, string fxobjs, integer timesnap, integer overwrite ){
-    
-	integer stacks = getStacks(pid, FALSE);
-    list fxs = llJson2List(fxobjs);
-
-	// Start by removing all dfxs
-	remDFX( pid );
+	}
 	
-	while(llGetListLength(fxs)){
+	else if( t == fx$DAMAGE_ARMOR )
+		Status$damageArmor(LINK_ROOT, l2i(fx, 0));
+
+	else if( t == fx$PUSH ){
+		vector z = llGetVel();
+		vector apply = (vector)l2s(fx, 0)*llGetMass();//-<0,0,z.z>;
+		llApplyImpulse(apply, FALSE);
+	}
 	
-        list fx = llJson2List(llList2String(fxs,0));
-        fxs = llDeleteSubList(fxs,0,0);
-        integer t = llList2Integer(fx, 0);
-		fx = llDeleteSubList(fx, 0, 0);
-        
-		// These are things that should not be run if the FX was overwritten, only if it was removed
-		if( !overwrite && t == fx$ANIM )
-			AnimHandler$anim(llList2String(fx, 0), !llList2Integer(fx,1), 0, 0, 0);
-		// Shared
-		dumpFxRemsShared()
+	else if( t == fx$HITFX ){
 		
-		// PC specific:
-		else if( t == fx$CLASS_VIS )
-			gotClassAtt$spellEnd(l2s(fx,0), -1, 0);
-		else if( t == fx$FORCE_SIT )
-			llOwnerSay("@unsit=y,unsit=force");
-		else if( t == fx$PULL ){
+		// This is handled in rootaux
+		str color = l2s(fx,0);
+		int flags = l2i(fx,1);
+		raiseEvent(FXCEvt$hitFX, mkarr((list)color + flags + caster));
+		
+	}
+	else if( t == fx$HUD_TEXT )
+		runMethod((str)LINK_ROOT, "got Alert", AlertMethod$freetext, fx, TNN);
+	
+	else if( t == fx$ANIM && !l2i(fx, 2) )
+		AnimHandler$anim(l2s(fx, 0), l2i(fx,1), 0, l2f(fx,3), l2i(fx, 2));
+
+	else if( t == fx$INTERRUPT )
+		SpellMan$interrupt(l2i(fx, 0));
+	
+	else if( t == fx$RESET_COOLDOWNS ){
+		SpellMan$resetCooldowns(l2i(fx,0), l2i(fx,1));
+	}
+	else if( t == fx$FORCE_SIT ){
+	
+		string out = "@sit:"+l2s(fx,0)+"=force";
+		if( !l2i(fx, 1) )
+			out+=",unsit=n";
+		llOwnerSay(out);
+		
+	}
+	else if( t == fx$PARTICLES ){
+		ThongMan$particles(l2f(fx,0), llList2Integer(fx,1), llList2String(fx,2));
+	}
+	else if( t == fx$PULL && ~fxFlags&fx$F_NO_PULL ){
+	
+		vector pos = (vector)l2s(fx, 0);
+		if( pos == ZERO_VECTOR ){
+		
 			raiseEvent(FXCEvt$pullEnd, "");
 			llStopMoveToTarget();
-		}
-		else if( t == fx$STANCE ){
-			WeaponLoader$fxStance(l2s(fx, 0), FALSE);
-		}
-		else if(t == fx$LTB)
-			BuffVis$rem(pid);
-		else if( t == fx$ATTACH )
-			Rape$remFXAttachments(fx);
-
-    }
-
-}
-
-// Compiles a list of SPELL_* for indexed spells, IE. Not spell_dmg_taken_multi
-list spellModCompile(list input){
-
-	integer i;
-	list out = [1,1,1,1,1];		// Needs to match nr spells
-	for( ; i<llGetListLength(input); i+=3 ){
-	
-        integer n = llList2Integer(input, i+1);	// nr Index
-		float cur = llList2Float(out, n);					// current at index
-		integer stacks = getStacks(dPid(l2i(input, i)), FALSE);
-		cur *= (llList2Float(input, i+2)*stacks+1);
-		out = llListReplaceList(out, [cur], n, n);
-		
-    }
-	return out;
-	
-}
-
-string cache_spellmods;
-
-updateGame(){
-
-
-    integer visual = dPid(llList2Integer(getDFXSlice(fx$THONG_VISUAL, 1), -2));
-    if( current_visual != visual ){
-        
-		current_visual = visual;
-        ThongMan$fxVisual(llJson2List(llList2String(getDFXSlice( fx$THONG_VISUAL, 1), -1)));
-		
-    }
-	integer team = -1;
-	list teamMod = getDFXSlice( fx$SET_TEAM, 1);
-	if( teamMod )
-		team = l2i(teamMod, -1);
-		
-	llSetBuoyancy(l2f(getDFXSlice( fx$GRAVITY, 1), -1));
-	
-    // Compile lists of spell specific modifiers
-    list spdmtm; // [(str)spellName, (int)playerID, (float)dmgmod]
-	list data = getDFXSlice( fx$SPELL_DMG_TAKEN_MOD, 3 );
-	integer i;
-    for( ; i<count(data); i+=4 ){
-	
-		// First value is a bitwise combination, see DFX at FXCompiler_Shared
-		int stacks = getStacks(dPid(l2i(data, i)), FALSE);
-		// #3 is an integerlized version of the caster
-		int caster = l2i(data, i+3);
-		// #1 is the name of the spell
-        string n = llList2String(data, i+1);
-		// #2 is the float modifier
-		
-        integer pos = llListFindList(spdmtm, [n, caster]); // find spellName and caster, caster * is 0
-        if(~pos)
-			spdmtm = llListReplaceList(spdmtm, [llList2Float(spdmtm, pos+2)*(1+llList2Float(data, i+2))*stacks], pos+2, pos+2);
-        else 
-			spdmtm+=[n, caster, 1+llList2Float(data, i+2)*stacks];
 			
-    }
-
-	llMessageLinked(LINK_ROOT, TASK_SPELL_MODS, mkarr((list)
-			mkarr(spdmtm) + 
-			mkarr(cMod(fx$DAMAGE_TAKEN_MULTI)) + 
-			mkarr(cMod(fx$HEALING_TAKEN_MULTI))
-		),
-		""
-	);
+		}else{
+		
+			raiseEvent(FXCEvt$pullStart, "");
+			llSleep(.1);
+			int fromSender = l2i(fx, 2);
+			float speed = l2f(fx, 1);
+			if( fromSender ){
+			
+				key c = caster;
+				if( prAttachPoint(c) )
+					c = llGetOwnerKey(c);
+				vector r = llGetRootPosition();
+				vector pp = prPos(c);
+				pp.z = 0;
+				rotation between = llRotBetween(<1,0,0>, llVecNorm(<r.x, r.y, 0>-pp));
+				pos *= between;
+				pos += r;
+				
+			}
+			
+			llMoveToTarget(pos, speed);
+		}
+		
+	}
+	else if( t == fx$SPAWN_VFX ){
+		SpellFX$spawnInstant(mkarr(fx), llGetOwner());
+	}
+	else if( t == fx$ALERT )
+		Alert$freetext(LINK_ROOT, l2s(fx,0), l2i(fx,1), l2i(fx, 2));
+	else if( t == fx$CUBETASKS ){
+		RLV$cubeTask(fx);
+	}
+	else if( t == fx$REFRESH_SPRINT ){
 	
-	data = [];
+		if( l2f(fx, 0) == 0.0 )
+			RLV$setSprintPercent(LINK_ROOT, 1);
+		else
+			RLV$addSprint(l2f(fx, 0));
+			
+	}
+		
+    // Send updated hp/mana and stuff
+    if( resource_updates ){
+		Status$batchUpdateResources(caster, resource_updates);
+	}
 
-	llMessageLinked(LINK_THIS, TASK_OFFENSIVE_MODS, mkarr(([
-		mkarr(cMod(fx$DAMAGE_DONE_MULTI))
-	])), "");
+#endif	
+
+
+// Add
+#if FXCOMPILER_SECTION == 2
+
+    
+
 	
-	// these work off of spell index
-	string out = llList2Json(JSON_ARRAY, [
-		mkarr(spellModCompile(getDFXSlice( fx$SPELL_DMG_DONE_MOD, 2 ))),
-		mkarr(spellModCompile(getDFXSlice( fx$SPELL_MANACOST_MULTI, 2 ))),
-		mkarr(spellModCompile(getDFXSlice( fx$SPELL_CASTTIME_MULTI, 2 ))),
-		mkarr(spellModCompile(getDFXSlice( fx$SPELL_COOLDOWN_MULTI, 2 )))
-	]);
-
-	if( out != cache_spellmods ){
-
-		cache_spellmods = out;
-		raiseEvent(FXCEvt$spellMultipliers, out);
+	// These are PC specific
+	if( t == fx$ANIM ){
+		AnimHandler$anim(l2s(fx, 0), l2i(fx,1), 0, 0, l2i(fx,2));
+	}
+	else if( t == fx$THONG_VISUAL ){
+		
+		integer pos = llListFindList(thongVis, (list)pix);
+		if( pos == -1 ){
+		
+			thongVis += pix;
+			ThongMan$fxVisual(fx);
+			
+		}
 		
 	}
 	
-	list conv;
-	data = getDFXSlice( fx$CONVERSION, 1);
-	for( i=0; i<count(data); i+=2 )
-		conv+= llJson2List(l2s(data, i+1));
-	
-	integer hlt;
-	data = getDFXSlice( fx$SPELL_HIGHLIGHT, 2);
-	for( i=0; i<count(data); i+=3 ){
-		if( l2i(data, i+2) <= getStacks(dPid(l2i(data, i)), TRUE) )
-			hlt = hlt | (int)llPow(2,llList2Integer(data, i+1));
+	else if( t == fx$CLASS_VIS ){
+		gotClassAtt$spellStart(l2s(fx,0), l2f(fx, 1), l2s(fx, 2));
 	}
+	else if( t == fx$ATTACH ){
+		Rape$addFXAttachments(fx);
+	}
+	else if( t == fx$STANCE ){
+		WeaponLoader$fxStance(l2s(fx, 0), TRUE);
+	}
+	else if( t == fx$FORCE_SIT ){
+	
+		string out = "@sit:"+l2s(fx, 0)+"=force";
+		if( l2i(fx, 1) )
+			out+=",unsit=n";
+		llOwnerSay(out);
 		
-	// These are the FXCUpd$ values
-	Passives$setActive(([ 
-		CACHE_FLAGS, 		// 00 FLAGS
-		stat( fx$MANA_REGEN_MULTI ), 		// 01 MANA_REGEN
-		100, 			// 02 DAMAGE_DONE (handled in TASK_OFFENSIVE_MODS)
-		100, 			// 03 DAMAGE_TAKEN (handled in TASK_SPELL_MODS)
-		statInverse( fx$DODGE ), 		// 04 DODGE Inverted (chance of FAILING a dodge)
-		stat( fx$CASTTIME_MULTI ), 			// 05 CASTTIME
-		stat( fx$COOLDOWN_MULTI ), 			// 06 COOLDOWN
-		stat( fx$MANA_COST_MULTI ), 			// 07 MANA_COST
-		stat( fx$CRIT_ADD ), 			// 08 CRIT
-		stat( fx$PAIN_MULTI ), 			// 09 PAIN_MULTI
-		stat( fx$AROUSAL_MULTI ),			// 10 AROUSAL_MULTI
-		// These don't use f2i for now since these have no active effects, but if you add active effects at some point you should f2i them here and then i2f them in got Passives
-		statAdditive( fx$HP_ADD ),		// 11 HP_ADD
-		stat( fx$HP_MULTI ),	// 12 HP_MULTI
-		0,					// 13 MANA_ADD
-		stat( fx$MANA_MULTI ),					// 14 MANA_MULTI
-		0,					// 15 AROUSAL_ADD
-		stat( fx$MAX_AROUSAL_MULTI ),					// 16 AROUSAL_MULTI
-		0,					// 17 PAIN_ADD
-		stat( fx$MAX_PAIN_MULTI),					// 18 PAIN_MULTI
-		1,					// 19 HP_REGEN
-		1,					// 20 PAIN_REGEN
-		1,					// 21 AROUSAL_REGEN
-		hlt,				// 22 HIGHLIGHT_FLAGS
-		100,			// 23 Healing taken mod
-		stat( fx$MOVE_SPEED ),				// 24 NPC: Movespeed. PC: Sprint regen.
-		stat( fx$HEALING_DONE_MULTI ),			// 25 Healing done mod
-		team,				// 26 Team override
-		stat( fx$BEFUDDLE ),		// 27 Befuddle
-		mkarr(conv),		// 28 Conversions
-		100,				// 29 Sprint fade (f2i)
-		100,				// 30 Backstab mul (f2i)
-		100,					// 31 Swim speed (f2i)
-		f2i(l2f(getDFXSlice( fx$FOV, 1), -1)), // 32, FoV (f2i)
-		stat( fx$PROC_BEN ),	// Beneficial proc chance
-		stat( fx$PROC_DET ),		// Detrimental proc chance
-		stat( fx$HP_ARMOR_DMG_MULTI ),
-		stat( fx$ARMOR_DMG_MULTI ),
-		stat( fx$QTE_MOD ),
-		stat( fx$COMBAT_HP_REGEN )
-	])); 
-}
-#include "got/classes/packages/got FXCompiler.lsl"
+	}
+	else if( t == fx$LTB ){
+		// Convert table back to an int
+		BuffVis$add(llOrd(table, 0), l2s(fx, 0), l2s(fx,1));
+	}
+
+
+#endif
+
+// Delete
+#if FXCOMPILER_SECTION == 3
+
+// Note: duration cannot be relied on here
+	
+	if( t == fx$ANIM ){
+		AnimHandler$anim(l2s(fx, 0), !l2i(fx,1), 0, 0, 0);
+	}
+	else if( t == fx$CLASS_VIS ){
+		gotClassAtt$spellEnd(l2s(fx,0), -1, 0);
+	}
+	else if( t == fx$FORCE_SIT ){
+		llOwnerSay("@unsit=y,unsit=force");
+	}
+	else if( t == fx$PULL ){
+		raiseEvent(FXCEvt$pullEnd, "");
+		llStopMoveToTarget();
+	}
+	else if( t == fx$STANCE ){
+		WeaponLoader$fxStance(l2s(fx, 0), FALSE);
+	}
+	else if(t == fx$LTB){
+		BuffVis$rem(llOrd(table, 0));
+	}
+	else if( t == fx$ATTACH )
+		Rape$remFXAttachments(fx);
+	else if( t == fx$THONG_VISUAL ){
+		
+		integer pos = llListFindList(thongVis, (list)pix);
+		if( ~pos )
+			thongVis = llDeleteSubList(thongVis, pos, pos);
+		list set;
+		if( count(thongVis) ){
+			// Need to get fx
+			str tc = getFxPackageTableByIndex(l2i(thongVis, -1));
+			list sub = llJson2List(db4$fget(table, fxPackage$FXOBJS));
+			integer _s;
+			for(; _s < count(sub); ++_s ){
+				list _sd = llJson2List(l2s(sub, _s));
+				if( l2i(_sd, 0) == fx$THONG_VISUAL )
+					set = llDeleteSubList(_sd, 0, 0);
+			}
+		}
+		ThongMan$fxVisual(set);
+		
+	}
+	
+#endif
+
+

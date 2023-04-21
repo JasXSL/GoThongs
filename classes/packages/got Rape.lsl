@@ -13,8 +13,6 @@ list RAPE_ANIMS;
 list RAPE_ATTACHMENTS;
 list RAPE_REZZED;
 
-integer STATUS_FLAGS;
-
 // llListFindList for name works in this because it's the only string type
 list FX_ATTACHMENTS;		// [(str)name, (key)id, (int)nr_attachments]	
 
@@ -67,10 +65,6 @@ onEvt(string script, integer evt, list data){
 		updateFxAttachments();
 		
 	}
-
-	if( script == "got Status" && evt == StatusEvt$flags )
-		STATUS_FLAGS = llList2Integer(data,0);
-	
 	
 }
 
@@ -119,7 +113,7 @@ default {
         if( METHOD == RapeMethod$start && count(PARAMS) > 1 ){
 		
 
-            if( BFL&BFL_RAPE_STARTED || ~STATUS_FLAGS&StatusFlag$dead )
+            if( BFL&BFL_RAPE_STARTED || ~hud$status$flags()&StatusFlag$dead )
 				return;
             
             BFL = BFL|BFL_RAPE_STARTED;

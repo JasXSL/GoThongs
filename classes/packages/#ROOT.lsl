@@ -78,6 +78,8 @@ timerEvent(string id, string data){
 		setTarget("", "", TRUE, 0);
 		RLV$clearCamera((string)LINK_THIS);
 		Level$bind(llGetOwner());
+		sendHUDs();
+		setFocus(llGetKey());	// make sure that GUI knows we are targeting ourselves
 		
 	}
 	
@@ -116,7 +118,8 @@ timerEvent(string id, string data){
 
 setFocus( key id ){
 	TARG_FOCUS = id;
-	llLinksetDataWrite(db4table$ext$focus, (str)TARG_FOCUS);
+	
+	db4$freplace(hudTable$root, hudTable$root$focus, (str)TARG_FOCUS);
 	raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
 }
 
@@ -174,8 +177,8 @@ integer setTarget(key t, key icon, integer force, integer team){
 		
 	}
 
-	llLinksetDataWrite(db4table$ext$target, (str)TARG);
-    raiseEvent(RootEvt$targ, mkarr(([t, icon, team])));		
+	db4$freplace(hudTable$root, hudTable$root$targ, (str)TARG);
+    raiseEvent(RootEvt$targ, mkarr((list)t + icon + team));		
 	
 	// Check if target still exists
 	if(t)
@@ -207,9 +210,10 @@ savePlayers(){
 	list players = getPlayers();
 	integer i;
 	for(; i < count(players); ++i )
-		llLinksetDataWrite(db4table$ext$players+(str)i, l2s(players, i));
-	llLinksetDataWrite(db4table$ext$root$nrPlayers, (str)count(players));
-	raiseEvent(RootEvt$players, "");
+		db4$replace(hudTable$rootPlayers, i, l2s(players, i));
+	db4$setIndex(hudTable$rootPlayers, count(players));
+	
+	raiseEvent(RootEvt$players, mkarr(players));	// Needed for mod backward compatibility
 	
 }
 
@@ -217,10 +221,11 @@ sendHUDs(){
 
 	integer i; integer num = count(getPlayers());
 	for(; i < num; ++i )
-		llLinksetDataWrite(db4table$ext$huds+(str)i, l2s(COOP_HUDS, i));
-		
+		db4$replace(hudTable$rootHuds, i, l2s(COOP_HUDS, i));
+	db4$setIndex(hudTable$rootHuds, num);
+	
 	runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, (list)llGetKey(), 0,0), TNN);
-	raiseEvent(RootEvt$coop_hud, "");	// Todo: Have scripts pull HUDs from db instead of here
+	raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS)); // Needed for mod backward compatibility
 	
 }
 
@@ -308,15 +313,7 @@ default{
 		llOwnerSay("Media cleared");
 		*/
 		
-		// Create schema before resetting the other scripts
-		db4$createTableLocalNoIndex(db4table$gotBridge);
-		db4$createTableLocalNoIndex(db4table$gotBridgeSpells);
-		db4$createTableLocalNoIndex(db4table$gotBridgeSpellsTemp);		// Handled by one of the spell scripts
-		db4$createTableLocal(db4table$npcNear);					// handled by got Evts
-		db4$createTableLocalNoIndex(db4table$spellIcons);				// Handled by got Evts, used in GUI
-		db4$createTableLocalNoIndex(db4table$status);					// Handled by got Status
-		
-		db4$insert(db4table$npcNear, 0 + llGetKey());		// Us being first is needed to save memory in smart heal. See got Evts for more.
+		db4$insert(hudTable$evtsNpcNear, mkarr((list)0 + llGetKey()));		// Us being first is needed to save memory in smart heal. See got Evts for more.
 				
 		Root$attached();
 		
@@ -617,9 +614,20 @@ default{
 			
     }
     
-    if(METHOD == RootMethod$getPlayers)
-		CB_DATA = [mkarr(getPlayers()), mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0))];
-	
+    if(METHOD == RootMethod$getPlayers){
+		
+		string players = mkarr(getPlayers());
+		string huds = mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0));
+		integer chan = l2i(PARAMS, 0);
+		if( chan ){
+			
+			llRegionSayTo(id, chan, mkarr((list)players + huds));
+			return;
+			
+		}
+		CB_DATA = [players, huds];
+		
+	}
 	
 	else if(METHOD == RootMethod$attached){
 		

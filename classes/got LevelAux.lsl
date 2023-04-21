@@ -17,26 +17,26 @@
 #define LevelAuxMethod$backup 16
 
 #define LevelAux$ping(callback) runOmniMethod("got LevelAux", LevelAuxMethod$ping, [], callback)
-#define LevelAux$save(group) runOmniMethod("got LevelAux", LevelAuxMethod$save, [TRUE, group], TNN)
+#define LevelAux$save(group) runOmniMethod("got LevelAux", LevelAuxMethod$save, (list)TRUE + (group), TNN)
 #define LevelAux$purge() runOmniMethod("got LevelAux", LevelAuxMethod$purge, [], TNN)
 #define LevelAux$stats() runOmniMethod("got LevelAux", LevelAuxMethod$stats, [], TNN)
-#define LevelAux$setData(index, data) runOmniMethod("got LevelAux", LevelAuxMethod$setData, [index, data], TNN)
-#define LevelAux$testSpawn(isHUD, id, live) runOmniMethod("got LevelAux", LevelAuxMethod$testSpawn, [isHUD, id, live], TNN)
+#define LevelAux$setData(index, data) runOmniMethod("got LevelAux", LevelAuxMethod$setData, (list)index + data, TNN)
+#define LevelAux$testSpawn(isHUD, id, live) runOmniMethod("got LevelAux", LevelAuxMethod$testSpawn, (list)(isHUD) + (id) + (live), TNN)
 #define LevelAux$list(isHUD) runOmniMethod("got LevelAux", LevelAuxMethod$list, [isHUD], TNN)
-#define LevelAux$remove(isHUD, id) runOmniMethod("got LevelAux", LevelAuxMethod$remove, [isHUD, id], TNN)
-#define LevelAux$assetVar(isHUD, id, index, val) runOmniMethod("got LevelAux", LevelAuxMethod$assetVar, [isHUD, id, index, val], TNN)
+#define LevelAux$remove(isHUD, id) runOmniMethod("got LevelAux", LevelAuxMethod$remove, (list)isHUD + id, TNN)
+#define LevelAux$assetVar(isHUD, id, index, val) runOmniMethod("got LevelAux", LevelAuxMethod$assetVar, (list)(isHUD) + (id) + (index) + (val), TNN)
 #define LevelAux$getOffset(pos, cb) runOmniMethod("got LevelAux", LevelAuxMethod$getOffset, [pos], cb)
-#define LevelAux$restoreFromBackup(targ, api_key, token) runMethod(targ, "got LevelAux", LevelAuxMethod$restoreFromBackup, [api_key, token], TNN)
+#define LevelAux$restoreFromBackup(targ, api_key, token) runMethod(targ, "got LevelAux", LevelAuxMethod$restoreFromBackup, (list)(api_key) + (token), TNN)
 #define LevelAux$backup(targ, api_key, token) runMethod(targ, "got LevelAux", LevelAuxMethod$backup, [api_key, token], TNN)
 
-#define LevelAux$spawnAsset(asset) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, llGetRootPosition()+llRot2Fwd(llGetRot()), 0, TRUE], TNN)
-#define LevelAux$spawnNPC(asset, rot) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, llGetRootPosition()+llRot2Fwd(llGetRot()), rot, TRUE], TNN)
-#define LevelAux$spawnLive(asset, pos, rot) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [asset, pos, rot, FALSE], TNN)
-#define LevelAux$spawnLiveTarg(targ, asset, pos, rot) runMethod((string)(targ), "got LevelAux", LevelAuxMethod$spawn, [asset, pos, rot, FALSE], TNN)
+#define LevelAux$spawnAsset(asset) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, (list)(asset) + (llGetRootPosition()+llRot2Fwd(llGetRot())) + 0 + TRUE, TNN)
+#define LevelAux$spawnNPC(asset, rot) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, (list)(asset) + (llGetRootPosition()+llRot2Fwd(llGetRot())) + rot + TRUE, TNN)
+#define LevelAux$spawnLive(asset, pos, rot) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, (list)(asset) + (pos) + (rot) + FALSE, TNN)
+#define LevelAux$spawnLiveTarg(targ, asset, pos, rot) runMethod((string)(targ), "got LevelAux", LevelAuxMethod$spawn, (list)(asset) + (pos) + (rot) + FALSE, TNN)
 // SAYs
-#define LevelAux$spawn(prim, pos, rot, debug, description, group) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, [prim, pos, rot, debug, description, group], TNN)
+#define LevelAux$spawn(prim, pos, rot, debug, description, group) runOmniMethod("got LevelAux", LevelAuxMethod$spawn, (list)(prim) + (pos) + (rot) + (debug) + (description) + (group), TNN)
 // Custom target
-#define LevelAux$spawnTarg(targ, prim, pos, rot, debug, description, group) runMethod((str)targ, "got LevelAux", LevelAuxMethod$spawn, [prim, pos, rot, debug, description, group], TNN)
+#define LevelAux$spawnTarg(targ, prim, pos, rot, debug, description, group) runMethod((str)targ, "got LevelAux", LevelAuxMethod$spawn, (list)(prim) + (pos) + (rot) + (debug) + (description) + (group), TNN)
 
 
 

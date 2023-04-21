@@ -6,7 +6,6 @@
 
 list _C;		// Math constants
 
-integer TEAM = TEAM_PC;
 key HUD_TARG;
 
 // Contains the fx data
@@ -20,42 +19,25 @@ list CACHE;
 
 #define nrToIndex(nr) nr*CSTRIDE
 //#define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
-#define difDmgMod() SpellAux$difficultyDamageDoneModifier( DIF )
-
-integer DIF;	// difficulty
+#define difDmgMod() SpellAux$difficultyDamageDoneModifier( hud$status$difficulty() )
 
 // Calculates bonus damage for particular spells
-list SPDM = [-1,-1,-1,-1,-1];		// [rest, abil1, abil2...]
-
-// Caching modifiers
-float cHP = 100;
-float cMP = 50;
-float cAR;
-float cPP;
-int cCR;
-float cMHP = 100;
-float cMMP = 50;
-float cArmor = 250;
-
-
-integer SF;			// Status flags
+list SPDM = [1,1,1,1,1];		// [abilt5, abil0, abil1...]
 
 // FX
-float dtmod = 1.0;		// Damage taken modifier from PASSIVE
-float adtmod = 1.0;		// Damage taken modifier from ACTIVE (Only affects ALL damage taken mods, not spell damage taken or from a specific target)
+list dtmod = [0,1];		// Damage taken modifier from PASSIVE
 float bfDmg = 1;		// Befuddle damage multiplier
-float pdmod = 1;       // Damage done
 float cmod = 0;
 float cdmod = 1;		// Cooldown modifier
 float hdmod = 1;		// Healing done mod
+float cCR = 1.0;		// Crit multiplier this cast
 list dmod;				// int playerID, float amount
-list mcm = [1,1,1,1,1];
 
-float befuddle = 1;		// Chance to cast at a random target
+float befuddle;			// Chance to cast at a random target
 float bsMul = 1;	// Additional damage when attacking from behind
 integer fxFlags = 0;
 
-#define pmod (1./(float)llLinksetDataRead(db4table$ext$root$nrPlayers))
+#define pmod (1./hud$root$numPlayers())
 
 /* Constants:
 	$T0$	Target of spell (if not AoE) Only differs from _TA_ in self cast
@@ -86,7 +68,16 @@ string runMath( string FX, integer index, key targ ){
 	FX = implode((str)((int)("0x"+(str)llGetKey())), explode("$sI$", FX));
 	FX = implode((str)((int)("0x"+(str)llGetOwner())), explode("$soI$", FX));
 	
-
+	// 
+	float cAR = hud$status$arousal();
+	float cPP = hud$status$pain();
+	float cMHP = hud$status$maxHP();
+	float cHP = hud$status$hp();
+	float cMP = hud$status$mana();
+	float cMMP = hud$status$maxMana();
+	float cArmor = hud$status$armor();
+	integer TEAM = hud$status$team();
+	
 	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
     list split = llParseString2List(FX, ["$MATH$","$M$"], []);
 	parseDesc(targ, resources, status, fxf, sex, team, monsterflags, _a, _b)
@@ -94,24 +85,23 @@ string runMath( string FX, integer index, key targ ){
 	int ehp = (int)(l2f(res, 0)*100);
 	
 	
-	float bsMul = 1;
+	float bsm = 1;
 	integer B = 0;
 	rotation axis = llEuler2Rot(<0,PI_BY_TWO,0>);
+	
 	if( monsterflags & Monster$RF_ANIMESH )
 		axis = ZERO_ROTATION;
-	prAngle(targ, ang, axis)
+	myAng(targ, ang, axis) // check if I am behind target
 		
-	if((llFabs(ang)>PI_BY_TWO || fxFlags&fx$F_ALWAYS_BEHIND) && targ != ""){
+	if( (llFabs(ang) > PI_BY_TWO || fxFlags&fx$F_ALWAYS_BEHIND) && targ != llGetKey() ){
 		B = 1;
-		bsMul = bsMul;
+		bsm = bsMul;
 	}
 	float spdmdm = llList2Float(SPDM, index);
-	if(spdmdm == -1)
-		spdmdm = 1;
-	else if(spdmdm<0)
+	if( spdmdm < 0 )
 		spdmdm = 0;
 		
-	float dm = pdmod;
+	float dm = 1.0;
 	integer pos = llListFindList(dmod, (list)0);
 	if( ~pos )
 		dm = dm*l2f(dmod, pos+1);
@@ -125,9 +115,9 @@ string runMath( string FX, integer index, key targ ){
 
 	_C = [
 		// Damage done multiplier
-        "D", (dm*pmod*cCR*spdmdm*difDmgMod()*bsMul*bfDmg),
+        "D", (dm*pmod*cCR*spdmdm*difDmgMod()*bsm*bfDmg),
 		// Raw multiplier not affected by team or difficulty
-		"R", (dm*cCR*spdmdm*bsMul*bfDmg),
+		"R", (dm*cCR*spdmdm*bsm*bfDmg),
 		// Critical hit
 		"C", cCR,
 		// Points of arousal
@@ -150,7 +140,7 @@ string runMath( string FX, integer index, key targ ){
 		"hpp", cHP/cMHP,
 		"mpp", cMP/cMMP,
 		
-		"dtm", dtmod*adtmod,
+		"dtm", l2f(dtmod, 1),
 		
 		// Max HP
 		"mhp", cMHP,
@@ -216,45 +206,18 @@ onEvt(string script, integer evt, list data){
 
 	if( script == "#ROOT" && evt == RootEvt$targ )
         HUD_TARG = l2s(data,0);
-
-	else if(script == "got Status" && evt == StatusEvt$flags)
-        SF = llList2Integer(data,0);
-	
-	else if(script == "got Status" && evt == StatusEvt$difficulty){
-		DIF = l2i(data, 0);
-	}
-	
-	else if(script == "got Status" && evt == StatusEvt$resources){
-	
-		// [(float)dur, (float)max_dur, (float)mana, (float)max_mana, (float)arousal, (float)max_arousal, (float)pain, (float)max_pain, (float)hpPerc, (int)armor_pool] - PC only
-		cAR = llList2Float(data, 4);
-		cPP = llList2Float(data, 6);
-		cMHP = l2f(data, 1);
-		cHP = l2f(data, 0);
-		cMP = l2f(data, 2);
-		cMMP = l2f(data, 3);
-		cArmor = l2i(data, 9);
-		
-	}
-	else if(script == "got Status" && evt == StatusEvt$team)
-		TEAM = l2i(data,0);
-	
-	else if(script == "got FXCompiler" && evt == FXCEvt$spellMultipliers){
-		SPDM = llJson2List(llList2String(data,0));
-		mcm = llJson2List(llList2String(data,1));
-	}
 	
 	else if(script == "got SpellMan" && evt == SpellManEvt$recache){
 		CACHE = [];
 		
-		str tmpCh = db4$getTableChar(db4table$gotBridgeSpellsTemp);
-		str ch = db4$getTableChar(db4table$gotBridgeSpells);
+		str tmpCh = hudTable$spellmanSpellsTemp;
+		str ch = hudTable$bridgeSpells;
 		integer i;
 		for( ; i<5; ++i ){
 			
-			list d = db4$getFast(tmpCh, i);
+			list d = llJson2List(db4$get(tmpCh, i));
 			if(d == [])
-				d = db4$getFast(ch, i);
+				d = llJson2List(db4$get(ch, i));
 			
 			CACHE+= llList2String(d, BSSAA$fxwrapper); // Wrapper
 			CACHE+= llList2String(d, BSSAA$selfcast); // Selfcast
@@ -262,7 +225,7 @@ onEvt(string script, integer evt, list data){
 			CACHE+= llList2Integer(d, BSSAA$target_flags); // Flags
 
 		}
-		
+			
 	}
 	
 	// Spell handlers
@@ -282,15 +245,14 @@ onEvt(string script, integer evt, list data){
 		
 		// Befuddle
 		bfDmg = 1.0;
-		if( llFrand(1) < befuddle-1 && (str)SPELL_TARGS != "AOE" && (count(SPELL_TARGS) > 1 || l2s(SPELL_TARGS, 0) != "1") ){
+		if( llFrand(1) < befuddle && (str)SPELL_TARGS != "AOE" && (count(SPELL_TARGS) > 1 || l2s(SPELL_TARGS, 0) != "1") ){
 			
 			vector rpos = llGetRootPosition();
 			list viable = (list)"";
 			
-			string ch = db4$getTableChar(db4table$npcNear);
-			db4$eachFast(ch, index, row,
+			db4$each(hudTable$evtsNpcNear, index, row,
 				
-				key t = l2k(row, 1);
+				key t = j(row, 1);
 				if( t != llGetKey() ){
 				
 					smartHealDescParse(t, resources, status, fx, team)
@@ -351,11 +313,13 @@ rollCrit( int allow, int spell ){
 
 applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 
+	integer TEAM = hud$status$team();
+	
 	// Handle AOE
 	if( (string)SPELL_TARGS == "AOE" ){
 	
 		wrapper = runMath(wrapper, index, "");
-		FX$aoe(range, llGetKey(),  wrapper, TEAM);  
+		FX$aoe(range, llGetKey(), wrapper, TEAM);
 		FX$run("", wrapper);
 		SPELL_TARGS = (list)LINK_ROOT;
 		return ;
@@ -377,34 +341,21 @@ applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 }
 
 
-
-
 default{
 
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		pdmod = i2f(l2f(data, FXCUpd$DAMAGE_DONE)); \
-		cmod = i2f(l2f(data, FXCUpd$CRIT))-1; \
-		cdmod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
-		hdmod = i2f(l2f(data, FXCUpd$HEAL_DONE_MOD)); \
-		fxFlags = l2i(data, FXCUpd$FLAGS);\
-		befuddle = i2f(l2f(data, FXCUpd$BEFUDDLE));\
-		bsMul = i2f(l2f(data,FXCUpd$BACKSTAB_MULTI)); \
-		dtmod = i2f(l2f(data, FXCUpd$DAMAGE_TAKEN)); \
+		dmod = llJson2List(fx$getDurEffect(fxf$DAMAGE_DONE_MULTI)); \
+		cmod = (float)fx$getDurEffect(fxf$CRIT_ADD)-1; \
+		cdmod = (float)fx$getDurEffect(fxf$COOLDOWN_MULTI); \
+		hdmod = (float)fx$getDurEffect(fxf$HEALING_DONE_MULTI); \
+		fxFlags = (int)fx$getDurEffect(fxf$SET_FLAG);\
+		befuddle = (float)fx$getDurEffect(fxf$BEFUDDLE)-1; \
+		bsMul = (float)fx$getDurEffect(fxf$BACKSTAB_MULTI); \
+		dtmod = llJson2List(fx$getDurEffect(fxf$DAMAGE_TAKEN_MULTI)); \
+		SPDM = llJson2List(fx$getDurEffect(fxf$SPELL_DMG_DONE_MOD)); \
 	} \
-	else if( nr == TASK_OFFENSIVE_MODS ){ \
-	\
-		dmod = llJson2List(j(s, 0)); \
-	\
-	} \
-	else if( nr ==  TASK_SPELL_MODS ){ \
-		list l = llJson2List(j(s, 1)); /* Spell damage done mod */ \
-		int pos = llListFindList(l, (list)0); \
-		adtmod = 1;\
-		if( ~pos )\
-			adtmod = l2f(l, pos+1);\
-	}
+
 
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 

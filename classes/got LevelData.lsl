@@ -11,7 +11,7 @@
 
 #define gotLevelData$cellData(data) runMethod(ROOT_LEVEL, "got LevelData", gotLevelDataMethod$cellData, [data], TNN)
 #define gotLevelData$cellDesc(desc) runMethod(ROOT_LEVEL, "got LevelData", gotLevelDataMethod$cellDesc, [desc], TNN)
-#define gotLevelData$died( killer ) runOnDbPlayers(targ, runOmniMethodOn(targ, "got LevelData", gotLevelDataMethod$died, (list)killer, TNN);)
+#define gotLevelData$died( killer ) runOnDbPlayers(_i, targ, runOmniMethodOn(targ, "got LevelData", gotLevelDataMethod$died, (list)killer, TNN);)
 #define gotLevelData$setFinished(player, overrideFinish) runMethod((string)LINK_THIS, "got LevelData", gotLevelDataMethod$setFinished, [player, overrideFinish], TNN)
 #define gotLevelData$difficulty(difficulty, challenge) runMethod(ROOT_LEVEL, "got LevelData", gotLevelDataMethod$difficulty, [difficulty, challenge], TNN)
 #define gotLevelData$enableWipeTracker() runMethod((str)LINK_THIS, "got LevelData", gotLevelDataMethod$enableWipeTracker, [], TNN)

@@ -4,10 +4,7 @@
 
 integer chan;
 list bindings;			// (key)targ, (int)chan
-list PASSIVES;
 
-float adtmod = 1.0;		// Global active damage taken mod
-float addmod = 1.0;		// Global active damage done mod
 onEvt(string script, integer evt, list data){
 
 	if( bindings ){
@@ -51,11 +48,15 @@ timerEvent(string id, string data){
 	}
 	
 }
+
+#define durFxPercStr(effect) (str)((float)fx$getDurEffect(effect)*100)
+#define durFxPerc(effect) ((float)fx$getDurEffect(effect)*100)
+
+
 default{
 
     state_entry(){
 	
-		PLAYERS = [(str)llGetOwner()];
 		chan = GotAPI$chan(llGetOwner());
 		llListen(chan, "", "", "");
 		llRegionSay(chan, GotAPI$buildAction(GotAPI$actionIni, []));
@@ -69,6 +70,7 @@ default{
 		if(!startsWith(message, "GA|"))
 			return;
 			
+		list PLAYERS = hudGetPlayers();
 		if( llListFindList(PLAYERS, [(str)llGetOwnerKey(id)]) == -1 )
 			return;
 			
@@ -112,23 +114,6 @@ default{
 	}
 	
 	
-	#define LM_PRE \
-		if( nr == TASK_FX ) \
-			PASSIVES = llJson2List(s); \
-		else if( nr ==  TASK_SPELL_MODS ){ \
-			list l = llJson2List(j(s, 1)); /* Spell damage done mod */ \
-			int pos = llListFindList(l, (list)0); \
-			adtmod = 1;\
-			if( ~pos )\
-				adtmod = l2f(l, pos+1);\
-		} \
-		else if( nr == TASK_OFFENSIVE_MODS ){ \
-			list l = llJson2List(j(s, 0)); \
-			int pos = llListFindList(l, (list)0); \
-			addmod = 1;\
-			if( ~pos )\
-				addmod = l2f(l, pos+1);\
-		}
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -139,7 +124,7 @@ default{
 		
 		// Dumps all passive stats
 		llOwnerSay("    :: MODIFIERS ::");
-		int f = l2i(PASSIVES, 0);
+		int f = (int)fx$getDurEffect(fxf$SET_FLAG);
 		integer i;
 		for( ; i<32; ++i ){
 			if( f&(1<<i) )
@@ -147,61 +132,84 @@ default{
 		}
 		llOwnerSay("FLAGS > "+llList2CSV(descsOut));
 		descs = descsOut = [];
+		llOwnerSay("RESOURCE MODIFIERS > \n"+
+			durFxPercStr(fxf$HP_MULTI)+"% +"+fx$getDurEffect(fxf$HP_ADD)+" HP \n"+
+			durFxPercStr(fxf$MANA_MULTI)+"% +"+fx$getDurEffect(fxf$MANA_ADD)+" MP \n"+
+			durFxPercStr(fxf$MAX_PAIN_MULTI)+"% +"+fx$getDurEffect(fxf$MAX_PAIN_ADD)+" Pain \n"+
+			durFxPercStr(fxf$MAX_AROUSAL_MULTI)+"% +"+fx$getDurEffect(fxf$MAX_AROUSAL_ADD)+" Arousal"
+		);
 		
-		llOwnerSay("RESOURCE MODIFIERS > "+
-			l2s(PASSIVES, FXCUpd$HP_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$HP_ADD)+" HP | "+
-			l2s(PASSIVES, FXCUpd$MANA_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$MANA_ADD)+" MP | "+
-			l2s(PASSIVES, FXCUpd$PAIN_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$PAIN_ADD)+" Pain | "+
-			l2s(PASSIVES, FXCUpd$AROUSAL_MULTIPLIER)+"% +"+l2s(PASSIVES, FXCUpd$AROUSAL_ADD)+" Arousal"
+		list arrDmdm = llJson2List(fx$getDurEffect(fxf$DAMAGE_DONE_MULTI));
+		int pos = llListFindList(arrDmdm, (list)0);
+		float dmdm = 1.0;
+		if( ~pos )
+			dmdm = l2f(arrDmdm, pos+1);
+		list arrDmtm = llJson2List(fx$getDurEffect(fxf$DAMAGE_TAKEN_MULTI));
+		pos = llListFindList(arrDmtm, (list)0);
+		float dmtm = 1.0;
+		if( ~pos )
+			dmtm = l2f(arrDmtm, pos+1);
 			
+		list arrHetm = llJson2List(fx$getDurEffect(fxf$HEALING_TAKEN_MULTI));
+		pos = llListFindList(arrHetm, (list)0);
+		float herm = 1.0;
+		if( ~pos )
+			herm = l2f(arrHetm, pos+1);
+		
+		llOwnerSay(
+			"POWER> \n"+
+			(str)llRound(dmdm*100)+"% Damage & Healing done "+mkarr(arrDmdm)+"\n"+
+			durFxPercStr(fxf$HEALING_DONE_MULTI)+"% Healing done\n"+
+			(str)(((float)fx$getDurEffect(fxf$CRIT_ADD)-1.0)*100)+"% Crit chance\n"+
+			durFxPercStr(fxf$BACKSTAB_MULTI)+"% Damage done from  behind\n"+
+			fx$getDurEffect(fxf$SPELL_DMG_DONE_MOD)+" abil dmg done\n"
 		);
 		
 		
 		llOwnerSay(
-			"POWER> "+
-			(str)llRound(l2i(PASSIVES, FXCUpd$DAMAGE_DONE)*addmod)+"% Damage & Healing done | "+
-			l2s(PASSIVES, FXCUpd$HEAL_DONE_MOD)+"% Bonus healing | "+
-			l2s(PASSIVES, FXCUpd$CRIT)+"% Crit chance | "+
-			l2s(PASSIVES, FXCUpd$BACKSTAB_MULTI)+"% Damage done from  behind"
+			"REGEN >\n"+
+			durFxPercStr(fxf$HP_REGEN_MULTI)+"% HP\n"+
+			durFxPercStr(fxf$MANA_REGEN_MULTI)+"% MP\n"+
+			durFxPercStr(fxf$PAIN_REGEN_MULTI)+"% Pain\n"+
+			durFxPercStr(fxf$AROUSAL_REGEN_MULTI)+"% Arousal\n"+
+			durFxPercStr(fxf$COMBAT_HP_REGEN)+"% Combat HP Regen"
 		);
 		
-		
-		llOwnerSay(
-			"REGEN > "+
-			l2s(PASSIVES, FXCUpd$HP_REGEN)+"% HP | "+
-			l2s(PASSIVES, FXCUpd$MANA_REGEN)+"% MP | "+
-			l2s(PASSIVES, FXCUpd$PAIN_REGEN)+"% Pain | "+
-			l2s(PASSIVES, FXCUpd$AROUSAL_REGEN)+"% Arousal | "+
-			(str)(l2i(PASSIVES, FXCUpd$COMBAT_HP_REGEN)-100)+"% Combat HP Regen"
+
+		llOwnerSay("DEFENSES >\n"+
+			(str)(100-durFxPerc(fxf$DODGE))+"% Dodge\n"+	// Dodge is inverse
+			(str)llRound(dmtm*100)+"% Damage Taken "+mkarr(arrDmtm)+"\n"+
+			(str)llRound(100*herm)+"% Healing received "+mkarr(arrHetm)+"\n"+
+			durFxPercStr(fxf$HP_ARMOR_DMG_MULTI)+"% HP to armor damage multiplier\n"+
+			durFxPercStr(fxf$ARMOR_DMG_MULTI)+"% Global armor damage multiplier\n"+
+			durFxPercStr(fxf$QTE_MOD)+"% Quick time event speed multiplier"+
+			fx$getDurEffect(fxf$SPELL_DMG_TAKEN_MOD)+" Sp.dmg taken [(int)caster_(str)spellName, (float)multi...] caster=0xUUID, 0=ALL casters\n"
 		);
 		
-		
-		llOwnerSay("DEFENSES > "+
-			(str)(100-l2i(PASSIVES, FXCUpd$DODGE))+"% Dodge | "+	// Dodge is inverse
-			(str)llRound(l2i(PASSIVES, FXCUpd$DAMAGE_TAKEN)*adtmod)+"% Damage Taken | "+
-			l2s(PASSIVES, FXCUpd$HEAL_MOD)+"% Healing received | "+
-			l2s(PASSIVES, FXCUpd$HP_ARMOR_DMG_MULTI)+"% HP to armor damage multiplier | "+
-			l2s(PASSIVES, FXCUpd$ARMOR_DMG_MULTI)+"% Global armor damage multiplier | "+
-			l2s(PASSIVES, FXCUpd$QTE_MOD)+"% Quick time event haste"			
+		llOwnerSay("BEFUDDLE CHANCE >\n"+
+			(str)llRound(100*((float)fx$getDurEffect(fxf$BEFUDDLE)-1.0))+"%"
+		);
+		llOwnerSay("MANA COST >\n"+
+			durFxPercStr(fxf$MANA_COST_MULTI)+"%\n"+
+			fx$getDurEffect(fxf$SPELL_MANACOST_MULTI) + " Per spell multiplier"
 		);
 		
-		llOwnerSay("BEFUDDLE CHANCE > "+l2s(PASSIVES,FXCUpd$BEFUDDLE)+"%");
-		llOwnerSay("MANA COST > "+l2s(PASSIVES, FXCUpd$MANACOST)+"%");
-		
-		llOwnerSay("PROCS > "+
-			l2s(PASSIVES,FXCUpd$PROC_BEN)+"% Beneficial proc chance | "+
-			l2s(PASSIVES,FXCUpd$PROC_DET)+"% Detrimental proc chance"
+		llOwnerSay("PROCS >\n"+
+			durFxPercStr(fxf$PROC_BEN)+"% Beneficial proc chance\n"+
+			durFxPercStr(fxf$PROC_DET)+"% Detrimental proc chance\n"
 		);
 		
-		llOwnerSay("SPEED > "+
-			l2s(PASSIVES, FXCUpd$CASTTIME)+"% cast time multiplier | "+
-			l2s(PASSIVES, FXCUpd$COOLDOWN)+"% cooldown multiplier | "+
-			l2s(PASSIVES, FXCUpd$MOVESPEED)+"% sprint regeneration | "+
-			l2s(PASSIVES, FXCUpd$SPRINT_FADE_MULTI)+"% sprint duration increase | "+
-			l2s(PASSIVES, FXCUpd$SWIM_SPEED_MULTI)+"% swim speed"			
+		llOwnerSay("SPEED >\n"+
+			durFxPercStr(fxf$CASTTIME_MULTI)+"% cast time multiplier "+fx$getDurEffect(fxf$SPELL_CASTTIME_MULTI)+"\n"+
+			durFxPercStr(fxf$COOLDOWN_MULTI)+"% cooldown multiplier "+fx$getDurEffect(fxf$SPELL_COOLDOWN_MULTI)+"\n"+
+			
+			durFxPercStr(fxf$MOVE_SPEED)+"% sprint regeneration\n"+
+			durFxPercStr(fxf$SPRINT_FADE_MULTI)+"% sprint duration\n"+
+			durFxPercStr(fxf$SWIM_SPEED_MULTI)+"% swim speed"	
 		);
 		
-		
+		llOwnerSay("Conversions > "+fx$getDurEffect(fxf$CONVERSION));
+
 	}
 	
 	if( method$byOwner && METHOD == GotAPIMethod$dumpLSD ){

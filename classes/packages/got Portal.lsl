@@ -12,6 +12,8 @@ list PLAYER_HUDS;
 key spawner;				// Key of prim that spawned me
 key requester;				// Key of priom that requested this spawn. Can be "" if internal from the HUD, and can be same as spawner. Defaults to spawner
 
+list INJ_REQS;				// (key)script, (int)nrScripts - Scripts that are allowed to inject scripts into us using the quick API.
+
 integer BFL;
 #define BFL_SCRIPTS_INITIALIZED 1
 #define BFL_GOT_PLAYERS 2
@@ -19,6 +21,7 @@ integer BFL;
 #define BFL_HAS_DESC 8
 #define BFL_INITIALIZED 0x10
 #define BFL_PERSISTENT 0x20
+#define BFL_INJECTING 0x40		// An active inject request is open
 
 #define BFL_INI 11
 //~BFL&BFL_IS_DEBUG && 
@@ -30,6 +33,8 @@ integer BFL;
 		debugUncommon("Raising script init"); \
 		raiseEvent(PortalEvt$spawner, (str)requester); \
 		raiseEvent(PortalEvt$desc_updated, INI_DATA); \
+		llListen(evtChan, "", "", ""); \
+		llRegionSay(evtChan, Portal$gEvt$ini); \
 	}
 
 // Fetches desc from spawner
@@ -38,6 +43,7 @@ integer BFL;
 string INI_DATA = "";
 string SPAWNROUND;
 integer REZ_PARAM;
+int evtChan;
 
 onEvt( string script, integer evt, list data ){
 
@@ -73,12 +79,41 @@ onEvt( string script, integer evt, list data ){
 #define getText() llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]), 0)
 #define setText(data) llSetText(data, ZERO_VECTOR, 0)
 
+
+handleInjectReq(){
+	// Inject is active
+	if( BFL&BFL_INJECTING || INJ_REQS == [] )
+		return;
+	
+	key id = l2k(INJ_REQS, 0);
+	int cd = l2i(INJ_REQS, 1)*3+3;
+	INJ_REQS = llDeleteSubList(INJ_REQS, 0, 1);
+	multiTimer(["INJ", 0, cd, FALSE]);
+	pin = llFloor(llFrand(0xFFFFFFF));
+	llSetRemoteScriptAccessPin(pin);
+	BFL = BFL|BFL_INJECTING;
+	llRegionSayTo(id, evtChan, Portal$gEvt$inject+(str)pin);
+	
+}
+
+// Clears access pin and continues the queue
+injectDone(){
+	BFL = BFL&~BFL_INJECTING;
+	llSetRemoteScriptAccessPin(0);
+	handleInjectReq();
+}
+
+
 integer pin;
 
 timerEvent( string id, string data ){
 
 	if( id == "INI" )
 		Root$getPlayers("INI");
+		
+	else if( id == "INJ" )
+		injectDone();
+		
 		
 	else if( id == "POSTQUERY" ){
 	
@@ -123,8 +158,15 @@ timerEvent( string id, string data ){
 }
 
 sendPlayers(){
-	raiseEvent(PortalEvt$playerHUDs, mkarr(PLAYER_HUDS));
-	raiseEvent(PortalEvt$players, mkarr(PLAYERS));
+	
+	string huds = mkarr(PLAYER_HUDS);
+	string players = mkarr(PLAYERS);
+	
+	db4$freplace(portalTable$portal, portalRow$players, players);
+	db4$freplace(portalTable$portal, portalRow$huds, players);
+	raiseEvent(PortalEvt$playerHUDs, huds);
+	raiseEvent(PortalEvt$players, players);
+	
 }
 
 // Removes this and anything spawned by this if this was a sub level
@@ -138,6 +180,9 @@ remove(){
     llDie();
 }
 
+
+
+
 default{
 
     on_rez(integer mew){
@@ -145,7 +190,7 @@ default{
 	
 		// Let the spawner know it can rez next
 		llRegionSayTo(mySpawner(), playerChan(mySpawner()), "PN");
-        if(mew != 0){
+        if( mew ){
 		
 			integer p = llCeil(llFrand(0xFFFFFFF));
             llSetRemoteScriptAccessPin(p);
@@ -160,19 +205,22 @@ default{
     }
     state_entry(){
 	
-	
+		evtChan = Portal$evtChan(llGetOwner());
 		requester = spawner = mySpawner();
 		// Let the spawner know it can rez next
 		llRegionSayTo(requester, playerChan(requester), "PN");
 		
 		
 		PLAYERS = [(string)llGetOwner()];
+		db4$freplace(portalTable$portal, portalRow$players, mkarr(PLAYERS));
+		db4$freplace(portalTable$portal, portalRow$huds, "[]");
+		
         initiateListen();
 		llListen(AOE_CHAN, "", "", "");
         pin = llCeil(llFrand(0xFFFFFFF));
         llSetRemoteScriptAccessPin(pin);
 		Root$getPlayers("INI");
-		
+				
         memLim(1.5);
 		
         if(!llGetStartParameter())
@@ -303,6 +351,26 @@ default{
 		llList2String(PLAYERS, 0) != "*" && \
 		llGetOwnerKey(id) != llGetOwner() \
 	){ \
+		return; \
+	} \
+	if( chan == evtChan ){ \
+		if( message == Portal$gTask$get ){ \
+			llRegionSayTo(id, evtChan, Portal$gEvt$ini); \
+		} \
+		/* Owner only tasks */ \
+		if( llGetOwnerKey(id) == llGetOwner() ){ \
+			/* Post-ini script injections. Useful for HUD mods etc. */ \
+			if( llGetSubString(message, 0, 2) == Portal$gTask$inject ){ \
+				int nrScripts = (int)llGetSubString(message, 3, -1); \
+				if( nrScripts < 1 ) \
+					nrScripts = 1; \
+				INJ_REQS += (list)id + nrScripts; \
+				handleInjectReq(); \
+			} \
+			else if( message == Portal$gTask$injectDone && id == l2k(INJ_REQS, 0) ){ \
+				injectDone(); \
+			} \
+		} \
 		return; \
 	}
 	

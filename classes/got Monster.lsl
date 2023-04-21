@@ -56,6 +56,8 @@
 #define Monster$RF_HUMANOID 0x4000		// This is a humanoid (allow certain monster interactions)
 #define Monster$RF_MINOR 0x8000			// This monster should not drop loot
 #define Monster$RF_ALWAYS_R 0x10000		// 65536 This monster is always able to trigger sex poses on downed players regardless of invul
+#define Monster$RF_FLANKING 0x20000		// This monster will try to flank players when not targeted by their aggro
+#define Monster$RF_INF_HP 0x40000		// 262144 Monster cannot lose HP but can do everything else
 
 #define Monster$atkFrame "_a"
 

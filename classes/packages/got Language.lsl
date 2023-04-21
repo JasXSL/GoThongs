@@ -33,7 +33,7 @@ integer UI = TRUE;
 onEvt(string script, integer evt, list data){
     
 	if(script == "got Bridge" && evt == BridgeEvt$userDataChanged){
-        SPOKEN = l2i(Bridge$userData(), BSUD$LANG);
+        SPOKEN = (int)j(hud$bridge$userData(), BSUD$LANG);
     }
 	
 	else if( script == "got GUI" && evt == GUIEvt$toggle ){

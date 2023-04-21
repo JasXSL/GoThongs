@@ -9,6 +9,7 @@
 #define fxlib$remForceSit(targ) fxlib$removeSpellByName(targ, "forceSat")
 
 #define fxlib$dealDamageOn(target, damage, color, team, hfxFlags) FX$send(target, llGetKey(), "[9,0,0,0,[0,1,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\","+(str)(hfxFlags)+"]],[],[],[],0,0,0]]", team)
+#define fxlib$dealDamageOnCanDodge(target, damage, color, team, hfxFlags) FX$send(target, llGetKey(), "[1,0,0,0,[0,1,\"_dmg\",[[1,"+(string)damage+"],[6,\""+(str)color+"\","+(str)(hfxFlags)+"]],[],[],[],0,0,0]]", team)
 
 
 #define fxlib$dealDamageOnAllowQuickrape(target, damage, color, team, hfxFlags) FX$send(target, llGetKey(), "[13,0,0,0,[0,17,\"\",[[1,"+(string)damage+"],[6,\""+(str)color+"\","+(str)(hfxFlags)+"]],[],[],[],0,0,0]]", team)

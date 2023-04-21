@@ -12,7 +12,7 @@ relies on the following functions and definitions
 	#define HITFX_COLOR
 	#define ON_LOAD
 	#define NO_IMPACT
-
+	#define IMPACT_ANIM (str)anim - Can be JSON array
 	// loop particles
 	ini(){} 
 	
@@ -145,7 +145,10 @@ STEP(){
 		#ifdef NO_IMPACT
 			llDie();
 		#else
-		
+			
+			#ifdef IMPACT_ANIM
+				AnimHandler$targAnim(TARGET, IMPACT_ANIM, TRUE);
+			#endif
 			llSetLinkAlpha(LINK_SET, 0, ALL_SIDES);
 			boom();
 			llStopSound();

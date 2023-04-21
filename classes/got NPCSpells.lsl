@@ -3,14 +3,14 @@
 
 #define NPCSpellsMethod$setSpells 1			// Array of spell objects, see below
 #define NPCSpellsMethod$interrupt 2			// (int)force
-#define NPCSpellsMethod$startCast 3			// (int)id - Returns true/false
+//#define NPCSpellsMethod$startCast 3			// (int)id - Returns true/false
 #define NPCSpellsMethod$wipeCooldown 4		// (int/str)id - -1 is all
 #define NPCSpellsMethod$setOutputStatusTo 5	// Sets players that are currently targeting this monster
 #define NPCSpellsMethod$setConf 6			// (float)max_spells_per_sec
 #define NPCSpellsMethod$silence 7		// (int)silence - Silence
 #define NPCSpellsMethod$customCast 8		// (int)flags, (float)casttime, (str)name, (key)targ - Casts a custom spell. The index will be -1
-#define NPCSpellsMethod$disableSpells 9		// (int)spell1, (int)spell2...
-#define NPCSpellsMethod$triggerCooldown 10	// (int)spell1, spell2...
+#define NPCSpellsMethod$disableSpells 9		// (int/str)spell1, (int/str)spell2...
+#define NPCSpellsMethod$triggerCooldown 10	// (int/str)spell1, (int/str)spell2... - Spell can also be a JSON array where the first val is id and second is cooldown
 
 // For the spells array
 #define NPCS$SPELL_FLAGS 0			// 
@@ -41,7 +41,8 @@
 #define NPCS$SPELL_TARG_ROLE 9		// Bitwise combination (use role2flag) of viable specs
 #define NPCS$SPELL_ROT 10			// Float radius. Use negative for inverse. PI_BY_TWO = I must be in front of the target, -PI_BY_TWO = I must be behind
 
-#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags, viableRoles, rot) llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags)+(viableRoles)+(rot))
+#define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags, viableRoles, rot) \
+	llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags)+(viableRoles)+(rot))
 
 // Spell is the spell index, targ is the target (converted to owner key if attached), real is either same as targ or the HUD itself
 #define NPCSpellsEvt$SPELL_CAST_START 1				// (int)spell, (key)targ, (key)real, (str)spellName
@@ -53,7 +54,7 @@
 #define NPCSpells$setSpells(data) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setSpells, data, TNN)
 #define NPCSpells$setConf(conf)	runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setConf, conf, TNN)
 #define NPCSpells$interrupt( force ) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$interrupt, (list)(force), TNN)
-#define NPCSpells$startCast(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$startCast, [id], TNN)
+//#define NPCSpells$startCast(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$startCast, [id], TNN)
 #define NPCSpells$wipeCooldown(id) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$wipeCooldown, (list)(id), TNN)
 #define NPCSpells$setOutputStatusTo(targs) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$setOutputStatusTo, targs, TNN)
 #define NPCSpells$silence(silenced) runMethod((string)LINK_THIS, "got NPCSpells", NPCSpellsMethod$silence, [silenced], TNN)

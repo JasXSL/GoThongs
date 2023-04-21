@@ -33,6 +33,7 @@
 
 
 // Index of the INI_DATA raised by localConf event
+#define Trap$setIniData(triggerCd, finishCd, attachItems, baseAnim, animeshAnim) raiseEvent(LocalConfEvt$iniData, mkarr((list)(triggerCd) + (finishCd) + mkarr((list)attachItems) + (baseAnim) + (animeshAnim))) // note: MUST be raised by a script called got LocalConf
 #define TrapConf$triggerCooldown 0		// (float) time between triggers
 #define TrapConf$finishCooldown 1		// (float) cooldown after releasing a player
 #define TrapConf$attach 2				// (arr) items to attach (uses the pink box in the hud)

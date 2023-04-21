@@ -46,6 +46,7 @@ string localConfIdle;
 
 // Bitflags used in LocalConf.NPC.template in the BFR int
 #define BFR_IN_GRAPPLE 0x1			// We are in a grapple either as a host or a client (see hookups in got LocalConf.NPC.template)
+#define BFL_PLAYERS_SEATED 0x2		// The grapple players are seated on this
 
 /*
 	Hookup (hup) extension to the grapple system
@@ -57,7 +58,7 @@ string localConfIdle;
 */
 // Hookup configuration
 #define hup$TASK_BASE "HUP"
-	#define hup$task$hostStart "A"		// (str)name, (key)victim_hud - We grappled a player
+	#define hup$task$hostStart "A"		// (str)name, (list)victim_huds - We grappled on or many player
 	#define hup$task$clientAck "B"			// (str)callback - Target accepted sender
 	#define hup$task$hostAck "C"			// (str)name, (key)victim_hud, (str)callback - Send to target, you are clear to begin.
 	#define hup$task$clientStart "D"		// (str)npc_idle_anim, (str)player_idle_anim, (float)sync - Setup the idle animations and begin.

@@ -1,89 +1,47 @@
 /*
+	The purpose of FXCompiler is now to handle INSTANT effects. And effects that should send instant messages when added and/or removed. Such as animation. Everything else is handled by passives.
 	
-	Requires the following functions:
-	runEffect(integer pid, integer pflags, str pname, arr fxobjs, int timesnap, key sender)
-	addEffect(integer pid, integer pflags, str pname, arr fxobjs, int timesnap, (float)duration)
-	remEffect(integer pid, integer pflags, str pname, arr fxobjs, int timesnap, bool overwrite)
-	
-	// Stacks can be acquired through getStacks(PID)
-	
-	updateGame()
-	
+
+	- TASK_FXC_PARSE is now 2-stride, containing tasks as before, but now also pix. Pix can be converted to a table by using getFxPackageTableByIndex(pix) 
+	- Pix is 1-indexed
+	- run/add/rem effect should be fine to only run with a pix now
+		
+	Requires the following functions defined before this script:
+	- Table is the table-ized version of pix through getFxPackageTableByIndex
+	runEffect(str table)
+	addEffect(str table)
+	remEffect(str table)
+		
 */
 //#define USE_EVENTS
 //#define DEBUG DEBUG_UNCOMMON
+#define USE_DB4
 #include "got/_core.lsl"
 
-/*
-	STACKS:
-	[
-		(int):
-			0b0(1) no_stack_multiply
-			0b0000000000000000(16) pid,
-			0b00000000000000(14) stacks
-	]
+list DEF;
 
-*/
 
-// Cache proc chance beneficial/detrimental
-float CPB = 1.0;
-float CPD = 1.0;
+#define FXCOMPILER_SECTION 0
+#ifdef IS_NPC
+	#include "./got FXCompiler_NPC.lsl"
+#else
+	#include "./got FXCompiler_PC.lsl"
+#endif
 
-list STACKS;
-#define sGetStacks( n ) (n&0x3FFF);
-#define sGetPid( n ) ((n>>14)&0xFFFF)
-#define sGetIgnoreStacks( n ) ((n>>30)&1)	// Returns if stacks should be ignored
-#define addStacks( stacks, pid, no_stack_multiply ) \
-	STACKS += (stacks&0x3FFF|((pid&0xFFFF)<<14)|((no_stack_multiply>0)<<30));
-
-#define removeStacks( pid ) \
-	integer _sr; \
-	for( ; _sr<count(STACKS) && count(STACKS); ++_sr ){ \
-		integer n = l2i(STACKS, _sr); \
-		if( sGetPid(n) == pid ){ \
-			STACKS = llDeleteSubList(STACKS, _sr, _sr); \
-			--_sr; \
+#define onStateEntry() \
+	DEF = fx$DEFAULTS; \
+	int i; \
+	for(; i < count(DEF); ++i ){ \
+		if( l2i(DEF, i) != fx$NO_PASSIVE ){ \
+			db4$replace(hudTable$fxCompilerActives, i, l2s(DEF, i)); \
 		} \
 	}
-	
-#define replaceStacks( pid, nr ) \
-	integer _sr; \
-	for( ; _sr<count(STACKS); ++_sr ){ \
-		integer n = l2i(STACKS, _sr); \
-		if( sGetPid(n) == pid ) \
-			STACKS = llListReplaceList(STACKS, (list)((n&~0x3FFF)|(nr&0x3FFF)), _sr, _sr); \
-	}
-	
-integer CACHE_FLAGS;		// Cache of FX flags, used for certain effects
 
-
-#define onStackUpdate() //qd(mkarr(STACKS))
-// updateGame is now run at the end of the package parser
-
-// If absolute it set, it will return nr stacks regardless of PF_NO_STACK_MULTIPLY, used for proper spell icon stack count
-integer getStacks( integer pid, integer absolute ){
-
-	integer i;
-	for( ; i<count(STACKS); ++i ){
-		
-		integer n = l2i(STACKS, i);
-		if( 
-			sGetPid(n) == pid && 
-			( 
-				!sGetIgnoreStacks(n) || 
-				absolute
-			)
-		)return sGetStacks(n);
-	}
-
-	return 1;
-	
-}
-
-default 
-{
+default{
 	#ifdef IS_NPC 
 	state_entry(){
+		
+		onStateEntry();
 		
 		if(llGetStartParameter())
 			raiseEvent(evt$SCRIPT_INIT, "");
@@ -93,6 +51,12 @@ default
 			spawnEffects();
 		}
 	}
+	#else
+	state_entry(){
+		
+		onStateEntry();
+		qd(llGetUsedMemory());
+	}
 	#endif
 	
 	link_message( integer link, integer nr, string s, key id ){
@@ -101,96 +65,282 @@ default
 			llResetScript();
 		
 		// Event handler
+		#ifdef USE_EVENTS
 		if(nr == EVT_RAISED){
 		
 			int evt = (int)((str)id);
 			list dta = llJson2List(s);
-			str script = l2s(dta, 0);
-			if( l2s(dta,0) == "got Status" && evt == StatusEvt$team )
-				TEAM = l2i(dta,1);
-
-			#ifdef USE_EVENTS
-				onEvt( l2s(dta, 0), (int)((str)id), llJson2List(l2s(dta, 1)) );
-			#endif
-		}
-		
-		if( nr == TASK_FX ){
-			
-			list dta = llJson2List(s);
-			CPB = i2f(l2i(dta, FXCUpd$PROC_BEN));
-			CPD = i2f(l2i(dta, FXCUpd$PROC_DET));
-			return;
+			onEvt( l2s(dta, 0), (int)((str)id), llJson2List(l2s(dta, 1)) );
 			
 		}
+		#endif
 
 		if( nr != TASK_FXC_PARSE )
 			return;
 				
-		integer actions;
 		list input = llJson2List(s);
 		s = "";
-		if( input == [] )
-			return;
-			
-		while( input ){
 		
-			integer action = l2i(input,0); 
-			actions = actions|action;
-			integer PID = l2i(input,1); 
-			integer stacks = l2i(input, 2); 
-			integer pflags = l2i(input,3); 
-			string pname = l2s(input, 4); 
-			string fx_objs = l2s(input, 5); 
-			integer timesnap = l2i(input, 6);
-			string additional = l2s(input, 7); 
-			input = llDeleteSubList(input, 0, FXCPARSE$STRIDE-1); 
+		// Store changed passive types
+		list fxTypes;		// FX types that need to be recompiled
+		list defaults;		// Stores default values for fxType. Same index as fxTypes
+		int gravChanged;
+		int flagsChanged;
+		int refreshCombat;
+		int i;
+				
+		integer in;
+		for(; in < count(input); in += 2 ){
+			
+			int action = l2i(input, in);
+			int pix = l2i(input, in+1);
+			str table = getFxPackageTableByIndex(pix);
+			
+			int team = hud$status$team();
+			int stacks = (int)db4$fget(table, fxPackage$STACKS);
+			key caster = db4$fget(table, fxPackage$SENDER);
+			str pname = db4$fget(table, fxPackage$NAME);
+			int pflags = (int)db4$fget(table, fxPackage$FLAGS);
+			list fxs = llJson2List(db4$fget(table, fxPackage$FXOBJS));
+
+			if( pflags & PF_DETRIMENTAL && action&(FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_STACKS|FXCPARSE$ACTION_RUN) )
+				refreshCombat = TRUE;
+			
+			
+			
+			// Add/Remove needs to update events
+			if( action&(FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_REM) ){
+			
+				list evts = llJson2List(db4$fget(table, fxPackage$EVTS));
+				for( i = 0; i < count(evts); ++i ){
+					
+					str evt = l2s(evts, i);
+					str eTable = getEventPackageTable(j(evt, FXEVT_TYPE), j(evt, FXEVT_SCRIPT));
+					list cur = getEventPackageIndexes(eTable);
+					int pos = llListFindList(cur, (list)pix);
+					
+					// Add to table
+					if( action&FXCPARSE$ACTION_ADD && pos == -1 )
+						cur += pix;
+					// Remove from table
+					if( action&FXCPARSE$ACTION_REM && ~pos )
+						cur = llDeleteSubList(cur, pos, pos);
 						
-			// Stacks first
-			if( action&FXCPARSE$ACTION_ADD ){
-				integer s = stacks; 
-				if( stacks < 1 )
-					stacks=1;
-				addStacks(stacks, PID, (pflags&PF_NO_STACK_MULTIPLY));
+					if( cur )
+						llLinksetDataWrite(eTable, mkarr(cur));
+					else
+						llLinksetDataDelete(eTable);
+						
+				}
+				
 			}
 			
-			if( action&FXCPARSE$ACTION_RUN ) 
-				runEffect(PID, pflags, pname, fx_objs, timesnap, id); 
+			// Iterate over the package FX
+			for( i = 0; i < count(fxs); ++i ){
 			
-			if( action&FXCPARSE$ACTION_ADD ){ 
-			
-				addEffect(PID, pflags, pname, fx_objs, timesnap, i2f((int)additional), id); 
-				onStackUpdate(); 
+				list fx = llJson2List(llList2String(fxs,i));
+				integer t = l2i(fx, 0);	// Effect type
+				fx = llDeleteSubList(fx, 0, 0);
+				int def = l2i(DEF, t);
 				
-			} 
-			
-			if( action&FXCPARSE$ACTION_REM ){ 
-			
-				remEffect(PID, pflags, pname, fx_objs, timesnap, (int)additional); 
-				removeStacks(PID);
+				// Store information about changed passive types
+				if( action & (FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_REM|FXCPARSE$ACTION_STACKS) ){
 				
-			} 
-			
-			if( action&FXCPARSE$ACTION_STACKS ){ 
-			
-				integer s = stacks; 
-				if( s<1 )
-					s = 1; 
+					if( llListFindList(fxTypes, (list)t) == -1 && def != fx$NO_PASSIVE ){
+					
+						fxTypes += t;
+						defaults += llList2List(DEF, t, t);
+						if( t == fx$SET_FLAG || t == fx$UNSET_FLAG )
+							flagsChanged = TRUE;
+						else if( t == fx$GRAVITY )
+							gravChanged = TRUE;
+						
+					}
+					
+				}
 				
-				replaceStacks(PID, s);
+				if( action&FXCPARSE$ACTION_RUN ){
+					
+					#undef FXCOMPILER_SECTION
+					#define FXCOMPILER_SECTION 1
+					#ifdef IS_NPC
+						#include "./got FXCompiler_NPC.lsl"
+					#else
+						#include "./got FXCompiler_PC.lsl"
+					#endif
+					
+				}
+				if( action&FXCPARSE$ACTION_ADD ){
+					#undef FXCOMPILER_SECTION
+					#define FXCOMPILER_SECTION 2
+					#ifdef IS_NPC
+						#include "./got FXCompiler_NPC.lsl"
+					#else
+						#include "./got FXCompiler_PC.lsl"
+					#endif
+					
+				}
+				if( action&FXCPARSE$ACTION_REM ){ 
+				
+					#undef FXCOMPILER_SECTION
+					#define FXCOMPILER_SECTION 3
+					#ifdef IS_NPC
+						#include "./got FXCompiler_NPC.lsl"
+					#else
+						#include "./got FXCompiler_PC.lsl"
+					#endif
 
-				#ifdef IS_NPC
-					NPCInt$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
-				#else
-					Evts$stacksChanged(PID, timesnap, (int)(i2f((int)additional)*10), s); 
-				#endif
-				onStackUpdate(); 
-							
-			} 
+				}
+				
+			}
+			
+			// Unlink instant effects and removed effects here.
+			if( action&FXCPARSE$ACTION_REM || (int)db4$fget(table, fxPackage$DUR) == 0 ){
+				db4$fdelete(table, fxPackage$STACKS);
+			}
+
+				
 		}
 		
-		if( actions&(FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_REM|FXCPARSE$ACTION_STACKS))
-			updateGame(); 
-	}
+
+		if( refreshCombat )
+			Status$refreshCombat();
+		
+		// Passives have changed and must be recompiled
+		if( fxTypes != [] ){
+					
+			// Scan through packages and find changed variables
+			fxPackageEach(pix,tb,
+				
+				list effects = llJson2List(db4$fget(tb, fxPackage$FXOBJS));
+				int stacks = (int)db4$fget(tb, fxPackage$STACKS);
+				int flags = (int)db4$fget(tb, fxPackage$FLAGS);
+				int sender = key2int(db4$fget(tb, fxPackage$SENDER));
+				
+				// Loop through effect arrays
+				integer fxi;
+				for(; fxi < count(effects); ++fxi ){
+					
+					// See if we need to compile this type
+					int type = (int)j(l2s(effects, fxi), 0);
+					int pos = llListFindList(fxTypes, (list)type);
+					// This type is being compiled
+					if( ~pos ){
+						
+						list cur = llList2List(defaults, pos, pos);
+						list add = llDeleteSubList(llJson2List(l2s(effects, fxi)), 0, 0);
+						list out;
+						
+						// Concat JSON array types
+						if( type == fx$CONVERSION )
+							out = (list)mkarr(llJson2List(l2s(cur, 0)) + add);
+						// Bitwise types
+						else if( type == fx$SET_FLAG || type == fx$UNSET_FLAG ){
+							out = (list)(l2i(cur,0)|l2i(add,0));
+						}
+						else if( type == fx$SPELL_HIGHLIGHT && stacks >= l2i(add, 1) ){
+							out = (list)(l2i(cur,0)|(1<<l2i(add,0))); 
+						}
+						// Replace types
+						else if( type == fx$FOV || type == fx$SET_TEAM )
+							out = (list)add;
+						// Integer additive types
+						else if( type == fx$HP_ADD || type == fx$MANA_ADD || type == fx$MAX_AROUSAL_ADD || type == fx$MAX_PAIN_ADD )
+							out = (list)(l2i(cur,0)+l2i(add,0));
+						// Float additive
+						else if( type == fx$GRAVITY ){
+							out = (list)(l2f(cur, 0)+l2f(add,0));
+						}
+						// Inverse multiplicative types
+						else if( type == fx$DODGE )
+							out = (list)(l2f(cur,0)*(1.0-l2f(add,0)));
+						// outputs [<casterInt>_<spellName>, (float)multi]
+						else if( type == fx$SPELL_DMG_TAKEN_MOD ){
+							
+							str label = "0";	// Modify all packages with this name
+							if( l2i(add, 2) )	// Modify only if the caster is the sender of this package
+								label = (str)sender;
+							label += "_"+l2s(add, 0); // Add the package name
+							
+							float val = 1.0+l2f(add,1); // Make value multiplicative
+							list c = llJson2List(l2s(cur, 0));
+							int pos = llListFindList(c, (list)label);
+							if( ~pos )
+								c = llListReplaceList(c, (list)(l2f(c, pos+1)*val), pos+1, pos+1);
+							else
+								c += (list)label + val;
+							out = (list)mkarr(c);
+							
+						}
+						// Global and bycaster modifiers: [0(global),float globalMod,   key2int(uuid),float uuidMod...]
+						else if( type == fx$DAMAGE_DONE_MULTI || type == fx$DAMAGE_TAKEN_MULTI || type == fx$HEALING_TAKEN_MULTI ){
+						
+							float multi = l2f(add, 0);
+							int targ = 0;
+							if( l2i(add, 1) )
+								targ = sender;
+							
+							list c = llJson2List(l2s(cur, 0));
+							int pos = llListFindList(c, (list)targ);
+							
+							if( ~pos )
+								c = llListReplaceList(c, (list)(l2f(c, pos+1)*(multi+1.0)), pos+1, pos+1);
+							else
+								c += (list)targ + (multi+1.0);
+							out = (list)mkarr(c);
+							
+						}
+						// Spell index modifiers [float abil4,float abil0, float abil1, float abil2, float abil3]
+						else if( type == fx$SPELL_DMG_DONE_MOD || type == fx$SPELL_MANACOST_MULTI || type == fx$SPELL_CASTTIME_MULTI || type == fx$SPELL_COOLDOWN_MULTI ){
+							
+							list c = llJson2List(l2s(cur, 0));
+							int idx = l2i(add, 0);
+							float val = (l2f(add, 1)+1.0)*l2f(c, idx);
+							c = llListReplaceList(c, (list)val, idx, idx);
+							out = (list)mkarr(c);
+							
+						}
+						// Float multiplication
+						else{
+							
+							// Multiplicative type
+							out = (list)(l2f(cur,0)*(l2f(add,0)+1.0));
+							
+						}
+
+						defaults = llListReplaceList(defaults, out, pos, pos);
+						
+						
+					
+					}
+					
+				}
+				
+			)
+			
+			// Update the actives table
+			for( i = 0; i < count(fxTypes); ++i )
+				db4$replace(hudTable$fxCompilerActives, l2i(fxTypes, i), l2s(defaults, i));
+			
+			if( flagsChanged )
+				db4$freplace(
+					hudTable$fxCompilerActives, 
+					fxf$SET_FLAG,
+					(int)fx$getDurEffect(fxf$SET_FLAG)&~(int)fx$getDurEffect(fxf$UNSET_FLAG)
+				);
+			
+			if( gravChanged )
+				llSetBuoyancy((float)fx$getDurEffect(fxf$GRAVITY));
+			
+			
+			// Tell scripts what types have been updated
+			llMessageLinked(LINK_SET, TASK_FX, mkarr(fxTypes), "");
+			
+			//qd("Types "+mkarr(fxTypes));
+			//qd("Vals "+mkarr(defaults));
+		}
 	
+	}
+
 
 }

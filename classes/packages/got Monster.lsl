@@ -32,6 +32,9 @@ float hitbox = 3;       // Range of melee attacks
 float atkspeed = 1;     // Time between melee attacks
 float wander;           // Range to roam
 float hoverHeight;		// Hover height. Primarily used for animesh
+float lastFlank;		// llGetTime of last attempt to flank
+list flankPoints;		// Points to go to
+
 
 integer height_add;		// LOS check height offset from the default 0.5m above root prim
 #define hAdd() ((float)height_add/10)
@@ -39,7 +42,7 @@ integer height_add;		// LOS check height offset from the default 0.5m above root
 float fxSpeed = 1;			// FX speed modifier
 float fxCooldownMod = 1;	// Used for attack speed
 
-integer RUNTIME_FLAGS;  		// Flags that can be set from other script, see got Monster head file
+integer RUNTIME_FLAGS = Monster$RF_ANIMESH;  		// Flags that can be set from other script, see got Monster head file
 integer RUNTIME_FLAGS_SPELL;	// Flags set from npcspells
 
 #define getRF() (RUNTIME_FLAGS|RUNTIME_FLAGS_SPELL)
@@ -203,7 +206,8 @@ toggleMove( integer on ){
 	if(~getRF()&Monster$RF_NOROT && ~FXFLAGS&fx$F_STUNNED){ \
 		vector pp = prPos(chasetarg); \
 		vector gpos = llGetRootPosition(); \
-		if(look_override)pp = prPos(look_override); \
+		if( look_override ) \
+			pp = prPos(look_override); \
 		lookAt(<pp.x, pp.y, gpos.z>); \
 	}\
 
@@ -255,7 +259,7 @@ timerEvent( string id, string data ){
         } 
         
         
-		// Seeking a specific position
+		// Seeking a specific position. Or flanking around a player if flankPoints are not empty
         else if( STATE == MONSTER_STATE_SEEKING ){
 		
 			// If monster ignore this because monster overrides
@@ -267,10 +271,11 @@ timerEvent( string id, string data ){
 			}
 
 			vector gpos = groundPoint();
+			int flanking = count(flankPoints);
+			float md = 0.25+flanking*.25;				// Min dist to be considered at target
 			
-			float md = 0.25;				// Min dist to be considered at target
 			vector t = lastseen;		// Pos to go to
-
+			vector mPos = llGetPos();
 			
 			// External defined target
 			if( SEEKTARG ){ 
@@ -281,6 +286,22 @@ timerEvent( string id, string data ){
 					t = prPos(l2s(SEEKTARG,0));
 					
 			}
+			// Attemptint to flank
+			else if( flanking ){
+				
+				t = ZERO_VECTOR;
+				while( count(flankPoints) && t == ZERO_VECTOR ){
+				
+					vector point = l2v(flankPoints, 0);
+					list ray = llCastRay(mPos, point, RC_DEFAULT);
+					if( l2i(ray, -1) != 0 || llVecDist(<mPos.x,mPos.y,0>, <point.x,point.y,0>) < 0.25 )
+						flankPoints = llDeleteSubList(flankPoints, 0, 0);
+					else
+						t = point;
+			
+				}
+							
+			}
 			// We have waypoints to follow (tracking a lost target). Find the closest waypoint and pick that instead.
 			else if( count(WPOINTS) ){
 			
@@ -288,7 +309,7 @@ timerEvent( string id, string data ){
 				int i;
 				for( ; i < count(WPOINTS) && count(WPOINTS); ++i ){
 					
-					list ray = llCastRay(llGetPos(), l2v(WPOINTS, i), [RC_REJECT_TYPES, RC_REJECT_AGENTS|RC_REJECT_PHYSICAL]);
+					list ray = llCastRay(mPos, l2v(WPOINTS, i), RC_DEFAULT);
 					
 					int r = l2i(ray, -1);
 					// Stop here
@@ -349,27 +370,39 @@ timerEvent( string id, string data ){
 				
             }
 			
-			// We could not move towards the target.
+			// We could not move towards the target or we have reached the target.
 			
-			// We are seeking towards a scripted target location.
-			if( SEEKTARG ){
+			// Flanking gets priority over tracking last seen, but not seektarg
+			if( flanking && SEEKTARG == [] ){
 			
-				BFL = BFL&~BFL_SEEKING;
-				if( dist < md )
-					raiseEvent(MonsterEvt$seekComplete, l2s(SEEKTARG, 2));
-				else
-					raiseEvent(MonsterEvt$seekFail, l2s(SEEKTARG, 2));
-					
-				SEEKTARG = [];
+				flankPoints = llDeleteSubList(flankPoints, 0, 0);
+				// If a flank pos still exists we can try to do that one instead. No need to change state yet!
+				if( count(flankPoints) )
+					return;
 				
 			}
+			else{
 			
-			// Unable to move towards the target so start deleting waypoints until maybe one fits
-			lastseen = l2v(WPOINTS, 0);
-			WPOINTS = llDeleteSubList(WPOINTS, 0, 0);
-			if( lastseen != ZERO_VECTOR )
-				return;
-			
+				// We are seeking towards a scripted target location.
+				if( SEEKTARG ){
+				
+					BFL = BFL&~BFL_SEEKING;
+					if( dist < md )
+						raiseEvent(MonsterEvt$seekComplete, l2s(SEEKTARG, 2));
+					else
+						raiseEvent(MonsterEvt$seekFail, l2s(SEEKTARG, 2));
+						
+					SEEKTARG = [];
+					
+				}
+				
+				// Unable to move towards the target so start deleting waypoints until maybe one fits
+				lastseen = l2v(WPOINTS, 0);
+				WPOINTS = llDeleteSubList(WPOINTS, 0, 0);
+				if( lastseen != ZERO_VECTOR )
+					return;
+					
+			}
 			// Stop moving
 			integer s = MONSTER_STATE_IDLE;
 			if( chasetarg )
@@ -383,6 +416,8 @@ timerEvent( string id, string data ){
 			
         }
         
+
+		
 		// Tracking a player
         else if( STATE == MONSTER_STATE_CHASING ){
 		
@@ -468,6 +503,31 @@ timerEvent( string id, string data ){
                 
 				updateLookAt();
 				toggleMove(FALSE);
+				
+				myAngX(chasetarg, ang)
+				if( rf & Monster$RF_FLANKING && llGetTime()-lastFlank > 6 && llFabs(ang) < PI_BY_TWO ){
+					
+					if( llListFindList(llJson2List(db4$fget(hudTable$npcInt, hudTable$npcInt$directTargeting)), (list)((str)chasetarg)) == -1 ){
+					
+						lastFlank = llGetTime();
+						float deg = llFrand(PI*0.08); // Around 30 deg
+						float first = -PI_BY_TWO;	// left side
+						if( ang > 0 ){
+							deg = -deg; 		// need to remove degrees to turn counter clockwise (to the right side)
+							first = -first;		// Make first positive to jump to right side first
+						}
+						rotation fwd = prRot(chasetarg);
+						flankPoints = (list)
+							(ppos+zRotNorm( first, fwd )) +
+							(ppos+zRotNorm( PI+deg, fwd )*1.25)
+						;
+						
+						// Todo: Check if flank points can be reached
+						STATE = MONSTER_STATE_SEEKING;
+						
+					}
+					
+				}
 				
             }
             // Might be in range but should move closer
@@ -731,13 +791,13 @@ onSettings(list settings){
 
 default{
 
-    on_rez(integer rawr){llResetScript();}
-    
     timer(){multiTimer([]);}
     
     state_entry(){
 		llSetStatus(STATUS_PHANTOM, TRUE);
-        if(llGetStartParameter())raiseEvent(evt$SCRIPT_INIT, "");
+        if( llGetStartParameter() )
+			raiseEvent(evt$SCRIPT_INIT, "");
+			
     }
 	/*
     #define LISTEN_LIMIT_LINK LINK_THIS
@@ -747,13 +807,15 @@ default{
 	
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		FXFLAGS = l2i(data, FXCUpd$FLAGS); \
-		if(RUNTIME_FLAGS & Monster$RF_IS_BOSS)FXFLAGS = FXFLAGS&~fx$F_STUNNED; \
-		if(FXFLAGS&fx$F_STUNNED_IMPORTANT)FXFLAGS = FXFLAGS|fx$F_STUNNED; \
-		fxSpeed = i2f(l2f(data, FXCUpd$MOVESPEED)); \
-		fxCooldownMod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
-		if(FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED))toggleMove(FALSE); \
+		FXFLAGS = (int)fx$getDurEffect(fxf$SET_FLAG); \
+		if( RUNTIME_FLAGS & Monster$RF_IS_BOSS ) \
+			FXFLAGS = FXFLAGS&~fx$F_STUNNED; \
+		if( FXFLAGS&fx$F_STUNNED_IMPORTANT ) \
+			FXFLAGS = FXFLAGS|fx$F_STUNNED; \
+		fxSpeed = (float)fx$getDurEffect(fxf$MOVE_SPEED); \
+		fxCooldownMod = (float)fx$getDurEffect(fxf$COOLDOWN_MULTI); \
+		if( FXFLAGS&(fx$F_STUNNED|fx$F_ROOTED) ) \
+			toggleMove(FALSE); \
 	} \
 	else if(nr == TASK_MONSTER_SETTINGS){\
 		onSettings(llJson2List(s)); \

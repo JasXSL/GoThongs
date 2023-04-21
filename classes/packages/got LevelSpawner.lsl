@@ -153,7 +153,7 @@ default{
 		toggleLoadingScreen(TRUE);
 		
 		
-		runOnDbPlayers(targ,
+		runOnDbPlayers(idx, targ,
 			if( targ != llGetOwner() )
 				LevelSpawner$setLoading(targ);
 		)

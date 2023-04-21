@@ -30,18 +30,10 @@ key cache_targ;
 int P_BUTTONS;
 int P_BAR;
 
-#define SPSTRIDE 7
+#define SPSTRIDE 3
 // Note: if you change this stride, you have to update in got GUI too, and that must be -1 to this stride
-list SPELL_ICONS;   // [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)flags]
-/*
-	PID : Package ID
-	Texture : uuid
-	Desc : Click description
-	Added : timesnap (9figure unix time in 10ths of a second)
-	Duration: duration in 10th of a second
-	Stacks : nr stacks
-	Flags : flags
-*/
+list C_SPI;	// cache spellicons. [(int)pix, (key)texture, (str)desc]
+
 
 list TG; 			// [(str)id, (int)flags] Flags are in got NPCInt. Tracks target and/or focus target. Players currently actively targeting you
 
@@ -237,9 +229,8 @@ ptEvt( string id ){
 	// Set spell textures
 	else if( id == "OP" ){
 	
-		str ch = db4$getTableChar(db4table$spellIcons);
 		// Always send to self
-		int max = llGetListLength(SPELL_ICONS)/SPSTRIDE;
+		int max = llGetListLength(C_SPI)/SPSTRIDE;
 		if( max > 8 )
 			max = 8;
 			
@@ -247,13 +238,24 @@ ptEvt( string id ){
 		for( ; i < max; ++i ){
 			
 			integer n = i*SPSTRIDE;
-			list add = llDeleteSubList(llList2List(SPELL_ICONS, n, n+SPSTRIDE-1), 2, 2); // Description is not needed. But send rest;
+			str table = getFxPackageTableByIndex(l2i(C_SPI, n));
+			list add = llList2List(C_SPI, n, n+SPSTRIDE-2); // [(int)pix, (key)texture] - Desc removed
+			add += (list)
+				((int)db4$fget(table, fxPackage$ADDED)) + // time added
+				(float)db4$fget(table, fxPackage$DUR)+ // duration
+				(int)db4$fget(table, fxPackage$STACKS) + // stacks
+				(int)db4$fget(table, fxPackage$FLAGS) // flags
+			;
+			
 			out += add;
-			db4$replaceFast(ch, i, add);
+			db4$replace(hudTable$evtsSpellIcons, i, mkarr(add));
 			
 		}
+		db4$setIndex(hudTable$evtsSpellIcons, max);
+		
+		
 		GUI$setMySpellTextures(max);
-	
+		
 		// Textures sent too recently
 		if( BFL&BFL_TEXTURES_SENT || !count(TG) ){
 		
@@ -265,7 +267,6 @@ ptEvt( string id ){
 		BFL = BFL_TEXTURES_SENT;
 		
 		string s = mkarr(out);
-		
 		for( i=0; i<count(TG); i+= 2 ){
 			
 			integer n = l2i(TG, i+1);
@@ -467,23 +468,15 @@ targScan( list sensed ){
 	T = t;
 
 	// Something has changed so we will rewrite the DB
-	string ch = db4$getTableChar(db4table$npcNear);
-	int tblMax = db4$getMaxFast(ch);
-	for( i = 0; i < count(t)/2 || i < tblMax; ++i ){
-		
-		if( i < count(t)/2 ){
-			list dta = llList2List(t, i*T_STRIDE, i*T_STRIDE+1);
-			// Replace
-			if( i+1 < tblMax )	// +1 needed because 0 is always the hud itself (set in #ROOT on table creation)
-				db4$replaceFast(ch, i+1, dta);
-			// Insert
-			else
-				db4$insertFast(ch, dta);
-		}
-		else
-			db4$deleteFast(ch, i+1);
+	string ch = hudTable$evtsNpcNear;
+	int max = count(t)/2;
+	for( i = 0; i < max; ++i ){
+	
+		list dta = llList2List(t, i*T_STRIDE, i*T_STRIDE+1);
+		db4$replace(ch, i+1, mkarr(dta));
 		
 	}
+	db4$setIndex(ch, max+1);	// +1 because row 0 is constant
 	
 }
 
@@ -555,9 +548,41 @@ default{
 	
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		fxMod = i2f(l2f(data, FXCUpd$QTE_MOD)); \
+		fxMod = (float)fx$getDurEffect(fxf$QTE_MOD); \
     } \
+	else if( nr == TASK_FXC_PARSE ){ \
+		int i; list entries = llJson2List(s); \
+		s = ""; \
+		int needUpdate; \
+		for(; i < count(entries); i += FXCPARSE$STRIDE ){ \
+			int task = l2i(entries, i); \
+			int pix = l2i(entries, i+1); \
+			int pos = llListFindList(C_SPI, (list)pix); \
+			if( task & FXCPARSE$ACTION_REM ){ \
+				C_SPI = llDeleteSubList(C_SPI, pos, pos+SPSTRIDE-1); \
+				needUpdate = TRUE; \
+			} \
+			else if( task != FXCPARSE$ACTION_RUN ){ /* Run without stacks/add is ignored */ \
+				str table = getFxPackageTableByIndex(pix); \
+				list fxs = llJson2List(db4$fget(table, fxPackage$FXOBJS)); \
+				int n; \
+				for(; n < count(fxs); ++n ){ \
+					str fx = l2s(fxs, n); \
+					if( (int)j(fx, 0) == fx$ICON ){ \
+						str desc = j(fx, 2); \
+						str texture = j(fx, 1); \
+						if( ~pos ) \
+							C_SPI = llListReplaceList(C_SPI, (list)texture + desc, pos+1, pos+2); \
+						else \
+							C_SPI += (list)pix + texture + desc; \
+						needUpdate = TRUE; \
+					} \
+				} \
+			} \
+		} \
+		if( needUpdate ) \
+			ptSet("OP", 0.1, FALSE); \
+	} \
 	
     #include "xobj_core/_LM.lsl" 
     // Here's where you receive callbacks from running methods
@@ -687,63 +712,6 @@ default{
 		
 	}
 	
-	else if(
-		METHOD == EvtsMethod$addTextureDesc ||
-		METHOD == EvtsMethod$remTextureDesc ||
-		METHOD == EvtsMethod$stacksChanged
-	){
-		
-		if( METHOD == EvtsMethod$addTextureDesc ){
-			// [(int)PID, (key)texture, (str)desc, (int)added, (int)duration, (int)stacks, (int)pflags]
-			SPELL_ICONS += 
-				// PID
-				(list)l2i(PARAMS, 0) + 
-				// Texture
-				method_arg(1) +
-				// Desc
-				method_arg(2) + 
-				// Added
-				l2i(PARAMS, 3) + 
-				// Duration
-				l2i(PARAMS, 4) + 
-				// Stacks
-				l2i(PARAMS, 5) +
-				// Flags
-				l2i(PARAMS, 6)
-			;
-		}
-		else if(METHOD == EvtsMethod$remTextureDesc){
-		
-			integer pid = l2i(PARAMS, 0);
-			integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if( pos == -1 )
-				return;
-			
-			SPELL_ICONS = llDeleteSubList(SPELL_ICONS, pos*SPSTRIDE, pos*SPSTRIDE+SPSTRIDE-1);
-			
-		}
-		else{
-		
-			integer pid = (integer)method_arg(0);
-			integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-			if( pos == -1 )
-				return;
-			
-			SPELL_ICONS = llListReplaceList(SPELL_ICONS, 
-				(list)l2i(PARAMS, 1) +l2i(PARAMS, 2) + l2i(PARAMS, 3), 
-			pos*SPSTRIDE+3,pos*SPSTRIDE+5);
-			
-		}
-		
-		
-		// Set textures after 0.2 sec of finishing receiving updates
-		ptSet("OP", 0.2, FALSE);
-		
-		
-	}
-
-    
-	
 	
 	if( METHOD == EvtsMethod$startQuicktimeEvent ){
 	
@@ -802,15 +770,16 @@ default{
 		if( id == "" )
 			id = llGetOwner();
 		
-		integer pid = (integer)method_arg(0);
-        integer pos = llListFindList(llList2ListStrided(SPELL_ICONS, 0, -1, SPSTRIDE), [pid]);
-
+		integer pix = (integer)method_arg(0);
+        integer pos = llListFindList(llList2ListStrided(C_SPI, 0, -1, SPSTRIDE), (list)pix);
         if( pos == -1 )
 			return;
 		
+		str table = getFxPackageTableByIndex(pix);
+		str desc = l2s(C_SPI, pos*SPSTRIDE+2);
 		llRegionSayTo(llGetOwnerKey(id), 0, evtsStringitizeDesc(
-			llList2String(SPELL_ICONS, pos*SPSTRIDE+2),
-			l2i(SPELL_ICONS, pos*SPSTRIDE+5)
+			desc,
+			(int)db4$fget(table, fxPackage$STACKS)
 		));
 		
     }

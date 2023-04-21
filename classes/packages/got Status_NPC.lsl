@@ -141,7 +141,7 @@ ag( key pl, float ag ){
 		
             float nr = llList2Float(AG, pos-1);
             nr+=ag;
-            if( nr<=0 )
+            if( nr <= 0 )
 				dropag(pl, TRUE);
             else{
 			
@@ -244,7 +244,7 @@ outputStats( integer f ){
 	
 	// Check team
 	integer t = fxTeam;
-	if(t == -1)
+	if( t == -1 )
 		t = tDEF;
 		
 	integer pre = TEAM;
@@ -366,7 +366,8 @@ outputStats( integer f ){
 	}else{ \
 		ptUnset("A"); \
 	} \
-	if(llJsonValueType(drops, []) != JSON_ARRAY)drops = "[]"; \
+	if(llJsonValueType(drops, []) != JSON_ARRAY) \
+		drops = "[]"; \
 	setTeam(team); \
 	debugUncommon("Setting team from onSettings: "+(str)team); \
 	if(~BFL&BFL_INITIALIZED){ \
@@ -579,22 +580,18 @@ default
     
 	#define LM_PRE \
 		if(nr == TASK_FX){ \
-			list data = llJson2List(s); \
-			FF = l2i(data, FXCUpd$FLAGS); \
-			fmCR = i2f(l2f(data, FXCUpd$CRIT))-1; \
-			fxTeam = l2i(data, FXCUpd$TEAM); \
+			FF = (int)fx$getDurEffect(fxf$SET_FLAG); \
+			fmCR = (float)fx$getDurEffect(fxf$CRIT_ADD)-1; \
+			fxTeam = (int)fx$getDurEffect(fxf$SET_TEAM); \
+			fmDD = llJson2List(fx$getDurEffect(fxf$DAMAGE_DONE_MULTI)); \
+			SDTM = llJson2List(fx$getDurEffect(fxf$SPELL_DMG_TAKEN_MOD)); \
+			fmDT = llJson2List(fx$getDurEffect(fxf$DAMAGE_TAKEN_MULTI)); \
+			fmHT = llJson2List(fx$getDurEffect(fxf$HEALING_TAKEN_MULTI)); \
 			outputStats(FALSE); \
 		}\
 		else if(nr == TASK_MONSTER_SETTINGS){\
 			list data = llJson2List(s); \
 			onSettings(data); \
-		} \
-		else if( nr == TASK_OFFENSIVE_MODS )\
-			fmDD = llJson2List(j(s, 0));  \
-		else if( nr ==  TASK_SPELL_MODS ){ \
-			SDTM = llJson2List(j(s, 0)); \
-			fmDT = llJson2List(j(s, 1)); \
-			fmHT = llJson2List(j(s, 2)); \
 		}
 	
     // This is the standard linkmessages
@@ -652,6 +649,7 @@ default
 					HP = maxHP*(-amount);
 				}
 				else{
+				
 					float spdmtm = 1;
 					integer cn = key2int(attacker);
 					integer i;
@@ -678,7 +676,8 @@ default
 					if( flags&SMAFlag$IS_PERCENTAGE )
 						amount*=maxHP;
 						
-					if(amount<0){
+					int evt = StatusEvt$hurt;
+					if( amount < 0 ){
 					
 						// Damage taken multiplier
 						float fmdt = 1;
@@ -696,6 +695,7 @@ default
 					}
 					else{
 					
+						evt = StatusEvt$healed;
 						// Healing taken multiplier
 						float fmht = 1;
 						// Add wildcard
@@ -709,9 +709,10 @@ default
 						
 					}
 					
-					raiseEvent(StatusEvt$hurt, llList2Json(JSON_ARRAY, [(str)amount, attacker]));
-					if( amount<0 && RF&Monster$RF_INVUL )
+					if( amount < 0 && RF&(Monster$RF_INVUL|Monster$RF_INF_HP) )
 						return;
+						
+					raiseEvent(evt, mkarr((list)llFabs(amount) + attacker));
 					
 					HP += amount;
 					
@@ -791,6 +792,7 @@ default
 		
 		SF = SF|StatusFlag$dead;
 		raiseEvent(StatusEvt$dead, "1");
+		FX$rem(FALSE, "", "", "", 0, FALSE, PF_DETRIMENTAL, 0, 0, FALSE); // Remove all deterimental effects
 		startAnim("die");
 		
 		llSleep(.1);
@@ -872,13 +874,24 @@ default
 		else{
 		
 			key player = method_arg(0);
-			integer complete = l2i(PARAMS, 0);
+			integer complete = l2i(PARAMS, 1);
 			integer pos = llListFindList(AG, [player]);
-			if(~pos){
-				if(complete == 3)AG = llListRandomize(AG, AGGRO_STRIDE);
-				else if(complete == 2)AG = llListReplaceList(AG, [llFrand(10)], pos-1, pos-1);
-				else if(complete)AG = llDeleteSubList(AG, pos-1, pos+AGGRO_STRIDE-2);
-				else AG = llListReplaceList(AG, [llList2Integer(AG, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
+			if( ~pos ){
+				
+				// 3 randomizes
+				if( complete == 3 )
+					AG = llListRandomize(AG, AGGRO_STRIDE);
+				// 2 sets it to a low values
+				else if( complete == 2 )
+					AG = llListReplaceList(AG, [llFrand(10)], pos-1, pos-1);
+				// Any positive Completely removes
+				else if( complete ){
+					AG = llDeleteSubList(AG, pos-1, pos+AGGRO_STRIDE-2);
+				}
+				// Anything else persists in table but ignores until they aggro again
+				else 
+					AG = llListReplaceList(AG, [llList2Integer(AG, pos+1)|AGFLAG_NOT_AGGROD], pos+1, pos+1);
+				
 			}
 		}
 		ag("",0);

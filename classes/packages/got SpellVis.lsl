@@ -87,7 +87,7 @@ integer WEAPON_SHEATHED = TRUE;
 onEvt(string script, integer evt, list data){
 
     // Status flags updated
-    if(script == "got Status" && evt == StatusEvt$flags){
+    if( script == "got Status" && evt == StatusEvt$flags ){
 
         integer pre = STATUS_FLAGS;
         STATUS_FLAGS = llList2Integer(data,0);
@@ -106,11 +106,9 @@ onEvt(string script, integer evt, list data){
 		updateBorders();
 		
     }
-    else if( script == "got FXCompiler" && evt == FXCEvt$spellMultipliers )
-        manacostMulti = llJson2List(llList2String(data,1));
 	
 	// Builds the buttons on the HUD
-    else if(script == "got SpellMan" && evt == SpellManEvt$recache){
+    else if( script == "got SpellMan" && evt == SpellManEvt$recache ){
 	
         FX_CACHE = [];
         PARTICLE_CACHE = [];
@@ -122,15 +120,15 @@ onEvt(string script, integer evt, list data){
         // Set textures
         list set = [];
 		
-		str tmpCh = db4$getTableChar(db4table$gotBridgeSpellsTemp);
-		str ch = db4$getTableChar(db4table$gotBridgeSpells);
+		str tmpCh = hudTable$spellmanSpellsTemp;
+		str ch = hudTable$bridgeSpells;
 
         integer i;
         for( ;  i < 5; ++i ){
             
-			list d = db4$getFast(tmpCh, i);
+			list d = llJson2List(db4$get(tmpCh, i));
 			if(d == [])
-				d = db4$getFast(ch, i);
+				d = llJson2List(db4$get(ch, i));
 			
             string visuals = llList2String(d, BSSAA$fx); // Visuals
             list p = llJson2List(j(visuals, 3));
@@ -139,7 +137,9 @@ onEvt(string script, integer evt, list data){
             PARTICLE_CACHE += l2f(p, 0);
             PARTICLE_CACHE += llList2List(p, 1, 1);
             PARTICLE_CACHE += l2s(p, 2);
-
+			
+			//qd(mkarr(d));
+	
             set += [
                 PRIM_LINK_TARGET, llList2Integer(ABILS, i),
                 PRIM_TEXTURE, 1, llList2String(d, BSSAA$texture), <1,1,0>, <0,0,0>,0,
@@ -576,22 +576,22 @@ default {
         
         
         // Debug
-        //onEvt("got SpellMan", SpellManEvt$recache, []);
+		//onEvt("got SpellMan", SpellManEvt$recache, []);
     }
     
     timer(){multiTimer([]);}
     
     #define LM_PRE \
     if(nr == TASK_FX){ \
-        list data = llJson2List(s); \
-        manamod = i2f(l2f(data, FXCUpd$MANACOST)); \
-        cdmod = i2f(l2f(data, FXCUpd$COOLDOWN)); \
-        fxFlags = l2i(data, FXCUpd$FLAGS);\
+        manamod = (float)fx$getDurEffect(fxf$MANA_COST_MULTI); \
+        cdmod = (float)fx$getDurEffect(fxf$COOLDOWN_MULTI); \
+        fxFlags = (int)fx$getDurEffect(fxf$SET_FLAG); \
         integer pre = fxHighlight; \
-        fxHighlight = llList2Integer(data, FXCUpd$SPELL_HIGHLIGHTS); \
+        fxHighlight = (int)fx$getDurEffect(fxf$SPELL_HIGHLIGHT); \
+		manacostMulti = llJson2List(fx$getDurEffect(fxf$SPELL_MANACOST_MULTI)); \
         list out = []; \
         integer i; \
-        for(i=0; i<count(ABILS_BG); i++){ \
+        for( ; i<count(ABILS_BG); ++i ){ \
             integer check = (int)llPow(2,i); \
             if(fxHighlight&check){ \
                 out+= [ \

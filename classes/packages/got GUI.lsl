@@ -167,7 +167,7 @@ key boss;				// ID of boss (used if boss is a monster)
 			toggle(TRUE); \
 		} \
 		else if( evt == RootEvt$focus ){ \
-			key TARG_FOCUS = Root$focus; \
+			key TARG_FOCUS = hud$root$focus(); \
 			list out = []; integer i; \
 			for( ; i<count(PLAYER_HUDS); ++i ){ \
 				vector color = <0,0,0>; \
@@ -208,7 +208,8 @@ default {
 		if(~BFL&BFL_TOGGLED)
 			return;
 		
-		list statuses = (list)Root$target + PLAYER_HUDS + boss;
+		key target = hud$root$targ();
+		list statuses = (list)target + PLAYER_HUDS + boss;
 		list statuses_flags;
 		list statuses_sex;
 		list statuses_fx;
@@ -251,7 +252,7 @@ default {
 				}
 				
 				if( i == 0 && (mf&Monster$RF_NO_TARGET || s&StatusFlag$dead) )
-					Root$clearTargetIfIs(LINK_THIS, Root$target);
+					Root$clearTargetIfIs(LINK_THIS, target);
 				
 			}
 			
@@ -356,7 +357,7 @@ default {
 			// If we are targeting ourself, we can do both at once
 			int isTarg = SPICON_UPD & SPICON_TARG;
 			int isSelf = SPICON_UPD & SPICON_SELF;
-			int idx;	// Where to start from in db4table$spellIcons. Own icons start at 0, target at 100
+			int idx;	// Where to start from in hudTable$evtsSpellIcons. Own icons start at 0, target at 100.
 			list bars;	// Bars that must be updated
 			int max;	// How many textures to pull from DB
 			
@@ -378,7 +379,7 @@ default {
 			}
 			
 			// Also update target if we target ourself
-			if( Root$target == llGetKey() )
+			if( target == llGetKey() )
 				bars += 1;
 			
 			
@@ -387,23 +388,22 @@ default {
 			integer x;																	// Iterator for nrs to add blocks
 			
 			
-			str ch = db4$getTableChar(db4table$spellIcons);
+			str ch = hudTable$evtsSpellIcons;
 			// Cycle over the icons 
 			integer i;
 			for( ; i < max; ++i ){
 				
-				list data = db4$getFast(ch, idx+i);
+				list data = llJson2List(db4$get(ch, idx+i));
 
 				key texture = llList2Key(data, 1);
 				integer added = llList2Integer(data, 2);
-				integer duration = llList2Integer(data, 3);
-				float dur = (float)duration/10;
+				float duration = l2f(data, 3);
 				integer stacks = llList2Integer(data, 4);
-				string description = llList2String(data, 0);		// PID
+				string description = llList2String(data, 0);		// PIX
 				int flags = l2i(data, 5);
-				
+								
 				// Make sure the effect hasn't already expired
-				if( duration+added > timeSnap() ){
+				if( duration*10+added > timeSnap() ){
 				
 					vector border = <0.5,1,0.5>;
 					if( flags & PF_DETRIMENTAL ){
@@ -414,7 +414,7 @@ default {
 						
 					}
 				
-					float percentage = ((float)(snap-added)/dur)/10;
+					float percentage = ((float)(snap-added)/duration)/10;
 					block=[
 						PRIM_COLOR, ALL_SIDES, <1,1,1>,0,
 						PRIM_COLOR, 0, border, 1,
@@ -438,8 +438,8 @@ default {
 					for(x=0; x<count(bars); x++){
 					
 						integer link = getFxPrim((8*l2i(bars,x)+slot));
-						//llSetLinkTextureAnim(link, 0, 2, 0, 0, 0, 0, 0);
-						llSetLinkTextureAnim(link, ANIM_ON, 2, 16, 16, start, end-start, end/dur);
+						llSetLinkTextureAnim(link, 0, 2, 0, 0, 0, 0, 0);
+						llSetLinkTextureAnim(link, ANIM_ON, 2, 16, 16, start, end-start, end/duration);
 						
 						out+= [PRIM_LINK_TARGET,link]+block;
 					}
@@ -533,15 +533,16 @@ default {
 	
 	listen(integer chan, string name, key id, string message){
 	
-		if( chan == GCHAN+1 && id == Root$target ){
+		if( chan == GCHAN+1 && id == hud$root$targ() ){
 			
 			list data = llJson2List(message);
 			int stride = 6;
 			int i;
 			TARG_SPICON_LEN = count(data)/stride;
-			string ch = db4$getTableChar(db4table$spellIcons);
+			
+			string ch = hudTable$evtsSpellIcons;
 			for(; i < TARG_SPICON_LEN; ++i )
-				db4$replaceFast(ch, 100+i, llList2List(data, i*stride, i*stride+stride-1));
+				db4$replace(ch, 100+i, mkarr(llList2List(data, i*stride, i*stride+stride-1)));
 			SPICON_UPD = SPICON_UPD | SPICON_TARG;
 			
 		}
@@ -552,8 +553,9 @@ default {
 	//#define LM_PRE qd((str)link+" :: "+(str)nr+" :: "+(str)id+" :: "+(str)s);
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		integer flags = (int)j(s, 0); \
-		if(flags == CACHE_FX_FLAGS)return; \
+		integer flags = (int)fx$getDurEffect(fxf$SET_FLAG); \
+		if( flags == CACHE_FX_FLAGS ) \
+			return; \
 		if( \
 			~BFL&BFL_LOADING_SCREEN && (\
 				(flags&fx$F_BLINDED && ~CACHE_FX_FLAGS&fx$F_BLINDED) || \
@@ -755,7 +757,7 @@ default {
 		integer i;
 		for(i=0; i<4; i++){
 			integer exists = FALSE;
-			if( Root$numPlayers() > i )
+			if( hud$root$numPlayers() > i )
 				exists = TRUE;
 			
 			key texture = l2k(PARTY_ICONS, i);
@@ -777,7 +779,7 @@ default {
 					barscale.y = 0.08394;
 					colors = [1,2,3,4];
 				}
-				if( l2k(PLAYER_HUDS, i) == Root$focus )
+				if( l2k(PLAYER_HUDS, i) == hud$root$focus() )
 					border = FOCUS_BORDER;
 				
 				float bgAlpha = 1;
@@ -821,8 +823,9 @@ default {
 					
 				// Owner only spell icons
 				if(i==0){
+				
 					integer x;
-					for(x=0; x<8; x++){
+					for( ; x < 8; ++x ){
 						float a = x;
 						vector pos = <0.044754, 0.228554, 0.234596>;
 						if(i){
@@ -837,6 +840,7 @@ default {
 							PRIM_COLOR, ALL_SIDES, <1,1,1>, 0
 						];
 					}
+					
 				}
 			}else{ 
 				

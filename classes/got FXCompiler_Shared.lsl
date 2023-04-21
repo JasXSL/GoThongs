@@ -1,50 +1,8 @@
 #ifndef _FXCompiler_Shared
 #define _FXCompiler_Shared
-// Shared preprocessor definitions for the fxcompilers
-// Duration effects
+
+
 /*
-	DFX:
-	[
-		(int):
-			// 4 unused
-			0b000000000000(8) type
-			0b0000(4) num_arguments
-			0b0000000000000000(16) id,
-		(var)arg1,
-		(var)arg2...
-	]
-
-*/
-list DFX;
-
-// Converts the first value of a DFX slice to a PID
-#define dPid( confInt ) (confInt&0xFFFF)
-#define dLen( confInt ) ((confInt>>16)&0xF)
-#define dType( confInt ) ((confInt>>20)&0xFF)
-
-#define addDFX( id, type, args ) \
-	DFX += \
-		(id | (count(args)<<16) | (type << 20)) + \
-		args
-		
-remDFX( int pid ){
-
-	integer _rdfx;
-	while( _rdfx < count(DFX) && count(DFX) ){
-	
-		integer n = l2i(DFX, _rdfx);
-		integer len = dLen(n);
-		if( dPid(n) == pid )
-			DFX = llDeleteSubList(DFX, _rdfx, _rdfx+len);
-		else
-			_rdfx += len+1;
-		
-	}
-	
-}
-
-
-
 recacheFlags(){
 
 	integer pre = CACHE_FLAGS;
@@ -65,49 +23,6 @@ recacheFlags(){
 	#endif
 	
 }
-
-// Returns a slice of dfx data with numElements elements
-list getDFXSlice( integer type, integer numElements ){
-
-	list out;
-	integer _rdfx;
-	if( numElements < 1 )
-		numElements = 0;
-		
-	while( _rdfx < count(DFX) ){
-	
-		integer n = l2i(DFX, _rdfx);
-		integer len = dLen(n);
-		
-		// this entry has the right type
-		if( dType(n) == type ){
-
-			list slice;
-			integer i;
-			for( ; i<numElements+1; ++i ){
-				
-				if( len >= i )
-					slice+= llList2List(DFX, _rdfx+i, _rdfx+i);
-				else
-					slice += "";
-				
-			}
-			
-			out+= slice;
-			
-		}
-		
-		_rdfx += len+1;
-		
-	}	
-
-	return out;
-	
-}
-
-#define stat( type ) _st(type, 0)
-#define statAdditive( type ) _st(type, 1)
-#define statInverse( type ) _st(type, 2)
 
 // compiles a stat for output and returns it as a compressed integer
 // Additive can also be 2 in which case it is inverse multiplicative
@@ -166,7 +81,7 @@ list cMod( int t ){
 	return out;
 
 }
-
+*/
 
 
 #endif

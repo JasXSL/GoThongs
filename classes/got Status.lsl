@@ -1,12 +1,47 @@
+/*
+	- No logic is needed in the event, only caching
+*/
 #ifndef _GotStatus
 #define _GotStatus
 
-#define db4table$status "got Status"
+// Status table
+#define hudTable$status$hp db4$0
+#define hudTable$status$mana db4$1
+#define hudTable$status$arousal db4$2
+#define hudTable$status$pain db4$3
+#define hudTable$status$flags db4$4
+#define hudTable$status$armor db4$5
+#define hudTable$status$team db4$6
+#define hudTable$status$difficulty db4$7
+#define hudTable$status$genitals db4$8
+#define hudTable$status$maxHp db4$9
+#define hudTable$status$maxMana db4$10
+#define hudTable$status$maxArousal db4$11
+#define hudTable$status$maxPain db4$12
+	
 
+// These methods fetch data from db4
+#define hud$status$hp() (float)db4$fget(hudTable$status, hudTable$status$hp)
+#define hud$status$mana() (float)db4$fget(hudTable$status, hudTable$status$mana)
+#define hud$status$arousal() (float)db4$fget(hudTable$status, hudTable$status$arousal)
+#define hud$status$pain() (float)db4$fget(hudTable$status, hudTable$status$pain)
+#define hud$status$maxHP() (float)db4$fget(hudTable$status, hudTable$status$maxHp)
+#define hud$status$maxMana() (float)db4$fget(hudTable$status, hudTable$status$maxMana)
+#define hud$status$maxArousal() (float)db4$fget(hudTable$status, hudTable$status$maxArousal)
+#define hud$status$maxPain() (float)db4$fget(hudTable$status, hudTable$status$maxPain)
+#define hud$status$flags() (int)db4$fget(hudTable$status, hudTable$status$flags)
+#define hud$status$armor() (int)db4$fget(hudTable$status, hudTable$status$armor)
+#define hud$status$team() (int)db4$fget(hudTable$status, hudTable$status$team)
+#define hud$status$difficulty() (int)db4$fget(hudTable$status, hudTable$status$difficulty)
+#define hud$status$genitals() (int)db4$fget(hudTable$status, hudTable$status$genitals)
+
+	
 #define StatusMethod$debugOut 0				// void - Outputs into chat: [(int)maxHP, (int)maxMana, (int)maxArousal, (int)maxPain]
 
 // debug got Status, 1, 0, 0, 1, -2000 - damage self 20 HP
-// debug got Status, 1, 0, 0, 2, 2000 - Add 20 arousal
+// debug got Status, 1, 0, 2, 1, 2000 - Add 20 arousal
+// debug got Status, 1, 0, 3, 1, 2000 - Add 20 pain
+
 #define StatusMethod$batchUpdateResources 1 	// (str)attacker, (int)type, (int)numArgs, (var)arg1, arg2... - Attacker is prepended and not strided. Strided list of resources to add or subtract. Number of args should match numArgs. Floats are auto converted to int with f2i. Use the SMBUR$build* functions to make sure the syntax matches
 	#define SMBUR$durability 0						// (float)durability, (str)spellName, (int)flags, (float)life_steal - Life steal is multiplied against damage on receiving and returned to the caster
 	#define SMBUR$mana 1							// (float)mana, (str)spellName, (int)flags
@@ -29,9 +64,9 @@
 #define StatusMethod$fullregen 5		// NULL
 //#define StatusMethod$setTargeting 6		// Move to got Evts (int)flags, see got NPCInt - targeting PCs is handled by got Evts
 #define StatusMethod$get 7				// returns [STATUS_FLAGS, FXFLAGS, DURABILITY/maxDurability(), MANA/maxMana(), AROUSAL/maxArousal(), PAIN/maxPain(), (int)sex_flags, (int)team]
-#define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, (arr)damage_taken_mod, (arr)healing_taken_mod]
+//#define StatusMethod$spellModifiers 8	// [(arr)SPELL_DMG_TAKEN_MOD, (arr)damage_taken_mod, (arr)healing_taken_mod]
 										// First argument is a strided array of [str package_name, int key2int(caster), float multiplier]
-
+										// Removed to use LSD instead
 #define StatusMethod$setSex 12			// (int)sex - 
 #define StatusMethod$outputStats 13		// NULL - Forces stats update (pc only)
 #define StatusMethod$loading 14			// (bool)loading - Sets loading flag
@@ -45,6 +80,7 @@
 #define StatusMethod$playerSceneDone 22		// void - Player scene was finished
 #define StatusMethod$damageArmor 23			// (int)damage
 #define StatusMethod$toggleBreakfree 24		// (bool)on - Enables or disables ability to revive when going down
+#define StatusMethod$setArmor 25			// 
 
 // Monster only
 #define StatusMethod$monster_dropAggro 100		// (key)target/"ALL", (int)complete - Drops aggro. If complete is 0, it removes the player from aggro list. If 1 it preserves the aggro until the enemy is seen/deals damage again, like if 2 players are fighting and the tank gets out of LOS it will not remove the aggro next time it sees the tank. If 2 it will just reset the aggro number to 1. If 3, it shuffles all aggro
@@ -95,10 +131,10 @@
 // Monster doesn't have shared vars so status is sent this way
 #define StatusEvt$monster_hp_perc 3			// HP/maxHP
 #define StatusEvt$dead 4					// (int)dead
-//#define StatusEvt$monster_targData 5		// contains same vars as StatusMethod$get returns
+#define StatusEvt$healed 5					// (float)amount, (key)attacker
 #define StatusEvt$monster_init 6			// Sent once the config has loaded
 #define StatusEvt$difficulty 7				// [(int)difficulty]
-#define StatusEvt$hurt 8					// [(float)amount, (key)id] - Raised when durability is damaged. ID only exists on NPCs
+#define StatusEvt$hurt 8					// [(float)amount, (key)attacker] - Raised when durability is damaged. 
 #define StatusEvt$death_hit 9				// void - HP has reached 0 but fx$F_NO_DEATH is set
 #define StatusEvt$genitals 10				// (int)genitals - Whenever genitals have changed. _core has a definition of these flags
 #define StatusEvt$loading_level 11			// [(key)level]
@@ -155,7 +191,7 @@
 
 
 #define runOnAttackable(targ, run) runOnHUDs(targ,  \
-	parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor) \
+	parseDesc(targ, resources, status, fx, sex, team, monsterflags, armor, cData) \
 	if(_attackableV(status, fx)){ \
 		run \
 	} \
@@ -239,6 +275,7 @@ if( var*amount != 0.0 ){ \
 #define Status$kill(targ) runMethod((str)targ, "got Status", StatusMethod$kill, [], TNN)
 #define Status$killAndPunish(targ, punishGroup) runMethod((str)targ, "got Status", StatusMethod$kill, (list)(punishGroup), TNN)
 #define Status$damageArmor(targ, damage) runMethod((str)targ, "got Status", StatusMethod$damageArmor, (list)damage, TNN)
+#define Status$setArmor(targ, val) runMethod((str)targ, "got Status", StatusMethod$setArmor, (list)(val), TNN)
 
 #define Status$outputStats() runMethod((str)LINK_ROOT, "got Status", StatusMethod$outputStats, [], TNN)
 
@@ -248,7 +285,7 @@ if( var*amount != 0.0 ){ \
 #define Status$monster_aggro(targ, amt) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_aggro, [targ, amt], TNN)
 #define Status$dropAggroConditional(targ, condition) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_dropAggro, [targ, condition], TNN)
 #define Status$monster_taunt(targ, inverse) runMethod((string)LINK_ROOT, "got Status", StatusMethod$monster_taunt, [targ, inverse], TNN)
-#define Status$monster_aggroed(player, range, team) runLimitMethod(llGetOwner(), "got Status", StatusMethod$monster_aggroed, [player, range, team], TNN, range)
+#define Status$monster_aggroed(player, range, team) runOmniMethod("got Status", StatusMethod$monster_aggroed, (list)player + (range) + (team), TNN)
 #define Status$monster_overrideDesc(desc) runMethod((str)LINK_ROOT, "got Status", StatusMethod$monster_overrideDesc, [desc], TNN)
 #define Status$setTeam(targ, team) runMethod((str)targ, "got Status", StatusMethod$setTeam, (list)team, TNN)
 

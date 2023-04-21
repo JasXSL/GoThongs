@@ -1,6 +1,28 @@
 #ifndef _Portal
 #define _Portal
 
+// Fixed table rows
+#define portalRow$players db4$0		// JSON array of players
+#define portalRow$huds db4$1		// JSON array of HUDs
+
+#define Portal$getPlayers() llJson2List(db4$fget(portalTable$portal, portalRow$players))
+#define Portal$getHuds() llJson2List(db4$fget(portalTable$portal, portalRow$huds))
+
+
+
+// Events sent as llRegionSay on a custom channel to save script time. Lets you affect NPCs from non-level scripts on the fly.
+// Channel for sending and receiving portal events
+#define Portal$evtChan(player) playerChan(player)+696969
+#define Portal$gEvt$ini "INI"			// Sent when rezzed.
+#define Portal$gEvt$inject "INJ"		// An integer pin is appended. You can now inject your requested scripts.
+
+#define Portal$gTask$inject "INJ"		// Appended with (int)nr_scripts. Asks to inject one or more scripts. 
+										// Portal replies with Portal$gEvt$inject when ready.
+										// You have 3 sec per script to complete the injection, plus 2 seconds.
+										// After that, the pin is reset.
+#define Portal$gTask$injectDone "IJD"	// Immediately closes the transfer window, and has the target forget the pin.
+#define Portal$gTask$get "GET"		// Callbacks an ini call to the script sending the GET command.
+
 // Helpful macros to automate
 #define Portal$playerLists \
 	list PLAYERS; \
@@ -9,6 +31,7 @@
 #define Portal$isPlayerListIfStatement script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players)
 #define Portal$plif Portal$isPlayerListIfStatement
 #define Portal$hif script == "got Portal" && evt == PortalEvt$playerHUDs
+#define Portal$isScriptInit script == "got Portal" && evt == evt$SCRIPT_INIT
 
 // Handles players and HUDs inside onEvt
 #define Portal$handlePlayers() \

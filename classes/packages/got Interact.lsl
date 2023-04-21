@@ -47,7 +47,7 @@ integer onInteract(key obj, string task, list params, vector pos){
 		list players = additionalAllow+llGetOwner();
 		integer i;
 		for(i=0; i<count(players); ++i){
-			runOmniMethodOn(l2s(players, i), "got Level", LevelMethod$interact, ([obj, mkarr(params)]), TNN);
+			runOmniMethodOn(l2s(players, i), "got Level", LevelMethod$interact, (list)(obj) + mkarr(params), TNN);
 		}
 		
     }
@@ -59,7 +59,7 @@ integer onInteract(key obj, string task, list params, vector pos){
 		Status$coopInteract(obj);
 		key hud;
 		integer i;
-		runOnDbHuds(targ, 
+		runOnDbHuds(_i, targ, 
 		
 			if( llGetOwnerKey(targ) == obj )
 				hud = targ;

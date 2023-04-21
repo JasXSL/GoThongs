@@ -4,6 +4,7 @@
  - Should it only be passive?
  
 2. Add an FXCUpd$ id for your effect in the "got FXCompiler" header file.
+	- Active: Also map it to add to FXCMap in got Passives package file
 
 3. ACTIVE effect only:
 If BOTH NPC and PC: 
@@ -11,7 +12,7 @@ If BOTH NPC and PC:
 Else: 
 	Add to FXCompiler_PC or FXCompiler_NPC in the locations mentioned above. See the other effects for examples.
 
-4. DURATION & Passive effects only: Go to FXCompiler_NPC AND FXCompiler_PC and find updateGame. Compile the values if necessary and put them in Passives$setActive in PC and the link message in NPC
+4. DURATION & Passive effects only: Go to FXCompiler_NPC AND FXCompiler_PC and find updateGame. 
 
 5. DURATION & Passive effects only: Go to got Passives, add to the end of the index of the compiled_actives global AND parse it in LM_PRE
 

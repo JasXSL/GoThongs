@@ -56,7 +56,7 @@ onEvt(string script, integer evt, list data){
 
     if( script == "got Bridge" && evt == BridgeEvt$userDataChanged ){
 		
-		data = Bridge$userData();
+		data = llJson2List(hud$bridge$userData());
         list dta = llJson2List(llList2String(data, BSUD$BROWSER)); // Browser conf
         if(llList2Float(dta, 1)>0){
             b_scale = llList2Float(dta, 1);

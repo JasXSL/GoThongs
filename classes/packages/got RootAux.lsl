@@ -16,7 +16,6 @@ list MANIFEST;
 int P_SFX;
 int ARMOR = Status$FULL_ARMOR;			// Received from got Status
 int FXF;			// FX Flags
-int SF;				// Status flags
 
 int ARMOR_SLOTS;	// Currently equipped slots in bits
 #define getSlotEquipped(slot) (ARMOR_SLOTS&(1<<slot))
@@ -29,8 +28,9 @@ key VALIDATE;		// HTTP request to fetch manifest
 // Toggle clothes
 tClt(){
 
+	integer sf = hud$status$flags();
 	int vis = 0;
-	int fxStripped = FXF&fx$F_SHOW_GENITALS || SF&(StatusFlag$dead|StatusFlag$raped);
+	int fxStripped = FXF&fx$F_SHOW_GENITALS || sf&(StatusFlag$dead|StatusFlag$raped);
 	if( !fxStripped ){
 		
 		int i;
@@ -67,7 +67,7 @@ tClt(){
 				else{
 					ThongMan$dead(
 						TRUE, 							// Hide thong
-						!!(SF&StatusFlag$dead)	// But don't show particles or sound if this was an FX call
+						!!(sf&StatusFlag$dead)	// But don't show particles or sound if this was an FX call
 					);
 				}
 			}
@@ -90,25 +90,7 @@ tClt(){
 		SpellFX$spawnInstantTarg(P_SFX, mkarr((list)"ArmorLost" + l2v(locs, slot)), llGetOwner());
 		
 	}
-		
-	
-	/*
-	// Show genitals
-	integer show = (SF&(StatusFlag$dead|StatusFlag$raped)) || FXF&fx$F_SHOW_GENITALS;
-	
-    if(show && ~BFL&BFL_NAKED){
-		BFL = BFL|BFL_NAKED;
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Bits");
-		
-    }
-	
-	else if(!show && BFL&BFL_NAKED){
-		BFL = BFL&~BFL_NAKED;
-        llRegionSayTo(llGetOwner(), 1, "jasx.setclothes Dressed");
-		llSleep(1);
-        llRegionSayTo(llGetOwner(), 1, "jasx.togglefolder Dressed/Groin, 0");
-    }
-	*/
+
 	
 }
 
@@ -139,7 +121,6 @@ onEvt(string script, integer evt, list data){
 		else if(evt == RLVevt$cam_unset)BFL = BFL&~BFL_CAM_SET;
 	}
 	else if(script == "got Status" && evt == StatusEvt$flags){
-		SF = l2i(data, 0);
 		tClt();
 	}
 	else if(script == "got Status" && evt == StatusEvt$armor ){
@@ -149,7 +130,7 @@ onEvt(string script, integer evt, list data){
 	
 	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" ){
 		
-		runOnDbPlayers(targ,
+		runOnDbPlayers(idx, targ,
 			Status$damageArmor(targ, -1000);
 		)
 		
@@ -307,6 +288,7 @@ purge(){
 	BFL = BFL&~BFL_INSTALLING;
 }
 
+
 default{
 
 	state_entry(){
@@ -323,6 +305,7 @@ default{
 			if( name == "SpellFX" )
 				P_SFX = nr;
 		)
+		llRegionSayTo(llGetOwner(), 1, "jasx.settings");
 		
 	}
 	
@@ -449,8 +432,7 @@ default{
 	
 	#define LM_PRE \
 	if(nr == TASK_FX){ \
-		list data = llJson2List(s); \
-		FXF = llList2Integer(data, 0); \
+		FXF = (int)fx$getDurEffect(fxf$SET_FLAG); \
 		tClt(); \
     } \
 	

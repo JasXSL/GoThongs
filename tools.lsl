@@ -73,52 +73,34 @@ string toGSCReadable( integer copper ){
 	
 }
 
+#define runOnDbPlayers(index, player, code) db4$each(hudTable$rootPlayers, index, player, code)
+#define runOnDbHuds(index, hud, code) db4$each(hudTable$rootHuds, index, hud, code)
+
 // Gets all players from db4
 list hudGetPlayers(){
 
-	list out; integer i;
-	integer max = (int)llLinksetDataRead(db4table$ext$root$nrPlayers);
-	for(; i < max; ++i )
-		out += llLinksetDataRead(db4table$ext$players+(str)i);
+	list out; 
+	runOnDbPlayers(i, pl, 
+		out += pl; 
+	)
 	return out;
 	
 }
 
 list hudGetHuds(){
 
-	list out; integer i;
-	integer max = (int)llLinksetDataRead(db4table$ext$root$nrPlayers);
-	for(; i < max; ++i )
-		out += llLinksetDataRead(db4table$ext$huds+(str)i);
+	list out; 
+	runOnDbHuds(i, hud, 
+		out += hud;
+	)
 	return out;
 	
 }
 
-#define runOnDbPlayers(player, code) \
-{ \
-	integer _n = (int)llLinksetDataRead(db4table$ext$root$nrPlayers); integer _i; \
-	for(; _i < _n; ++_i){ \
-		key player = llLinksetDataRead(db4table$ext$players+(str)_n); \
-		code \
-	} \
-}	
-
-#define runOnDbHuds(hud, code) \
-{ \
-	integer _n = (int)llLinksetDataRead(db4table$ext$root$nrPlayers); integer _i; \
-	for(; _i < _n; ++_i){ \
-		key player = llLinksetDataRead(db4table$ext$huds+(str)_n); \
-		code \
-	} \
-}	
 
 
 
-// Converts a Z forward rotation to an X forward rotation for old monster scripts to new monster scripts
-/* 
-	#define NormRot got_n2r
-	#define llLookAt(a,b,c) xLookAt(a)
-*/
+
 rotation got_n2r( rotation Q ){
 
 	vector v = llRot2Euler(Q);
@@ -436,6 +418,10 @@ list getHUDsByRole( int role ){
 	)
 	return out;
 }
+
+// Helper for got LocalConf.NPC.template since we need this in the header
+#define seqAnim( anims ) \
+	sI = 0; llRequestPermissions(llGetOwnerKey(l2k(GRAPPLE_TARGS, 0)), PERMISSION_TRIGGER_ANIMATION); sA = (list)anims
 
 #endif
 
