@@ -120,8 +120,8 @@ onEvt(string script, integer evt, list data){
         // Set textures
         list set = [];
 		
-		str tmpCh = hudTable$spellmanSpellsTemp;
-		str ch = hudTable$bridgeSpells;
+		str tmpCh = gotTable$spellmanSpellsTemp;
+		str ch = gotTable$bridgeSpells;
 
         integer i;
         for( ;  i < 5; ++i ){

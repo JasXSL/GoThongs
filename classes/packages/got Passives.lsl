@@ -113,7 +113,7 @@ default{
 		/*
 		int i;
 		for( ; i < count(FXCDefaults); ++i )
-			db4$replace(hudTable$passivesOutput, i, l2s(FXCDefaults, i));
+			db4$replace(gotTable$passivesOutput, i, l2s(FXCDefaults, i));
 		*/
 	}
 	
@@ -133,7 +133,7 @@ default{
         str oName = method_arg(0);
 		str name = "p$"+oName;
 		integer flags = l2i(PARAMS, 2);
-		//str table = hudTable$passivesInput;
+		//str table = gotTable$passivesInput;
 		list effects = llJson2List(method_arg(1));
 
 		int pos = llListFindList(REM_ON_CLEAN, (list)name);

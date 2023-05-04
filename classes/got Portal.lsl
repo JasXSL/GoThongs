@@ -5,8 +5,8 @@
 #define portalRow$players db4$0		// JSON array of players
 #define portalRow$huds db4$1		// JSON array of HUDs
 
-#define Portal$getPlayers() llJson2List(db4$fget(portalTable$portal, portalRow$players))
-#define Portal$getHuds() llJson2List(db4$fget(portalTable$portal, portalRow$huds))
+#define Portal$getPlayers() llJson2List(db4$fget(gotTable$portal, portalRow$players))
+#define Portal$getHuds() llJson2List(db4$fget(gotTable$portal, portalRow$huds))
 
 
 

@@ -1,18 +1,10 @@
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
 list PLAYERS;
-
-string group = "";
-integer assets_saved;
-integer points_saved;
-integer custom_saved;
-key backup_restore;
-key backup;
+string group;
 key fetchWindlights;
-
-#define HUD_TABLES Level$HUD_TABLES
-#define CUSTOM_TABLES Level$CUSTOM_TABLES
 
 // (str)name, (vec)pos
 list MONSTERS_KILLED;
@@ -35,15 +27,8 @@ list toSet;	// Windlights to set
 		PLAYERS = data; \
 
 
-ptEvt(str id){
-    if(id == "SAVE")
-        llOwnerSay((string)assets_saved+" HUD\n"+(string)points_saved+" spawns\n"+(string)custom_saved+" assets saved");
-    else if(id == "S"){
-        // Start save
-        Portal$save();
-        ptSet("SAVE", 10, FALSE);
-    }
-	else if(id == "KILLQUE" && MONSTERS_KILLED != []){
+ptEvt( str id ){
+	if( id == "KILLQUE" && MONSTERS_KILLED != [] ){
 		runOnPlayers(targ,
 			Bridge$monstersKilled(targ, MONSTERS_KILLED);
 		)
@@ -51,7 +36,7 @@ ptEvt(str id){
 	}	
 }
 
-list trimVecRot(list vec_or_rot, integer places, integer returnString){
+list trimVecRot( list vec_or_rot, integer places, integer returnString ){
     integer type = llGetListEntryType(vec_or_rot, 0);
     if(type != TYPE_ROTATION && type != TYPE_VECTOR)
 		return vec_or_rot;
@@ -74,38 +59,8 @@ list trimVecRot(list vec_or_rot, integer places, integer returnString){
     return [(vector)out];
 }
 
-// Returns [(str)table, (int)internal_index, (str)data] or [] if not found
-list getAssetByIndex(integer customAsset, integer globalIndex){
-	if(globalIndex<0){
-		llOwnerSay("Negative indexes are no longer allowed");
-		return [];
-	}
-	// Tables
-	list tables = HUD_TABLES;
-	if(customAsset)
-		tables = CUSTOM_TABLES;
-		
-	// Global index
-	integer n;
-	
-	list out = [];
-	// Interate over tables
-	integer i;
-	for(i=0; i<count(tables); ++i){
-		list parse = llJson2List(db3$get(l2s(tables, i), []));
-		if(globalIndex>=n+count(parse)){
-			n+= count(parse);
-		}
-		else{
-			return [
-				l2s(tables, i),
-				globalIndex-n,
-				llList2String(parse, globalIndex-n)
-			];
-		}
-	}
-	return [];
-}
+// Returns the spawn row (see header) or an empty list if not found
+#define getAssetByIndex( index ) LevelAux$getSpawnData(index)
 
 default{
 
@@ -114,296 +69,135 @@ default{
 		raiseEvent(evt$SCRIPT_INIT, ""); 
 		ptSet("KILLQUE", 2, TRUE); 
 		
-		integer N;
-        // fetchWindlights((list)"[TOR] Night - Anwar" + "Nacon's Natural Sunset: C");
-        links_each( nr, name,
-            
-            string desc = l2s(llGetLinkPrimitiveParams(nr, (list)PRIM_DESC), 0);
-            if( ~llSubStringIndex(desc, "WL$") ){
-                
-                list spl = explode("$$", desc);
-                integer i;
-                for(; i < count(spl); ++i ){
-                    
-                    list sub = explode("$", l2s(spl, i));
-                    if( l2s(sub, 0) == "WL" ){
-                        
-                        string wl = llToLower(l2s(sub, 1));
-						
-						// Windlight is already a key
-						if( (key)wl ){}
-						else{
-						
-							integer pos = llListFindList(toSet, (list)wl);
-							if( ~pos )
-								toSet = llListReplaceList(toSet, [
-									implode(",", explode(",", l2s(toSet, pos+1)) + nr )
-								], pos+1, pos+1);
-							else
-								toSet += (list)wl + nr;
-
-						}
-						i = count(spl);
-						
-                    }
-                    
-                }
-                
-            }
-            ++N;
-        
-        )
-		
-        fetchWindlights = llHTTPRequest(
-			"https://jasx.org/api/windlight/?SKY="+
-				llEscapeURL(implode(",", llList2ListStrided(toSet, 0, -1, 2))),
-			[],
-			""
-		);
-		
 	}
     
     timer(){ ptRefresh(); }
     
-	
-	http_response(key id, integer status, list meat, string body){
-		
-		if( id == backup )
-			llOwnerSay(body);
-		
-		if( id == fetchWindlights ){
-			
-			integer i;
-			body = j(body, "SKY");
-			if( !isset(body) )
-				return;
-				
-			for(; i < count(toSet); i += 2 ){
-				
-				key uuid = j(body, l2s(toSet, i));
-				if( uuid ){
-					
-					list prims = explode(",", l2s(toSet, i+1));
-					integer pid;
-					for(; pid < count(prims); ++pid ){
-						
-						integer prim = l2i(prims, pid);
-						list desc = explode(
-							"$$", 
-							l2s(
-								llGetLinkPrimitiveParams(prim, (list)PRIM_DESC),
-								0
-							)
-						);
-						
-						integer d;
-						for( ; d < count(desc); ++d ){
-							
-							list spl = explode("$", l2s(desc, d));
-							if( l2s(spl, 0) == "WL" ){
-								
-								spl = llListReplaceList(spl, (list)uuid, 1, 1);
-								desc = llListReplaceList(desc, (list)implode("$", spl), d, d);
-								
-							}    
-							
-						}
-						
-						string out = implode("$$", desc);
-						if( llStringLength(out) > 127 )
-							llOwnerSay("ERROR: Prim desc too long: '"+out+"' Please report this here: https://github.com/JasXSL/GoThongs/issues/343");
-						else
-							llSetLinkPrimitiveParamsFast(prim, (list)PRIM_DESC + out);
-						
-					}
-					
-					
-				}
-				else
-					llOwnerSay("MISSING WINDLIGHT: "+l2s(toSet, i));
-				
-				
-			}
-			toSet = [];
-					
-		}
-		
-		if( id != backup_restore )
-			return;
-		
-		if(llJsonValueType(body, []) != JSON_OBJECT ){
-			llOwnerSay(body);
-			return;
-		}
-		
-		if(llJsonValueType(body, ["jsonapi", 0, "errors"]) != JSON_INVALID){
-			llOwnerSay(llJsonGetValue(body, ["jsonapi", 0, "errors", 0, "title"]));
-			return;
-		}
-		if(llJsonValueType(body, ["jsonapi", 0, "data"]) == JSON_INVALID){
-			llOwnerSay("Load failed, data was invalid: ("+(str)llStringLength(body)+"):");
-			integer n;
-			while(n<llStringLength(body)){
-				llOwnerSay(llGetSubString(body, n, n+999));
-				n += 1000;
-			}
-			return;
-		}
-		body = llJsonGetValue(body, ["jsonapi", 0, "data"]);
-		llOwnerSay("Wiping existing tables");
-		list all = Level$ALL_TABLES;
-		list_shift_each(all, val,
-			db3$setOther(val, [], "[]");
-		)
-		list split = llJson2List(body);
-		body = "";
-		integer i;
-		for(i=0; i<count(split); i = i+2){
-			llOwnerSay("Restoring "+l2s(split, i));
-			db3$setOther(l2s(split, i), [], l2s(split, i+1));
-		}
-		llOwnerSay("Backup load complete");
-		
-	}
-	
     #include "xobj_core/_LM.lsl"
-    if(!method$byOwner)return;
-    if(method$isCallback){
+    if( !method$byOwner )
+		return;
 	
-        if(CB == "SV"){
+	str listButtonA = "[secondlife:///app/chat/1/";
+	str listButtonB = " (List)]";
+	
+    if( method$isCallback ){
+	
+		// Callback from portal telling you to save it
+        if( CB == "SV" ){
 		
-            ptSet("SAVE", 5, FALSE);
-            
-            
             list data = llGetObjectDetails(id, [OBJECT_NAME, OBJECT_DESC, OBJECT_POS, OBJECT_ROT, OBJECT_ATTACHED_POINT]);
+			// Ignore attachments
 			if( l2i(data, 4) )
 				return;
             
-            string name = llList2String(data, 0);
+            string name = l2s(data, 0);
+			integer localInv = llGetInventoryType(name) == INVENTORY_OBJECT;
             string pos = (string)trimVecRot([llList2Vector(data, 2)-llGetRootPosition()], 2, TRUE);
             string rot = "";
             if( (rotation)llList2String(data,3) != ZERO_ROTATION )
 				rot = (string)trimVecRot([llList2Rot(data, 3)], 3, TRUE);
-				
-            list out = [name, pos, rot];
+			
+			// Build the table row
+            list out = (list)localInv + name + pos + rot;
             string desc = llStringTrim(llList2String(data, 1), STRING_TRIM);
+			// To save it must start with $ and not be $M$ which marks an object as a monster
             if( llGetSubString(desc, 0,0) != "$" || llGetSubString(desc, 0, 2) == "$M$" )
 				desc = "";
             else 
-				desc = llGetSubString(desc, 1, -1);
+				desc = llGetSubString(desc, 1, -1); // remove $
 				
-            out+=desc;
-            out+=group;
+            out += desc;
+            out += group;
 			
-			integer i;
 			
-			// Saved data is [name, pos, rot, desc, group]
-            
-            // This object is in my inventory
-            if(llGetInventoryType(name) == INVENTORY_OBJECT){
+			// This is a start point
+            if( llGetSubString(name, 0, 12) == "_STARTPOINT_P" ){
+                
+				str idx = gotTable$meta$spawn0;
+				if(name == "_STARTPOINT_P2")
+					idx = gotTable$meta$spawn1;
 				
-				for( i=0; i < count(CUSTOM_TABLES); ++i ){
+				db4$freplace(gotTable$meta, idx, l2s(out, 1));
+				llOwnerSay("-> Saved start point at "+l2s(out, 1));
 				
-					if( db3$setOther(l2s(CUSTOM_TABLES, i), [-1], mkarr(out)) != "0" ){
-						++custom_saved;
-						return;
-					}
-					
-				}
-			
             }
-            // This is a start point
-            else if(llGetSubString(name, 0, 12) == "_STARTPOINT_P"){
-                if(name == "_STARTPOINT_P1")
-					db3$setOther("got Level", [LevelShared$P1_start], llList2String(out, 1));
-                else if(name == "_STARTPOINT_P2")
-					db3$setOther("got Level", [LevelShared$P2_start], llList2String(out, 1));
-                points_saved++;
-            }
-            // This is probably in the HUD then
+			// Otherwise it is a spawn
             else{
 			
-                // Spawn from HUD
-                list names = HUD_TABLES;
-				for(i=0; i<3; ++i){
-					if( db3$setOther(l2s(names, i), [-1], mkarr(out)) != "0" ){
-						++assets_saved;
-						return;
+				// Todo: Check if we have any empty slots
+				string o = mkarr(out); integer iid;
+				LevelAux$forSpawns( tot, idx ){
+					
+					if( LevelAux$getSpawnData(idx) == [] ){
+						
+						// Empty slot found
+						
+						db4$replace(gotTable$spawns, idx, o);
+						iid = idx;
+						tot = -1;
+						
 					}
+				
 				}
+				
+				// Did not find an empty one
+				if( ~tot )
+					iid = db4$insert(gotTable$spawns, o);
+				
+				string url = "remSpawn "+(str)iid;
+				llOwnerSay("Inserted "+(str)iid+" >>> " + o + " [secondlife:///app/chat/1/"+llEscapeURL(url)+" (Remove)]");
+
             }
 			
         }
+		
+		// Callback end
         return;
+		
     }
     
     // Purge all level data
-    if(METHOD == LevelAuxMethod$purge){
-        llOwnerSay("Wiping all data");
-        clearDB3()
+    if( METHOD == LevelAuxMethod$purge ){
+        
+		llOwnerSay("Wiping all data");
+		// 2 characters, starting with the table
+        list spawns = llLinksetDataFindKeys("^"+gotTable$spawns+".$", 0, -1);
+		integer i;
+		for(; i < count(spawns); ++i )
+			llLinksetDataDelete(l2s(spawns, i));
+		
     }
-	else if(METHOD == LevelAuxMethod$getOffset){
+	
+	// Callback the position (arg0) relative to root position
+	else if( METHOD == LevelAuxMethod$getOffset ){
+		
 		vector offs = (vector)method_arg(0);
 		CB_DATA = [offs-llGetRootPosition()];
+		
 	}
     
 	
     // Save level data
-    else if(METHOD == LevelAuxMethod$save){
+    else if( METHOD == LevelAuxMethod$save ){
         
-		group = method_arg(1);
-        assets_saved = 0;
-        points_saved = 0;
-        custom_saved = 0;
-		
+		group = method_arg(0);
 		llOwnerSay("Adding...");
-
-        ptSet("S", 3, FALSE);
+		Portal$save();
+		
     }
     
     else if(METHOD == LevelAuxMethod$stats){
+	
         llOwnerSay("Stats:");
-		list h = HUD_TABLES;
-		integer hud;
-		integer hlen;
-		list_shift_each(h, val,
-			val = db3$get(val, []);
-			hud = llGetListLength(llJson2List(val));
-			hlen += llStringLength(val);
-		)
-		list c = CUSTOM_TABLES;
-		integer custom;
-		integer clen;
-		list_shift_each(c, val,
-			val = db3$get(val, []);
-			custom = llGetListLength(llJson2List(val));
-			clen += llStringLength(val);
-        )
+		llOwnerSay("-- P0 start point: "+db4$fget(gotTable$meta, gotTable$meta$spawn0));
+		llOwnerSay("-- P1 start point: "+db4$fget(gotTable$meta, gotTable$meta$spawn1));
+		llOwnerSay("-- Free LSD: "+(str)llLinksetDataAvailable());
 		
-        vector p1 = (vector)db3$get("got Level", [LevelShared$P1_start]);
-        vector p2 = (vector)db3$get("got Level", [LevelShared$P2_start]);
-        
-        if(p1 == ZERO_VECTOR){
-            llOwnerSay("WARNING. Required P1 spawn point missing.");
-        }
-        else llOwnerSay("P1: "+(string)p1);
-        
-        if(p2){
-            llOwnerSay("P2: "+(string)p2);
-        }
-        else llOwnerSay("P2 Not set.");
-        
-
-        
-        llOwnerSay("HUD Spawned: "+(string)hud);
-        llOwnerSay("Custom assets: "+(string)custom);
-		integer perc = llRound(100-((float)hlen/(db3$tableMaxlength*3)*100));
-		llOwnerSay("Free Spawner Memory: "+(string)perc+"%");
-        perc = llRound(100-((float)clen/(db3$tableMaxlength*3))*100);
-		llOwnerSay("Free Assets Memory: "+(string)perc+"%");
     }
     
-	else if(METHOD == LevelAuxMethod$spawn){
+	// Spawn a new asset from either inventory by name. Usually used when placing new monsters into a level.
+	else if( METHOD == LevelAuxMethod$spawn ){
+	
 		string asset = method_arg(0);
         vector pos = (vector)method_arg(1);
         rotation rot = (rotation)method_arg(2);
@@ -412,183 +206,161 @@ default{
 		string spawnround = method_arg(5);
 		
 		
-        if(llGetInventoryType(asset) == INVENTORY_OBJECT){
-            if(debug)llOwnerSay("Spawning local asset: "+asset);
+        if( llGetInventoryType(asset) == INVENTORY_OBJECT ){
+            
+			if( debug )
+				llOwnerSay("Spawning local asset: "+asset);
 			Spawner$spawnInt(asset, pos, rot, description, debug, FALSE, spawnround);
+			
         }else{
-            if(debug)llOwnerSay("Item '"+asset+"' not found in level. Loading from HUD.");
+            
+			if( debug )
+				llOwnerSay("Item '"+asset+"' not found in level. Loading from HUD.");
             Spawner$spawn(asset, pos, rot, description, debug, FALSE, spawnround);
+			
         }
+		
 	}
 
     // Spawns an item from HUD assets or level inventory as if it was live by ID
-    else if(METHOD == LevelAuxMethod$testSpawn){
-        integer HUD = (integer)method_arg(0);
-        integer index = (integer)method_arg(1);
-        integer live = (integer)method_arg(2);
+    else if( METHOD == LevelAuxMethod$testSpawn ){
+	
+        integer index = (integer)method_arg(0);
+        integer live = (integer)method_arg(1);
         
-		list asset = getAssetByIndex(!HUD, index);
+		list asset = getAssetByIndex(index);
 		if(asset == []){
+			
 			llOwnerSay("Not found: "+(str)index);
 			return;
+			
 		}
-		list parse = llJson2List(l2s(asset, 2));
-		if(HUD){
-			llOwnerSay("From HUD: "+llList2String(parse, 0));
-			Spawner$spawn(llList2String(parse, 0), (vector)llList2String(parse, 1)+llGetRootPosition(), llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
-		}else{
-			llOwnerSay("From INV: "+llList2String(parse, 0));
-			Spawner$spawnInt(llList2String(parse, 0), (vector)llList2String(parse,1)+llGetRootPosition(), (rotation)llList2String(parse, 2), llList2String(parse, 3), !live, false, "");
+		
+		if( !l2i(asset, 0) ){
+		
+			llOwnerSay("From HUD: "+llList2String(asset, 1));
+			Spawner$spawn(
+				llList2String(asset, 1), 
+				(vector)llList2String(asset, 2)+llGetRootPosition(), 
+				llList2String(asset, 3), 
+				llList2String(asset, 4), 
+				!live, 
+				false, 
+				""
+			);
+			
+		}
+		else{
+		
+			llOwnerSay("From INV: "+llList2String(asset, 1));
+			Spawner$spawnInt(
+				llList2String(asset, 1), 
+				(vector)llList2String(asset,2)+llGetRootPosition(), 
+				(rotation)llList2String(asset, 3), 
+				llList2String(asset, 4), 
+				!live, 
+				false, 
+				""
+			);
+			
 		}
     }
     
-    else if(METHOD == LevelAuxMethod$list){
+	// list all spawns
+    else if( METHOD == LevelAuxMethod$list ){
+		
+		integer type = l2i(PARAMS, 0);
+		string search = llToLower(method_arg(1));
+		if( llGetSubString(search, 0,1) == "\\\"")
+			search = llGetSubString(search, 1, -1);
+			
+		if( search )
+			qd("Searching "+search);
 		//llOwnerSay("Listing "+method_arg(0)+" ["+SENDER_SCRIPT+"]");
-        list data = [];
-        if((integer)method_arg(0))
-			data = HUD_TABLES;
-        else 
-			data = CUSTOM_TABLES;
-        
-        integer i; integer n;
-        for(i=0; i<llGetListLength(data); i++){
-			string s = db3$get(l2s(data, i), []);
-			list spawns = llJson2List(s);
-			list_shift_each(spawns, val,
-				llOwnerSay("["+(string)n+"] "+val);
-				++n;
-			)
-        }
-        
+		LevelAux$forSpawns( total, idx ){
+			
+			list data = LevelAux$getSpawnData(idx);
+			if( data ){
+			
+				string s = mkarr(data);
+				integer fail = l2i(data, 0) != type;				
+				if( search != "" && !fail )
+					fail = llSubStringIndex(llToLower(s), search) == -1;
+					
+				if( !fail )
+					llOwnerSay(
+						"[secondlife:///app/chat/1/"+llEscapeURL("remSpawn "+(str)idx)+" DEL] "+
+						"[secondlife:///app/chat/1/"+llEscapeURL("testSpawn "+(str)idx)+" DUM] "+
+						"[secondlife:///app/chat/1/"+llEscapeURL("testSpawn "+(str)idx+" 1")+" LVE] "+
+						"["+(str)idx+"] "+
+						s
+					);
+				
+			}
+		}
+		
     }
 	
-	else if( METHOD == LevelAuxMethod$restoreFromBackup ){
-		
-		string api_key = method_arg(0);
-		string save_token = trim(method_arg(1));
-		if( save_token == "" )
-			save_token = "backup";
-		backup_restore = llHTTPRequest(
-			"https://jasx.org/lsl/got/app/mod_api/", 
-			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],
-			"tasks="+llEscapeURL(llList2Json(JSON_ARRAY, [
-				llList2Json(JSON_OBJECT, [
-					"type", "GetBackup",
-					"target", llGetObjectName(),
-					"data", llList2Json(JSON_OBJECT, [
-						"backup_token", save_token
-					])
-				])
-			]))
-		);
-		
-	}
-	
-	else if( METHOD == LevelAuxMethod$backup ){
-		
-		string api_key = method_arg(0);
-		string save_token = method_arg(1);
-		
-		integer dbPrim;
-		links_each(nr, name,
-			if( name == "DB0" ){
-				dbPrim = nr;
-			}
-		)
-		
-
-		llOwnerSay("Beginning dump");
-		list out = [];
-		integer i;
-		for(i=0; i<llGetLinkNumberOfSides(dbPrim); ++i){
-				
-			list tables = llGetLinkMedia(dbPrim, i, [
-				PRIM_MEDIA_HOME_URL, PRIM_MEDIA_CURRENT_URL, PRIM_MEDIA_WHITELIST
-			]);
-			string text;
-			list_shift_each(tables, val,
-				int pos = llSubStringIndex(val, "://");
-				text += llDeleteSubString(val, 0, pos+2);
-			)
-			
-			integer pos = llSubStringIndex(text, "|");
-			string a = llGetSubString(text, 0, pos-1);
-			if(
-				llStringLength(text) && 
-				llGetListLength(
-					llJson2List(llGetSubString(text, pos+1, -1))
-				) &&
-				llListFindList(out, (list)a) == -1
-			){
-				text = llGetSubString(text, pos+1, -1);
-				
-				if(llStringLength(text) > 2034)
-					llOwnerSay("WARNING! Table "+a+" is too big to fit on the new prim DB. Can splice it in MYSQL.");
-				out += [
-					a, text
-				];
-			}
-			
-		}
-		
-		llOwnerSay("Backing up "+llGetObjectName());
-		backup = llHTTPRequest(
-			"https://jasx.org/lsl/got/app/mod_api/", 
-			[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded", HTTP_CUSTOM_HEADER, "Got-Mod-Token", api_key, HTTP_BODY_MAXLENGTH, 16384],
-			"tasks="+llEscapeURL(llList2Json(JSON_ARRAY, [
-				llList2Json(JSON_OBJECT, [
-					"type", "BackupCell",
-					"target", llGetObjectName(),
-					"data", llList2Json(JSON_OBJECT, [
-						"backup_token", save_token,
-						"data", llList2Json(JSON_OBJECT, out)
-					])
-				])
-			]))
-		);
-		
-	}
-        
-		
-	
-	
 	// Set a property of a spawn
-	else if(METHOD == LevelAuxMethod$assetVar){
-		integer HUD = l2i(PARAMS, 0);
-		integer globalIndex = l2i(PARAMS, 1);
-		integer field = l2i(PARAMS,2);
-		string newVal = method_arg(3);
+	else if( METHOD == LevelAuxMethod$assetVar ){
+	
+		integer globalIndex = l2i(PARAMS, 0);
+		integer field = l2i(PARAMS,1);
+		list newVal = llList2List(PARAMS, 2, 2);
 		
 		
-		list asset = getAssetByIndex(!HUD, globalIndex);
-		if(asset == []){
-			llOwnerSay("Error: Item not found.");
+		list asset = getAssetByIndex(globalIndex);
+		string pre = mkarr(asset);
+		integer total = db4$getIndex(gotTable$spawns);
+		if( globalIndex >= total ){
+			llOwnerSay("Error: Index too high.");
 			return;
 		}
-		list data = llJson2List(l2s(asset, 2));
+		str oldVal = l2s(asset, field);
+		// -1 field replaces whole entry
+		if( field == -1 ){
+			newVal = llJson2List(l2s(newVal, 0));
+			if( count(newVal) < 4 ){
+				llOwnerSay("Too few args for full replace.");
+				return;
+			}
+			oldVal = mkarr(asset);
+			asset = newVal;
+		}
+		else
+			asset = llListReplaceList(asset, (list)newVal, field, field);
 		
-		data = llListReplaceList(data, [newVal], field, field);
-
-        db3$setOther(l2s(asset, 0), [l2i(asset, 1)], mkarr(data));
-        llOwnerSay("Item updated. Say 'listAssets' or 'listSpawns' for updated index");
+		db4$replace(gotTable$spawns, globalIndex, mkarr(asset));
+		string url = "setSpawnVal "+(str)globalIndex+" "+(str)field+" "+oldVal;
+		str aType = "listSpawns";
+		if( l2i(asset, 0) )
+			aType = "listAssets";
+        llOwnerSay(
+			"Updated #"+(str)globalIndex+"."+
+			"\nOLD: "+pre + 
+			"\nNEW: "+mkarr(asset)+
+			"\n[secondlife:///app/chat/1/"+llEscapeURL(url)+" (Undo)] | "+listButtonA+aType+listButtonB
+		);
 		
 	}
     
     else if(METHOD == LevelAuxMethod$remove){
-        integer HUD = l2i(PARAMS, 0);
-		integer globalIndex = l2i(PARAMS, 1);
+	
+		integer globalIndex = l2i(PARAMS, 0);
 		
-		list asset = getAssetByIndex(!HUD, globalIndex);
-		if(asset == []){
+		list asset = getAssetByIndex(globalIndex);
+		if( asset == [] ){
 			llOwnerSay("Error: Item not found.");
 			return;
 		}
-		string table = l2s(asset, 0);
-		integer localIndex = l2i(asset, 1);
-		list out = llJson2List(db3$get(table, []));
-		out = llDeleteSubList(out, localIndex, localIndex);
-		db3$setOther(table, [], mkarr(out));
-        llOwnerSay("Removed. Index list changed.");
+		
+		db4$delete(gotTable$spawns, globalIndex);
+		str as = mkarr(asset);
+		string url = "setSpawnVal "+(str)globalIndex+" -1 "+as;
+		str aType = "listSpawns";
+		if( l2i(asset, 0) )
+			aType = "listAssets";
+		llOwnerSay("Removed asset: "+as+" [secondlife:///app/chat/1/"+llEscapeURL(url)+" (Undo)] | "+listButtonA+aType+listButtonB);
     }
     
     #define LM_BOTTOM  

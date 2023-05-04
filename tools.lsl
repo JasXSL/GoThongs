@@ -73,8 +73,8 @@ string toGSCReadable( integer copper ){
 	
 }
 
-#define runOnDbPlayers(index, player, code) db4$each(hudTable$rootPlayers, index, player, code)
-#define runOnDbHuds(index, hud, code) db4$each(hudTable$rootHuds, index, hud, code)
+#define runOnDbPlayers(index, player, code) db4$each(gotTable$rootPlayers, index, player, code)
+#define runOnDbHuds(index, hud, code) db4$each(gotTable$rootHuds, index, hud, code)
 
 // Gets all players from db4
 list hudGetPlayers(){

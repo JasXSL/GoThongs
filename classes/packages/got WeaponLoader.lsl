@@ -233,8 +233,8 @@ onEvt(string script, integer evt, list data){
 	if( script == "got SpellMan" && evt == SpellManEvt$recache ){
 		
 		SPELL_STANCES = SPELL_FLAGS = [];
-		string tmpChr = hudTable$spellmanSpellsTemp;
-		string chr = hudTable$bridgeSpells;
+		string tmpChr = gotTable$spellmanSpellsTemp;
+		string chr = gotTable$bridgeSpells;
 		integer i;
         for( ; i<5; ++i ){
             

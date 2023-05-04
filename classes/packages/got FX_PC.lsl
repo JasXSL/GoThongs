@@ -18,7 +18,7 @@ if(script == "got Status" && evt == StatusEvt$flags ){ \
 
 integer checkCondition(key caster, integer cond, list data, integer flags, integer team){
 
-	int genitals = (int)db4$fget(hudTable$status, hudTable$status$genitals);
+	int genitals = (int)db4$fget(gotTable$status, gotTable$status$genitals);
 	if(
 		(~flags&PF_ALLOW_WHEN_QUICKRAPE && FX_FLAGS&fx$F_QUICKRAPE) ||
 		(cond == fx$COND_HAS_GENITALS && ((genitals & llList2Integer(data,0)) != llList2Integer(data,0)))
@@ -45,16 +45,16 @@ integer checkCondition(key caster, integer cond, list data, integer flags, integ
         return FALSE;
     }
 
-	// This only works because fx$COND_*_GREATER_THAN has the same number sequence as hudTable$status$hp/mp/arousal/pain and hudTable$status$max*
-	list tables = (list)hudTable$status$hp + hudTable$status$mana + hudTable$status$arousal + hudTable$status$pain;
-	list maxTables = (list)hudTable$status$maxHp + hudTable$status$maxMana + hudTable$status$maxArousal + hudTable$status$maxPain;
+	// This only works because fx$COND_*_GREATER_THAN has the same number sequence as gotTable$status$hp/mp/arousal/pain and gotTable$status$max*
+	list tables = (list)gotTable$status$hp + gotTable$status$mana + gotTable$status$arousal + gotTable$status$pain;
+	list maxTables = (list)gotTable$status$maxHp + gotTable$status$maxMana + gotTable$status$maxArousal + gotTable$status$maxPain;
 	int gtStart = fx$COND_HP_GREATER_THAN;
 	int gtLen = 4;
 	integer i;
 	for(; i < gtLen; ++i ){
 		integer n = i+gtStart;
 		if( cond == n ){
-			float perc = (float)db4$fget(hudTable$status, l2s(tables, i))/(float)db4$fget(hudTable$status, l2s(maxTables, i));
+			float perc = (float)db4$fget(gotTable$status, l2s(tables, i))/(float)db4$fget(gotTable$status, l2s(maxTables, i));
 			if( perc <= l2f(data, 0) )
 				return FALSE;
 		}

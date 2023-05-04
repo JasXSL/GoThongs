@@ -55,7 +55,6 @@ int S_CH = 0;				// 4bit array of current charges
 // If castSpell is false, play interrupt sound
 #define setQueue(index) if(QUEUE_SPELL != index){QUEUE_SPELL = index; SpellVis$setQueue(QUEUE_SPELL);}
 #define clearQueue() QUEUE_SPELL = -1; BFL=BFL&~BFL_QUEUE_SELF_CAST; SpellVis$setQueue(QUEUE_SPELL)
-#define startSpell(spell) if(castSpell(spell) == FALSE){llStopSound();llPlaySound("2967371a-f0ec-d8ad-4888-24b3f8f3365c", .2);clearQueue();}
 
 // Global cooldown. Set by bridge.
 float GCD = 1.5;
@@ -138,7 +137,9 @@ bool visionCheck( list data ){
 onEvt(string script, integer evt, list data){
 
     if(script == "#ROOT"){
-	
+		
+		int sps = -1;
+		
         if(evt == evt$BUTTON_PRESS){
 			integer pressed = llList2Integer(data,0);
 			
@@ -170,12 +171,24 @@ onEvt(string script, integer evt, list data){
 					return;
                 nr = (integer)llGetSubString(ln, -1, -1);
             }
-            startSpell(nr);
+            sps = nr;
         }
 
 		// Update target cache
 		else if( evt == RootEvt$targ && SPELL_ON_TARG != -1 ){
-			startSpell(SPELL_ON_TARG);
+			sps = SPELL_ON_TARG;
+		}
+		
+		if( ~sps ){
+			
+			if( castSpell(sps) == FALSE ){
+			
+				llLinkStopSound(soundPrim$spellMan);
+				llLinkPlaySound(soundPrim$spellMan, "2967371a-f0ec-d8ad-4888-24b3f8f3365c", .1, SOUND_PLAY);
+				clearQueue();
+				
+			}
+			
 		}
 
     }
@@ -184,12 +197,12 @@ onEvt(string script, integer evt, list data){
 
 
 // This attempts to start casting a spell
-integer castSpell(integer nr){
+integer castSpell( integer nr ){
 
 
-	if( SPELL_ON_TARG == -1 && nr != QUEUE_SPELL )
-		llPlaySound("31086022-7f9a-65d1-d1a7-05571b8ea0f2", .5);
-    
+	if( SPELL_ON_TARG == -1 && nr != QUEUE_SPELL ){
+		llLinkPlaySound(soundPrim$spellMan, "31086022-7f9a-65d1-d1a7-05571b8ea0f2", .1, SOUND_PLAY);
+    }
 	SPELL_ON_TARG = -1;
 	// Play the click sound
 	
@@ -221,8 +234,9 @@ integer castSpell(integer nr){
 		
 			q = -1;
 			BFL = BFL&~BFL_QUEUE_SELF_CAST;
-			llPlaySound("691cc796-7ed6-3cab-d6a6-7534aa4f15a9", .5);
-			
+			llLinkStopSound(soundPrim$spellMan);
+			llLinkPlaySound(soundPrim$spellMan, "691cc796-7ed6-3cab-d6a6-7534aa4f15a9", .2, SOUND_PLAY);
+
 		}
 		else if( BFL&BFL_CROUCH_HELD )
 			BFL = BFL|BFL_QUEUE_SELF_CAST;
@@ -425,7 +439,7 @@ integer castSpell(integer nr){
 
 	// Cache the casttime
 	CACHE_CASTTIME = casttime;
-	if(casttime){
+	if( casttime ){
 		// Only raise the start cast event on spells with a cast time
 		list evData = [
 			f2i(casttime), 
@@ -548,8 +562,9 @@ spellEnd(){
 
 timerEvent(string id, string data){
     
-	if( id == "CAST" )
+	if( id == "CAST" ){
 		spellComplete();
+	}
     else if( id == "SC" )
         BFL = BFL&~BFL_START_CAST;
     else if( id == "GCD" ){
@@ -559,13 +574,13 @@ timerEvent(string id, string data){
     }
 	else if( id == "Q" )
 		SPELL_ON_TARG = -1;
-	else if( startsWith(id, "CD_") ){
+	else if( llGetSubString(id, 0, 2) == "CD_" ){
 		
 		int idx = (int)llGetSubString(id, 3, -1);
 		setSpellCharges(idx, getSpellCharges(idx)+1);
-		if( getSpellCharges(idx) >= getSpellMaxCharges(idx) ){
+		if( getSpellCharges(idx) >= getSpellMaxCharges(idx) )
 			setSpellCharges(idx, getSpellMaxCharges(idx));
-		}
+		
 		sendCharges();
 		// Got another charge to load
 		if( getSpellCharges(idx) < getSpellMaxCharges(idx) ){
@@ -640,8 +655,8 @@ default{
 		if( GCD <= 0 )
 			GCD = 1.5;
 		
-		str tmpCh = hudTable$spellmanSpellsTemp;
-		str ch = hudTable$bridgeSpells;
+		str tmpCh = gotTable$spellmanSpellsTemp;
+		str ch = gotTable$bridgeSpells;
 		integer i;
 		for( ; i < 5; ++i ){
 			
@@ -691,8 +706,9 @@ default{
 
 			raiseEvent(SpellManEvt$interrupted, mkarr(([SPELL_CASTED, f2i(CACHE_CASTTIME)])));
 			A$(ASpellMan$interrupted);
-			spellEnd();				
-            SpellFX$startSound("6b050b67-295b-972d-113e-97bf21ccbb8f", .5, FALSE);
+			spellEnd();
+			llLinkPlaySound(soundPrim$interrupt, "6b050b67-295b-972d-113e-97bf21ccbb8f", .5, SOUND_PLAY);
+			
         }
         else if(METHOD == SpellManMethod$resetCooldowns){
 		
@@ -778,9 +794,9 @@ default{
 		int spell = l2i(PARAMS, 0)+1;	// (Argument uses -1 for ability 5)
 
 		if( method_arg(1) == "" )
-			db4$delete(hudTable$spellmanSpellsTemp, spell);
+			db4$delete(gotTable$spellmanSpellsTemp, spell);
 		else
-			db4$replace(hudTable$spellmanSpellsTemp, spell, method_arg(1));
+			db4$replace(gotTable$spellmanSpellsTemp, spell, method_arg(1));
 			
 		if( l2i(PARAMS, 2) )
 			SpellMan$rebuildCache();

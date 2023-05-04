@@ -29,7 +29,7 @@ integer onInteract(key obj, string task, list params, vector pos){
 	
         Bridge$setBook(llList2String(params, 0));
 		SharedMedia$setBook(llList2String(params, 0));
-		llPlaySound("01df6c43-069f-e7c8-6133-f1e706e2b672", .5);
+		llLinkPlaySound(InteractConf$soundPrim, "01df6c43-069f-e7c8-6133-f1e706e2b672", .5, SOUND_PLAY);
 		
     }
     else if( task == "STDIN" ){

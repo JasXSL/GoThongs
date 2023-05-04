@@ -9,7 +9,7 @@
 */
 
 // DB4 table
-#define hudTable$npcInt$directTargeting db4$0	// array of Players currently directly targeting this NPC
+#define gotTable$npcInt$directTargeting db4$0	// array of Players currently directly targeting this NPC
 
 
 #define NPCIntChan$targeting(user) (playerChan(user)+0x745)

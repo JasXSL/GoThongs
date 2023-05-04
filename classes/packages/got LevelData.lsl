@@ -1,4 +1,4 @@
-
+#define USE_DB4
 #define USE_EVENTS
 #include "got/_core.lsl"
 
@@ -246,13 +246,13 @@ default
 		return;
     }
 	
-
 	
-	
-	if(METHOD == gotLevelDataMethod$cellData && method$byOwner){
+	if( METHOD == gotLevelDataMethod$cellData && method$byOwner ){
+		
 		string dta = method_arg(0);
-		db3$set([LevelShared$questData], dta);
+		db4$freplace(gotTable$meta, gotTable$meta$levelData, dta);
 		Level$raiseEvent(LevelEvt$questData, llJson2List(dta));
+		
 	}
 
 	if( METHOD == gotLevelDataMethod$difficulty && method$byOwner ){
@@ -270,9 +270,9 @@ default
 				--i;
 			}
 		}
-		desc+= mkarr((list)LevelDesc$difficulty + DIFFICULTY + CHALLENGE);
+		desc += mkarr((list)LevelDesc$difficulty + DIFFICULTY + CHALLENGE);
 		
-		if( _lSharp() )
+		if( Level$isLive() )
 			desc+= mkarr((list)LevelDesc$live);
 		
 		llSetObjectDesc(mkarr(desc));

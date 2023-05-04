@@ -21,7 +21,7 @@
 		2. Conditions are checked in got FX and has an optional callback of (int)success with how many packages succeeded in being added.
 		3. Useful package data is parsed, then stored in lsd (see fxPackage$* for the saved fields).
 		4. got FX sends TASK_FXC_PARSE on RUN/ADD/REM/STACKS to got FXCompiler.
-		5. got FXCompiler goes over the parsed data and forwards any actions to the appropriate scripts, as well as compiling duration effects into linkset data on table hudTable$fxCompilerActives. See _lib_fx for definitions of each index.
+		5. got FXCompiler goes over the parsed data and forwards any actions to the appropriate scripts, as well as compiling duration effects into linkset data on table gotTable$fxCompilerActives. See _lib_fx for definitions of each index.
 		6. got FXCompiler then sends TASK_FX with an array of changed values. Though you may as well read them every time the event is received to save memory.
 		
 	Passives:
@@ -30,10 +30,10 @@
 */
 
 // Package table index
-// Packages are stored in tables between hudTable$fxStart and hudTable$fxStart+hudTable$fxStart$length
+// Packages are stored in tables between gotTable$fxStart and gotTable$fxStart+gotTable$fxStart$length
 // Each table has the following constant index
 /*
-	PIX : Package index, an offset from hudTable$fxStart. Starts at 1.
+	PIX : Package index, an offset from gotTable$fxStart. Starts at 1.
 	To check if a table has been deleted, duration must be 0 and stacks 0
 	This is to prevent race conditions.
 	got FXCompiler does not check anything, but removes the stack value.
@@ -42,7 +42,7 @@
 	Note that dur and stacks cannot be relied on for deleted packages in passives and fxcompiler
 	
 */
-#define fx$getDurEffect(fxfType) db4$fget(hudTable$fxCompilerActives, fxfType)
+#define fx$getDurEffect(fxfType) db4$fget(gotTable$fxCompilerActives, fxfType)
 
 
 #define fxPackage$STACKS db4$0        	// int - Nr current stacks. MUST be 1 or more. Used to determine is a package exists or not on a table.
@@ -61,14 +61,14 @@
 
 
 // These are shared between fxcompiler (writes) and fx (reads)
-#define getEventPackageTable(evt, script) hudTable$fxCompilerEvts+evt+"_"+script
+#define getEventPackageTable(evt, script) gotTable$fxCompilerEvts+evt+"_"+script
 #define getEventPackageIndexes(table) llJson2List(llLinksetDataRead(table))
 
 // Gets a table by index offset from fxStart
-#define getFxPackageTableByIndex(pix) llChar(hudTable$fxStart+pix)
+#define getFxPackageTableByIndex(pix) llChar(gotTable$fxStart+pix)
 
 // got FX checks both stacks and dur to see if a package is deleted
-#define fxPackageEach(i,table,code) integer i = 1; for(; i <= hudTable$fxStart$length; ++i ){ \
+#define fxPackageEach(i,table,code) integer i = 1; for(; i <= gotTable$fxStart$length; ++i ){ \
     string table = getFxPackageTableByIndex(i); /* pix is 1-indexed */ \
     if( (int)db4$fget(table, fxPackage$STACKS) && (float)db4$fget(table, fxPackage$DUR) != 0 ){ \
         code \
@@ -149,6 +149,7 @@ string FX_buildWrapper(integer wrapperflags, integer min_objs, integer max_objs,
 #define WF_ALLOW_WHEN_DEAD 0x2
 #define WF_ALLOW_WHEN_QUICKRAPE 0x4
 #define WF_NO_DODGE 0x8
+// 10 not used
 #define WF_ALLOW_WHEN_RAPED 0x20	// 32
 #define WF_REQUIRE_LOS 0x40			// 64
 #define WF_ENEMY_ONLY 0x80			// 128 - Allow other team only

@@ -4,13 +4,13 @@
 
 // DB table row definitions
 // Root table
-#define hudTable$root$targ db4$0			// UUID of current target
-#define hudTable$root$focus db4$1			// UUID of focus target
-#define hud$root$targ() db4$fget(hudTable$root, hudTable$root$targ)
-#define hud$root$focus() db4$fget(hudTable$root, hudTable$root$focus)
+#define gotTable$root$targ db4$0			// UUID of current target
+#define gotTable$root$focus db4$1			// UUID of focus target
+#define hud$root$targ() db4$fget(gotTable$root, gotTable$root$targ)
+#define hud$root$focus() db4$fget(gotTable$root, gotTable$root$focus)
 
-#define hud$root$numPlayers() db4$getIndex(hudTable$rootPlayers)
-#define hud$root$numHuds() db4$getIndex(hudTable$rootHuds)
+#define hud$root$numPlayers() db4$getIndex(gotTable$rootPlayers)
+#define hud$root$numHuds() db4$getIndex(gotTable$rootHuds)
 
 
 #define RootMethod$reset 0						// Reset script

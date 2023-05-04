@@ -7,9 +7,9 @@
 #define FXCOMPILER_ADD 2
 #define FXCOMPILER_REM 3
 
-#define hudTable$fxCompilerSpellMods$spellDamageTakenMods 0			// Array of [(str)spellName, (int)playerID, (float)dmgmod]
-#define hudTable$fxCompilerSpellMods$senderDamageTakenMods 1		// [int charID, float modifier]
-#define hudTable$fxCompilerSpellMods$senderHealingTakenMod 2		// [int charID, float modifier]
+#define gotTable$fxCompilerSpellMods$spellDamageTakenMods 0			// Array of [(str)spellName, (int)playerID, (float)dmgmod]
+#define gotTable$fxCompilerSpellMods$senderDamageTakenMods 1		// [int charID, float modifier]
+#define gotTable$fxCompilerSpellMods$senderHealingTakenMod 2		// [int charID, float modifier]
 
 
 
@@ -70,7 +70,7 @@
 			int cTeam = hud$status$team(); \
 			float s = llGetTime(); \
 			list targ; float chp = 1; \
-			db4$each(hudTable$evtsNpcNear, index, row, \
+			db4$each(gotTable$evtsNpcNear, index, row, \
 				key hud = j(row, 1); \
 				smartHealDescParse(hud, resources, status, fx, team) \
 				if( team == cTeam && !(status&StatusFlags$NON_VIABLE) && !(fx&fx$UNVIABLE) ){ \
@@ -155,7 +155,7 @@
 		key t = caster; \
 		if( t == llGetOwner() || t == llGetKey() ) \
 			t = ""; \
-		if(!targs || targs&FXAF$SELF || (targs&FXAF$CASTER && t == "")){ \
+		if( !targs || targs&FXAF$SELF || (targs&FXAF$CASTER && t == "") ){ \
 			FX$run("", l2s(fx,0)); \
 		} \
 		if(t != "" && targs&FXAF$CASTER && (range<=0 || llVecDist(llGetRootPosition(), prPos(caster))<=range)){ \

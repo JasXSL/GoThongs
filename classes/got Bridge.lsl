@@ -1,12 +1,12 @@
 #ifndef __Bridge
 #define __Bridge
 
-// Index constants for hudTable$bridge
-#define hudTable$bridge$data db4$0						// Data is always put on index 0
-#define hudTable$bridge$userData db4$1					// UserData is always put on index 1
+// Index constants for gotTable$bridge
+#define gotTable$bridge$data db4$0						// Data is always put on index 0
+#define gotTable$bridge$userData db4$1					// UserData is always put on index 1
 
-#define hud$bridge$thongData() db4$fget(hudTable$bridge, hudTable$bridge$data)
-#define hud$bridge$userData() db4$fget(hudTable$bridge, hudTable$bridge$userData)
+#define hud$bridge$thongData() db4$fget(gotTable$bridge, gotTable$bridge$data)
+#define hud$bridge$userData() db4$fget(gotTable$bridge, gotTable$bridge$userData)
 
 
 
@@ -130,7 +130,7 @@
 	llList2Json(JSON_ARRAY, [texture, -1, wrapper, mana, cooldown, targets, range, casttime, fx, selfcastWrapper])
 
 
-// hudTable$bridgeSpells row definition
+// gotTable$bridgeSpells row definition
 	#define BSSAA$texture 0
 	#define BSSAA$id 1
 	#define BSSAA$fxwrapper 2

@@ -210,8 +210,8 @@ onEvt(string script, integer evt, list data){
 	else if(script == "got SpellMan" && evt == SpellManEvt$recache){
 		CACHE = [];
 		
-		str tmpCh = hudTable$spellmanSpellsTemp;
-		str ch = hudTable$bridgeSpells;
+		str tmpCh = gotTable$spellmanSpellsTemp;
+		str ch = gotTable$bridgeSpells;
 		integer i;
 		for( ; i<5; ++i ){
 			
@@ -250,7 +250,7 @@ onEvt(string script, integer evt, list data){
 			vector rpos = llGetRootPosition();
 			list viable = (list)"";
 			
-			db4$each(hudTable$evtsNpcNear, index, row,
+			db4$each(gotTable$evtsNpcNear, index, row,
 				
 				key t = j(row, 1);
 				if( t != llGetKey() ){

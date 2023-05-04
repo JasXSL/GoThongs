@@ -12,7 +12,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 #if FXCOMPILER_SECTION == 1
 
 	list resource_updates; // Updates for HP/Mana etc
-	int fxFlags = (int)fx$getDurEffect(fxf$SET_FLAG);
+	int fxFlags = (int)fx$getDurEffect(fxf$SET_FLAG); // owner's current FX flags
 
 	// Shared between PC/NPC, defined in got FXCompiler header file
 	dumpFxInstants()
@@ -34,9 +34,9 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 			resource_updates += SMBUR$buildArousal(l2f(fx,0)*st, pname, f);
 		else if(t == fx$PAIN)
 			resource_updates += SMBUR$buildPain(l2f(fx,0)*st, pname, f);
-		else if(t == fx$MANA)
+		else if(t == fx$MANA){
 			resource_updates += SMBUR$buildMana(l2f(fx,0)*st, pname, f);
-			
+		}
 	}
 	
 	else if( t == fx$CLASS_VIS ){
@@ -90,7 +90,14 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 		runMethod((str)LINK_ROOT, "got Alert", AlertMethod$freetext, fx, TNN);
 	
 	else if( t == fx$ANIM && !l2i(fx, 2) )
-		AnimHandler$anim(l2s(fx, 0), l2i(fx,1), 0, l2f(fx,3), l2i(fx, 2));
+	// anim, start, repDly, duration, flags
+		AnimHandler$anim(
+			l2s(fx, 0), 	// anim
+			l2i(fx,1), 		// start
+			0, 				// rep dly
+			l2f(fx,4), 		// duration
+			l2i(fx,3)		// flags
+		);
 
 	else if( t == fx$INTERRUPT )
 		SpellMan$interrupt(l2i(fx, 0));
@@ -174,7 +181,13 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 	
 	// These are PC specific
 	if( t == fx$ANIM ){
-		AnimHandler$anim(l2s(fx, 0), l2i(fx,1), 0, 0, l2i(fx,2));
+		AnimHandler$anim(
+			l2s(fx, 0), // name
+			l2i(fx,1),  // start
+			0, 			// rep dly
+			0, 			// duration (Not used in add/rem)
+			l2i(fx,3)	// flags
+		);
 	}
 	else if( t == fx$THONG_VISUAL ){
 		
@@ -219,7 +232,13 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 // Note: duration cannot be relied on here
 	
 	if( t == fx$ANIM ){
-		AnimHandler$anim(l2s(fx, 0), !l2i(fx,1), 0, 0, 0);
+		AnimHandler$anim(
+			l2s(fx, 0), 	// anim
+			!l2i(fx,1), 	// start
+			0, 				// rep dly
+			0, 				// duration
+			l2i(fx,3)		// flags
+		);
 	}
 	else if( t == fx$CLASS_VIS ){
 		gotClassAtt$spellEnd(l2s(fx,0), -1, 0);

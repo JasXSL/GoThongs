@@ -2,6 +2,7 @@
 #define _GOT_CORE
 
 #include "./_tables.lsl"
+#include "./_soundPrims.lsl"
 #include "xobj_core/libraries/lazyPandaLib.lsl"
 
 // We're not using tokens because listeners are limited by party

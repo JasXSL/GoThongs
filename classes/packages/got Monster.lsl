@@ -507,7 +507,7 @@ timerEvent( string id, string data ){
 				myAngX(chasetarg, ang)
 				if( rf & Monster$RF_FLANKING && llGetTime()-lastFlank > 6 && llFabs(ang) < PI_BY_TWO ){
 					
-					if( llListFindList(llJson2List(db4$fget(hudTable$npcInt, hudTable$npcInt$directTargeting)), (list)((str)chasetarg)) == -1 ){
+					if( llListFindList(llJson2List(db4$fget(gotTable$npcInt, gotTable$npcInt$directTargeting)), (list)((str)chasetarg)) == -1 ){
 					
 						lastFlank = llGetTime();
 						float deg = llFrand(PI*0.08); // Around 30 deg
@@ -739,8 +739,11 @@ onSettings(list settings){
 		
 		// Flags
 		if(idx == 0){
+		
 			RUNTIME_FLAGS = l2i(dta,0);
+			db4$freplace(gotTable$monster, gotTable$monster$runtimeFlags, RUNTIME_FLAGS);
 			flagsChanged = TRUE;
+			
 		}
 		// Movement speed
 		if(idx == 1 && l2f(dta,0)>0)
@@ -839,8 +842,11 @@ default{
         integer pre = getRF();
 		// Basic flags
 		if(!l2i(PARAMS, 2)){
+		
 			RUNTIME_FLAGS = RUNTIME_FLAGS|(integer)method_arg(0);
 			RUNTIME_FLAGS = RUNTIME_FLAGS&~(integer)method_arg(1);
+			db4$freplace(gotTable$monster, gotTable$monster$runtimeFlags, RUNTIME_FLAGS);
+			
         }
 		// Spell flags
 		else{

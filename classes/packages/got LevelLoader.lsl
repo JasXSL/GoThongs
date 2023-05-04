@@ -1,21 +1,47 @@
-#define db3$use_cache
+#define USE_DB4
 #include "got/_core.lsl"
 
 #define log(text) //llOwnerSay(llGetTimestamp()+" "+text)
 
 // Used for "" loading and reporting
 integer BFL;
-#define BFL_HAS_ASSETS 0x1
-#define BFL_HAS_SPAWNS 0x2
-#define BFL_SPAWNING_INI 0x4
+list WAITING_HUD;				// Groups that are spawning from hud at start of level
+list WAITING_LOCAL;				// Groups that are spawning from local at start of level
+#define BFL_WAITING_BUFFER 0x1	// When spawning "" a buffer of 5 sec is set to allow for additional custom spawns
+#define BFL_WAITING_LOAD 0x2	// Waiting to finish loading
+
+checkIni(){
+
+	if( WAITING_HUD == [] && WAITING_LOCAL == [] && ~BFL&BFL_WAITING_BUFFER && BFL&BFL_WAITING_LOAD ){
+		
+		BFL = BFL&~BFL_WAITING_LOAD;
+		raiseEvent(LevelLoaderEvt$levelLoaded, "");
+		
+	}
+		
+}
+
+addIni( list groups ){
+	
+	integer i;
+	for(; i < count(groups); ++i ){
+		
+		list l = llList2List(groups, i, i);
+		if( llListFindList(WAITING_HUD, l) == -1 )
+			WAITING_HUD += l;
+		if( llListFindList(WAITING_LOCAL, l) == -1 )
+			WAITING_LOCAL += l;
+		
+	}
+	
+}
 
 timerEvent( string id, string data ){
 
 	if( id == "INI" ){
 		
-		BFL = BFL&~BFL_SPAWNING_INI;
-		list d = [BFL&BFL_HAS_ASSETS, BFL&BFL_HAS_SPAWNS];
-		raiseEvent(LevelLoaderEvt$defaultStatus, mkarr(d));
+		BFL = BFL&~BFL_WAITING_BUFFER;
+		checkIni();
 		
 	}
 	
@@ -25,9 +51,8 @@ default{
 
     state_entry(){
 	
-		if(llGetStartParameter() == 2)
+		if( llGetStartParameter() == 2 )
 			raiseEvent(evt$SCRIPT_INIT, "");
-		db3_cache();
 		
     }
     
@@ -37,12 +62,48 @@ default{
     #include "xobj_core/_LM.lsl"
 	if(method$isCallback){
 	
-		if(SENDER_SCRIPT == "got Spawner" && (METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn)){
+		if( SENDER_SCRIPT == "got Spawner" && (METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn) ){
 		
-			//list parse = llJson2List(CB);
-			//if(l2s(parse, 0) == "HUD" || l2s(parse, 0) == "CUSTOM"){
+			if( BFL&BFL_WAITING_LOAD ){
+			
+				list parse = llJson2List(CB);
+				list groups = llJson2List(l2s(parse, 1));
+				if( l2s(parse, 0) == "HUD" ){
+					
+					integer i;
+					for(; i < count(groups); ++i ){
+						
+						int pos = llListFindList(WAITING_HUD, llList2List(groups, i, i));
+						if( ~pos ){
+							
+							WAITING_HUD = llDeleteSubList(WAITING_HUD, pos, pos);
+						
+						}
+						
+					}
+				
+				}
+				else if( l2s(parse, 0) == "CUSTOM" ){
+				
+					integer i;
+					for(; i < count(groups); ++i ){
+						
+						int pos = llListFindList(WAITING_LOCAL, llList2List(groups, i, i));
+						if( ~pos ){
+							
+							WAITING_LOCAL = llDeleteSubList(WAITING_LOCAL, pos, pos);
+						
+						}
+						
+					}
+				
+				}
+				
+				checkIni();
+				
+			}
+			
 			raiseEvent(LevelLoaderEvt$queueFinished, CB);
-			//}
 			
 		}
 		return;
@@ -50,179 +111,110 @@ default{
 	}
 	
 
-	// Spawn the level, this goes first as it's fucking memory intensive
+	// Spawn the level
     if(METHOD == LevelLoaderMethod$load && method$internal){
 	
         integer debug = (integer)method_arg(0);
-		
-		list groups = [method_arg(1)];
-		if(llJsonValueType(method_arg(1), []) == JSON_ARRAY)
+		list groups = (list)method_arg(1);
+		if( llJsonValueType(method_arg(1), []) == JSON_ARRAY )
 			groups = llJson2List(method_arg(1));
 		
 		// Spawning the whole thing if the first group is "" (IE. load live)
 		if( l2s(groups, 0) == "" ){
-		
-			BFL = BFL&~BFL_HAS_ASSETS;
-			BFL = BFL&~BFL_HAS_SPAWNS;
-			BFL = BFL|BFL_SPAWNING_INI;
+			
+			WAITING_HUD = WAITING_LOCAL = [];
+			BFL = BFL|BFL_WAITING_BUFFER|BFL_WAITING_LOAD;
+			multiTimer(["INI", 0, 5, FALSE]);
 			
 		}
-
 		
-		list out;					// Data to push to spawners
+		if( BFL&BFL_WAITING_BUFFER )
+			addIni(groups);
+
+		integer outHudLen;
+		list outHud;				// Data to push to HUD spawner
+		integer outLocalLen;
+		list outLocal;				// Data to push to local spawner
 		list data;					// Asset data
-		integer spawned;			// Nr spawned
 		
-        // Spawn from HUD
-		list HUD = Level$HUD_TABLES;
-		list_shift_each(HUD, table,
-		
-			log(">> Table "+table);
-			// Get spawns from table
-			data = llJson2List(db3$get(table, []));
-			log(">> Table FETCHED");
+        // Spawn things
+		LevelAux$forSpawns( total, idx ){
 			
-			// Iterate each spawn
-			list_shift_each(data, v,
-			
-				// Single spawn data
-				list val = llJson2List(v);
+			list spdata = LevelAux$getSpawnData(idx);
+			list group = llList2List(spdata, 5, 5);
+			if( group == [] )
+				group = [""];
 				
-				// Get spawnround
-				list l = llList2List(val, 4, 4);
-				if( l == [] )
-					l = [""];
+			// This group should be spawned right now
+			if( ~llListFindList(groups, group) && spdata != [] ){
+				
+				string chunk = mkarr((list)
+					l2s(spdata, 1) + // Name
+					((vector)l2s(spdata, 2)+llGetRootPosition()) + // Pos
+					l2s(spdata, 3) + // Rot
+					l2s(spdata, 4) + // Desc
+					debug +
+					FALSE + 
+					l2s(spdata, 5) // group
+				);
+				
+				int spawner = l2i(spdata, 0);
+				
+				// HUD Spawned
+				if( !spawner ){
 					
-				// See if this should be spawned in one of these groups
-				integer pos = llListFindList(groups, l);
-				
-				// Get the group name
-				string group = llList2String(groups, pos);
-				
-				if(~pos){ 
-				
-					++spawned;
-					log("M "+(str)spawned);
-					// Data to send
-					string chunk = llList2Json(JSON_ARRAY, [
-						llList2String(val, 0), 
-						(vector)llList2String(val, 1)+llGetRootPosition(), 
-						llList2String(val, 2), 
-						llList2String(val, 3), 
-						debug, 
-						FALSE, 
-						group
-					]);
-					// Reached cap, send
-					if(llStringLength(mkarr(out)+chunk)>512){
+					if( llStringLength(chunk)+outHudLen > 480 ){
+						
 						// Send out
-						Spawner$spawnThese(llGetOwner(), out);
-						log("Sending spawner chunk "+mkarr(out));
-						out = [];
+						Spawner$spawnThese(llGetOwner(), outHud);
+						outHud = [];
+						outHudLen = 0;
+						
 					}
 					
-					// Add the chunk
-					out+= chunk;
+					outHud += chunk;
+					outHudLen += llStringLength(chunk);
 					
 				}
-			)
-		)
-		
-
-		// Send any stragglers
-		if(out){
-			Spawner$spawnThese(llGetOwner(), out);
-			log("Sending spawner chunk "+mkarr(out));
-		}
-		
-		// Append a callback so we know if it has finished loading
-		out = [llList2Json(JSON_ARRAY, [
-			"_CB_", "[\"HUD\","+mkarr(groups)+"]"
-		])];
-		Spawner$spawnThese(llGetOwner(), out);
-		
-		
-		
-		// There was at least 1 spawn
-		if( !spawned )
-			BFL = BFL|BFL_HAS_SPAWNS;
-		
-
-			
-		//qd("Spawned "+(str)spawned+" monsters");
-        spawned = 0;
-		
-        // Spawn from the level itself
-		out = [];
-        
-		list CUSTOM = Level$CUSTOM_TABLES;
-		list_shift_each(CUSTOM, table,
-		
-			// Get data from the table
-			data = llJson2List(db3$get(table, []));
-			log(">> Table "+table);
-			
-			// Cycle each entry
-			list_shift_each(data, v,
-			
-				// Get info about the spawn
-				list val = llJson2List(v);
+				// Local spawned
+				else{
 				
-				// Get the group from the spawn
-				list l = llList2List(val, 4, 4);
-				if( l == [] )
-					l = [""];
-					
-				// Test if group is in the batch that is spawning
-				integer pos = llListFindList(groups, l);
-				string group = llList2String(groups, pos);
-				
-				if( ~pos ){
-				
-					++spawned;
-					log("C "+(str)spawned);
-					// Add to queue
-					string add = llList2Json(JSON_ARRAY, [
-						llList2String(val, 0), 
-						(vector)llList2String(val,1)+llGetRootPosition(), 
-						llList2String(val, 2), 
-						llStringTrim(llList2String(val, 3), STRING_TRIM), 
-						debug, 
-						FALSE, 
-						group
-					]);
-					
-					// Send chunks every 1024 or so to prevent stack heaps
-					if(llStringLength(mkarr(out))+llStringLength(add) > 512){
-						Spawner$spawnThese(LINK_THIS, out);
-						log("Sending internal chunk "+mkarr(out));
-						out = [];
+					if( llStringLength(chunk)+outLocalLen > 1024 ){
+						
+						// Send out
+						Spawner$spawnThese(LINK_THIS, outLocal);
+						outLocal = [];
+						outLocalLen = 0;
+						
 					}
-					out += add;
 					
+					outLocal += chunk;
+					outLocalLen += llStringLength(chunk);
+				
 				}
 				
-			)
-		)
+				
+			}
+			
 		
-		if( out ){
-			Spawner$spawnThese(LINK_THIS, out);
-			log("Sending internal chunk "+mkarr(out));
 		}
 		
-		out = [llList2Json(JSON_ARRAY, [
-			"_CB_", "[\"CUSTOM\","+mkarr(groups)+"]"
-		])];
-		Spawner$spawnThese(LINK_THIS, out);
-
-		// assets are needed
-		if( spawned )
-			BFL = BFL|BFL_HAS_ASSETS;
-
-		out = [];
+		// Spawn the last and add a finish callback
+		Spawner$spawnThese(
+			llGetOwner(), 
+			outHud + mkarr((list)
+				"_CB_" + 
+				("[\"HUD\","+mkarr(groups)+"]")
+			)
+		);
+		Spawner$spawnThese(
+			LINK_THIS, 
+			outLocal + mkarr((list)
+				"_CB_" + 
+				("[\"CUSTOM\","+mkarr(groups)+"]")
+			)
+		);
 		
-		if( BFL&BFL_SPAWNING_INI )
-			multiTimer(["INI", "", 3, FALSE]);	// 3 sec grace period after initial load for any other items to arrive
 		
     }
 	

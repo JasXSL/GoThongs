@@ -5,35 +5,38 @@
 #define _GotStatus
 
 // Status table
-#define hudTable$status$hp db4$0
-#define hudTable$status$mana db4$1
-#define hudTable$status$arousal db4$2
-#define hudTable$status$pain db4$3
-#define hudTable$status$flags db4$4
-#define hudTable$status$armor db4$5
-#define hudTable$status$team db4$6
-#define hudTable$status$difficulty db4$7
-#define hudTable$status$genitals db4$8
-#define hudTable$status$maxHp db4$9
-#define hudTable$status$maxMana db4$10
-#define hudTable$status$maxArousal db4$11
-#define hudTable$status$maxPain db4$12
+/*
+	N = available to NPC status
+*/
+#define gotTable$status$hp db4$0
+#define gotTable$status$mana db4$1
+#define gotTable$status$arousal db4$2
+#define gotTable$status$pain db4$3
+#define gotTable$status$flags db4$4
+#define gotTable$status$armor db4$5
+#define gotTable$status$team db4$6				// N
+#define gotTable$status$difficulty db4$7
+#define gotTable$status$genitals db4$8
+#define gotTable$status$maxHp db4$9
+#define gotTable$status$maxMana db4$10
+#define gotTable$status$maxArousal db4$11
+#define gotTable$status$maxPain db4$12
 	
 
 // These methods fetch data from db4
-#define hud$status$hp() (float)db4$fget(hudTable$status, hudTable$status$hp)
-#define hud$status$mana() (float)db4$fget(hudTable$status, hudTable$status$mana)
-#define hud$status$arousal() (float)db4$fget(hudTable$status, hudTable$status$arousal)
-#define hud$status$pain() (float)db4$fget(hudTable$status, hudTable$status$pain)
-#define hud$status$maxHP() (float)db4$fget(hudTable$status, hudTable$status$maxHp)
-#define hud$status$maxMana() (float)db4$fget(hudTable$status, hudTable$status$maxMana)
-#define hud$status$maxArousal() (float)db4$fget(hudTable$status, hudTable$status$maxArousal)
-#define hud$status$maxPain() (float)db4$fget(hudTable$status, hudTable$status$maxPain)
-#define hud$status$flags() (int)db4$fget(hudTable$status, hudTable$status$flags)
-#define hud$status$armor() (int)db4$fget(hudTable$status, hudTable$status$armor)
-#define hud$status$team() (int)db4$fget(hudTable$status, hudTable$status$team)
-#define hud$status$difficulty() (int)db4$fget(hudTable$status, hudTable$status$difficulty)
-#define hud$status$genitals() (int)db4$fget(hudTable$status, hudTable$status$genitals)
+#define hud$status$hp() (float)db4$fget(gotTable$status, gotTable$status$hp)
+#define hud$status$mana() (float)db4$fget(gotTable$status, gotTable$status$mana)
+#define hud$status$arousal() (float)db4$fget(gotTable$status, gotTable$status$arousal)
+#define hud$status$pain() (float)db4$fget(gotTable$status, gotTable$status$pain)
+#define hud$status$maxHP() (float)db4$fget(gotTable$status, gotTable$status$maxHp)
+#define hud$status$maxMana() (float)db4$fget(gotTable$status, gotTable$status$maxMana)
+#define hud$status$maxArousal() (float)db4$fget(gotTable$status, gotTable$status$maxArousal)
+#define hud$status$maxPain() (float)db4$fget(gotTable$status, gotTable$status$maxPain)
+#define hud$status$flags() (int)db4$fget(gotTable$status, gotTable$status$flags)
+#define hud$status$armor() (int)db4$fget(gotTable$status, gotTable$status$armor)
+#define hud$status$team() (int)db4$fget(gotTable$status, gotTable$status$team)
+#define hud$status$difficulty() (int)db4$fget(gotTable$status, gotTable$status$difficulty)
+#define hud$status$genitals() (int)db4$fget(gotTable$status, gotTable$status$genitals)
 
 	
 #define StatusMethod$debugOut 0				// void - Outputs into chat: [(int)maxHP, (int)maxMana, (int)maxArousal, (int)maxPain]
@@ -134,7 +137,7 @@
 #define StatusEvt$healed 5					// (float)amount, (key)attacker
 #define StatusEvt$monster_init 6			// Sent once the config has loaded
 #define StatusEvt$difficulty 7				// [(int)difficulty]
-#define StatusEvt$hurt 8					// [(float)amount, (key)attacker] - Raised when durability is damaged. 
+#define StatusEvt$hurt 8					// [(float)amount, (key)attacker] - Raised when durability is damaged. Amount is negative for legacy reasons (amount of HP added)
 #define StatusEvt$death_hit 9				// void - HP has reached 0 but fx$F_NO_DEATH is set
 #define StatusEvt$genitals 10				// (int)genitals - Whenever genitals have changed. _core has a definition of these flags
 #define StatusEvt$loading_level 11			// [(key)level]

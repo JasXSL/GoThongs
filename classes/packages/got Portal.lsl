@@ -162,8 +162,8 @@ sendPlayers(){
 	string huds = mkarr(PLAYER_HUDS);
 	string players = mkarr(PLAYERS);
 	
-	db4$freplace(portalTable$portal, portalRow$players, players);
-	db4$freplace(portalTable$portal, portalRow$huds, players);
+	db4$freplace(gotTable$portal, portalRow$players, players);
+	db4$freplace(gotTable$portal, portalRow$huds, players);
 	raiseEvent(PortalEvt$playerHUDs, huds);
 	raiseEvent(PortalEvt$players, players);
 	
@@ -212,8 +212,8 @@ default{
 		
 		
 		PLAYERS = [(string)llGetOwner()];
-		db4$freplace(portalTable$portal, portalRow$players, mkarr(PLAYERS));
-		db4$freplace(portalTable$portal, portalRow$huds, "[]");
+		db4$freplace(gotTable$portal, portalRow$players, mkarr(PLAYERS));
+		db4$freplace(gotTable$portal, portalRow$huds, "[]");
 		
         initiateListen();
 		llListen(AOE_CHAN, "", "", "");

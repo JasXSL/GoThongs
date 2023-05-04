@@ -89,7 +89,7 @@
 		key GRAPPLE_TARG						// Holds the grapple target
 		function grappleStart( key id, int fxflags ) 		// Starts the grapple 
 		function grappleEnd()					// Stops any active grapple
-		integer grappleClosestConal( float arc, float range, int fxflags )		// Tries to grapple the closest player within arc and range
+		integer grappleClosestConal( float arc, float range, int grappleFlags, int minPlayers, int maxPlayers )		// Tries to grapple the closest player within arc and range
 	
 	#define body // put into default
 

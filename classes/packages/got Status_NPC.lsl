@@ -251,6 +251,7 @@ outputStats( integer f ){
 	
 	// Needed for TEAM to be in the description
 	TEAM = t;
+	db4$freplace(gotTable$status, gotTable$status$team, TEAM);
 	updateDesc();
 
 	if( BFL&BFL_STATUS_SENT && !f && TEAM == pre ){
@@ -709,13 +710,11 @@ default
 						
 					}
 					
-					if( amount < 0 && RF&(Monster$RF_INVUL|Monster$RF_INF_HP) )
-						return;
+					
+					if( amount > 0 || !(RF&(Monster$RF_INVUL|Monster$RF_INF_HP)) )
+						HP += amount;
 						
 					raiseEvent(evt, mkarr((list)llFabs(amount) + attacker));
-					
-					HP += amount;
-					
 					Status$handleLifeSteal(amount, steal, attacker)
 				}
 				if( HP <= 0 && HP != pre ){

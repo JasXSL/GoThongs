@@ -1,3 +1,4 @@
+#define USE_DB4
 #define SCRIPT_IS_ROOT
 #define USE_EVENTS
 #define ALLOW_USER_DEBUG 1
@@ -16,12 +17,10 @@ integer START_PARAM;
 integer pin;
 
 integer BFL;
-#define BFL_MONSTERS_LOADED 0x1
-#define BFL_ASSETS_LOADED 0x2
+
 #define BFL_LOADING 0x4
-#define BFL_SCRIPTS_LOADED 0x8
 #define BFL_INI 0x10
-#define BFL_LOAD_REQ (BFL_MONSTERS_LOADED|BFL_ASSETS_LOADED)
+
 // Prevents auto load from running multiple times when the level is rezzed live
 #define BFL_AUTOLOADED 0x40
 
@@ -34,44 +33,63 @@ list SPAWNS_REQ = [];
 list LOADQUEUE = REQUIRE;			// Required scripts to be remoteloaded
 list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
 
-#define onEvt(script, evt, data) \
-	if(evt == evt$SCRIPT_INIT && ~BFL&BFL_INI){ \
-		integer pos = llListFindList(LOADQUEUE, [script]); \
-		if(~pos){ \
-			LOADQUEUE = llDeleteSubList(LOADQUEUE, pos, pos); \
-			if(LOADQUEUE == []){ /* These are base scripts that get fetched first */ \
-				db3$set([LevelShared$isSharp], (string)START_PARAM); \
-				raiseEvent(evt$SCRIPT_INIT, (str)pin);			  \
-				sqd("INI raised");\
-			}  \
-		} \
-		pos = llListFindList(LOAD_ADDITIONAL, [script]); \
-		if(~pos){ \
-			LOAD_ADDITIONAL = llDeleteSubList(LOAD_ADDITIONAL, pos, pos); \
-		} \
-		if(LOADQUEUE+LOAD_ADDITIONAL == [] && ~BFL&BFL_INI){ \
-			/* All scripts have been initialized, fetch players and begin loading */ \
-			sqd(">> All scripts are now initialized <<"); \
-			Alert$freetext(llGetOwner(), "Loading from HUD", FALSE, FALSE); \
-			Root$setLevel(); \
-			BFL = BFL|BFL_INI; \
-		} \
-	} \
-	 \
-	if( script == "got LevelLoader" && evt == LevelLoaderEvt$defaultStatus ){ \
-		integer assets = l2i(data, 0); \
-		integer spawns = l2i(data, 1); \
-		if(!assets){ \
-			Level$loaded(LINK_THIS, 0); \
-		} \
-		if(!spawns){ \
-			Level$loaded(LINK_THIS, 1); \
-		} \
-		if(assets || spawns){ \
-			multiTimer(["LOAD_FINISH", "", 90, FALSE]); \
-		} \
+// Set the level as fully loaded
+finishLoad(){
+
+	Root$setLevel();
+	multiTimer(["LOAD_FINISH"]);
+	BFL = BFL&~BFL_LOADING;
+	raiseEvent(LevelEvt$loaded, "");
+	
+	runOnPlayers(pk, 
+		Status$loading(pk, FALSE);
+		GUI$toggleSpinner(pk, FALSE, "");
+	)
+
+
+}
+
+onEvt( string script, integer evt, list data ){
+
+	if( evt == evt$SCRIPT_INIT && ~BFL&BFL_INI ){
+	
+		integer pos = llListFindList(LOADQUEUE, [script]);
+		if( ~pos ){
+		
+			LOADQUEUE = llDeleteSubList(LOADQUEUE, pos, pos);
+			if( LOADQUEUE == [] ){ /* These are base scripts that get fetched first */
+				
+				db4$freplace(gotTable$meta, gotTable$meta$levelSharp, START_PARAM);
+				raiseEvent(evt$SCRIPT_INIT, (str)pin);			 
+				sqd("INI raised");
+				
+			}
+			
+		}
+		pos = llListFindList(LOAD_ADDITIONAL, [script]);
+		if( ~pos )
+			LOAD_ADDITIONAL = llDeleteSubList(LOAD_ADDITIONAL, pos, pos);
+		
+		if( LOADQUEUE+LOAD_ADDITIONAL == [] && ~BFL&BFL_INI ){
+			
+			/* All scripts have been initialized, fetch players and begin loading */
+			sqd(">> All scripts are now initialized <<");
+			Alert$freetext(llGetOwner(), "Loading from HUD", FALSE, FALSE);
+			Root$setLevel();
+			BFL = BFL|BFL_INI;
+			
+		}
+		
 	}
 	
+	if( script == "got LevelLoader" && evt == LevelLoaderEvt$levelLoaded ){
+	
+		finishLoad();
+		
+	}
+	
+
+}
 	
 
 
@@ -83,14 +101,11 @@ timerEvent(string id, string data){
 		Root$setLevel();
 	}
 	
-	else if( id == "LOAD_FINISH" ){
+	// Timeout loading
+	else if( id == "LOAD_FINISH" )	
+		finishLoad();
 	
-		Level$loadFinished();
-		Root$setLevel();
-		
-	}
-	
-	else if(id == "WIPE"){
+	else if( id == "WIPE" ){
 	
 		BFL = BFL&~BFL_WIPED;
 		Portal$killAll();
@@ -107,8 +122,7 @@ timerEvent(string id, string data){
 }
 
 
-default
-{
+default{
 
     on_rez(integer mew){
 	
@@ -131,17 +145,16 @@ default
 		START_PARAM = llList2Integer(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]), 0);
 		
 		// On remoteload
-		if(llGetStartParameter() == 2){
-			
-			list tables = Level$ALL_TABLES;
-			db3$addTables(tables);
-			
+		if( llGetStartParameter() == 2 ){
+						
 			vector p = llGetRootPosition();
 			vector pos = p-vecFloor(p)+int2vec(START_PARAM);
 			
-			if(START_PARAM == 1)pos = ZERO_VECTOR;
+			if( START_PARAM == 1 )
+				pos = ZERO_VECTOR;
 
-			if(START_PARAM&(BIT_DEBUG-1))llSetRegionPos(pos);
+			if( START_PARAM&(BIT_DEBUG-1) )
+				llSetRegionPos(pos);
 			
 			list refresh = ["Trigger", "TriggerSensor"];
 			while(llGetListLength(refresh)){
@@ -206,7 +219,7 @@ default
 	
     #include "xobj_core/_LM.lsl"
 	// Spawn the level, this goes first as it's fucking memory intensive
-    if(METHOD == LevelMethod$load && method$byOwner){
+    if( METHOD == LevelMethod$load && method$byOwner ){
 	
 		integer debug = (integer)method_arg(0);
 		string group = method_arg(1);
@@ -216,18 +229,20 @@ default
 		// Things to run on level start
 		if( group == "" ){
 		
-			BFL = BFL&~BFL_MONSTERS_LOADED;
-			BFL = BFL&~BFL_ASSETS_LOADED;
 			BFL = BFL|BFL_LOADING;
 			
+			// Set timeout
+			multiTimer(["LOAD_FINISH", 0, 90, FALSE]);
+
 			// Load timeout is set by an event from LevelLoader
 			//multiTimer(["LOAD_FINISH", "", 90, FALSE]);	// 90 second timeout
 			
 			Bridge$getCellData();
 			
-			vector p1 = (vector)db3$get(cls$name, [LevelShared$P1_start]);
-			vector p2 = (vector)db3$get(cls$name, [LevelShared$P2_start]); 
-			if(debug){
+			vector p1 = (vector)db4$fget(gotTable$meta, gotTable$meta$spawn0);
+			vector p2 = (vector)db4$fget(gotTable$meta, gotTable$meta$spawn1);
+			
+			if( debug ){
 				if(p1)
 					Devtool$spawnAt("_STARTPOINT_P1", p1+llGetRootPosition(), ZERO_ROTATION);
 				if(p2)
@@ -272,6 +287,7 @@ default
 		
 		LevelLoader$load(debug, group);
         return;
+		
     }
 	
 	
@@ -288,7 +304,8 @@ default
 		){
             
 			PLAYERS = PARAMS;
-			if(llList2Key(PLAYERS, 0)){
+			if( llList2Key(PLAYERS, 0) ){
+				
 				// prevents recursion
 				if(BFL&BFL_AUTOLOADED)
 					return;
@@ -312,9 +329,9 @@ default
 				
 				multiTimer(["INI"]);
 				Alert$freetext(llGetOwner(), "Players: "+implode(", ", pnames), FALSE, FALSE);
-				if(START_PARAM){
+				if( START_PARAM )
 					runMethod((string)LINK_THIS, cls$name, LevelMethod$load, [FALSE], TNN);
-				}
+				
 			}
 			
         }
@@ -369,41 +386,12 @@ default
 	if (METHOD == LevelMethod$getPlayers )
 		raiseEvent(LevelEvt$players, mkarr(PLAYERS));
    
-    
-    if(METHOD == LevelMethod$loaded && BFL&BFL_LOADING && method$byOwner){
-	
-        integer isHUD = (integer)method_arg(0);
-		//if(isHUD == 2)BFL = BFL|BFL_SCRIPTS_LOADED; Not used, but might still be sent.
-        if( isHUD == 1 )
-			BFL = BFL|BFL_MONSTERS_LOADED;
-        else if( isHUD == 0 )
-			BFL = BFL|BFL_ASSETS_LOADED;
-				
-        if( (BFL&BFL_LOAD_REQ) == BFL_LOAD_REQ ){
-            Level$loadFinished();
-        }
-		
-    }
-	
+
 	if(METHOD == LevelMethod$potionUsed)
 		raiseEvent(LevelEvt$potion, mkarr(([llGetOwnerKey(id), method_arg(0)])));
 	
 	if(METHOD == LevelMethod$potionDropped)
 		raiseEvent(LevelEvt$potionDropped, mkarr(([id, method_arg(0)])));
-	
-
-    if(METHOD == LevelMethod$loadFinished && BFL&BFL_LOADING && method$byOwner){
-		
-		multiTimer(["LOAD_FINISH"]);
-        BFL = BFL&~BFL_LOADING;
-        raiseEvent(LevelEvt$loaded, "");
-		
-		runOnPlayers(pk, 
-			Status$loading(pk, FALSE);
-            GUI$toggleSpinner(pk, FALSE, "");
-		)
-
-    }
 
     if(METHOD == LevelMethod$despawn && method$byOwner && START_PARAM != 0)
         llDie();

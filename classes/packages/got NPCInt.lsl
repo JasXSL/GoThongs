@@ -121,7 +121,7 @@ default{
         raiseEvent(evt$SCRIPT_INIT, 0);
         T_CHAN = NPCIntChan$targeting(llGetOwner());
         llListen(T_CHAN, "", "", "");
-		db4$freplace(hudTable$npcInt, hudTable$npcInt$directTargeting, "[]");	// Reset
+		db4$freplace(gotTable$npcInt, gotTable$npcInt$directTargeting, "[]");	// Reset
     }
     
     timer(){ptRefresh();}
@@ -183,7 +183,7 @@ default{
 				if( l2i(OST, i+1) & NPCInt$targeting )
 					direct += l2k(OST, i);	
 			}
-			db4$freplace(hudTable$npcInt, hudTable$npcInt$directTargeting, mkarr(direct));
+			db4$freplace(gotTable$npcInt, gotTable$npcInt$directTargeting, mkarr(direct));
             
         }
            

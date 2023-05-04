@@ -120,8 +120,10 @@ default{
                 llStopSound();
                 float vol = (float)method_arg(1);
                 integer loop = (integer)method_arg(2);
-                if(loop)llLoopSound(sound, vol);
-                else llPlaySound(sound, vol);
+                if( loop )
+					llLoopSound(sound, vol);
+                else 
+					llPlaySound(sound, vol);
             }
             else llStopSound();
         }

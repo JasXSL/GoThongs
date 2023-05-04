@@ -44,7 +44,8 @@ alert(string text, integer ownerSay, string playSound){
 		vol = 1;
 		ALERTS = [];
 	}
-	if(sound)llPlaySound(sound, vol);
+	if( sound )
+		llLinkPlaySound(soundPrim$alert, sound, vol, SOUND_PLAY);
     if(ownerSay)llOwnerSay(text);
     ALERTS+=text;
     

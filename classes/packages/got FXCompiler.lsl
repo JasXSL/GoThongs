@@ -33,7 +33,7 @@ list DEF;
 	int i; \
 	for(; i < count(DEF); ++i ){ \
 		if( l2i(DEF, i) != fx$NO_PASSIVE ){ \
-			db4$replace(hudTable$fxCompilerActives, i, l2s(DEF, i)); \
+			db4$replace(gotTable$fxCompilerActives, i, l2s(DEF, i)); \
 		} \
 	}
 
@@ -55,7 +55,7 @@ default{
 	state_entry(){
 		
 		onStateEntry();
-		qd(llGetUsedMemory());
+		
 	}
 	#endif
 	
@@ -102,11 +102,12 @@ default{
 			str pname = db4$fget(table, fxPackage$NAME);
 			int pflags = (int)db4$fget(table, fxPackage$FLAGS);
 			list fxs = llJson2List(db4$fget(table, fxPackage$FXOBJS));
+			
+			if( pflags & PF_NO_STACK_MULTIPLY )
+				stacks = 1;
 
 			if( pflags & PF_DETRIMENTAL && action&(FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_STACKS|FXCPARSE$ACTION_RUN) )
 				refreshCombat = TRUE;
-			
-			
 			
 			// Add/Remove needs to update events
 			if( action&(FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_REM) ){
@@ -206,7 +207,7 @@ default{
 		if( refreshCombat )
 			Status$refreshCombat();
 		
-		// Passives have changed and must be recompiled
+		// PASSIVES have changed and must be recompiled
 		if( fxTypes != [] ){
 					
 			// Scan through packages and find changed variables
@@ -216,7 +217,9 @@ default{
 				int stacks = (int)db4$fget(tb, fxPackage$STACKS);
 				int flags = (int)db4$fget(tb, fxPackage$FLAGS);
 				int sender = key2int(db4$fget(tb, fxPackage$SENDER));
-				
+				if( flags & PF_NO_STACK_MULTIPLY )
+					stacks = 1;
+					
 				// Loop through effect arrays
 				integer fxi;
 				for(; fxi < count(effects); ++fxi ){
@@ -320,11 +323,11 @@ default{
 			
 			// Update the actives table
 			for( i = 0; i < count(fxTypes); ++i )
-				db4$replace(hudTable$fxCompilerActives, l2i(fxTypes, i), l2s(defaults, i));
+				db4$replace(gotTable$fxCompilerActives, l2i(fxTypes, i), l2s(defaults, i));
 			
 			if( flagsChanged )
 				db4$freplace(
-					hudTable$fxCompilerActives, 
+					gotTable$fxCompilerActives, 
 					fxf$SET_FLAG,
 					(int)fx$getDurEffect(fxf$SET_FLAG)&~(int)fx$getDurEffect(fxf$UNSET_FLAG)
 				);

@@ -518,12 +518,12 @@ default{
 	
 	state_entry(){
 		
-		list keys = llLinksetDataFindKeys(hudTable$fxCompilerEvts+"-?\\d", 0,-1); 
+		list keys = llLinksetDataFindKeys(gotTable$fxCompilerEvts+"-?\\d", 0,-1); 
 		int i; 
 		for(; i < count(keys); ++i ) 
 			llLinksetDataDelete(l2s(keys, i));
 		// Clear all the effects
-		for( i = 0; i < hudTable$fxStart$length; ++i ){
+		for( i = 0; i < gotTable$fxStart$length; ++i ){
 			str table = getFxPackageTableByIndex(i);
 			integer sub = 0;
 			for(; sub < 20; ++sub )
@@ -571,9 +571,7 @@ default{
 			if( method$internal )
 				team = TEAM;
 				
-			
 			integer flags = llList2Integer(wrapper, 0);		// Wrapper flags
-			
 			if( flags&WF_ENEMY_ONLY && team == TEAM )
 				return;
 			
@@ -653,7 +651,7 @@ default{
 						i = count(wrapper);
 					
 				}
-				
+								
 				// We don't have enough successful packages
 				if( nSuc < min_objs || !nSuc )
 					CB_DATA = (list)FALSE;
@@ -736,8 +734,10 @@ default{
 									stacks += (int)db4$fget(table, fxPackage$STACKS);
 									if( stacks > mstacks )
 										stacks = mstacks;
-									//raiseEvt, name, tag, sender, pix, runOnRem, flags, count, dispeller, passive
-									FX$rem(FALSE, "", "", "", pix, TRUE, 0, 0, "", TRUE);
+									//raiseEvt, name, tag, sender, pix, overwrite, flags, count, dispeller, passive
+									// For this rem to work you must assign a new pix
+									FX$rem(FALSE, "", "", "", pix, FALSE, 0, 0, "", TRUE);
+									pix = 0;
 									
 								}
 								else{
@@ -758,7 +758,7 @@ default{
 						
 							// Make our own loop here because we want to find an EMPTY row
 							integer pi = 1; 
-							for(; pi <= hudTable$fxStart$length; ++pi ){
+							for(; pi <= gotTable$fxStart$length; ++pi ){
 								
 								string tb = getFxPackageTableByIndex(pi); /* pix is 1-indexed */
 								if( db4$fget(tb, fxPackage$STACKS) == "" && db4$fget(tb, fxPackage$DUR) == "" ){
@@ -866,7 +866,7 @@ default{
 				
 			// These are pixes
 			// find(list names, list senders, list tags, list pixs, list flags, integer max){
-			list find = find(names, senders, tags, pixs, flags, 0, allowPassive); // Fetch all viable	
+			list find = find(names, senders, tags, pixs, flags, 0, allowPassive); // Fetch all viable
 			
 			// Jump since we can't have continues
 			@delContinue;

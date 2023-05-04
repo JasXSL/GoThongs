@@ -1,6 +1,12 @@
 #ifndef __Monster
 #define __Monster
 
+// index of gotTable$monster
+#define gotTable$monster$runtimeFlags db4$0		// (int)RUNTIME_FLAGS
+
+#define MonsterGet$runtimeFlags() (int)db4$fget(gotTable$monster, gotTable$monster$runtimeFlags)
+
+
 #define MonsterMethod$toggleFlags 1		// [(int)flags_to_set, (int)flags_to_remove[, (int)is_spellflags]] - set will be ORed, remove will be and NOT ed
 #define MonsterMethod$lookOverride 2	// (key)id or "" - Forces the monster to look at this ID instead of aggro target
 #define MonsterMethod$KFM 3				// (arr)kfm_a, (arr)kfm_b - Runs a keyframed motion on an npc
@@ -56,7 +62,7 @@
 #define Monster$RF_HUMANOID 0x4000		// This is a humanoid (allow certain monster interactions)
 #define Monster$RF_MINOR 0x8000			// This monster should not drop loot
 #define Monster$RF_ALWAYS_R 0x10000		// 65536 This monster is always able to trigger sex poses on downed players regardless of invul
-#define Monster$RF_FLANKING 0x20000		// This monster will try to flank players when not targeted by their aggro
+#define Monster$RF_FLANKING 0x20000		// 131072 This monster will try to flank players when not targeted by their aggro
 #define Monster$RF_INF_HP 0x40000		// 262144 Monster cannot lose HP but can do everything else
 
 #define Monster$atkFrame "_a"

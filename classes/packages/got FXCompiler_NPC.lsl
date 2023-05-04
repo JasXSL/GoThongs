@@ -95,7 +95,6 @@ onSettings(list settings){
 
 	list resource_updates; // Updates for HP/Mana etc
 
-
 	// Shared between PC/NPC, defined in got FXCompiler header file
 	dumpFxInstants()
 	
@@ -109,15 +108,21 @@ onSettings(list settings){
 		resource_updates += SMBUR$buildDurability(-l2f(fx,0)*stacks, pname, l2i(fx,1), l2f(fx, 2));
 		
 	}
-	else if( t == fx$ANIM ){
-		// Todo: Should check if this is a humanoid or if the animation is in inventory
-		// Todo: Add a force if not humanoid
-		if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT )
-			AniAnim$customAnim(LINK_THIS, l2s(fx,0), l2i(fx,1));
+	else if( t == fx$ANIM && !l2i(fx, 2) ){
+	
+		if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT && !l2i(fx, 2) )
+			AniAnim$customAnim(LINK_THIS, 
+				l2s(fx,0), 	// Name
+				l2i(fx,1), 	// Start
+				l2i(fx,3), 	// flags
+				l2i(fx,4), 	// duration
+				TRUE		// prevent non-humanoid
+			);
 		else if( l2i(fx,1) )
 			MeshAnim$startAnim(l2s(fx, 0));
 		else 
 			MeshAnim$stopAnim(l2s(fx, 0));
+			
 	}
 	
 	else if( t == fx$INTERRUPT )
@@ -155,7 +160,14 @@ onSettings(list settings){
 	if( t == fx$ANIM ){
 	
 		if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT )
-			AniAnim$customAnim(LINK_THIS, l2s(fx,0), l2i(fx,1));
+			AniAnim$customAnim(
+				LINK_THIS, 
+				l2s(fx,0), // Name
+				l2i(fx,1), // Start
+				l2i(fx,3), // flags
+				l2i(fx,4), // duration
+				TRUE
+			);
 		else if( l2i(fx,1) )
 			MeshAnim$startAnim(l2s(fx, 0));
 		else 
@@ -163,9 +175,9 @@ onSettings(list settings){
 	
 	}
 
-	else if( t == fx$LTB )
+	else if( t == fx$LTB ){
 		BuffVis$addToMe(llOrd(table, 0), l2s(fx, 0), l2s(fx,1));
-
+	}
 
 #endif
 
@@ -176,7 +188,14 @@ onSettings(list settings){
 	if(t == fx$ANIM){
 		
 		if( llGetInventoryType("got AniAnim") == INVENTORY_SCRIPT )
-			AniAnim$customAnim(LINK_THIS, l2s(fx,0), !l2i(fx,1));
+			AniAnim$customAnim(
+				LINK_THIS,
+				l2s(fx,0), // Name
+				!l2i(fx,1), // Start
+				l2i(fx,3), // flags
+				l2i(fx,4), // duration
+				FALSE		// prevent non humanoid
+			);
 		else if( !l2i(fx,2) )
 			MeshAnim$startAnim(llList2String(fx, 0));
 		else 

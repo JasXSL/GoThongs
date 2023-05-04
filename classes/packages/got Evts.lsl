@@ -137,7 +137,7 @@ qteButtonTouched( integer button ){
 	// SUCCESS
 	if(success){
 	
-		llPlaySound("45ab8496-0fad-b8f9-281d-02aaf588e306", 1);
+		llLinkPlaySound(soundPrim$evts, "45ab8496-0fad-b8f9-281d-02aaf588e306", 1, SOUND_PLAY);
 		// DONE
 		if( --QTE_STAGES == 0 ){
 			
@@ -150,7 +150,7 @@ qteButtonTouched( integer button ){
 		
 	}
 	else{
-		llPlaySound("dafef83b-035f-b2b8-319d-daac01b0936e", 1);
+		llLinkPlaySound(soundPrim$evts, "dafef83b-035f-b2b8-319d-daac01b0936e", 1, SOUND_PLAY);
 		llSetLinkColor(P_BUTTONS, <1,.25,.25>, l2i(QTE_BORDERMAP, button));
 		llSetLinkTextureAnim(P_BUTTONS, ANIM_ON|LOOP|PING_PONG, l2i(QTE_BORDERMAP, button), 16,2, 0,0, 120);
 		ptSet("QTEf", 1+QTE_DELAY, FALSE);
@@ -248,10 +248,10 @@ ptEvt( string id ){
 			;
 			
 			out += add;
-			db4$replace(hudTable$evtsSpellIcons, i, mkarr(add));
+			db4$replace(gotTable$evtsSpellIcons, i, mkarr(add));
 			
 		}
-		db4$setIndex(hudTable$evtsSpellIcons, max);
+		db4$setIndex(gotTable$evtsSpellIcons, max);
 		
 		
 		GUI$setMySpellTextures(max);
@@ -468,7 +468,7 @@ targScan( list sensed ){
 	T = t;
 
 	// Something has changed so we will rewrite the DB
-	string ch = hudTable$evtsNpcNear;
+	string ch = gotTable$evtsNpcNear;
 	int max = count(t)/2;
 	for( i = 0; i < max; ++i ){
 	
@@ -558,7 +558,7 @@ default{
 			int task = l2i(entries, i); \
 			int pix = l2i(entries, i+1); \
 			int pos = llListFindList(C_SPI, (list)pix); \
-			if( task & FXCPARSE$ACTION_REM ){ \
+			if( task & FXCPARSE$ACTION_REM && ~pos ){ \
 				C_SPI = llDeleteSubList(C_SPI, pos, pos+SPSTRIDE-1); \
 				needUpdate = TRUE; \
 			} \

@@ -119,7 +119,7 @@ timerEvent(string id, string data){
 setFocus( key id ){
 	TARG_FOCUS = id;
 	
-	db4$freplace(hudTable$root, hudTable$root$focus, (str)TARG_FOCUS);
+	db4$freplace(gotTable$root, gotTable$root$focus, (str)TARG_FOCUS);
 	raiseEvent(RootEvt$focus, (str)TARG_FOCUS);
 }
 
@@ -177,7 +177,7 @@ integer setTarget(key t, key icon, integer force, integer team){
 		
 	}
 
-	db4$freplace(hudTable$root, hudTable$root$targ, (str)TARG);
+	db4$freplace(gotTable$root, gotTable$root$targ, (str)TARG);
     raiseEvent(RootEvt$targ, mkarr((list)t + icon + team));		
 	
 	// Check if target still exists
@@ -210,8 +210,8 @@ savePlayers(){
 	list players = getPlayers();
 	integer i;
 	for(; i < count(players); ++i )
-		db4$replace(hudTable$rootPlayers, i, l2s(players, i));
-	db4$setIndex(hudTable$rootPlayers, count(players));
+		db4$replace(gotTable$rootPlayers, i, l2s(players, i));
+	db4$setIndex(gotTable$rootPlayers, count(players));
 	
 	raiseEvent(RootEvt$players, mkarr(players));	// Needed for mod backward compatibility
 	
@@ -221,8 +221,8 @@ sendHUDs(){
 
 	integer i; integer num = count(getPlayers());
 	for(; i < num; ++i )
-		db4$replace(hudTable$rootHuds, i, l2s(COOP_HUDS, i));
-	db4$setIndex(hudTable$rootHuds, num);
+		db4$replace(gotTable$rootHuds, i, l2s(COOP_HUDS, i));
+	db4$setIndex(gotTable$rootHuds, num);
 	
 	runOmniMethod("__ROOTS__", gotMethod$setHuds, llListReplaceList(COOP_HUDS, (list)llGetKey(), 0,0), TNN);
 	raiseEvent(RootEvt$coop_hud, mkarr(COOP_HUDS)); // Needed for mod backward compatibility
@@ -313,7 +313,7 @@ default{
 		llOwnerSay("Media cleared");
 		*/
 		
-		db4$insert(hudTable$evtsNpcNear, mkarr((list)0 + llGetKey()));		// Us being first is needed to save memory in smart heal. See got Evts for more.
+		db4$insert(gotTable$evtsNpcNear, mkarr((list)0 + llGetKey()));		// Us being first is needed to save memory in smart heal. See got Evts for more.
 				
 		Root$attached();
 		
@@ -632,12 +632,16 @@ default{
 	else if(METHOD == RootMethod$attached){
 		
 		key okey = llGetOwnerKey(id);
-		if(okey == llGetOwner()){
-			if(llGetAttached()){
+		if( okey == llGetOwner() && id != llGetKey() ){	// Should not be needed but LSL is LSL so
+		
+			if( llGetAttached() ){
+				
 				llRequestPermissions(llGetOwner(), PERMISSION_ATTACH);
 				llDetachFromAvatar();
+				
 			}
 			return;
+			
 		}
 		
 		integer pos = llListFindList(PLAYERS, [(str)okey]);

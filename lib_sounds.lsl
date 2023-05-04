@@ -206,6 +206,15 @@
 #define gotSoundLib$residue$attack "baaa5950-b972-0e97-11ec-96cf1568b2b3"
 #define gotSoundLib$residue$death "4d3c5a7b-be42-b92b-6b19-7f04510db479"
 
+#define gotSoundLib$humanMale$clearThroat "55294ee1-a62f-f8b5-45cc-5e529124c634"
+#define gotSoundLib$humanMale$question "f416ec32-5e6c-58a6-1a20-bc16f4a8e811"
+#define gotSoundLib$humanMale$ha "5d31545a-d69f-0201-0672-f38a80fe68a9"
+#define gotSoundLib$humanMale$grunt "1bd18479-7e07-4e37-bc73-cadf7edab0d4"
+#define gotSoundLib$humanMale$sigh "dacfca33-3b6c-9230-6301-8bd8f5ff4c08"
+
+
+
+
 
 #define gotSoundLib$humanMale$aggro "cbbf5234-24d4-692d-3470-47a2f3e8bc42"
 #define gotSoundLib$humanMale$takehit "ea2cf924-1ad9-2421-013f-a916205eba95"

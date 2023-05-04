@@ -2,12 +2,12 @@
 #define _gotLevel
 
 #define LevelMethod$update 0		// Updates scripts from HUD
-#define LevelMethod$loaded 1		// (int)HUD_loaded - 2 = Scripts from HUD loaded, 1 = Monsters, 0 = Assets Whenever the loader has finished
+//#define LevelMethod$loaded 1		// (int)HUD_loaded - 2 = Scripts from HUD loaded, 1 = Monsters, 0 = Assets Whenever the loader has finished
 //#define LevelMethod$died 2			// MOVED to got LevelData
 #define LevelMethod$load 3			// (bool)edit_mode[, (str)group=JSON_INVALID] - Edit mode will let you move monsters and stuff around. JSON_INVALID = spawn at level start. Otherwise lets you spawn by group.
 #define LevelMethod$setFinished 4	// [PROXY for got LevelData]
 #define LevelMethod$spawn 5			// [!MOVED to got LevelAux, forwarded from got Level for legacy purposes]
-#define LevelMethod$loadFinished 6	// void - Level has finished loading
+//#define LevelMethod$loadFinished 6	// void - Level has finished loading
 //#define LevelMethod$getScripts 7	// MOVED TO got LevelData 
 #define LevelMethod$interact 8		// (key)clicker, (key)asset - Raises an interaction event
 #define LevelMethod$trigger 9		// (key)person, (key)asset, (str)data - Raises an interaction event
@@ -79,11 +79,11 @@
 #define Level$loadSharp(group) runOmniMethod("got Level", LevelMethod$load, (list)0 + (group), TNN)
 #define Level$targLoadSharp(targ, group) runMethod((str)targ, "got Level", LevelMethod$load, [0,group], TNN)
 #define Level$intLoadSharp(group) runMethod((string)LINK_THIS, "got Level", LevelMethod$load, [0,group], TNN)
-#define Level$loadFinished() runMethod((string)LINK_THIS, "got Level", LevelMethod$loadFinished, [], TNN)
+//#define Level$loadFinished() runMethod((string)LINK_THIS, "got Level", LevelMethod$loadFinished, [], TNN)
 #define Level$despawn() runOmniMethod("got Level", LevelMethod$despawn, [], TNN)
 #define Level$trigger(user, data) runOmniMethod("got Level", LevelMethod$trigger, (list)user + data, TNN)
 #define Level$idEvent(evt, id, data, spawnround) runOmniMethod("got Level", LevelMethod$idEvent, (list)(evt) + (id) + (data) + (spawnround), TNN)
-#define Level$loaded(targ, isHUD) runMethod((str)targ, "got Level", LevelMethod$loaded, [isHUD], TNN)
+//#define Level$loaded(targ, isHUD) runMethod((str)targ, "got Level", LevelMethod$loaded, [isHUD], TNN)
 #define Level$loadPerc(targ, id, perc) runMethod(targ, "got Level", LevelMethod$loadPerc, [id, perc], TNN)
 // ??? These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}
 #define Level$getObjectives() runMethod(ROOT_LEVEL, "got Level", LevelMethod$getObjectives, [], TNN)
@@ -104,7 +104,7 @@
 
 
 // Level internal
-#define _lSharp() ((integer)db3$get("got Level", (list)LevelShared$isSharp))
+#define Level$isLive() ((int)db4$fget(gotTable$meta, gotTable$meta$levelSharp))
 
 
 #endif

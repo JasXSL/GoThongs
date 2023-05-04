@@ -5,7 +5,7 @@
 
 #define saveFlags() \
 if( SFp != SF ){ \
-	db4$freplace(hudTable$status, hudTable$status$flags, SF); \
+	db4$freplace(gotTable$status, gotTable$status$flags, SF); \
 	raiseEvent(StatusEvt$flags, llList2Json(JSON_ARRAY, [SF, SFp])); \
 	SFp = SF; \
 }	
@@ -752,9 +752,6 @@ OS( int ic ){
 		t = TEAM_D;
 		
 	integer pre = TEAM;
-	
-	
-	
 	integer armTot = (ARMOR&0x3F)+((ARMOR>>6)&0x3F)+((ARMOR>>12)&0x3F)+((ARMOR>>18)&0x3F)+((ARMOR>>24)&0x3F);
 
 	// GUI
@@ -806,7 +803,7 @@ OS( int ic ){
 	if( pre != t ){
 		TEAM = t;
 		
-		db4$freplace(hudTable$status, hudTable$status$team, TEAM);
+		db4$freplace(gotTable$status, gotTable$status$team, TEAM);
 		raiseEvent(StatusEvt$team, TEAM);
 		runOnDbPlayers(i, targ,
 			
@@ -839,16 +836,16 @@ OS( int ic ){
     saveFlags();
 
 	// We also need to update LSD
-	string tS = hudTable$status;
-	db4$freplace(tS, hudTable$status$hp, HP);
-	db4$freplace(tS, hudTable$status$mana, MANA);
-	db4$freplace(tS, hudTable$status$arousal, AROUSAL);
-	db4$freplace(tS, hudTable$status$pain, PAIN);
-	db4$freplace(tS, hudTable$status$maxHp, maxHP());
-	db4$freplace(tS, hudTable$status$maxMana, maxMana());
-	db4$freplace(tS, hudTable$status$maxArousal, maxArousal());
-	db4$freplace(tS, hudTable$status$maxPain, maxPain());
-	db4$freplace(tS, hudTable$status$armor, armTot);
+	string tS = gotTable$status;
+	db4$freplace(tS, gotTable$status$hp, HP);
+	db4$freplace(tS, gotTable$status$mana, MANA);
+	db4$freplace(tS, gotTable$status$arousal, AROUSAL);
+	db4$freplace(tS, gotTable$status$pain, PAIN);
+	db4$freplace(tS, gotTable$status$maxHp, maxHP());
+	db4$freplace(tS, gotTable$status$maxMana, maxMana());
+	db4$freplace(tS, gotTable$status$maxArousal, maxArousal());
+	db4$freplace(tS, gotTable$status$maxPain, maxPain());
+	db4$freplace(tS, gotTable$status$armor, armTot);
 	
 }
 
@@ -945,7 +942,7 @@ default {
     state_entry(){
 	
         Status$fullregen();
-		db4$freplace(hudTable$status, hudTable$status$team, TEAM);	// Set initial value
+		db4$freplace(gotTable$status, gotTable$status$team, TEAM);	// Set initial value
         multiTimer([TIMER_REGEN, 0, 1, TRUE]);
 		llOwnerSay("@setdebug_RenderResolutionDivisor:0=force");
 		A_ARM = floor(llFrand(4));	// 0-3
@@ -1023,7 +1020,7 @@ default {
 			
 			integer pre = DIF;
 			DIF = llList2Integer(PARAMS, 0);
-			db4$freplace(hudTable$status, hudTable$status$difficulty, DIF);
+			db4$freplace(gotTable$status, gotTable$status$difficulty, DIF);
 			raiseEvent(StatusEvt$difficulty, DIF);
 			
 			if(DIF != pre){
@@ -1047,7 +1044,7 @@ default {
 
             GF = l2i(PARAMS, 0)&(GENITALS_VAGINA|GENITALS_BREASTS|GENITALS_PENIS);
 			OS(TRUE);
-			db4$freplace(hudTable$status, hudTable$status$genitals, GF);
+			db4$freplace(gotTable$status, gotTable$status$genitals, GF);
 			raiseEvent(StatusEvt$genitals, GF);
 			
         }

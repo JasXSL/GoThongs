@@ -357,7 +357,7 @@ default {
 			// If we are targeting ourself, we can do both at once
 			int isTarg = SPICON_UPD & SPICON_TARG;
 			int isSelf = SPICON_UPD & SPICON_SELF;
-			int idx;	// Where to start from in hudTable$evtsSpellIcons. Own icons start at 0, target at 100.
+			int idx;	// Where to start from in gotTable$evtsSpellIcons. Own icons start at 0, target at 100.
 			list bars;	// Bars that must be updated
 			int max;	// How many textures to pull from DB
 			
@@ -388,7 +388,7 @@ default {
 			integer x;																	// Iterator for nrs to add blocks
 			
 			
-			str ch = hudTable$evtsSpellIcons;
+			str ch = gotTable$evtsSpellIcons;
 			// Cycle over the icons 
 			integer i;
 			for( ; i < max; ++i ){
@@ -413,8 +413,10 @@ default {
 							border = <0.5,0,1>;
 						
 					}
-				
-					float percentage = ((float)(snap-added)/duration)/10;
+					
+					float percentage = 1;
+					if( duration > 0 )					
+						percentage = ((float)(snap-added)/duration)/10;
 					block=[
 						PRIM_COLOR, ALL_SIDES, <1,1,1>,0,
 						PRIM_COLOR, 0, border, 1,
@@ -540,7 +542,7 @@ default {
 			int i;
 			TARG_SPICON_LEN = count(data)/stride;
 			
-			string ch = hudTable$evtsSpellIcons;
+			string ch = gotTable$evtsSpellIcons;
 			for(; i < TARG_SPICON_LEN; ++i )
 				db4$replace(ch, 100+i, mkarr(llList2List(data, i*stride, i*stride+stride-1)));
 			SPICON_UPD = SPICON_UPD | SPICON_TARG;

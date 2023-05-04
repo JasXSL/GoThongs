@@ -173,7 +173,7 @@ default{
         float vol = (float)method_arg(4);
         if(sound){
             if(vol <= 0)vol = 1;
-            llPlaySound(sound, vol);
+            llLinkPlaySound(soundPrim$language, sound, vol, SOUND_PLAY);
         }
         AM$(text);
         

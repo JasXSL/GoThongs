@@ -25,13 +25,13 @@ animKit( string base, integer start ){
     // Stop kit
     if( !start ){
         for( i=0; i<count(viable); ++i )
-            anim(l2s(viable, i), FALSE);
+            anim(l2s(viable, i), FALSE, 0,0);
         return;
     }
     
     string anim = randElem(viable);
-    anim(anim, FALSE);
-    anim(anim, TRUE);
+    anim(anim, FALSE, 0,0);
+    anim(anim, TRUE, 0,0);
 	#ifdef MaskAnimConf$animStartEvent
 	raiseEvent(MaskAnimEvt$onAnimStart, mkarr((list)base+anim));
 	#endif
@@ -39,30 +39,53 @@ animKit( string base, integer start ){
     
 }
 
-anim( string name, integer start ){
+anim( string name, integer start, integer flags, float duration ){
     
+	//qd(mkarr((list)name + start + flags +duration));
     if( llGetInventoryType(name) == INVENTORY_ANIMATION ){
+	
         if( start )
-            llStartObjectAnimation(name);
+            objAnimOn(name);
         else
-            llStopObjectAnimation(name);
+            objAnimOff(name);
+			
     }
     
-    name += "_ub";
-    if( llGetInventoryType(name) == INVENTORY_ANIMATION ){
+	string ub = name + "_ub";
+    if( llGetInventoryType(ub) == INVENTORY_ANIMATION ){
         if( start )
-            llStartObjectAnimation(name);
+            objAnimOn(ub);
         else
-            llStopObjectAnimation(name);
+            objAnimOff(ub);
     }
 	
+	multiTimer(["OFF_"+name]);
+	multiTimer(["MOV_"+name]);
 	
-        
+	if( start && duration > 0 ){
+		
+		multiTimer(["OFF_"+name, 0, duration, FALSE]); // off timer
+		if( flags & jasAnimHandler$animFlag$stopOnMove )
+			multiTimer(["MOV_"+name, 0, 1, TRUE]);
+	
+	}
     
 }
 
+timerEvent( string id, string data ){
+	
+	str start = llGetSubString(id, 0, 3);
+	str tail = llGetSubString(id, 4, -1);
+	if( start == "OFF_" ){
+		anim(tail, FALSE, 0,0);
+	}
+	if( start == "MOV_" && llVecMag(llGetVel()) > 0.1 )
+		anim(tail, FALSE, 0,0);
+
+}
+
 #define toggleIdleAnims( on ) \
-	AniAnim$customAnim(LINK_THIS, mkarr(IDLE_ANIMS), on)
+	AniAnim$customAnim(LINK_THIS, mkarr(IDLE_ANIMS), on, 0,0, FALSE)
 
 
 onEvt(string script, integer evt, list data){
@@ -79,13 +102,14 @@ onEvt(string script, integer evt, list data){
 	
 	if( script == "got Portal" && evt == PortalEvt$desc_updated ){
 		
-		list_shift_each(data, block,
+		integer i;
+		for(; i < count(data); ++i ){
 			
-			list d = llJson2List(block);
+			list d = llJson2List(l2s(data, i));
 			if( l2s(d, 0) == "IDL" )
 				IDLE_ANIMS += llDeleteSubList(d, 0, 0);
 		
-		)
+		}
 		
 		toggleIdleAnims( TRUE );
 		
@@ -101,7 +125,8 @@ onEvt(string script, integer evt, list data){
 }
 
 
-list FETCH_REQS;	// (str)anim, (float)time
+#define FETCHREQ_STRIDE 4
+list FETCH_REQS;	// (str)anim, (float)time, (int)flags, (float)dur 
 
 default{
     
@@ -121,20 +146,31 @@ default{
 		#endif
     }
 	
+	timer(){
+		multiTimer([]);
+	}
+	
 	changed( integer change ){
 		
 		if( change & CHANGED_INVENTORY ){
 			
 			integer i;
-			for(; i<count(FETCH_REQS) && count(FETCH_REQS); i+=2 ){
-				string anim = l2s(FETCH_REQS, 0);
-				float time = l2f(FETCH_REQS, 1);
+			for(; i < count(FETCH_REQS) && count(FETCH_REQS); i += FETCHREQ_STRIDE ){
+			
+				string anim = l2s(FETCH_REQS, i);
+				float time = l2f(FETCH_REQS, i+1);
 				
 				if( llGetTime()-time < 5 )
-					anim(anim, TRUE);
+					anim(
+						anim, 
+						TRUE, 
+						l2i(FETCH_REQS, i+2), 	// Flags
+						l2f(FETCH_REQS, i+3) 	// Duration
+					);
 				
-				FETCH_REQS = llDeleteSubList(FETCH_REQS, i, i+1);
-				i -= 2;
+				FETCH_REQS = llDeleteSubList(FETCH_REQS, i, i+FETCHREQ_STRIDE-1);
+				i -= FETCHREQ_STRIDE;
+				
 			}
 		
 		}
@@ -164,34 +200,55 @@ default{
 		
 			
 			integer i;
-			for( i=0; i<count(FETCH_REQS) && FETCH_REQS != []; i+=2 ){
+			// Ignore animations that have timed out
+			for( ; i < count(FETCH_REQS) && FETCH_REQS != []; i += FETCHREQ_STRIDE ){
+			
 				if( l2f(FETCH_REQS, i+1)+4 < llGetTime() ){
-					FETCH_REQS = llDeleteSubList(FETCH_REQS, i, i+1);
-					i -= 2;
-				}
-			}
-			
-			list anims = llJson2List(method_arg(0));
-			list_shift_each( anims, anim, 
-			
-				integer start = l2i(PARAMS, 1);
-				integer exists = llGetInventoryType(anim) == INVENTORY_ANIMATION;
-				if( exists ){
 					
-					anim(anim, FALSE);
-					if( start )
-						anim(anim, TRUE);
-						
-				}
-				else if( start && llListFindList(FETCH_REQS, (list)anim) == -1 ){
-						
-					// Request from owner
-					FETCH_REQS = FETCH_REQS + anim + llGetTime();
-					AnimHandler$get(llGetOwner(), (list)anim);
+					FETCH_REQS = llDeleteSubList(FETCH_REQS, i, i+FETCHREQ_STRIDE-1);
+					i -= FETCHREQ_STRIDE;
 					
 				}
 				
-			)
+			}
+			
+			int mFlags = MonsterGet$runtimeFlags();
+			int flags = l2i(PARAMS, i+2);
+			int start = l2i(PARAMS, i+1);
+			float duration = l2f(PARAMS, i+3);
+			int humanoidOnly = l2i(PARAMS, i+4);
+				
+			// Anims can be a JSON array of multiple animations
+			list anims = llJson2List(method_arg(0));
+			
+			if( flags & jasAnimHandler$animFlag$randomize && start )
+				anims = (list)randElem(anims);
+			
+			for( i = 0; i < count(anims); ++i ){
+				
+				str anim = l2s(anims, i);
+				if( !humanoidOnly || mFlags & Monster$RF_HUMANOID ){
+				
+					integer exists = llGetInventoryType(anim) == INVENTORY_ANIMATION;
+					if( exists ){
+						
+						anim(anim, FALSE, flags, duration);
+						if( start )
+							anim(anim, TRUE, flags, duration);
+							
+					}
+					else if( start && llListFindList(FETCH_REQS, (list)anim) == -1 ){
+							
+						// Request from owner
+						FETCH_REQS = FETCH_REQS + anim + llGetTime() + flags + duration;
+						AnimHandler$get(llGetOwner(), (list)anim);
+						
+					}
+					
+				}
+				
+			}
+			
 		}
         
         
