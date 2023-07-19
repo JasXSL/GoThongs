@@ -69,7 +69,7 @@ string localConfIdle;
 #define hup$send(targ, task, data) llRegionSayTo(targ, HOOKUP_CHAN, hup$TASK_BASE+task+mkarr((list)data))
 #define hup$global(task, data) llRegionSay(HOOKUP_CHAN, hup$TASK_BASE+task+mkarr((list)data))
 // Shortcut
-#define hup$clientAnim( npc, pc ) hup$send(HUP_TARG, hup$task$clientAnim, (npc) + (pc))
+#define hup$clientAnim( pc, npc ) hup$send(HUP_TARG, hup$task$clientAnim, (pc) + (npc))
 				
 		
 /*

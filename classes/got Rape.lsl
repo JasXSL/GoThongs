@@ -7,7 +7,7 @@
 #define RapeMethod$remInventory 4		// [(arr)assets]
 #define RapeMethod$setTemplates 5		// (arr)rapes - Allows something like an arena to set a template rape to trigger when a player goes down.
 #define RapeMethod$activateTemplate 6	// void - Activates a template
-#define RapeMethod$addFXAttachments 7	// attachment1, attachment2...
+#define RapeMethod$addFXAttachments 7	// attachment1, attachment2... If the last index is JSON_TRUE then it will be treated as a class attachment
 #define RapeMethod$remFXAttachments 8	// attachment1, attachment2...
 
 #define Rape$start(data) runMethod((string)LINK_ALL_OTHERS, "got Rape", RapeMethod$start, data, TNN)

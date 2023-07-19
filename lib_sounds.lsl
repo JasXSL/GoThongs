@@ -45,6 +45,11 @@
 #define gotSoundLib$fireprimal$attack "98211081-df54-21d3-8dff-472e2bfcb9ba"
 #define gotSoundLib$fireprimal$death "06a11ccb-ec01-fd25-3c41-d0fd7898b37c"
 
+#define gotSoundLib$biterfish$aggro "2acb1c1a-7b39-6741-935f-5b7aa4e351c6"
+#define gotSoundLib$biterfish$takehit "8b496783-d5f3-9bc6-4022-3d19a4c70156"
+#define gotSoundLib$biterfish$attack "7f6b8719-21dc-8438-ed72-d04f86867af2"
+#define gotSoundLib$biterfish$death "2d996052-4804-f6ac-ae65-9ba3e5131591"
+
 
 #define gotSoundLib$watersprite$aggro "e099fd20-6d28-1ea3-401a-a2eb790e0930"
 #define gotSoundLib$watersprite$takehit "33763d1c-1b0b-e610-049d-bcb44f9f8428"

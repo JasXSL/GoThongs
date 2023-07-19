@@ -44,4 +44,5 @@ Temporary Items
 *.bak
 *.bup
 
+/classes/packages/got Bridge.lsl
 classes/packages/got Bridge.lsl

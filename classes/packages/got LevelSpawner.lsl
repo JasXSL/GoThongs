@@ -11,17 +11,7 @@ quit(){
 key CURRENT_LEVEL;
 int LOADING;
 key PRELOADED_TEXTURE;
-list TEXTURES = [
-	"4f484ea3-8aa0-f09b-3173-ea61a5221ab4", // Panda VS Skel
-	"ae46da92-2078-0882-db82-39fa3e5b3ec5", // Fuyu & friend
-	"10a121c0-6296-749e-090c-67800975873b",	// Climbing rope
-	"683ed954-20f6-8026-1f42-b32bbfce5479",	// Riding the elevator
-	"ff0e1b2e-d9e4-0f78-7a81-4bca426cf6b9",	// Imp lair entrance
-	"042d3ef6-a923-adcf-67e1-085f444c1fe7", // Sun in PanRi
-	"451eff51-5fdb-4430-06ea-c6405538eab6",	// Kitsu & tiger
-	"2779b923-f813-28ac-38dd-19bddc3ac6b6",	// Dei dragon in tavern
-	"d7cb2c72-651a-a986-333f-c0646b227bf8"	// Dei reindeer and kitsu dragon
-];
+
 
 toggleLoadingScreen( int visible ){
 	

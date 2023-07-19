@@ -276,7 +276,7 @@ default{
 "🗓 secondlife:///app/group/6ff2300b-8199-518b-c5be-5be5d864fe1f/about SL Group!\n"+
 "️🔑 [https://goo.gl/TQftHT CC BY-NC-SA 4.0 License]\n"+
 "🖊 [https://goo.gl/nBVmME GitHub]\n"+
-"🌐 [https://goo.gl/rKz2iW Community Wiki]\n"+
+"🌐 [https://t.ly/Ov4V Wiki]\n"+
 "🐙 [https://goo.gl/67PfR7 JasX Patreon]  "+
 "🐼 [https://goo.gl/dtjvSf Toonie Patreon]";
 

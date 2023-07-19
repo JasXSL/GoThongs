@@ -14,7 +14,9 @@ list RAPE_ATTACHMENTS;
 list RAPE_REZZED;
 
 // llListFindList for name works in this because it's the only string type
-list FX_ATTACHMENTS;		// [(str)name, (key)id, (int)nr_attachments]	
+#define FXASTRIDE 4
+list FX_ATTACHMENTS;		// [(str)name, (key)id, (int)nr_attachments, (int)flags]
+bool REM_CLASS_ATTACH; 		// Do not attach things with the fx$ATTACH_CLASSATT flag
 
 updateFxAttachments(){
 
@@ -23,9 +25,15 @@ updateFxAttachments(){
 	
 	integer sets;
 	integer i;
-	for(; i<count(FX_ATTACHMENTS); i+=3){
+	for( ; i < count(FX_ATTACHMENTS); i += FXASTRIDE ){
 		
-		if(llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == "" && llGetInventoryType(l2s(FX_ATTACHMENTS, i)) == INVENTORY_OBJECT ){
+		int flags = l2i(FX_ATTACHMENTS, i+3);
+		
+		if( 
+			(~flags & fx$ATTACH_CLASSATT || !REM_CLASS_ATTACH) && 
+			llKey2Name(llList2Key(FX_ATTACHMENTS, i+1)) == "" && 
+			llGetInventoryType(l2s(FX_ATTACHMENTS, i)) == INVENTORY_OBJECT 
+		){
 			++sets;
 			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetRootPosition()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
 		}
@@ -68,6 +76,37 @@ onEvt(string script, integer evt, list data){
 	
 }
 
+
+onFxChanged( list chTypes ){
+	
+	if( llListFindList(chTypes, (list)fx$SET_FLAG) == -1 )
+		return;
+	
+	int rem = (int)fx$getDurEffect(fxf$SET_FLAG) & fx$F_NO_CLASS_ATTACH;
+	if( rem != REM_CLASS_ATTACH ){
+		
+		REM_CLASS_ATTACH = rem;
+		
+		// Remove. Add is automatic,
+		if( rem ){
+		
+			int i;
+			for(; i < count(FX_ATTACHMENTS); i += FXASTRIDE ){
+			
+				int f = l2i(FX_ATTACHMENTS, i+3);
+				if( f & fx$ATTACH_CLASSATT )
+					Attached$removeTarg(l2k(FX_ATTACHMENTS, i+1)); 
+					
+			}
+		
+		}
+		
+		
+	}
+	
+
+}
+
 default {
 	
 	on_rez( integer bap ){
@@ -93,6 +132,11 @@ default {
 			FX_ATTACHMENTS = llListReplaceList(FX_ATTACHMENTS, [id], pos+1, pos+1);
 		
 	}
+	
+	#define LM_PRE \
+		if( nr == TASK_FX ){ onFxChanged(llJson2List(s)); }
+	
+	
     
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -173,34 +217,62 @@ default {
 		}
 		
 		else if(METHOD == RapeMethod$addFXAttachments){
+		
 			list add = PARAMS;
-			list_shift_each(add, val,
+			
+			integer flags;
+			// If last is an integer then that is used as flags
+			if( llGetListEntryType(add, -1) == TYPE_INTEGER ){
+			
+				flags = l2i(add, -1);
+				add = llDeleteSubList(add, -1, -1);
+				
+			}
+			
+			//qd(mkarr(PARAMS));
+			
+			integer i;
+			for(; i < count(add); ++i ){
+			
+				string val = l2s(add, i);
 				integer pos = llListFindList(FX_ATTACHMENTS, [val]);
-				if(~pos){
-					FX_ATTACHMENTS = llListReplaceList(FX_ATTACHMENTS, [llList2Integer(FX_ATTACHMENTS, pos+2)+1], pos+2, pos+2);
+				// Add 1 to usage
+				if( ~pos ){
+					FX_ATTACHMENTS = llListReplaceList(FX_ATTACHMENTS, [l2i(FX_ATTACHMENTS, pos+2)+1], pos+2, pos+2);
 				}
+				// Add new entry
 				else{
-					FX_ATTACHMENTS += ([val, NULL_KEY, 1]);
+					FX_ATTACHMENTS += (list)val + NULL_KEY + 1 + flags;
 				}
-			)
+				
+			}
+			//qd(mkarr(FX_ATTACHMENTS));
 			updateFxAttachments();
+			
 		}
 		else if(METHOD == RapeMethod$remFXAttachments){
 			
 			list rem = PARAMS;
-			list_shift_each(rem, val,
+			integer i;
+			for(; i < count(rem); ++i ){
+			
+				str val = l2s(rem, i);
 				integer pos = llListFindList(FX_ATTACHMENTS, [val]);
-				if(~pos){
-					integer nr = llList2Integer(FX_ATTACHMENTS, pos+2)-1;
+				if( ~pos ){
+				
+					integer nr = l2i(FX_ATTACHMENTS, pos+2)-1;
 					if(nr <= 0){
 						// Remove attachment
-						Attached$removeTarg(llList2Key(FX_ATTACHMENTS, pos+1)); 
-						FX_ATTACHMENTS = llDeleteSubList(FX_ATTACHMENTS, pos, pos+2);
+						Attached$removeTarg(l2k(FX_ATTACHMENTS, pos+1)); 
+						FX_ATTACHMENTS = llDeleteSubList(FX_ATTACHMENTS, pos, pos+FXASTRIDE-1);
 					}else{
+						// Subtract from nr
 						FX_ATTACHMENTS = llListReplaceList(FX_ATTACHMENTS, [nr], pos+2, pos+2);
 					}
+					
 				}
-			)
+				
+			}
 			
 			updateFxAttachments();
 		}

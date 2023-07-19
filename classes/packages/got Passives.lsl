@@ -6,7 +6,7 @@
 #include "got/_core.lsl"
 
 list REM_ON_CLEAN;	// names of passives that should be removed on cleanup
-
+list REM_ON_UNSIT;	// names of passives that should be removed when unsitting
 
 
 
@@ -100,14 +100,19 @@ onEvt(string script, integer evt, list data){
 
 }
 
-default{
-	/*
-    timer(){
+timerEvent( str id, str data ){
 	
-		ptRefresh();
+	if( id == "SC" && REM_ON_UNSIT != [] && ~llGetAgentInfo(llGetOwner()) & AGENT_SITTING ){
+			
+		integer i; list remove = REM_ON_UNSIT;
+		for( ; i < count(remove); ++i )
+			Passives$rem(LINK_THIS, l2s(remove, i));
 		
-    }
-	*/
+	}
+	
+}
+
+default{
     // Reset to defaults
 	state_entry(){
 		/*
@@ -115,6 +120,13 @@ default{
 		for( ; i < count(FXCDefaults); ++i )
 			db4$replace(gotTable$passivesOutput, i, l2s(FXCDefaults, i));
 		*/
+		
+		multiTimer(["SC", 0, 1, TRUE]);
+		
+	}
+	
+	timer(){
+		multiTimer([]);
 	}
 	
 
@@ -136,10 +148,13 @@ default{
 		//str table = gotTable$passivesInput;
 		list effects = llJson2List(method_arg(1));
 
-		int pos = llListFindList(REM_ON_CLEAN, (list)name);
+		int pos = llListFindList(REM_ON_CLEAN, (list)oName);
 		if( ~pos )
 			REM_ON_CLEAN = llDeleteSubList(REM_ON_CLEAN, pos, pos);
-		
+		pos = llListFindList(REM_ON_UNSIT, (list)oName);
+		if( ~pos )
+			REM_ON_UNSIT = llDeleteSubList(REM_ON_UNSIT, pos, pos);
+				
 		// Remove existing
 		FX$rem(
 			false, // raiseEvent
@@ -156,9 +171,12 @@ default{
 		if( effects == [] )
 			return;
 		
-		if( flags & Passives$FLAG_REM_ON_CLEANUP ){
+		if( flags & Passives$FLAG_REM_ON_CLEANUP )
 			REM_ON_CLEAN += oName;
-		}
+		if( flags & Passives$FLAG_REM_ON_UNSIT )
+			REM_ON_UNSIT += oName;
+		
+		debugUncommon("Transpiling "+method_arg(1));
 		list fx;
 		list events;
 		integer i;
@@ -167,6 +185,7 @@ default{
 			int type = l2i(effects, i);
 			list val = llList2List(effects, i+1, i+1);
 			int to = l2i(FXCMap, type+3);	// +3 because it starts at -3
+			
 			if( type == FXCUpd$PROC ){
 				
 				val = llJson2List(l2s(val, 0));
@@ -179,9 +198,16 @@ default{
 				str wrapper = l2s(val, Passives$procWrapper);
 				val = [];
 				
+				debugUncommon("Converting triggers "+mkarr(triggers));
 				// Note: Avoid multiple triggers if you can because they are a waste of memory
 				int t;
 				for( ; t < count(triggers); ++t ){
+					
+					// Fail
+					if( llJsonValueType(l2s(triggers, t), []) != JSON_ARRAY ){
+						llOwnerSay("Error: Non-array trigger found in passive: '"+name+"'. Did you forget to make the triggers an array of arrays?");
+						return;
+					}
 					
 					list trig = llJson2List(l2s(triggers, t));
 					int targ = l2i(trig, Passives$pt$targ);
@@ -211,7 +237,16 @@ default{
 			}
 			// Attach must unroll into a flat format
 			else if( type == FXCUpd$ATTACH ){
-				fx += mkarr((list)to + llJson2List(l2s(val, 0)));
+			
+				list set = (list)to + llJson2List(l2s(val, 0));
+				if( oName == "_ENCH_" )
+					set += fx$ATTACH_CLASSATT;
+				fx += mkarr(set);
+				
+			}
+			// If you use cooldown with an array as data, it is treated as a cooldown of a particular spell and is transpiled to fx$SPELL_COOLDOWN_MULTI
+			else if( type == FXCUpd$COOLDOWN && llJsonValueType(l2s(val, 0), []) == JSON_ARRAY ){
+				fx += mkarr((list)fx$SPELL_COOLDOWN_MULTI + (int)j(l2s(val, 0), 1) + (float)j(l2s(val, 0), 0));				
 			}
 			else if( to != FXCMAP_NONE ){
 				fx += mkarr((list)to + val);
@@ -226,6 +261,7 @@ default{
 			"[],"+
 			mkarr(events)+
 		"]]";
+		debugUncommon("Transpile: "+wrapper);
 		//qd(wrapper);
 		FX$run("", wrapper);
 		

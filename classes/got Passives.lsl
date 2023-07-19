@@ -48,7 +48,7 @@
 #define FXCUpd$TEAM 26				// (int)team
 #define FXCUpd$BEFUDDLE 27			// (float)multiplier
 #define FXCUpd$CONVERSION 28		// (arr)conversions - Converts damage types into another. See below
-#define FXCUpd$SPRINT_FADE_MULTI 29	// (float)multiplier - Lower = longer sprint
+#define FXCUpd$SPRINT_FADE_MULTI 29	// (float)multiplier - Higher = faster regen speed
 #define FXCUpd$BACKSTAB_MULTI 30	// (float)multiplier - Increases or lowers damage from behind
 #define FXCUpd$SWIM_SPEED_MULTI 31	// (float)multiplier - Default 1
 #define FXCUpd$FOV 32				// (float)field_of_view - 0 resets
@@ -65,12 +65,14 @@
 
 
 
+
 #define Passives$TARG_SELF -1							// 
 #define Passives$TARG_AOE -2							//
 	
 #define Passives$toFloat(val) ((float)val/100)			// Convert back to float
 
 #define Passives$FLAG_REM_ON_CLEANUP 0x1				// Removes the passive on cleanup
+#define Passives$FLAG_REM_ON_UNSIT 0x2					// Removes the passive when owner is not sitting
 
 #define PassivesConst$MAX_PASSIVES 64					// Max passives a player can have
 

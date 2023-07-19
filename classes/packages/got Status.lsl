@@ -164,10 +164,11 @@ float rCnv( integer ty, float am ){
 	return out;
 }
 
-
-dArm( int amount ){
-
-	if( !ARMOR && amount > 0 )
+// force lets you update the FX regardless of change
+dArm( int amount, int force ){
+	
+	// Already stripped
+	if( !ARMOR && amount > 0 && !force )
 		return;
 	
 	int pre = ARMOR;
@@ -235,10 +236,10 @@ dArm( int amount ){
 	*/
 	
 	// Dressed
-	if( !pre && ARMOR )
+	if( (!pre || force) && ARMOR )
 		Passives$rem(LINK_THIS, "_SS_");
 	// Stripped
-	else if( pre && !ARMOR )
+	else if( (pre || force) && !ARMOR )
 		Passives$set(LINK_THIS, "_SS_", 0 + fx$F_SHOW_GENITALS, 0);
 		
 		
@@ -295,7 +296,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 					llFloor(llFabs(am)/ARMOR_PER_DMG) + 
 					(llFrand(1) < llFabs((am-llFloor(am/ARMOR_PER_DMG))/ARMOR_PER_DMG))
 				;
-				dArm(aDmg);
+				dArm(aDmg, FALSE);
 					
 			}
 			
@@ -322,7 +323,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		if( !iCnv && ~fl&SMAFlag$IS_PERCENTAGE )
 			am *= rCnv(FXC$CONVERSION_HP, am);
 			
-		raiseEvent(evt, mkarr((list)llFabs(am) + sn));
+		raiseEvent(evt, mkarr((list)am + sn));
 			
 		
     }
@@ -647,7 +648,7 @@ onEvt( string script, integer evt, list data ){
 	}
 		
 	else if( script == "got Bridge" && evt == BridgeEvt$spawningLevel && l2s(data, 0) == "FINISHED" ){
-		dArm(-1000);
+		dArm(-1000, FALSE);
 		OS(FALSE);
 	}
 	
@@ -1191,8 +1192,8 @@ default {
 	else if( METHOD == StatusMethod$setArmor ){
 		
 		ARMOR = l2i(PARAMS, 0);
-		dArm(0);
-		OS(FALSE);
+		dArm(0, TRUE);
+		OS(TRUE);
 	
 	}
 	
@@ -1222,7 +1223,7 @@ default {
 				++a;
 		}
 		
-		dArm( a );
+		dArm( a, FALSE );
 		OS(FALSE);
 		
 	}

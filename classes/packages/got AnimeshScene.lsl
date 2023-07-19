@@ -22,7 +22,7 @@ integer CFLAGS;
 
 #define setThrustTimer() ptSet("thr", llFrand(speed_max-speed_min)+speed_min, FALSE)
 
-#define seat() llOwnerSay("@sit:"+(str)llGetKey()+"=force,unsit=n")
+#define seat(unsit) llOwnerSay("@sit:"+(str)llGetKey()+"=force,unsit="+unsit)
 
 list SOUNDS = ["72d65db8-31fe-375b-8716-89e3963fbf7d","90b0ec1a-d5d2-3e18-ed0d-c5fb7c6885fd","f9194db3-9606-2264-3cde-765430179069"];
 
@@ -71,14 +71,14 @@ ptEvt( str id ){
 	}
 	
 	if( id == "resit" )
-		seat();
+		seat("n");
     
 }
 
 begin(){
 	
 	if( BFL&BFL_LIVE && BFL&BFL_HAS_CONF ){
-		seat();
+		seat("n");
 	}
 }
 
@@ -221,7 +221,7 @@ updatePos(){
     
 	vector pos = POS;
 	pos.z += zOffs;
-	
+		
     llSitTarget(pos, ROT);
     links_each( nr, name,
         
@@ -268,10 +268,12 @@ default{
     
     state_entry(){
         
+		llLinkSitTarget(LINK_SET, ZERO_VECTOR, ZERO_ROTATION);
         llLinkParticleSystem(LINK_SET, []);
         raiseEvent(evt$SCRIPT_INIT, "");
-        if( llAvatarOnSitTarget() )
-            llRequestPermissions(llAvatarOnSitTarget(), PERMISSION_TRIGGER_ANIMATION);
+		key ast = llAvatarOnSitTarget();
+        if( ast )
+            llRequestPermissions(ast, PERMISSION_TRIGGER_ANIMATION);
         
         links_each(nr, name,
             
@@ -305,7 +307,10 @@ default{
                     return llUnSit(t);
               
 				ptUnset("resit");
-                llRequestPermissions(llAvatarOnSitTarget(), PERMISSION_TRIGGER_ANIMATION|PERMISSION_TAKE_CONTROLS);
+                llRequestPermissions(
+					t, 
+					PERMISSION_TRIGGER_ANIMATION|PERMISSION_TAKE_CONTROLS
+				);
 				BFL = BFL|BFL_STARTED;
 				
             }
@@ -314,6 +319,10 @@ default{
                 ptUnset("thr");
 				if( portalConf$live )
 					llDie();
+				else{
+					stopAllObjectAnimations()
+					raiseEvent(gotAnimeshSceneEvt$stop, "");
+				}
 					
             }
         }
@@ -329,8 +338,9 @@ default{
 				llStopAnimation(anim);
 			)
 			
-			llStopObjectAnimation(ANIM+"_a");
-			llStartObjectAnimation(ANIM+"_a");
+			qd(ANIM);
+			objAnimOff(ANIM+"_a");
+			objAnimOn(ANIM+"_a");
             if( ANIM )
                 llStartAnimation(ANIM+"_t");
             setThrustTimer();
@@ -364,7 +374,7 @@ default{
 	
     #include "xobj_core/_LM.lsl"
 	
-	if( method$byOwner && METHOD == 0 ){
+	if( method$byOwner && METHOD == gotAnimeshSceneMethod$debug ){
 		llOwnerSay("Resetting");
 		llResetScript();
 	}
@@ -397,6 +407,12 @@ default{
 		
 	}
     
+	if( method$byOwner && METHOD == gotAnimeshSceneMethod$seat ){
+		
+		raiseEvent(evt$SCRIPT_INIT, "");
+		seat("y");
+		
+	}
 	
     if( !method$internal )
         return;
@@ -491,6 +507,7 @@ default{
         
     }
     
+	
     
     #define LM_BOTTOM  
     #include "xobj_core/_LM.lsl"  

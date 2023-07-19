@@ -12,13 +12,15 @@ animKit( string base, integer start ){
     integer i;
 	// This lets you do animName_1 animName_2 etc to pick one at random
     for(; i<llGetInventoryNumber(INVENTORY_ANIMATION); ++i ){
-        string n = llGetInventoryName(INVENTORY_ANIMATION, i);
+        
+		string n = llGetInventoryName(INVENTORY_ANIMATION, i);
         list expl = explode("_",n);
-        if( n == base || (l2s(expl, 0) == base && count(expl) < 3 ))
-            viable += n;
+        if( 
+			n == base || // Base always included
+			(l2s(expl, 0) == base && count(expl) < 3 && (l2i(expl, -1) || l2s(expl, -1) == "0")) // Must end with a 0 or positive number to be a kit
+		)viable += n;
+			
     }
-	
-    
     if( !count(viable) )
         return;
         
@@ -184,9 +186,7 @@ default{
         if( METHOD == MaskAnimMethod$start ){
             
 			string anim = method_arg(0);
-            integer restart = l2i(PARAMS, 1);
-			if( restart )
-                animKit(anim, FALSE);
+            //integer restart = l2i(PARAMS, 1); // Restart is not used by AniAnim. It is legacy from MeshAnim
             animKit(anim, TRUE);
             
         }

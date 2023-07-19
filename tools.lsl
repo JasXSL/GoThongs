@@ -421,7 +421,9 @@ list getHUDsByRole( int role ){
 
 // Helper for got LocalConf.NPC.template since we need this in the header
 #define seqAnim( anims ) \
-	sI = 0; llRequestPermissions(llGetOwnerKey(l2k(GRAPPLE_TARGS, 0)), PERMISSION_TRIGGER_ANIMATION); sA = (list)anims
+	sI = 0; llRequestPermissions(llGetOwnerKey(l2k(GRAPPLE_TARGS, 0)), PERMISSION_TRIGGER_ANIMATION | PERMISSION_CONTROL_CAMERA); sA = (list)anims
+#define seqCam( locTargList ) /* Requires call to seqAnim inline */ \
+	sC = (list)locTargList
 
 #endif
 

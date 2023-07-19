@@ -139,8 +139,9 @@ onEvt(string script, integer evt, list data){
 	if( script == "got Monster" && evt == MonsterEvt$runtimeFlagsChanged ){
 
 		RUNTIME_FLAGS = llList2Integer(data,0);
-		if(RUNTIME_FLAGS&Monster$RF_NO_SPELLS && BFL&BFL_CASTING)
+		if( RUNTIME_FLAGS & Monster$RF_NO_SPELLS && BFL&BFL_CASTING ){
 			endCast(FALSE, TRUE);
+		}
 
     }
 	
@@ -153,8 +154,12 @@ onEvt(string script, integer evt, list data){
 		else if( evt == StatusEvt$team )
 			TEAM = l2i(data, 0);
 		
-		else if( evt == StatusEvt$monster_gotTarget )
-            aggro_target = llList2String(data, 0);
+		else if( evt == StatusEvt$monster_gotTarget ){
+            
+			aggro_target = llList2String(data, 0);
+			// Add random cooldowns
+			
+		}
         
 		else if( evt == StatusEvt$monster_hp_perc && hp != llList2Float(data, 0) ){
 			
@@ -168,8 +173,9 @@ onEvt(string script, integer evt, list data){
 			BFL = BFL&~BFL_DEAD;
 			if( l2i(data, 0) ){
 				BFL = BFL|BFL_DEAD;
-				if( BFL&BFL_CASTING )
+				if( BFL&BFL_CASTING ){
 					endCast(FALSE, TRUE);
+				}
 			}
 			updateText();
 			
@@ -240,9 +246,7 @@ endCast( integer success, integer force ){
 		
 		
 	}
-	
 	ptSet("CC", 1, FALSE);
-    
 	
 }
 
@@ -279,7 +283,6 @@ startCast(integer spid, key targ, integer isCustom){
     integer flags = llList2Integer(d, NPCS$SPELL_FLAGS);
     float casttime = llList2Float(d, NPCS$SPELL_CASTTIME);
 	float recasttime = llList2Float(d, NPCS$SPELL_RECASTTIME);
-    
 	if( ~flags&NPCS$FLAG_IGNORE_HASTE ){
 	
 		casttime*=fxCTM;
@@ -316,13 +319,14 @@ startCast(integer spid, key targ, integer isCustom){
        
     spell_id = spid;
        
-	if(casttime <=0.1)
+	if( casttime <= 0.1 )
 		endCast(TRUE, FALSE); // Immediately finish the cast
 	
 	else{
 	
+		str data = mkarr((list)spid + spell_targ + spell_targ_real + l2s(d, NPCS$SPELL_NAME));
 		// Non instant
-		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, mkarr(([spid, spell_targ, spell_targ_real, l2s(d, NPCS$SPELL_NAME)])));
+		raiseEvent(NPCSpellsEvt$SPELL_CAST_START, data);
 		ptSet("CAST", casttime, FALSE);
 		ptSet("CB", 0.5, TRUE);
 		Monster$setSpellFlags(monster_flags);
@@ -487,7 +491,7 @@ ptEvt(string id){
 	
 	// Cast finish
     else if( id == "CAST" )
-        endCast(TRUE, FALSE);
+        endCast( TRUE, FALSE );
 		
 	// Cast bar
     else if( id == "CB" )
@@ -555,7 +559,7 @@ default {
     timer(){ptRefresh();}
     
 	#define LM_PRE \
-	if(nr == TASK_FX){ \
+	if( nr == TASK_FX ){ \
 		FXFLAGS = (int)fx$getDurEffect(fxf$SET_FLAG); \
 		if( RUNTIME_FLAGS & Monster$RF_IS_BOSS ){ \
 			FXFLAGS = FXFLAGS&~(fx$F_STUNNED|fx$F_SILENCED); \
@@ -564,9 +568,9 @@ default {
         fxCTM = (float)fx$getDurEffect(fxf$CASTTIME_MULTI);  \
         fxCDM = (float)fx$getDurEffect(fxf$COOLDOWN_MULTI); \
         if( BFL&BFL_CASTING && FXFLAGS&fx$NOCAST ) \
-            endCast(FALSE, TRUE); \
+            endCast( FALSE, TRUE ); \
 	} \
-	else if(nr == TASK_MONSTER_SETTINGS)\
+	else if( nr == TASK_MONSTER_SETTINGS )\
 		onSettings(llJson2List(s));
 	
     // This is the standard linkmessages
@@ -659,8 +663,9 @@ default {
 		
 	}
 	
-	else if( METHOD == NPCSpellsMethod$interrupt )
+	else if( METHOD == NPCSpellsMethod$interrupt ){
 		endCast(FALSE, l2i(PARAMS, 0));
+	}
 	
 	else if( METHOD == NPCSpellsMethod$setOutputStatusTo ){
 	

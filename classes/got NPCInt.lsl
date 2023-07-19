@@ -24,6 +24,7 @@
 #define NPCIntMethod$takehit 1		// void - Triggers monster take hit visual
 #define NPCIntMethod$rapeMe 2			// void - Sent as omni from player upon death
 
+#define NPCIntEvt$hitfx 1			// void - HitFX triggered
 
 //#define NPCInt$addTextureDesc(pid, texture, desc, added, duration, stacks, casterKey, flags) runMethod((string)LINK_ROOT, "got NPCInt", NPCIntMethod$addTextureDesc, [pid, texture, desc, added, duration, stacks, llGetSubString(casterKey,0,7), flags], TNN)
 //#define NPCInt$remTextureDesc(pid) runMethod((string)LINK_ROOT, "got NPCInt", NPCIntMethod$remTextureDesc, [pid], TNN)

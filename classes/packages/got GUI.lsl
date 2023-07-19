@@ -205,14 +205,18 @@ default {
 
 	timer(){
 		// Tick the updates
-		if(~BFL&BFL_TOGGLED)
+		#ifndef DEBUG
+		if( ~BFL&BFL_TOGGLED )
 			return;
+		#endif
 		
 		key target = hud$root$targ();
 		list statuses = (list)target + PLAYER_HUDS + boss;
 		list statuses_flags;
 		list statuses_sex;
 		list statuses_fx;
+		list mflags;	// Monster flags
+		list teams;
 		integer i;
 		
 		
@@ -222,13 +226,15 @@ default {
 			GUI$toggleBoss(LINK_THIS, "", FALSE);
 		
 		// Loops through the keys above and sets to -1 if not found, or a bitwise resource block
-		for( ; i<count(statuses); ++i ){
+		for( ; i < count(statuses); ++i ){
 		
 			int n = -1;
 			key t = l2k(statuses, i);
 			int s;		// Status
 			int se;		// Sex
 			int fx;		// FX Flags
+			int mf;
+			int te;		// Team
 			if( llKey2Name(t) ){
 			
 				list data = llGetObjectDetails(t, [OBJECT_ATTACHED_POINT, OBJECT_DESC]);
@@ -237,8 +243,8 @@ default {
 				s = l2i(split, StatusDesc$npc$STATUS);
 				fx = l2i(split, StatusDesc$npc$FX);
 				se = -1;	// Sex. Only relevent for player targets right now
-				int mf = l2i(split, StatusDesc$npc$MONSTERFLAGS);
-				
+				mf = l2i(split, StatusDesc$npc$MONSTERFLAGS);
+				te = l2i(split, StatusDesc$npc$TEAM);
 				// PC
 				if( l2i(data, 0) ){ // Attached
 					
@@ -246,16 +252,19 @@ default {
 					s = l2i(split, StatusDesc$pc$STATUS); // Same with status
 					se = l2i(split, StatusDesc$pc$SEX);
 					fx = l2i(split, StatusDesc$pc$FX);
-					
+					te = l2i(split, StatusDesc$pc$TEAM);
 					mf = 0;
 					
 				}
+				
 				
 				if( i == 0 && (mf&Monster$RF_NO_TARGET || s&StatusFlag$dead) )
 					Root$clearTargetIfIs(LINK_THIS, target);
 				
 			}
 			
+			mflags += mf;
+			teams += te;
 			statuses_flags += s;
 			statuses_sex += se;
 			statuses_fx += fx;
@@ -264,7 +273,7 @@ default {
 		}
 		
 		// Cycle status bars
-		for( i=0; i<count(statuses); ++i ){
+		for( i=0; i < count(statuses); ++i ){
 		
 			int n = l2i(statuses, i);
 				
@@ -274,17 +283,17 @@ default {
 			float al = 0.5;
 
 			// Boss
-			if(i == count(statuses)-1){
+			if( i == count(statuses)-1 ){
 				bar = P_BOSS_HP;
 				portrait = P_BOSS_PORTRAIT;
 				al = 1;
 			}
 			
 			
-			list data_out = [PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, <1,1,1>, 1];
+			list data_out;// = [PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, <1,1,1>, 1];
 			
-			if(~n){				
-						
+			if( ~n ){				
+				
 				list faces = [2,3,4,5]; // HP, Mana, Arousal, pain
 						
 				if( i > 1 && i != count(statuses)-1 )
@@ -297,6 +306,16 @@ default {
 				integer flags = l2i(statuses_flags, i);
 				int sex = l2i(statuses_sex, i);
 				int fx = l2i(statuses_fx, i);
+				int mf = l2i(mflags, i);
+				int te = l2i(teams, i);
+				vector hpC = <1,.5,.5>;
+				vector ppC = hpC; // Portrait border color
+				if( te == TEAM )
+					ppC = <.5,1,.5>;
+				
+				int invul = ( fx & fx$F_INVUL || flags & StatusFlag$invul || mf & (Monster$RF_INVUL|Monster$RF_INF_HP) );
+				if( invul )
+					hpC = ppC = <.5,.5,.5>;
 				
 				vector overlay = <1,1,1>;
 
@@ -309,6 +328,8 @@ default {
 						
 				// Set bars
 				list dta = [
+					// HP bar
+					PRIM_COLOR, l2i(faces, 0), hpC, 1,
 					PRIM_TEXTURE, l2i(faces,0), default_tx, <.5,1,0>, <.25-.5*hp,0,0>, 0,
 					PRIM_TEXTURE, l2i(faces,1), default_tx, <.5,1,0>, <.25-.5*mana,0,0>, 0,
 					PRIM_TEXTURE, l2i(faces,2), default_tx, <.5,1,0>, <.25-.5*ars,0,0>, 0,
@@ -326,8 +347,14 @@ default {
 					
 				data_out =
 					[PRIM_LINK_TARGET, bar]+dta+
-					[PRIM_LINK_TARGET, portrait, PRIM_COLOR, 1, overlay, 1]
+					[
+						PRIM_LINK_TARGET, portrait, 
+						PRIM_COLOR, 1, overlay, 1
+					]
 				;
+				// First an last can be border colored
+				if( i == count(statuses)-1 || !i )
+					data_out += (list)PRIM_COLOR + 0 + ppC + 1;
 				
 				data_out += (list)PRIM_LINK_TARGET + role;
 				// Portrait additional

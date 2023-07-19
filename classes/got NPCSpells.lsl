@@ -27,7 +27,6 @@
 	#define NPCS$FLAG_IGNORE_TANK 0x800			// Ignores the currently aggroed target
 	#define NPCS$FLAG_IGNORE_HASTE 0x1000		// Ignores haste modifier
 	#define NPCS$FLAG_HIDDEN 0x2000				// hide cast bar
-	
 	#define NPCS$STUN (NPCS$FLAG_ROOT|NPCS$FLAG_PACIFY|NPCS$FLAG_NOROT)
 	
 #define NPCS$SPELL_CASTTIME 1		// 0 = instant cast
@@ -40,6 +39,7 @@
 #define NPCS$SPELL_TARG_STATUS 8	// Status flags needed on target, 0 ignores, use negative for inverse
 #define NPCS$SPELL_TARG_ROLE 9		// Bitwise combination (use role2flag) of viable specs
 #define NPCS$SPELL_ROT 10			// Float radius. Use negative for inverse. PI_BY_TWO = I must be in front of the target, -PI_BY_TWO = I must be behind
+
 
 #define NPCS$buildSpell(flags, casttime, recast, range, name, minrange, targSex, targFxFlags, targStatusFlags, viableRoles, rot) \
 	llList2Json(JSON_ARRAY, (list)(flags)+(casttime)+(recast)+(range)+(name)+(minrange)+(targSex)+(targFxFlags)+(targStatusFlags)+(viableRoles)+(rot))

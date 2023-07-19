@@ -431,6 +431,8 @@ spawnWeapons(){
     multiTimer(["WC", "", 10, TRUE]);
 }
 
+string preAnim;
+
 default{
 
 	on_rez( integer bap ){
@@ -451,7 +453,7 @@ default{
         */
         
 		// Uncomment for debug
-        //loadWeapon(hud$bridge$userData());
+        //loadWeapon(llJson2List(hud$bridge$userData()));
             
         if(llGetAttached()){
             llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION|PERMISSION_OVERRIDE_ANIMATIONS);
@@ -531,11 +533,19 @@ default{
             
 			raiseEvent(WeaponLoaderEvt$attackAnim, "");
 
-            list kit = ["attack_fists_1", "attack_fists_2", "attack_fists_3"];
+			list kit = ["attack_fists_1", "attack_fists_2", "attack_fists_3"];
 			if( ANIM_SET != [] && !unsheatable )
 				kit = ANIM_SET;
            
-            string anim = randElem(kit);
+			list viable;
+			integer i;
+			for(; i < count(kit); ++i ){
+				if( l2s(kit, i) != preAnim )
+					viable += l2s(kit, i);
+			}
+			   
+            string anim = randElem(viable);
+			preAnim = anim;
             list out = [anim, anim+"_ub"];
             AnimHandler$anim(mkarr(out), TRUE, 0, 0, 0);
 

@@ -117,8 +117,8 @@ default{
 				if(name == "_STARTPOINT_P2")
 					idx = gotTable$meta$spawn1;
 				
-				db4$freplace(gotTable$meta, idx, l2s(out, 1));
-				llOwnerSay("-> Saved start point at "+l2s(out, 1));
+				db4$freplace(gotTable$meta, idx, l2s(out, 2));
+				llOwnerSay("-> Saved start point at "+l2s(out, 2));
 				
             }
 			// Otherwise it is a spawn

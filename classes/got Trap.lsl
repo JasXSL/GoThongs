@@ -13,7 +13,7 @@
 #define TrapMethod$frame 5			// (str)data - Triggers a legacy MeshAnim$frame event on the trap
 
 #define TrapEvent$triggered 1
-#define TrapEvent$seated 2
+#define TrapEvent$seated 2			// (key)ast
 #define TrapEvent$unseated 3		// (key)sitter
 #define TrapEvent$qteButton 4		// (bool)correct - A QTE button has been pushed
 #define TrapEvent$reset 5			// Trap has come off cooldown

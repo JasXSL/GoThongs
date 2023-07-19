@@ -13,7 +13,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 
 	list resource_updates; // Updates for HP/Mana etc
 	int fxFlags = (int)fx$getDurEffect(fxf$SET_FLAG); // owner's current FX flags
-
+;
 	// Shared between PC/NPC, defined in got FXCompiler header file
 	dumpFxInstants()
 	

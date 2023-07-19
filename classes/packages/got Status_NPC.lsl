@@ -556,7 +556,6 @@ default
 			if( llFabs(ang)>PI_BY_TWO && ~RF&Monster$RF_360_VIEW )
 				range *= 0.25;
 				
-						
 			if(
 				(
 					(type&AGENT && (ffa || ~llListFindList(PLAYERS, [(str)k]))) || 
@@ -565,7 +564,7 @@ default
 				dist < range
 			){
 			
-				list ray = llCastRay(root+<0,0,1+hAdd()>, ppos+<0,0,1>, ([RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS]));
+				list ray = llCastRay(root+<0,0,1+hAdd()>, ppos+<0,0,1>, RC_DEFAULT);
 				if( llList2Integer(ray, -1) == 0 )
 					Status$get(k, "aggro");
 
@@ -714,7 +713,7 @@ default
 					if( amount > 0 || !(RF&(Monster$RF_INVUL|Monster$RF_INF_HP)) )
 						HP += amount;
 						
-					raiseEvent(evt, mkarr((list)llFabs(amount) + attacker));
+					raiseEvent(evt, mkarr((list)amount + attacker));
 					Status$handleLifeSteal(amount, steal, attacker)
 				}
 				if( HP <= 0 && HP != pre ){

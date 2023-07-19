@@ -74,7 +74,8 @@
 		#define fx$F_SPELLS_MAX_RANGE 0x100000		// PC - Makes all spells cast as if they were done from max range (10m)
 		#define fx$F_IMPORTANT_DISPEL 0x200000		// 2097152 Highlight player to mark an important dispel
 		#define fx$F_NO_NUDE_PENALTY 0x400000		// 4194304 PC - Ignores nudity penalty
-
+		#define fx$F_NO_CLASS_ATTACH 0x8000000		// 134217728 - See fx$ATTACH - Detaches related ones when set
+		
 		// Should coincide with above
 		#define fx$FLAG_DESCS (list)\
 			"Stunned" + \
@@ -99,7 +100,8 @@
 			"Forced mouselook" + \
 			"Casting at max range" + \
 			"Has important dispellable effect" + \
-			"No nude penalty"
+			"No nude penalty" + \
+			"No class attach"
 			
 
 		#define fx$NOCAST (fx$F_STUNNED|fx$F_QUICKRAPE|fx$F_SILENCED)
@@ -115,7 +117,7 @@
 		#define fxf$CASTTIME_MULTI db4$18		//p (float)multi=1
 	#define fx$SPELL_DMG_TAKEN_MOD 19			// (str)spellName, (float)add, (bool)by_caster - PC only SpellName is the FX package name :: Increases efficiency of dur/man/ars/pain sections of a spell, useful for heals too
 		#define fxf$SPELL_DMG_TAKEN_MOD db4$19	//p [key2int(caster) or 0=global+"_"+(str)spellname, (float)multi]=[]
-	#define fx$ICON 20							// (key)icon, (str)description - Description can use a macro <|s3|> for a value multiplied by stacks
+	#define fx$ICON 20							// (key)icon, (str)description - Description can use a macro <|s3|> for a value multiplied by stacks. In this case s3 = stacks*3
 	#define fx$INTERRUPT 21						// (bool)force - Force will override fx$F_NO_INTERRUPT
 	#define fx$SPELL_DMG_DONE_MOD 22			// (int)index, (float)add - Index is the index of the spell, 0 is rest and then 1-4 for the others :: Increases efficiency of spells cast by you with this name
 		#define fxf$SPELL_DMG_DONE_MOD db4$22	//p [abil5multi,abil0multi...]=[1,1,1,1,1]
@@ -148,7 +150,8 @@
 	#define fx$PAIN_MULTI 41					// (float)add - PC only, Increases or decreases pain generation
 		#define fxf$PAIN_MULTI db4$41			//p (float)multi=1
 	#define fx$ALERT 42							// (str)text, (bool)ownersay, (bool)sound - PC only, standard alert
-	#define fx$ATTACH 43						// attachment1, attachment2...
+	#define fx$ATTACH 43						// attachment1, attachment2... - Attachment names must NOT be a number. The last entry can be used to set flags. MUST be treated as INT when passed through llJson2List
+		#define fx$ATTACH_CLASSATT 0x1				// This is treated as class attachments. Any attachments added through _ENCH_ (name of passive passed from the website through thongs/weapons/enchants) are automatically treated as this for backwards compatibility.
 	#define fx$MOVE_SPEED 44					// (float)add - NPC: Multiplies against normal move speed. PC: Sprint regen multiplier. Lower is slower.
 		#define fxf$MOVE_SPEED db4$44			//p (float)multi=1
 	#define fx$SPELL_MANACOST_MULTI 45			// (int)index, (float)multiply - PC only.
@@ -229,7 +232,11 @@
 		#define fxf$BACKSTAB_MULTI db4$86		//p (float)multi=1
 	#define fx$SWIM_SPEED_MULTI 87				// (float)multi - Affects swim speed
 		#define fxf$SWIM_SPEED_MULTI db4$87		//p (float)multi=1
-	
+	/* Removed because of security issue
+	#define fx$RUN_METHOD 88					// (int)target, (str)script, (int)method, (arr)args, (str)cb - Runs a method.
+		#define FXRMTarg$linkset 0x1				// Runs on victim HUD
+		#define FXRMTarg$owner 0x2					// Runs on victim owner
+	*/
 
 // Note: In strided ones (ex [0,1.0]) the second value MUST be seen as a float or searching will screw up.
 #define fx$NO_PASSIVE -0x80000000	// Marks the index as not having a passive

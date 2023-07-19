@@ -1,5 +1,5 @@
 #define gotAnimeshSceneMethod$debug 0						// Raises script init
-#define gotAnimeshSceneMethod$begin 1		// (obj)conf
+#define gotAnimeshSceneMethod$begin 1						// (obj)conf
 	#define gotAnimeshScene$cSpeedMin "minSpeed"			// min time between thrusts
 	#define gotAnimeshScene$cSpeedMax "maxSpeed"			// max time between thrusts
 	#define gotAnimeshScene$cAnim "anim"					// (str)base without _ so example "grapple_f" will be converted to "grapple_f_a". Animations are named base+"_"+t/a and thrusts are named base+"_"+nr+"_"+t/a
@@ -18,10 +18,11 @@
 #define gotAnimeshSceneMethod$killByName 3					// (str)name - Kills by name
 #define gotAnimeshSceneMethod$trigger 4						// int visuals - 1 = particles, 2 = sound - Trigger default particles or sounds (splat)
 #define gotAnimeshSceneMethod$stop 5						// Force stops the scene and unsits the target without deleting the object
-
+#define gotAnimeshSceneMethod$seat 6						// Used for debugging
 
 #define gotAnimeshSceneEvt$thrust 1					// void - Raised when a thrust starts
 #define gotAnimeshSceneEvt$start 2					// void - Raised when starting
+#define gotAnimeshSceneEvt$stop 3					// void - Raised when finishing (only debug)
 
 
 #define gotAnimeshScene$begin(CONF) runMethod((str)LINK_THIS, "got AnimeshScene", gotAnimeshSceneMethod$begin, (list)llList2Json(JSON_OBJECT, (list)CONF), TNN)

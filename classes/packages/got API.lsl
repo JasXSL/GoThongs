@@ -215,8 +215,34 @@ default{
 	if( method$byOwner && METHOD == GotAPIMethod$dumpLSD ){
 		list keys = llLinksetDataListKeys(0,-1);
         integer i;
-        for( i = 0; i < count(keys); ++i )
-            llOwnerSay(l2s(keys, i)+" >> "+llLinksetDataRead(l2s(keys, i)));
+		list cats = [
+			gotTable$bridge,"bridge",
+			gotTable$bridgeSpells, "spells",
+			gotTable$spellmanSpellsTemp, "tmpspells",
+			gotTable$evtsNpcNear, "npcNear",
+			gotTable$evtsSpellIcons, "sp.icons",
+			gotTable$status, "status",
+			gotTable$fxCompilerActives, "FX.Active",
+			gotTable$primSwim, "PrimSwim",
+			gotTable$root, "Root",
+			gotTable$rootPlayers, "Players"			
+		];
+        for( i = 0; i < count(keys); ++i ){
+            
+			string k = l2s(keys, i);
+			string cat = "???";
+			integer pos = llListFindList(cats, (list)llGetSubString(k, 0,0));
+			if( ~pos )
+				cat = l2s(cats, pos+1);
+			else{
+				integer ord = llOrd(k, 0);
+				if( ord >= gotTable$fxStart && ord < gotTable$fxStart+gotTable$fxStart$length ){
+					cat = "FX."+(str)ord+"."+(str)llOrd(k, 1);
+				}
+			}
+			llOwnerSay("["+cat+"] "+k+" >> "+llLinksetDataRead(k));
+			
+		}
 	}
 
 	if(method$byOwner && METHOD == GotAPIMethod$list && !(method$isCallback)){

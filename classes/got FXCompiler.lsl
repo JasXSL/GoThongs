@@ -202,8 +202,22 @@
 				"" \
 			);\
 		\
-	}\
-	
+	}
+	/* Security issue
+	else if( t == fx$RUN_METHOD && (caster == "" || llGetOwnerKey(caster) == llGetOwner()) ){ \
+		 \
+		int targs = l2i(fx, 0); \
+		str script = l2s(fx, 1); \
+		int method = l2i(fx, 2); \
+		list data = llJson2List(l2s(fx, 3)); \
+		str cb = l2s(fx, 4); \
+		if( targs & FXRMTarg$linkset ) \
+			runMethod((str)LINK_SET, script, method, data, cb); \
+		if( targs & FXRMTarg$owner ) \
+			runMethod(llGetOwner(), script, method, data, cb); \
+	 \
+	} \
+	*/
 	
 	
 #endif

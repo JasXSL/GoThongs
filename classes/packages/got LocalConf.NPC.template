@@ -74,8 +74,12 @@
 	#define onInternalMethod( sender_script, method, params, id ) list onInternalMethod( str sender_script, int method, list params, key id )		// Internal method received
 	#define onMethod( str sender_script, int method, list params, key id )				// Any method received
 	#define onObjectRez( key id )
+	#define onDamaged( float hp, key id )
+	#define onHitfx() // Raised when an fx object of type fx$HITFX is received
+	#define onRunTimePermissions( int perms )
 	#define int onCheckCastSpell( key victim, str spellName )
 	#define onListen(integer chan, string name, key id, string message)
+	
 	
 	Enabled by cf$USE_GRAPPLE
 	Optional user defined:
@@ -84,10 +88,12 @@
 		#define grappleOnFail() float grappleOnFail() // Returns how long it should take before unsitting the player
 		#define grappleOnPermissions()					// When run time permissions are received
 		#define grappleOnButton( int success )    		// When using a classic QTE and user presses a button
-	
+		#define grappleOnClientAnim(pc, npc) // Raised on host when client anim is received for non looping animations
+		
 	Built in:
-		key GRAPPLE_TARG						// Holds the grapple target
-		function grappleStart( key id, int fxflags ) 		// Starts the grapple 
+		list GRAPPLE_TARGS						// Holds the grapple target. MUST be a list of keys.
+		// !! NOTE: list huds MUST BE A LIST OF STRINGS !!
+		function grappleStart( list huds, int fxflags ) 		// Starts the grapple
 		function grappleEnd()					// Stops any active grapple
 		integer grappleClosestConal( float arc, float range, int grappleFlags, int minPlayers, int maxPlayers )		// Tries to grapple the closest player within arc and range
 	
@@ -311,7 +317,7 @@
 			return;
 		
 		BFR = BFR|BFR_IN_GRAPPLE;
-		GRAPPLE_TARGS = huds;
+		GRAPPLE_TARGS = [];
 		nGTARGS = count(huds);
 		Monster$setFlags(cf$GRAPPLE_MONSTERFLAGS);
 		multiTimer(["_g_fail", 0, 3, FALSE]);
@@ -326,8 +332,11 @@
 		
 		integer i;
 		for(; i < count(huds); ++i ){
+			
+			str targ = l2s(huds, i);
+			GRAPPLE_TARGS += targ; // Must be string
 			FX$send(
-				l2k(huds, i), 
+				targ, 
 				llGetKey(), 
 				"[9,0,0,0,["+
 					(str)cf$GRAPPLE_DURATION+","+(str)(PF_DETRIMENTAL|PF_NO_DISPEL)+",\"_Q\",["+
@@ -339,6 +348,8 @@
 				TEAM_NPC
 			);
 		}
+		
+		debugUncommon("Grappling "+mkarr(huds));
 		raiseEvent(LocalConfEvt$grappleStart, mkarr(huds));
 		#ifdef grappleOnStart
 		grappleOnStart();
@@ -492,6 +503,7 @@ onEvt(string script, integer evt, list data){
 			#endif
 			// If we use grapple, we can have HUP handled in grappleend
 			#if defined cf$USE_GRAPPLE
+				debugUncommon("Ending grapple because dead");
 				grappleEnd();
 			// Otherwise we need to reset HUP here
 			#elif defined cf$hup$CLIENT || defined cf$hup$HOST		
@@ -507,10 +519,21 @@ onEvt(string script, integer evt, list data){
 			THREAT = data;
 		}
 		#endif
+		#ifdef onDamaged
+		else if( evt == StatusEvt$hurt ){
+			onDamaged(l2f(data, 0), l2k(data, 1));
+		}
+		#endif
 		
 	}
 	
-    
+		
+    #ifdef onHitfx
+	if( script == "got NPCInt" && evt == NPCIntEvt$hitfx ){
+		onHitfx();
+	}
+	#endif
+	
     
 	
 
@@ -552,6 +575,7 @@ timerEvent( string id, string data ){
 		if( llKey2Name(HUP_TARG) == "" ){
 			
 			#ifdef cf$USE_GRAPPLE
+				debugUncommon("HUPc Failed");
 				grappleEnd();
 			#else
 				resetHUP();
@@ -595,8 +619,10 @@ timerEvent( string id, string data ){
 	#endif
 	
 	#ifdef cf$USE_GRAPPLE
-	if( id == "_g_fail" || id == "_g_end" )
+	if( id == "_g_fail" || id == "_g_end" ){
+		debugUncommon("Grapple timed out");
         grappleEnd();
+	}
 	#endif
 
 	#ifdef timerEvt
@@ -609,6 +635,7 @@ timerEvent( string id, string data ){
 // Sequential anim run on GRAPPLE_TARGS
 list sA;	// (str)player1anim, (str)playeranim...
 integer sI;	// Iterator
+list sC;	// Sequential camera. Set alongside seqAnim to update camera.
 
 default{
     on_rez(integer mew){llResetScript();}
@@ -653,6 +680,7 @@ default{
 	// Grapple anim handler
 	#ifdef cf$USE_GRAPPLE
 	changed( integer change ){ 
+	
 		if( !_G_EN )
 			return;
 	
@@ -673,7 +701,8 @@ default{
 					#ifdef cf$sitCheck
 					if( cf$sitCheck(lk) )
 					#else
-					if( (~llListFindList(GRAPPLE_TARGS, (list)lk) || !LIVE) && !DEAD )
+					int p = llListFindList(GRAPPLE_TARGS, (list)lk);
+					if( (~p || !LIVE) && !DEAD )
 					#endif
 						sitters += lk;
 					else{
@@ -732,14 +761,21 @@ default{
 			
 		}
 		else if( sitters == [] ){
+			debugUncommon("No viable sitters found. HUDs "+mkarr(PLAYER_HUDS)+" Targ "+mkarr(GRAPPLE_TARGS));
 			grappleEnd();
 		}
 			
 	}
 	
 	run_time_permissions( integer perm ){
+		#ifdef onRunTimePermissions
+			onRunTimePermissions(perm);
+		#endif
+		
 		if( !_G_EN )
 			return;
+			
+		
 			
 		#ifndef cf$ALLOW_DIRECT_ANIMATIONS
 			#undef llStartAnimation
@@ -749,6 +785,24 @@ default{
 			str a = l2s(sA, sI);
 			if( a != "" && llGetPermissions() & PERMISSION_TRIGGER_ANIMATION ) // Trigger animation may not be set because SL
 				llStartAnimation(a);
+				
+			// Set camera
+			if( sC ){
+			
+				vector pos = l2v(sC, 0);
+				vector targ = l2v(sC, 1);
+				sC = llDeleteSubList(sC, 0, 1);
+				
+				llSetCameraParams([
+					CAMERA_ACTIVE, TRUE,
+					CAMERA_POSITION_LOCKED, TRUE,
+					CAMERA_FOCUS_LOCKED, TRUE,
+					CAMERA_POSITION, llGetPos()+pos*llGetRot(),
+					CAMERA_FOCUS, llGetPos()+targ*llGetRot()
+				]);
+			
+			}
+				
 			++sI;
 			if( l2k(GRAPPLE_TARGS, sI) != "" )
 				llRequestPermissions(llGetOwnerKey(l2k(GRAPPLE_TARGS, sI)), PERMISSION_TRIGGER_ANIMATION);
@@ -758,6 +812,13 @@ default{
 			#define llStartAnimation #error "Use seqAnim. See got LocalConf.NPC.template"
 		#endif
 		
+	}
+	#else
+	// Run time permissions if no grapple is used
+	run_time_permissions( integer perm ){
+		#ifdef onRunTimePermissions
+			onRunTimePermissions(perm);
+		#endif
 	}
 	#endif
 		
@@ -781,6 +842,7 @@ default{
 				// If we can grapple we run end grapple
 				#ifdef cf$USE_GRAPPLE
 					grappleEnd();
+					debugUncommon("HUP end received");
 				// Otherwise end only hup
 				#else
 					resetHUP();
@@ -807,7 +869,7 @@ default{
 				
 				// Host is looking for a client
 				if( task == hup$task$hostStart && HUP_TARG == "" ){
-					
+										
 					if( 
 						hupPos == -1 		// We do not support this animation
 						|| DEAD										// we are dead
@@ -882,7 +944,6 @@ default{
 					HUP_VICTIMS = victims;
 					str cb = l2s(data, 2);
 					HUP_POS = llGetPos();			// Store our start position
-					onHookup(name, TRUE, FALSE);	// Client defined code
 					multiTimer(["HUP_FAIL"]);		// Stop fail
 					multiTimer(["HUPC", 0, 1, TRUE]);		// Hup ticker. Checks if grapple is ongoing etc.
 					BFR = BFR|BFR_IN_GRAPPLE;
@@ -903,6 +964,8 @@ default{
 						}
 						objAnimOn(HUP_A_NPC);
 					}
+					
+					onHookup(name, TRUE, FALSE);	// Client defined code
 					
 				}
 			#endif
@@ -950,6 +1013,11 @@ default{
 						objAnimOff(anim);
 						objAnimOn(anim);
 					}
+					
+					#ifdef grappleOnClientAnim
+						grappleOnClientAnim(l2s(data, 0), l2s(data, 1));
+					#endif
+					
 				}			
 			#endif
 			
@@ -1006,6 +1074,7 @@ default{
 							grappleOnSuccess();
 						#endif
 						raiseEvent(LocalConfEvt$grappleSuccess, mkarr(GRAPPLE_TARGS));
+						debugUncommon("QTE completed");
 						grappleEnd();
 						
 					}

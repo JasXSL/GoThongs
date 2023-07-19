@@ -277,6 +277,7 @@ default{
         startAnim("hit");
         if(thSnd)
             llTriggerSound(randElem(thSnd), 1);
+		raiseEvent(NPCIntEvt$hitfx, "");
     }
     
     else if( METHOD == NPCIntMethod$rapeMe ){
