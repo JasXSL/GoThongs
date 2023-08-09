@@ -11,6 +11,7 @@ list find( list names, list senders, list tags, list pixs, list flags, integer m
     
     list out;
     fxPackageEach(i,table,
+	
         integer stacks = (int)db4$fget(table, fxPackage$STACKS);
         // There is no data on this block
         if( !stacks )
@@ -36,6 +37,7 @@ list find( list names, list senders, list tags, list pixs, list flags, integer m
 				jump findContinue;
 		}
         
+		
         integer x;
         
         if( l2i(flags, 0) ){
@@ -122,7 +124,8 @@ onEvt( string script, integer evt, list data ){
 	packages = getEventPackageIndexes(getEventPackageTable((str)evt, script));		// EVT_INDEX is stored as script_evtID
     @wasInternal;
 	
-	//qd(mkarr(packages)+">>"+getEventPackageTable((str)evt, script));
+	
+	debugCommon("Found event packages: "+mkarr(packages)+">>"+getEventPackageTable((str)evt, script));
 
 	int ts = timeSnap(); // Time in 10ths of a second
 	vector pos = llGetPos();
@@ -149,16 +152,16 @@ onEvt( string script, integer evt, list data ){
 			int evFlags = l2i(evdata, FXEVT_FLAGS);
 			int cd = (int)(l2f(evdata, FXEVT_COOLDOWN)*10);	// Cooldown is stored in seconds. Convert to 10th of a second for timesnap comparison.
 			int lastProc = (int)j(lastProcs, ((str)ei));
-			/*
-			qd("Script "+script+" "+mkarr(evdata));
-			qd(mkarr((list)
+			
+			debugCommon("Script "+script+" "+mkarr(evdata));
+			debugCommon(mkarr((list)
 				(chance > 0 && llFrand(1.0) > chance) +
 				(FX_FLAGS&fx$F_NO_PROCS && ~evFlags&FXEVT$PF_OVERRIDE_PROC_BLOCK) +
 				(lastProc && ts-lastProc < cd) +
 				(script != l2s(evdata, FXEVT_SCRIPT) )+
 				(evt != l2i(evdata, FXEVT_TYPE))
 			));
-			*/
+			
 			// If proc chance was not successful. Then continue.
 			if( 
 				(chance > 0 && llFrand(1.0) > chance) ||
@@ -168,6 +171,7 @@ onEvt( string script, integer evt, list data ){
 				evt != l2i(evdata, FXEVT_TYPE)
 			)jump evtNext;
 			
+			debugCommon("Accepted");
 			// JSON array of parameters set in the package
 			list against = llJson2List(l2s(evdata, FXEVT_PARAMS));
 

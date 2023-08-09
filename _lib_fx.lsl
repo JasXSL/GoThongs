@@ -32,6 +32,7 @@
 		#define fxhfFlag$SLOT_BREASTS 0x100			// 256
 		#define fxhfFlag$SLOT_STOMACH 0x200			// 512
 		
+		#define fxhfColor$none "<-1,-1,-1>"
 		#define fxhfColor$phys "<1,.5,.5>"
 		#define fxhfColor$arouse "<1,.5,1>"
 		#define fxhfColor$toxic "<.8,1,.7>"
@@ -131,7 +132,10 @@
 	#define fx$AGGRO 28							// (float)amt - NPC only
 	#define fx$RESET_COOLDOWNS 29				// (int)flags, 0x1 = rest, 0x2 = abil1 etc, charges=1 - PC only. Adds charges to a spell.
 	#define fx$RAND 30							// (float)chance, (bool)multiply_by_stacks, (arr)fxobj1, (arr)fxobj2... - Pseudo effect. If llFrand(1)<=chance, then the trailing fxobjs are run (fxobj is (int)fx, (var)data1.... Only works for instant effects. Multiply_by_stacks will make it so if you have a chance of .2, and 3 stacks, that's a chance of 0.6
-	#define fx$FORCE_SIT 31						// (key)object, (bool)allow_unsit 
+	#define fx$FORCE_SIT 31						// (key)object, (int)flags
+		#define fx$FORCE_SIT$ALLOW_UNSIT 0x1		// allow_unsit
+		#define fx$FORCE_SIT$NO_AUTO_UNSIT 0x2		// Do not auto unsit when the effect ends
+		
 	#define fx$CRIT_ADD 32						// (float)amt - Increases chance of doing double damage
 		#define fxf$CRIT_ADD db4$32				//p (float)multi=1 - Spell script needs to subtract 1 from this
 	#define fx$ROT_TOWARDS 33					// (vec)pos - PC ONLY, Rotates the player towards a global position
@@ -361,8 +365,8 @@
 	#define fx$COND_NAME 17						// (str)name - Recipient has name
 	#define fx$COND_SAME_OWNER 18				// void - Recipient has the same owner as the sender
 	#define fx$COND_RANDOM 19					// (float)chance between 0 and 1
-	
-	
+	//#define fx$COND_STATUS_FLAGS 20				// (int)flags - Has all of these flags
+	//#define fx$COND_FX_FLAGS 21					// (int)flags - Has all of these fx flags
 	
 // Reserved names:
 	#define FXN$INFUSION "_I"					// Bloodlust
@@ -378,5 +382,4 @@
 	#define fx$TAG_NAKED 6
 	#define fx$TAG_ACTIVE_MITIGATION 7			// Used by tank active mitigation abilities
 	#define fx$TAG_VULNERABLE 8					// Used in pvp events
-	
 	

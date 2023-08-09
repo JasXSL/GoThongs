@@ -199,6 +199,8 @@ string FX_buildEvent( integer evtype, string evscript, integer targ, integer max
     return fx$buildEvent(evtype, evscript, targ, maxtargets, wrapper, mkarr(params), procChance, flags, range, cooldown);
 }
 
+
+
 // FX are packages containing info about a specific effect. You'll likely want to write your own sheet of various effects
 string FX_buildFX(integer id, list params){
     return llList2Json(JSON_ARRAY, [id]+params);
@@ -215,7 +217,7 @@ string FX_buildCondition(integer cond, list vars){
 // These are general package flags
 #define PF_DETRIMENTAL 0x1            	// Package is detrimental.
 #define PF_CANNIBALIZE 0x2				// Removes any matching existing spell and adds its stacks
-#define PF_EVENT_ON_OVERWRITE 0x4		// Raises the removal event even when overwritten. Only works together with PF_UNIQUE
+#define PF_EVENT_ON_OVERWRITE 0x4		// Raises the removal event even when overwritten. Only works together with PF_CANNIBALIZE
 #define PF_ALLOW_WHEN_DEAD 0x8			// 
 #define PF_ALLOW_WHEN_QUICKRAPE 0x10	// 16
 #define PF_NO_STACK_MULTIPLY 0x20		// 32 Don't multiply the value by nr stacks

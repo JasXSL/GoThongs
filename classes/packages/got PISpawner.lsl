@@ -3,6 +3,7 @@
 */
 #define USE_DB4
 #define LM_ON_METHOD(METHOD, PARAMS, id, SENDER_SCRIPT, CB) onMethod(METHOD, PARAMS, id, SENDER_SCRIPT, CB)
+#define TABLE gotTable$piSpawner
 
 #include "got/_core.lsl"
 
@@ -127,11 +128,14 @@ onMethod( integer METHOD, list PARAMS, key id, string SENDER_SCRIPT, string CB )
 		
 		pg = [];
 		list out = [];
-		for(i=0; i<count(adult); ++i){
+		for( i=0; i < count(adult); ++i ){
+			
 			parseSex(l2s(adult, i), sex);
 			out += mkarr((list)l2s(adult, i)+sex);
+			
 		}
 		
+		//qd(mkarr(out));
 		Bridge$getPVPScene(out, no_instigator);
 		
 	}

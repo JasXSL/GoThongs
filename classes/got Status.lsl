@@ -56,7 +56,8 @@
 	#define SMAFlag$OVERRIDE_CINEMATIC 0x2		// Allow this effect even during cinematics
 	#define SMAFlag$SOFTLOCK 0x4				// Use with pain or arousal to prevent regeneration from kicking in for a few seconds
 	#define SMAFlag$NO_STACK_MULTI 0x8			// Can be used if you don't want stack multi on only a resource, but the rest can be multiplied
-	#define SMAFlag$FORCE_PERCENTAGE 0x10		// NPC only for now. Force sets HP to a percentage
+	#define SMAFlag$FORCE_PERCENTAGE 0x10		// 16 | NPC only for now. Force sets HP to a percentage
+	#define SMAFlag$ABSOLUTE 0x20				// 32 | Forces an absolute value unmodified by damage taken modifiers. Has no effect on IS_PERCENTAGE.
 	
 	#define SMBUR$buildDurability(durability, spellName, flags, life_steal) ((list)SMBUR$durability + 4 + f2i(durability) + spellName + flags + life_steal)
 	//#define SMBUR$buildDurabilityNPC(durability, spellName, flags, life_steal, attacker) [SMBUR$durability, 4, f2i(durability), spellName, flags, life_steal, attacker]

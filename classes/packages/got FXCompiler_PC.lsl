@@ -108,7 +108,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 	else if( t == fx$FORCE_SIT ){
 	
 		string out = "@sit:"+l2s(fx,0)+"=force";
-		if( !l2i(fx, 1) )
+		if( ~l2i(fx, 1)&fx$FORCE_SIT$ALLOW_UNSIT )
 			out+=",unsit=n";
 		llOwnerSay(out);
 		
@@ -213,7 +213,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 	else if( t == fx$FORCE_SIT ){
 	
 		string out = "@sit:"+l2s(fx, 0)+"=force";
-		if( l2i(fx, 1) )
+		if( ~l2i(fx, 1) & fx$FORCE_SIT$ALLOW_UNSIT )
 			out+=",unsit=n";
 		llOwnerSay(out);
 		
@@ -244,7 +244,12 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 		gotClassAtt$spellEnd(l2s(fx,0), -1, 0);
 	}
 	else if( t == fx$FORCE_SIT ){
-		llOwnerSay("@unsit=y,unsit=force");
+	
+		str add = ",unsit=force";
+		if( l2i(fx, 1) & fx$FORCE_SIT$NO_AUTO_UNSIT )
+			add = "";
+		llOwnerSay("@unsit=y"+add);
+		
 	}
 	else if( t == fx$PULL ){
 		raiseEvent(FXCEvt$pullEnd, "");

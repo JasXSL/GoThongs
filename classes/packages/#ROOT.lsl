@@ -45,7 +45,7 @@ timerEvent(string id, string data){
     if( llGetSubString(id, 0, 1) == "H_" ){
 	
         integer d = (integer)data;
-        d++;
+        ++d;
         raiseEvent(evt$BUTTON_HELD_SEC, mkarr(([(integer)llGetSubString(id, 2, -1), d])));
         multiTimer([id, d, 1, FALSE]);
 		
@@ -420,10 +420,14 @@ default{
     
     control( key id, integer level, integer edge ){
 	
-        if( level&edge ){ // Pressed
+		int le = level & edge;
+		int lne = ~level & edge;
+		key root = prRoot(llGetOwner());
+		
+        if( le ){ // Pressed
 		
             pressStart = llGetTime();
-            raiseEvent(evt$BUTTON_PRESS, (string)(level&edge));
+            raiseEvent(evt$BUTTON_PRESS, (string)le);
             if( llGetTime()-lastclick < .5 ){
 			
                 raiseEvent(evt$BUTTON_DOUBLE_PRESS, (string)(level&edge&lcb));
@@ -437,15 +441,19 @@ default{
             }
             
             integer i;
-            for(i=0; i<32; i++){
-                integer pow = llCeil(llPow(2,i));
-                if(level&edge&pow)multiTimer(["H_"+(string)pow, 0, 1, TRUE]);
+            for( ; i < 32; ++i ){
+                
+				integer pow = llCeil(llPow(2,i));
+                if( level&edge&pow )
+					multiTimer(["H_"+(string)pow, 0, 1, TRUE]);
+				
             }
+			
         }
         
-        if( ~level&edge ){
+        if( lne ){
 		
-            raiseEvent(evt$BUTTON_RELEASE, llList2Json(JSON_ARRAY, [(~level&edge),(llGetTime()-pressStart)]));
+            raiseEvent(evt$BUTTON_RELEASE, llList2Json(JSON_ARRAY, [lne,(llGetTime()-pressStart)]));
             integer i;
             for( ; i<32; ++i ){
 			
@@ -456,6 +464,10 @@ default{
             }
 			
         } 
+		
+		if( (le || lne) && root != id )
+			llRegionSayTo(root, RootConst$chanQuickControl, (str)le+"$"+(str)lne);
+		
     }
     
     run_time_permissions(integer perms){
@@ -471,8 +483,8 @@ default{
 		if( llListFindList(getPlayers(), [(str)llGetOwnerKey(id)]) == -1 && ~BFL&BFL_WILDCARD ) \
 			return; \
 		if( message == "GHD" ) \
-			llRegionSayTo(id, chan, "GHD"+mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0)));
-    
+			llRegionSayTo(id, chan, "GHD"+mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0))); \
+
     #include "xobj_core/_LISTEN.lsl" 
     
 	
@@ -694,6 +706,10 @@ default{
 				
 		)
 		
+		db4$freplace(gotTable$root, gotTable$root$level, ROOT_LEVEL);
+		db4$freplace(gotTable$root, gotTable$root$levelIsLive, isLive);
+		db4$freplace(gotTable$root, gotTable$root$levelIsChallenge, isChallenge);
+		
 		raiseEvent(RootEvt$level, mkarr((list)ROOT_LEVEL + isChallenge + isLive));
 			
 		if(pre != ROOT_LEVEL && !method$byOwner){
@@ -706,6 +722,12 @@ default{
 		sendHUDs();
 		
 	}
+	else if( METHOD == RootMethod$raiseLevelEvent )
+		raiseEvent(RootEvt$level, mkarr((list)
+			hud$root$level() +
+			hud$root$levelIsChallenge() +
+			hud$root$levelIsLive()
+		));
 	else if(METHOD == RootMethod$refreshTarget){
 		// Refresh active target
 		

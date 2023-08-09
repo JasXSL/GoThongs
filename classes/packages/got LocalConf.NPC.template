@@ -44,7 +44,9 @@
 	#define cf$GRAPPLE_BUTTON_DELAY			// Grapple button delay = 0
 	#define cf$GRAPPLE_STAGES				// QTE stages, alternatively speed for quick grapples. = 30
 	#define cf$GRAPPLE_MONSTERFLAGS			// Flags to set when grapple starts and unset when it ends = Monster$RF_IMMOBILE|Monster$RF_PACIFIED|Monster$RF_NOROT|Monster$RF_NO_SPELLS
-		
+	#define cf$GRAPPLE_STRIP 				// Strip clothes during the grapple
+	#define cf$GRAPPLE_NO_QTE				// No QTE. call grappleEnd manually
+	
 	#define cf$DUMMY_MODE	// Enables dummy mode where you can sit on it to test grapple. For hookup clients this also removes the aggro check requirement
 	
 	
@@ -322,6 +324,9 @@
 		Monster$setFlags(cf$GRAPPLE_MONSTERFLAGS);
 		multiTimer(["_g_fail", 0, 3, FALSE]);
 		
+		#ifdef cf$GRAPPLE_STRIP
+			fxFlags = fxFlags | fx$F_SHOW_GENITALS;
+		#endif
 		integer blockUnsit = 
 		#ifdef cf$DUMMY_MODE
 			0
@@ -738,6 +743,7 @@ default{
 				hup$global(hup$task$hostStart, cf$hup$HOST + mkarr(GRAPPLE_TARGS));
 			#endif
 			
+			#ifndef cf$GRAPPLE_NO_QTE
 			// Start the grapple
 			if( LIVE ){
 			
@@ -757,7 +763,7 @@ default{
 					);
 					
 			}
-		
+			#endif
 			
 		}
 		else if( sitters == [] ){

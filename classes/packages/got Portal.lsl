@@ -5,6 +5,7 @@
 #include "../../_core.lsl"
 
 #define RQSTRIDE 2
+list remoted;				// List of scripts that we have remoteloaded
 list required;				// [(bool)fromHUD, (str)script]
 list PLAYERS;
 list PLAYER_HUDS;
@@ -26,7 +27,7 @@ integer BFL;
 #define BFL_INI 11
 //~BFL&BFL_IS_DEBUG && 
 #define checkIni() \
-	if((BFL&BFL_INI) == BFL_INI && ~BFL&BFL_INITIALIZED){ \
+	if( (BFL&BFL_INI) == BFL_INI && ~BFL&BFL_INITIALIZED ){ \
 		BFL=BFL|BFL_INITIALIZED; \
 		sendPlayers(); \
 		raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); \
@@ -35,30 +36,39 @@ integer BFL;
 		raiseEvent(PortalEvt$desc_updated, INI_DATA); \
 		llListen(evtChan, "", "", ""); \
 		llRegionSay(evtChan, Portal$gEvt$ini); \
+		Remoteloader$portalInit( remoted ); \
 	}
 
 // Fetches desc from spawner
-#define fetchDesc() llRegionSayTo(spawner, playerChan(spawner), "SP")
+#define fetchDesc() \
+	llRegionSayTo(spawner, playerChan(spawner), "SP"+(str)REZ_ID)
+	
+#define shortUUID() \
+	llGetSubString((str)llGetKey(), 0, 3)
 
 string INI_DATA = "";
 string SPAWNROUND;
 integer REZ_PARAM;
 int evtChan;
+int REZ_ID;				// Modern mode: Use when communicating with got Spawner.
+int NO_REMOTE;
 
 onEvt( string script, integer evt, list data ){
 
     if( evt == evt$SCRIPT_INIT && required != [] ){
 	
-        integer pos = llListFindList(required, [script]);
-        if( ~pos )
+        integer pos = llListFindList(required, (list)script);
+        if( ~pos ){
+			
 			required = llDeleteSubList(required, pos-1, pos);
-		
-		debugUncommon("Waiting for "+mkarr(required));
+			remoted += script;
+			
+		}
+		debugUncommon("[Ini "+shortUUID()+"] Waiting for "+mkarr(required));
         if( required == [] ){
 		
-			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
 			//qd(BFL);
-			debugUncommon("All scripts acquired");
+			debugUncommon("[Ini "+shortUUID()+"] All scripts acquired");
 			BFL = BFL|BFL_SCRIPTS_INITIALIZED;
 			
 			debugUncommon(BFL);
@@ -105,6 +115,7 @@ injectDone(){
 
 
 integer pin;
+int pqAttempts;
 
 timerEvent( string id, string data ){
 
@@ -117,43 +128,60 @@ timerEvent( string id, string data ){
 		
 	else if( id == "POSTQUERY" ){
 	
+		
+		checkIni();
+		
+		// We have failed
 		if( ~BFL&BFL_INITIALIZED ){
 		
-			// We have failed
-			checkIni();
+			++pqAttempts;
+			if( pqAttempts == 6 ){ // Give it 1 minute
+				
+				qd("Item failed to initialize in a timely fashion. If you get this message a lot you may want to try a sim restart.");
+				qd("BFL was: "+(string)BFL+" & non-initialized was "+mkarr(required));
+				
+			}
 			
-			qd("Portal failed to initialize. BFL was: "+(string)BFL+" & non-initialized was "+mkarr(required));
 			// Description is gone for good because simulator fuckery
 			if( ~BFL&BFL_HAS_DESC ){
-				qd("Fatal error: Description has gone missing in the vast abyss of the simulator.");
+			
+				qd("Fatal error: Sim has dropped spawn data. You may want to restart the level.");
 				return;
+				
 			}
 			// Players can be refetched
 			if( ~BFL&BFL_GOT_PLAYERS )
 				Root$getPlayers("INI");
+				
 			// Scripts can be refetched
 			if( ~BFL&BFL_SCRIPTS_INITIALIZED ){
 				
 				integer i; list fromHUD; list fromLevel;
-				for(i=0; i<llGetListLength(required); i+=2){
-					if(llList2Integer(required, i))fromHUD+= llList2String(required, i+1);
-					else fromLevel+= llList2String(required, i+1);
+				for( ; i<count(required); i += 2){
+					
+					if( l2i(required, i) )
+						fromHUD+= l2s(required, i+1);
+					else 
+						fromLevel += l2s(required, i+1);
+						
 				}
 				
-				if(fromHUD)
-					Remoteloader$load(mkarr(fromHUD), pin, 2);
-				if(fromLevel){
+				if( fromHUD )
+					Remoteloader$load(mkarr(fromHUD), pin, 2, NO_REMOTE);
+				if( fromLevel )
 					gotLevelData$getScripts(requester, pin, mkarr(fromLevel));
-				}
+				
 			}
-			multiTimer([id, "", 60, FALSE]);
+			multiTimer([id, "", 10, FALSE]);
 			
 		}
 		
 	}
 	
-	else if( id == "A" )
+	else if( id == "A" ){
+		debugUncommon("[Ini "+shortUUID()+"] Fetching desc. Rezid "+(str)REZ_ID);
 		fetchDesc();
+	}
 	
 }
 
@@ -180,13 +208,18 @@ remove(){
     llDie();
 }
 
+attemptPos( vector pos ){
+	int att = llSetRegionPos(pos);
+	if( !att && !llGetAttached() )
+		llOwnerSay("!SIM ERROR! Unable to position asset. Check build and object entry at "+(str)pos);
+}
 
+#define isLive() ((llGetStartParameter()&~1) == 2) // 2 or 3 are acceptable
 
 
 default{
 
     on_rez(integer mew){
-	
 	
 		// Let the spawner know it can rez next
 		llRegionSayTo(mySpawner(), playerChan(mySpawner()), "PN");
@@ -196,7 +229,7 @@ default{
             llSetRemoteScriptAccessPin(p);
             multiTimer([]);
 			setText((str)mew);
-            Remoteloader$load(cls$name, p, 2);
+            Remoteloader$load(cls$name, p, 2, FALSE);
 			return;
 			
         }
@@ -205,6 +238,7 @@ default{
     }
     state_entry(){
 	
+		debugCommon("[Ini "+shortUUID()+"] State entry");
 		evtChan = Portal$evtChan(llGetOwner());
 		requester = spawner = mySpawner();
 		// Let the spawner know it can rez next
@@ -223,30 +257,38 @@ default{
 				
         memLim(1.5);
 		
-        if(!llGetStartParameter())
+		if( !llGetStartParameter() )
 			return;
 		
-        if( llGetStartParameter() == 2 ){
+        if( isLive() ){
+			
+			NO_REMOTE = (llGetStartParameter() == 3);
 		
+			int i;
 			list refresh = PORTAL_SEARCH_OBJECTS;
 			list get_objects;
-			while(llGetListLength(refresh)){
+			while( count(refresh) ){
+			
 				string val = llList2String(refresh,0); 
 				refresh = llDeleteSubList(refresh,0,0);  
-				if(llGetInventoryType(val) != INVENTORY_NONE){ 
+				if( llGetInventoryType(val) != INVENTORY_NONE ){ 
+				
 					llRemoveInventory(val); 
 					get_objects += val;
-				} 
+					
+				}
+				
 			}
 		
             // Request
             list check = PORTAL_SEARCH_SCRIPTS;
-            list_shift_each(check, val,
+            for( i = 0; i < count(check); ++i ){
 			
-                if(llGetInventoryType(val) == INVENTORY_SCRIPT)
-                    required+=([1, val]);
+				str val = l2s(check, i);
+                if( llGetInventoryType(val) == INVENTORY_SCRIPT )
+                    required += (list)1 + val;
                 
-            )
+            }
 			
 			
 			// Required together
@@ -258,59 +300,65 @@ default{
 			
 			
 			check = PORTAL_SEARCH_OBJECTS;
-			list_shift_each(check, val,
-				if(llGetInventoryType(val) != INVENTORY_NONE){
+			for( i = 0; i < count(check); ++i ){
+			
+				str val = l2s(check, i);
+				if( llGetInventoryType(val) != INVENTORY_NONE )
 					llRemoveInventory(val);
-				}
-			)
-			
-			Remoteloader$load(mkarr(llList2ListStrided(llDeleteSubList(required, 0, 0), 0, -1, 2)), pin, 2);
-			debugUncommon("Waiting for "+mkarr(required));
-			
-			
-			integer mew = llList2Integer(llGetPrimitiveParams([PRIM_TEXT]), 0)&~BIT_TEMP;
-			REZ_PARAM = mew;
-			
-			vector p = llGetRootPosition();
-			vector pos;
-			
-			
-			// I can't remember what 1 is for but if it's 0 then it's not a region position
-			if( mew > 1 )
-				pos = p-vecFloor(p)+int2vec(mew);
-			// If no position is set then we regard it as debug (got LevelLite relies on this behavior)
-			else 
-				mew = mew|BIT_DEBUG;
-			
-			
-			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
-			
-
-			// Checks if pos is actually received
-			if( mew&(BIT_DEBUG-1) && pos != ZERO_VECTOR ){
-
-				int att = llSetRegionPos(pos);
-				if( !att && !llGetAttached() )
-					llOwnerSay("!SIM ERROR! Unable to position asset. Check build and object entry at "+(str)pos);
 				
 			}
 			
+			Remoteloader$load( mkarr(llList2ListStrided(llDeleteSubList(required, 0, 0), 0, -1, 2)), pin, 2, NO_REMOTE );
+			debugUncommon("[Ini  "+shortUUID()+"] Requested scripts "+mkarr(required));
 			
-			debugUncommon("Start params "+(str)mew);
-			if( mew&BIT_DEBUG )
-				BFL = BFL|BFL_IS_DEBUG;
-			else
-				multiTimer(["POSTQUERY", "", 30, FALSE]);
+			int startParams = l2i(llGetPrimitiveParams([PRIM_TEXT]), 0) & ~BIT_TEMP;
+			REZ_PARAM = startParams;
+			
+			int hasDesc = startParams & BIT_GET_DESC;
+			REZ_ID = startParams&(BIT_DEBUG-1);	// Interger-compressed position in legacy mode (not hasDesc). In desc mode, this is our spawner ID.
+			debugUncommon("[RezID "+shortUUID()+"] Set to "+(str)REZ_ID);
+			
+			vector pos;
+			// No desc = legacy mode. Extract pos from start param.
+			if( !hasDesc ){
 				
-			if( mew&BIT_GET_DESC ){
+				vector p = llGetRootPosition();
+
+				// I can't remember what 1 is for but if it's 0 then it's not a region position
+				if( startParams > 1 )
+					pos = p-vecFloor(p)+int2vec(startParams);
+				// If no position is set then we regard it as debug (got LevelLite relies on this behavior)
+				else 
+					startParams = startParams|BIT_DEBUG;
+				
 			
+				llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]); // Legacy
+			
+
+				// Checks if pos is actually received
+				if( REZ_ID && pos != ZERO_VECTOR )
+					attemptPos(pos);
+				
+				BFL = BFL|BFL_HAS_DESC;
+					
+			}
+			// Modern mode. Fetch desc by using REZ_ID as an ID.
+			else{
+				
+				
 				// Needs to fetch data from the spawner
 				fetchDesc();
+				debugUncommon("[Ini "+shortUUID()+"] Fetching desc. Rezid "+(str)REZ_ID);
 				multiTimer(["A", "", 10, TRUE]);	// re-fetching too much might cause problems
 				
 			}
-			else 
-				BFL = BFL|BFL_HAS_DESC;
+				
+			debugUncommon("[Ini "+shortUUID()+"] Start params "+(str)startParams);
+			if( startParams&BIT_DEBUG )
+				BFL = BFL|BFL_IS_DEBUG;
+			else
+				multiTimer(["POSTQUERY", "", 10, FALSE]);
+				
 			
 			// Build the first config
 			list text = [
@@ -321,17 +369,20 @@ default{
 			];
 			setText(mkarr(text));
 			
-			// Putting it below will cause trouble with double inits
+			
 			multiTimer(["INI", "", 5, TRUE]);
 			
-			list_shift_each(get_objects, val,
-				Spawner$getAsset(val);
-			)
+			for( i = 0; i < count(get_objects); ++i ){
+				
+				Spawner$getAsset(l2s(get_objects, i));
+				
+			}
 			
         } 
 		
         if(required == []){
-		
+			
+			
 			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
             BFL = BFL|BFL_SCRIPTS_INITIALIZED;
             checkIni()
@@ -393,18 +444,18 @@ default{
 			
             PLAYERS = llJson2List(method_arg(0));
 			PLAYER_HUDS = llJson2List(method_arg(1));
-			debugUncommon("Got players "+mkarr(PLAYERS));
-			debugUncommon("Got HUDS "+mkarr(PLAYER_HUDS));
+			debugUncommon("[Ini "+shortUUID()+"] Players "+mkarr(PLAYERS));
+			debugUncommon("[Ini "+shortUUID()+"] Got HUDS "+mkarr(PLAYER_HUDS));
 			
 
 			sendPlayers();
-			if( llGetStartParameter() != 2 )
+			
+			if( !isLive() )
 				return;
 				
 			//qd("PLAYERS from root: "+mkarr(PLAYERS));
 			multiTimer(["INI"]);
 			BFL = BFL|BFL_GOT_PLAYERS;
-			debugUncommon(BFL);
 			checkIni()
 			
         } 
@@ -412,8 +463,7 @@ default{
     }
     
     if(method$byOwner){
-	
-	
+		
         if( METHOD == PortalMethod$reinit ){
 		
             qd("Reinitializing");
@@ -424,9 +474,22 @@ default{
 			if( (integer)method_arg(0) )
 				nr = 3;	// Use a positive int to just update without initializing
 			
-			Remoteloader$load(cls$name, p, nr);
+			Remoteloader$load(cls$name, p, nr, TRUE);
 			
         }
+			
+		else if( METHOD == PortalMethod$remoteLoad ){
+			
+			llRemoteLoadScriptPin(
+				method_arg(0), 		// targ,
+				method_arg(1),		// script name
+				l2i(PARAMS, 2),		// pin
+				TRUE,				// Running
+				l2i(PARAMS, 3)		// Start param
+			);
+			
+		}
+		
 		else if( METHOD == PortalMethod$sendPlayers ){
 			
 			sendPlayers();
@@ -486,6 +549,7 @@ default{
 		
 		// Forces the portal to load as if it was live
 		else if(METHOD == PortalMethod$forceLiveInitiate){
+		
 			qd("Updating and setting live");
 			vector g = llGetRootPosition();
 			integer in = vec2int(g);
@@ -493,17 +557,30 @@ default{
             llSetRemoteScriptAccessPin(p);
 			setText((string)in);
             multiTimer([]);
-            Remoteloader$load(cls$name, p, 2);
+            Remoteloader$load(cls$name, p, 3, TRUE);
+			
 		}
 		
-		else if(METHOD == PortalMethod$iniData && ~BFL&BFL_HAS_DESC && llGetStartParameter() == 2){
+		else if( METHOD == PortalMethod$iniData && isLive() ){
+			
+			// Always tell the spawner to continue. It may have dropped our ack message so we can send a new one
+			llRegionSayTo(spawner, playerChan(spawner), "DN"+(str)REZ_ID);
+			debugUncommon("[Ini "+shortUUID()+"] Finalizing with rez id "+(str)REZ_ID);
+			//qd("INI with "+mkarr(PARAMS));
 		
+			// Already init but 
+			if( BFL & BFL_HAS_DESC )
+				return;
+				
+			
 			INI_DATA = method_arg(0);
 			SPAWNROUND = method_arg(1);
 			requester = method_arg(2);
+			vector pos = (vector)method_arg(3);
 			
-			// Tell the spawner to continue
-			llRegionSayTo(spawner, playerChan(spawner), "DN");
+			if( pos )
+				attemptPos(pos);
+			
 			// Stop asking for description
 			multiTimer(["A"]);
 			
@@ -518,7 +595,7 @@ default{
 				
 					list ini = llJson2List(INI_DATA);
 					integer i;
-					for(i=0; i<llGetListLength(ini) && ini != []; i++){
+					for( i=0; i<llGetListLength(ini) && ini != []; ++i ){
 					
 						list v = llJson2List(llList2String(ini, i));
 						string task = llList2String(v, 0);
@@ -527,25 +604,30 @@ default{
 							v = llDeleteSubList(v, 0, 0);
 							// Make sure there's actually an asset
 							if(v != []){
+							
 								// Only add to required ini if it's scripts
-								if(task == "SC" || task == "HSC"){
+								if( task == "SC" || task == "HSC" ){
+								
 									BFL=BFL&~BFL_SCRIPTS_INITIALIZED;
-									integer i;
-									for(i=0; i<llGetListLength(v); i++){
-										string val = llList2String(v, i);
-										if(llListFindList(required, [val]) == -1)
+									integer n;
+									for( ; n < count(v); ++n ){
+									
+										string val = llList2String(v, n);
+										if( llListFindList(required, [val]) == -1 )
 											required+=[
 												task == "HSC",		// From HUD
 												val					// Name
 											];
+											
 									}
+									
 								}
 								
-								if(task == "HSC"){
-									Remoteloader$load(mkarr(v), pin, 2);
-								}
+								if( task == "HSC" )
+									Remoteloader$load(mkarr(v), pin, 2, NO_REMOTE);
 								else
 									gotLevelData$getScripts(requester, pin, mkarr(v));
+									
 							}
 							// Remove this from data that is sent out, since we only need to send monster/status specific stuff
 							ini = llDeleteSubList(ini, i, i);

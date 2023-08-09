@@ -87,12 +87,38 @@ onEvt( string script, integer evt, list data ){
 		
 	}
 	
+	else if( script == "jas Primswim" && (evt == PrimswimEvt$onWaterEnter || evt == PrimswimEvt$onWaterExit) ){
+	
+		int f = (int)j(hud$bridge$userData(), BSUD$SETTING_FLAGS);
+		if( ~f & BSUD$SFLAG_SWIM_AO )
+			return;
+			
+		string on = "ON";
+		if( evt == PrimswimEvt$onWaterEnter )
+			on = "OFF";
+			
+		integer gAO_ChannelOC = (integer)("0x" + llGetSubString((string)llGetOwner(), 30, -1));
+        if( gAO_ChannelOC > 0 )
+			gAO_ChannelOC = -gAO_ChannelOC;
+        
+        llRegionSayTo(llGetOwner(), gAO_ChannelOC, "ZHAO_AO"+on);
+		
+	}
+	
 }
 
 float fxMod = 1.0;	// Multiplier against nr steps in a QTE
 
+#define getWidgetPos() \
+	l2v(BASE_POS, (int)Bridge$getUserDataField( BSUD$QTE_POS )) // Todo
+
 // Position of the QTE widget
-#define BASE_POS <0.023560, -0.303590, 0.647901>
+list BASE_POS = [
+	<0.023560, -0.303590, 0.647901>, 	// Default (bottom right)
+	<0.023560, 0.0, 0.647901>,			// Middle
+	<0.023560, 0.303590, 0.647901> 	// Bottom left
+];
+
 
 list QTE_SENDER_DATA;			// (key)id||(int)link, (str)scriptName, (str)custom
 integer QTE_STAGES;
@@ -191,7 +217,7 @@ toggleQTE(integer on, integer instant){
 		ptSet("next", time, FALSE);
 	else{
 	
-		llSetLinkPrimitiveParamsFast(P_BAR, [PRIM_SIZE, <0.22755, 0.02960, 0.01814>, PRIM_POSITION, BASE_POS+<0,0,-.1>]);
+		llSetLinkPrimitiveParamsFast(P_BAR, [PRIM_SIZE, <0.22755, 0.02960, 0.01814>, PRIM_POSITION, getWidgetPos()+<0,0,-.1>]);
 		ptSet("lrTick", 0.1, TRUE);
 		QTE_DELTA = llGetTime();
 		QTE_KEY = QTE_KEY_LEFT;
@@ -359,7 +385,7 @@ ptEvt( string id ){
 		vector scale = <0.21188, 0.14059, 0.13547>;
 		integer i;
 		++QTE_LR_FLASH;
-		out += [PRIM_LINK_TARGET, P_BUTTONS, PRIM_POSITION, BASE_POS,PRIM_SIZE, scale];
+		out += [PRIM_LINK_TARGET, P_BUTTONS, PRIM_POSITION, getWidgetPos(), PRIM_SIZE, scale];
 		for(i=0; i<4; ++i){
 		
 			vector color = ZERO_VECTOR;

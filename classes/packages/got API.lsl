@@ -37,12 +37,17 @@ timerEvent(string id, string data){
 	
 	// Make sure the asset remains within the region
 	if(id == "P"){
+	
 		integer i;
-		for(i=0; i<count(bindings) && bindings != []; i+=2){
+		for( ; i<count(bindings) && bindings != []; i += 2 ){
+			
 			if(llKey2Name(l2k(bindings, i)) == ""){
+			
 				bindings = llDeleteSubList(bindings, i, i+1);
 				i-=2;
+				
 			}
+			
 		}
 		
 	}

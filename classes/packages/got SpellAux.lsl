@@ -40,7 +40,7 @@ integer fxFlags = 0;
 #define pmod (1./hud$root$numPlayers())
 
 /* Constants:
-	$T0$	Target of spell (if not AoE) Only differs from _TA_ in self cast
+	$T0$	Target of spell (if not AoE) Only differs from $TARG$ in self cast
 	$TARG$	Target of wrapper
 	$SELF$	Script owner
 	$HT$	Active HUD-target.
@@ -83,7 +83,9 @@ string runMath( string FX, integer index, key targ ){
 	parseDesc(targ, resources, status, fxf, sex, team, monsterflags, _a, _b)
 	list res = splitResources(resources);
 	int ehp = (int)(l2f(res, 0)*100);
-	
+	int emp = (int)(l2f(res, 1)*100);
+	int ear = (int)(l2f(res, 2)*100);
+	int epa = (int)(l2f(res, 3)*100);
 	
 	float bsm = 1;
 	integer B = 0;
@@ -154,7 +156,11 @@ string runMath( string FX, integer index, key targ ){
 		// note that for selfcast, these still reference the target of the nonself if one of those exist
 		"m", (targRange < MELEE_RANGE || targ == "1" ),		// melee range of the spell target
 		"r", targRange,										// Total range to target
-		"ehp", ehp,				// enemy HP from 0 to 100
+		"ehp", ehp,				// target HP % from 0 to 100
+		"emp", emp,				// target MP % from 0 to 100
+		"ear", ear,				// target arousal % from 0 to 100
+		"epa", epa,				// target pain % from 0 to 100
+		
 		// HUD target flags
 		"tm", ( llVecDist(llGetRootPosition(), prPos(HUD_TARG)) < MELEE_RANGE || HUD_TARG == "1" )		// Melee range of the HUD target
 		

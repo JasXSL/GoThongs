@@ -35,7 +35,7 @@ list LOAD_ADDITIONAL = [];			// Scripts from description we need to wait for
 
 // Set the level as fully loaded
 finishLoad(){
-
+	
 	Root$setLevel();
 	multiTimer(["LOAD_FINISH"]);
 	BFL = BFL&~BFL_LOADING;
@@ -129,7 +129,7 @@ default{
         llSetText((string)mew, ZERO_VECTOR, 0);
 		pin = floor(llFrand(0xFFFFFFF));
 		llSetRemoteScriptAccessPin(pin);
-        Remoteloader$load(cls$name, pin, 2);
+        Remoteloader$load(cls$name, pin, 2, TRUE);
 		llResetScript();
 		
     }
@@ -172,10 +172,12 @@ default{
 			pin = floor(llFrand(0xFFFFFFF));
 			llSetRemoteScriptAccessPin(pin);
 			
-			Remoteloader$load(mkarr(LOADQUEUE), pin, 2);
+			Remoteloader$load(mkarr(LOADQUEUE), pin, 2, TRUE);
 			
 			// Add custom scripts that need to init
-			if(llJsonValueType(llGetObjectDesc(), []) == JSON_ARRAY){
+			
+			if( llJsonValueType(llGetObjectDesc(), []) == JSON_ARRAY ){
+			
 				list d = llJson2List(llGetObjectDesc());
 				list_shift_each(d, val,
 					list v = llJson2List(val);
@@ -192,6 +194,7 @@ default{
 					}
 					
 				)
+				
 			}
 			
 			return;
@@ -401,7 +404,7 @@ default{
 		// Grab script update
 		pin = floor(llFrand(0xFFFFFFF));
 		llSetRemoteScriptAccessPin(pin);
-        Remoteloader$load(cls$name, pin, 2);
+        Remoteloader$load(cls$name, pin, 2, TRUE);
 		llOwnerSay("Updating level code...");
 		
 	}

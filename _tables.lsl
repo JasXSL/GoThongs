@@ -20,7 +20,7 @@
 
 
 
-// (32) Sequential index. Written to by got LevelAux, also read by got LevelLoader
+// (32) Stores spawn DB in level. Sequential index. Written to by got LevelAux, also read by got LevelLoader
 #define gotTable$spawns db4$0 			// 
 // (33) Level metadata. Non-indexed. Handled by multiple level scripts.
 #define gotTable$meta db4$1
@@ -53,12 +53,25 @@
 // (45) Variable index. Each row is a player UUID.
 #define gotTable$rootPlayers db4$13
 
-// (46)Maintained by portal. Stores players etc.
+// (46) Maintained by portal. Stores players etc.
 #define gotTable$portal db4$14
 
 // (47) Maintained by got Monster
 #define gotTable$monster db4$15
 
+// (48) Managed by got Spawner, handles spawning of items
+#define gotTable$spawner db4$16
+
+// (49) Managed by got PISpawner. Same type as above
+#define gotTable$piSpawner db4$17
+
+// (50) Managed by jas Remoteloader
+#define gotTable$remoteloaderQueue db4$18
+// (51) Managed by jas Remoteloader
+#define gotTable$remoteloaderRemotes db4$19
+
+// (52) Written by got Bridge, read by got LevelLoader. Each entry is a UUID
+#define gotTable$loadingScreens db4$20
 
 #endif
 

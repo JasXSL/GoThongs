@@ -11,6 +11,7 @@ float ANIM_MAX_TIME = 1.2;		// Max time between animation trigger
 float ANIM_DURATION = 20;		// Total seconds to animate
 integer LIVE;					// Spawned through a portal
 
+// These are all STRINGS
 list TARGETS;
 list PLAYERS;
 list PLAYER_HUDS;
@@ -26,8 +27,10 @@ list TO_PLAY;					// (key)id, (str)anim
 int BFL;
 #define BFL_PUBLIC 0x1		// Allow anyone to sit
 
+vector offs;					// position offset of player 0
 
-#define setAnimTimer() ptSet("anim", llFrand(ANIM_MAX_TIME-ANIM_MIN_TIME)+ANIM_MIN_TIME, FALSE)
+#define setAnimTimer() multiTimer(["anim", 0, llFrand(ANIM_MAX_TIME-ANIM_MIN_TIME)+ANIM_MIN_TIME, FALSE])
+
 onEvt(string script, integer evt, list data){
     
     if( script == "got Portal" && evt == PortalEvt$playerHUDs )
@@ -87,18 +90,28 @@ forceSit( string targ ){
 	int f = fx$F_QUICKRAPE;
 	if( l2i(PLAYER_FLAGS, pos)&1 )
 		f = f|fx$F_SHOW_GENITALS;
+	
+	int flags;
+	float dur = ANIM_DURATION;
+	if( dur <= 0 ){
 		
+		// allow instant unsit after 120 sec
+		dur = 120;	// 
+		flags = fx$FORCE_SIT$NO_AUTO_UNSIT; 
+
+	}
+	
 	FX$send(targ, "", "["+
 		(string)(WF_ALLOW_WHEN_DEAD|WF_ALLOW_WHEN_QUICKRAPE)+","+
 		"0,0,"+
 		"0,"+
 		"["+
-			(str)ANIM_DURATION+","+
+			(str)dur+","+
 			(str)(PF_ALLOW_WHEN_DEAD|PF_ALLOW_WHEN_QUICKRAPE|PF_TRIGGER_IMMEDIATE)+","+
 			"\"forceSat\","+
 			"["+
 				"[13,"+(str)f+"],"+
-				"[31,\""+(str)llGetKey()+"\",0]"+
+				"[31,\""+(str)llGetKey()+"\","+(str)flags+"]"+
 			"]"+
 		"],"+
 		"[],[],[],0,0,1"+
@@ -107,10 +120,7 @@ forceSit( string targ ){
 }
 
 startAnim( list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags, list posOffsets, list rotOffsets ){
-
-
-	if( anim_duration < 5.0 )
-		anim_duration = 5.0;
+		
 	if( anim_min_time < 0.1 )
 		anim_min_time = 0.1;
 	if( anim_max_time < anim_min_time )
@@ -130,8 +140,8 @@ startAnim( list players, list player_flags, float anim_duration, float anim_min_
 		forceSit(targ);
 	)
 	
-	ptSet("retry", 1, TRUE);
-	ptSet("fail", 5, FALSE);
+	multiTimer(["retry", 0, 1, TRUE]);
+	multiTimer(["fail", 0, 5, FALSE]);
 	
 }
 
@@ -145,8 +155,9 @@ reqNextAnim(){
 		TO_PLAY = llDeleteSubList(TO_PLAY, 0, 1);
 	}
 	
-	if( !count(TO_PLAY) )
+	if( TO_PLAY == [] )
 		return;
+	
 	TO_PLAY = llDeleteSubList(TO_PLAY, 0, 0);
 	llRequestPermissions(player, PERMISSION_TRIGGER_ANIMATION);
 	
@@ -171,19 +182,6 @@ anim( string anim ){
 	
     reqNextAnim();
     
-}
-
-integer getPlayerLink( key id ){
-
-	integer i;
-	for(i = 1; i <= llGetNumberOfPrims(); ++i ){
-		
-		if( llGetLinkKey(i) == id )
-			return i;
-		
-	}
-	return 0;
-
 }
 
 // Checks if all poseballs are seated and unsits non players
@@ -230,34 +228,34 @@ onSeatChange(){
 		for( ; i < count(TARGETS); ++i ){
 			
 			key targ = l2k(TARGETS, i);
-			integer ln = getPlayerLink(targ);
-			if( ln ){
-				
-				vector scale = llGetAgentSize(targ);
-				vector pos = (vector)l2s(POS_OFFSETS, i);
-				rotation rot = (rotation)l2s(ROT_OFFSETS, i);
+			vector scale = llGetAgentSize(targ);
+			vector pos = (vector)l2s(POS_OFFSETS, i);
+			rotation rot = (rotation)l2s(ROT_OFFSETS, i);
+			updateSitTarget(targ, pos, rot);
+			Evt$startQuicktimeEvent(
+				targ,
+				20, // Speed, lower is slower
+				5, 
+				"PVP", 
+				0, 
+				Evts$qFlags$LR
+			);
 			
-				float fAdjust = ((((0.008906 * scale.z) + -0.049831) * scale.z) + 0.088967) * scale.z;
-				llSetLinkPrimitiveParamsFast(ln, (list)
-					PRIM_POSITION + (pos+ <0.0, 0.0, 0.4> - (llRot2Up(rot) * fAdjust)) +
-					PRIM_ROT_LOCAL + rot
-				);
-				
-			}
 		}
 		
         anim(ANIM_BASE);				// Start the idle animations
         setAnimTimer();					// Set timer for active animations
-        ptUnset("fail");				// Success, do not fail
+        multiTimer(["fail"]);				// Success, do not fail
         ANIM_STARTED = TRUE;					// It has started
         raiseEvent(gotPlayerPoserEvt$start, "");
-		ptUnset("retry");
+		multiTimer(["retry"]);
+		
 		
     }
 	// Not all players are seated
     else{
         
-        ptUnset("anim");
+        multiTimer(["anim"]);
 		// This has already started so now delete
         if( ANIM_STARTED )
             end();
@@ -272,13 +270,20 @@ end(){
 	runOnPlayers(targ,
 		Level$playerSceneDone(targ, ANIM_STARTED, TARGETS);
 	)
-	raiseEvent(gotPlayerPoserEvt$end, "");
-	ptUnset("retry");
 	
-	list_shift_each(TARGETS, targ,
+	raiseEvent(gotPlayerPoserEvt$end, "");
+	
+	multiTimer(["retry"]);
+	
+	int i;
+	for(; i < count(TARGETS); ++i ){
+		
+		key targ = l2k(TARGETS, i);
 		fxlib$remForceSit(targ);
 		Status$playerSceneDone(targ);
-	)
+		Evts$stopQuicktimeEvent(targ);
+		
+	}
 
     llSleep(1);
 	if( LIVE )
@@ -288,8 +293,7 @@ end(){
 	
 }
 
-// PandaTimer
-ptEvt( string id ){
+timerEvent( string id, string data  ){
     
 	// Start active animation
     if( id == "anim" ){
@@ -318,8 +322,7 @@ ptEvt( string id ){
 			key targ = l2k(TARGETS, i);
 			if( prRoot(targ) != llGetKey() )
 				forceSit(targ);
-			
-			
+		
 		}
 			
 	}
@@ -362,12 +365,52 @@ default{
         memLim(1.5);
 		// Get permissions if somebody is sitting on this
         onSeatChange();
-        
+        llListen(RootConst$chanQuickControl, "", "", "");
+		
 		raiseEvent(evt$SCRIPT_INIT, "");
 		
     }
+	
+	listen( integer ch, string name, key id, str message ){
+	
+		int pp = llListFindList(TARGETS, [(str)llGetOwnerKey(id)]);
+		//qd(mkarr(TARGETS)+" "+(str)llGetOwnerKey(id)+" "+message+" "+(str)pp);
+		if( pp == -1 )
+			return;
+			
+		list spl = explode("$", message);
+		int pressed = l2i(spl, 0);
+		
+		if( count(spl) < 2 )
+			return;
+		
+		if( pressed & CONTROL_UP )
+			offs.z += 0.01;
+		else if( pressed & CONTROL_DOWN )
+			offs.z -= 0.01;
+			
+		if( pressed & CONTROL_FWD )
+			offs.x += 0.01;
+		else if( pressed & CONTROL_BACK )
+			offs.x -= 0.01;
+			
+		
+		if( offs.z > 1 )
+			offs.z = 1;
+		else if( offs.z < -1 )
+			offs.z = -1;
+		if( offs.x > 1 )
+			offs.x = 1;
+		else if( offs.x < -1 )
+			offs.x = -1;
+			
+		vector pos = (vector)l2s(POS_OFFSETS, 0)+offs;
+		rotation rot = (rotation)l2s(ROT_OFFSETS, 0);
+		updateSitTarget(l2k(TARGETS, 0), pos, rot);
+			
+	}
     
-    timer(){ptRefresh();}
+    timer(){ multiTimer([]); }
     
     changed(integer change){
         
@@ -386,9 +429,29 @@ default{
 			reqNextAnim();
 			
 		}
+		
+		if( perm & PERMISSION_TAKE_CONTROLS )
+			llTakeControls( CONTROL_UP|CONTROL_DOWN, TRUE, TRUE);
+		
 	}
 	
     #include "xobj_core/_LM.lsl"
+	
+	if( method$isCallback ){
+		
+		if( CB == "PVP" ){
+			
+			integer type = l2i(PARAMS, 0);
+			integer success = l2i(PARAMS, 1);
+			
+			if( type == EvtsEvt$QTE$END )
+				end();
+			
+		}
+		
+		return;
+	
+	}
 	
 	if( method$byOwner ){
 			

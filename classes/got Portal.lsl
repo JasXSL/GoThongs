@@ -49,17 +49,18 @@
 #define PortalMethod$reinit 1				// NULL - refetches all scripts
 #define PortalMethod$remove 2				// (bool)force - Deletes object. got LevelLite in a non live prim and persistent objects will ignore this unless force is TRUE
 #define PortalMethod$save 3					// NULL - Auto callbacks
-#define PortalMethod$iniData 4				// (str)data, (str)spawnround, (key)requester - Sets config data
+#define PortalMethod$iniData 4				// (str)data, (str)spawnround, (key)requester, (vec)pos - Sets config data
 #define PortalMethod$debugPlayers 5			// void - Says the loaded PLAYERS to the owner
 #define PortalMethod$removeBySpawnround 6	// spawnround - Removes any item with a specific spawnround
 #define PortalMethod$removeBySpawner 7		// (key)spawner - Removes any portal object spawned by spawner
 #define PortalMethod$forceLiveInitiate 8	// Forces the portal to reinitialize as if it was live
 #define PortalMethod$persistence 9			// (bool)persistant - Ignores remove calls unless override is true
 #define PortalMethod$sendPlayers 10			// void - Forces a portal player and HUD event
+#define PortalMethod$remoteLoad 11			// (key)targ, (str)script, (int)pin, (int)startParam
 
 #define BIT_DEBUG 536870912			// This is the binary bit (30) that determines if it runs in debug mode or not
-#define BIT_GET_DESC 1073741824		// This is the binary bit (31) that determines if it needs to get custom data from the spawner or not
-#define BIT_TEMP 2147483648			// Binary bit (32) that determines if the object should be temp or not
+#define BIT_GET_DESC 1073741824		// This is the binary bit (31) that determines if it needs to get custom data from the spawner or not. If BIT_GET_DESC is set. The first 29 bits become an ID instead of a position, passed back to the spawner.
+#define BIT_TEMP 2147483648			// LSL works in mysterious ways
 
 // got LevelData should NOT be in this. It's auto fetched along with got LevelLite
 #define PORTAL_SEARCH_SCRIPTS (list)"ton MeshAnim"+"got Follower"+"jas MaskAnim"+"got AniAnim"+"got Projectile"+"got Status"+"got Monster"+"got FXCompiler"+"got FX"+"got NPCSpells"+"jas Attached"+"got Trap"+"got LevelLite"+"got LevelAux"+"got LevelLoader"+"got Spawner"+"got BuffSpawn"+"got ClassAtt"+"got PlayerPoser"+"got AnimeshScene"
@@ -69,12 +70,13 @@
 #define Portal$killAll() runOmniMethod("got Portal", PortalMethod$remove, [], TNN)
 // overrides all persistence
 #define Portal$nukeAll() runOmniMethod("got Portal", PortalMethod$remove, [TRUE], TNN)
-#define Portal$iniData(targ, data, spawnround, requester) runMethod(targ, "got Portal", PortalMethod$iniData, [data, spawnround, requester], TNN)
+#define Portal$iniData(targ, data, spawnround, requester, pos) runMethod(targ, "got Portal", PortalMethod$iniData, [data, spawnround, requester, pos], TNN)
 #define Portal$removeBySpawnround(spawnround) runOmniMethod("got Portal", PortalMethod$removeBySpawnround, [spawnround], TNN)
 #define Portal$removeSpawnedByThis() runOmniMethod("got Portal", PortalMethod$removeBySpawner, [llGetKey()], TNN)
 #define Portal$kill(targ) runMethod((str)targ, "got Portal", PortalMethod$remove, [], TNN)
 #define Portal$persistence(on) runMethod((str)LINK_THIS, "got Portal", PortalMethod$persistence, [on], TNN)
 #define Portal$sendPlayers() runMethod((str)LINK_THIS, "got Portal", PortalMethod$sendPlayers, [], TNN)
+#define Portal$remoteLoad( portalPrim, targ, script, pin, startParam ) runMethod((str)portalPrim, "got Portal", PortalMethod$remoteLoad, (list)(targ) + (script) + (pin) + (startParam), TNN)
 
 // Get spawn desc config
 #define portalConf() llList2String(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]),0)
@@ -98,14 +100,23 @@
 #define PortalEvt$playerHUDs 3			// (arr)huds - Player HUDs have changed
 #define PortalEvt$players 4				// (arr)players - Player UUIDs have been updated
 
-_portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, integer debug, integer reqDesc, integer temp){
+// Legacy: Spawns with reqDesc FALSE. If you need reqdesc you have to use the new function which gets pos from the spawner instead.
+// Temp is also removed.
+_portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, integer debug){
 	vector mpos = llGetRootPosition();
 	vector local = vecFloor(mpos)+(pos-vecFloor(pos));
 	integer in = vec2int(pos);
-	if(debug)in = in|BIT_DEBUG;
-	if(reqDesc)in = in|BIT_GET_DESC;
-	if(temp)in = in|BIT_TEMP;
+	if( debug )
+		in = in|BIT_DEBUG;
 	llRezAtRoot(name, local+spawnOffset, ZERO_VECTOR, rot, in);
+}
+
+// To be used with new got Spawner. MUST have reqDesc because it gets pos that way.
+_portal_spawn_new( int id, string name, rotation rot, vector spawnOffset, integer debug ){
+	
+	id = id | BIT_GET_DESC | (BIT_DEBUG*(!!debug));
+	llRezAtRoot(name, llGetRootPosition()+spawnOffset, ZERO_VECTOR, rot, id);
+
 }
 
 #endif

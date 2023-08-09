@@ -87,7 +87,7 @@
 #define BridgeEvt$goldChanged 5			// (int)gold
 #define BridgeEvt$partyIcons 6			// (arr)UUIDs - UUIDs of the party
 #define BridgeEvt$spawningLevel 7		// (str)level - "FINISHED" means you just completed a quest, but did not hand it in yet
-
+#define BridgeEvt$loadingScreensChanged 8	// void - Loading screens table has changed
 
 	
 // table: gotBridge, row: data - Contains thong data except spells
@@ -116,11 +116,15 @@
 		#define BSUD$SFLAG_BREAST_ANIMS 0x1		// enable breast anims
 		#define BSUD$SFLAG_PVP_SEX 0x2			// Enable player on player sex scenes
 		#define BSUD$SFLAG_BUTT_ANIMS 0x4		// enable breast anims
+		#define BSUD$SFLAG_SWIM_AO 0x8			// Toggle firestorm AO when swimming
 	#define BSUD$THONG_CLASS_ID 15				// ID of thong class such as 1 for assassin
 	#define BSUD$THONG_ROLE 16					// Role of thong. Use ROLE_* definition from _core
 	#define BSUD$THONG_SPEC 17					// Thong spec index
-	
+	#define BSUD$QTE_POS 18						// int constant where the QTE widget should be drawn
 
+
+// Not recommended to use if you need multiple values. Grab the array once instead.
+#define Bridge$getUserDataField( field ) j(hud$bridge$userData(), (field))
 
 // See Spell Data Readme.txt
 #define Bridge$buildSpellVisual(rezzables, complete_anim, complete_sound, particles, cast_anim, cast_sound) \

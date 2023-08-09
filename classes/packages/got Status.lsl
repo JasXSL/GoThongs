@@ -10,10 +10,16 @@ if( SFp != SF ){ \
 	SFp = SF; \
 }	
 
-#define maxHP() ((DEFAULT_DURABILITY+fmMHn)*fmMH)
-#define maxMana() ((DEFAULT_MANA+fmMMn)*fmMM)
-#define maxArousal() ((DEFAULT_AROUSAL+fmMAn)*fmMA)
-#define maxPain() ((DEFAULT_PAIN+fmMPn)*fmMP)
+// makes sure max is never lower than 1
+float maxResource( float val ){
+	if( val < 1 )
+		return 1;
+	return val;
+}
+#define maxHP() maxResource((DEFAULT_DURABILITY+fmMHn)*fmMH)
+#define maxMana() maxResource((DEFAULT_MANA+fmMMn)*fmMM)
+#define maxArousal() maxResource((DEFAULT_AROUSAL+fmMAn)*fmMA)
+#define maxPain() maxResource((DEFAULT_PAIN+fmMPn)*fmMP)
 
 #define TIMER_REGEN "a"
 #define TIMER_BREAKFREE "b"
@@ -270,20 +276,24 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		if( am < 0 ){
 		
 			// Damage taken multiplier
-			float fmdt = 1;
-			integer pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)0);
-			if( ~pos )
-				fmdt *= l2f(fmDT, pos*2+1);
-			if( key2int(atkr) && ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(atkr))) )
-				fmdt *= l2f(fmDT, pos*2+1);
+			if( ~fl & SMAFlag$ABSOLUTE ){
+			
+				float fmdt = 1;
+				integer pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)0);
+				if( ~pos )
+					fmdt *= l2f(fmDT, pos*2+1);
+				if( key2int(atkr) && ~(pos = llListFindList(llList2ListStrided(fmDT, 0,-1,2), (list)key2int(atkr))) )
+					fmdt *= l2f(fmDT, pos*2+1);
 
-			am*= 
-				(1+((SF&StatusFlag$pained)/StatusFlag$pained)*.1)*
-				(1+((SF&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
-				(1+(FXF&fx$F_SHOW_GENITALS && ~FXF&fx$F_NO_NUDE_PENALTY)*.2)*
-				fmdt*
-				difMod()
-			;
+				am*= 
+					(1+((SF&StatusFlag$pained)/StatusFlag$pained)*.1)*
+					(1+((SF&StatusFlag$aroused)/StatusFlag$aroused)*.1)*
+					(1+(FXF&fx$F_SHOW_GENITALS && ~FXF&fx$F_NO_NUDE_PENALTY)*.2)*
+					fmdt*
+					difMod()
+				;
+				
+			}
 
 			updateCombatTimer();
 			
@@ -306,15 +316,19 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 		// Healing
 		else{
 			
-			// Healing taken multiplier
-			float fmht = 1;
-			integer pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)0);
-			if( ~pos )
-				fmht *= l2f(fmHT, pos*2+1);
-			if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(atkr))) )
-				fmht *= l2f(fmHT, pos*2+1);
+			if( ~fl & SMAFlag$ABSOLUTE ){
+			
+				// Healing taken multiplier
+				float fmht = 1;
+				integer pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)0);
+				if( ~pos )
+					fmht *= l2f(fmHT, pos*2+1);
+				if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(atkr))) )
+					fmht *= l2f(fmHT, pos*2+1);
+					
+				am*= fmht;
 				
-			am*= fmht;
+			}
 			evt = StatusEvt$healed;
 			
 		}
@@ -675,9 +689,9 @@ onEvt( string script, integer evt, list data ){
 	else if( script == "jas Primswim" ){
 	
 		if( evt == PrimswimEvt$onWaterEnter )
-			SF = SF|StatusFlag$swimming;
+			SF = SF | StatusFlag$swimming;
 		else if( evt == PrimswimEvt$onWaterExit )
-			SF = SF&~StatusFlag$swimming;
+			SF = SF & ~StatusFlag$swimming;
 		OS( TRUE );
 		
 	}

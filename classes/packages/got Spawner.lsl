@@ -4,137 +4,141 @@
 #define USE_EVENTS
 #include "got/_core.lsl"
 
-// Defines how many objects can await description at a time
-#ifndef CONCURRENCY
-#define CONCURRENCY 5
+// If you need 
+#ifndef TABLE
+	#define TABLE gotTable$spawner
 #endif
-
-#define qdb(text) //qd(text)
 
 key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
 
-string CURRENT_ASSET;
- 
-// Inputs:
-// 1. Items to spawn are added into the queue
-list queue;			// [(str)objectName, (vec)objectRezPos, (rot)objectRezRot, (str)objectDesc, (bool)debug, (bool)temp_on_rez, (str)spawnround, (key)sender]
-// If objectName is "_CB_", a callback is sent, and these are the vars used instead of above:
-// ["_CB_", (str)customCallback]
-#define QUEUESTRIDE 8
 
-// 2. Before an object is rezzed, it is added to a rez queue
-list queue_rez;		// [(str)desc, (str)spawnround, (key)sender]
-list spawns;		// Integerized spawns to prevent lagbugs
+// gotTable$spawner is a sequential table containing JSON objects
+/*
+{
+	i : (key)id				- Assigned when "SP" is received
+	n : (str)obj_name		- Name of object we are spawning or "_CB_" if a callback
+	p : (vec)pos 			- Object spawn pos
+	r : (rot)rotation 		- Rotation of object
+	d : (str)desc			- Object spawn desc / cb_data for _CB_
+	t : (bool)debug_mode	- Spawn in debug/dummy mode
+	g : (str)spawnround		- Spawn group
+	s : (key)sender			- Sender that requested the spawn
+	[Unused] f : (bool)temp_on_rez	- Should be temp on rez 
+	_ : (float)time 		- llGetTime of when the spawn was requested
+	c : (str)callbackScript - Script to send the callback to in _CB_ type
+	m : (int)callbackMethod	- Method to callback to in _CB_ type
+	! : (int)state 			- use ST_*
+}
+*/
 
-// 3. Upon rezzing, the object gets added to a description que. This can hold up to CONCURRENCY assets
-// Number of objects rezzed and currently awaiting descriptions.
-#define processing (count(queue_desc)/QUEUEDESCSTRIDE)	
-list queue_desc;	// [(key)idOfObject, (str)desc, (str)spawnround, (key)sender]
-#define QUEUEDESCSTRIDE 4
+#define ST_QUEUED 0			// Not rezzed yet
+#define ST_REZZED 1			// We have called llRez on this
+#define ST_DESC_SENT 2		// Awaiting ack from portal
 
+#define CONCURRENCY 5
+#define TIMEOUT 180			// 3 min
 
-// Timestamp when the last spawn took place
-float SPAWN_START;
+next(){
 
-next() {
-	
-	if(
-		// No items left to spawn
-		queue == [] || 
-		// An item is in the process of being spawned
-		queue_rez != [] || 
-		// To many description load requests. This should prevent the event queue from being full
-		processing >= CONCURRENCY
-	){
-		// Queue done, Give it 5 sec before telling the level the load queue is finished. Used in case a mod adds additional spawns.
-		if(queue == []){
-			float timeout = 10;
-			// If we have been spawning for more than 10 sec we are allowed to end this earlier
-			if(SPAWN_START+10 < llGetTime())
-				timeout = 2;
-			multiTimer(["FORCE_NEXT"]);
+	// Loop through table
+	int pre; int found; int rezzed; list rezzable; // Gets the oldest n CONCURRENCY indexes that are on ST_QUEUED
+	db4$each(TABLE, i, data, 
+		
+		str name = j(data, "n");
+		str desc = j(data, "d");
+		
+		if( name == "_CB_" ){
+			
+			// This queue is done. Send callback.
+			if( pre == 0 ){
+				
+				sendCallback(
+					j(data, "s"), 
+					j(data, "c"), 
+					(int)j(data, "m"), 
+					"", 
+					desc
+				);
+				db4$delete(TABLE, i);
+				debugRare("[Queue] "+(str)i+". Sending queue callback for "+desc);
+				
+			}
+				
+			pre = 0;
+			
 		}
+		else{
+			++found; 	// This is a spawn in progress. Also needed on prune failed so callbacks do not get deleted.
+			++pre;		// There is an unfinished spawn before the next callback
+			
+			int st = (int)j(data, "!");
+			// Candidate for rezzing
+			if( st == ST_QUEUED && count(rezzable) < CONCURRENCY )
+				rezzable += i;
+			// Items awaiting finalizing
+			else if( st != ST_QUEUED )
+				++rezzed;
+				
+			float spawned = (float)j(data, "_");
+			if( 
+				(st != ST_QUEUED && llGetTime()-spawned > TIMEOUT) || 	// Timeout hit after attempting to rez it
+				(st == ST_DESC_SENT && llKey2Name(j(data, "i")) == "") 	// Object has been destroyed after sending desc
+			){
+				qd(
+					"[ERROR] Failed to rez "+j(data, "n")+"\n"+
+					"Timeout: "+(str)(llGetTime()-spawned > TIMEOUT) + " "+
+					"Obj in region: "+llKey2Name(j(data, "i")) + "\n" +
+					"Full data: "+data
+				);
+				db4$delete(TABLE, i);
+			}
+			
+		}
+		
+	)
+	
+	// Queue is empty so we can reset LSD
+	if( !found ){
+	
+		debugRare("Full queue is complete!");
+		multiTimer(["PRUNE"]);
+		db4$drop(TABLE);
 		return;
+		
 	}
 	
-	if( SPAWN_START == 0 )
-		SPAWN_START = llGetTime();
+	debugUncommon("[Queue] Able to spawn "+(str)(CONCURRENCY-rezzed)+" items");
+	// Rez items
+	integer i;
+	for(; i < count(rezzable) && i < CONCURRENCY-rezzed; ++i ){
 	
-	// Object Name
-	string asset = llList2String(queue, 0);
-	
-	// If object name is _CB_, send a callback
-	if(asset == "_CB_"){
-	
-		// Waits for queue to finish before loading more. This works because done() triggers next()
-		if(processing > 1){	// 1 is because the "_CB_" call counts as processing
-			return;
-		}
-	
+		integer idx = l2i(rezzable, i);
+		string data = db4$get(TABLE, idx);
+		data = llJsonSetValue(data, (list)"!", (str)ST_REZZED);
+		data = llJsonSetValue(data, (list)"_", (str)llGetTime()); // Give it more time
+		db4$replace(TABLE, idx, data);
 		
-		sendCallback(
-			llList2String(queue, 1), 
-			llList2String(queue, 2), 
-			llList2Integer(queue, 3), 
-			"", 
-			llList2String(queue, 4)
+		debugUncommon("[Queue] Spawning "+j(data, "n"));
+		// int id, string name, rotation rot, vector spawnOffset, integer debug
+		_portal_spawn_new(
+			idx,							// Index of spawn
+			j(data, "n"),				// Object name 
+			(rotation)j(data, "r"),		// Rotation 
+			-<0,0,8>,					// Spawn below by default 
+			(int)j(data, "t")			// Debug mode 
 		);
-		queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
-		next();
-		return;
 		
 	}
 	
-	// Asset not foudn in inventory, skip it
-	if(llGetInventoryType(asset) != INVENTORY_OBJECT){
-	
-		qd("Error. Asset not found: "+mkarr(llList2List(queue, 0, QUEUESTRIDE-1))+". The level may work but you probably want to restart.");
-		queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
-		next();
-		return;
-		
-	}
-	
-	
-	// Set/reset clean up timer
-	multiTimer(["FORCE_NEXT", 1, 60, FALSE]);
-	
-	CURRENT_ASSET = asset;
-	// Spawn it
-	qdb(":: spawn :: "+CURRENT_ASSET);
-	
-	// Store the data in a separate array which is also used to check if we're currently rezzing
-	queue_rez = [
-		llList2String(queue, 3), // Desc
-		llList2String(queue, 6), // Spawnround
-		llList2String(queue, 7)  // Sender
-	];
-	
-	// Remove from the main queue
-	_portal_spawn_std(asset, llList2Vector(queue, 1), llList2Rot(queue, 2), -<0,0,8>, llList2Integer(queue, 4), TRUE, llList2Integer(queue, 5));
-	queue = llDeleteSubList(queue, 0, QUEUESTRIDE-1);
-	
+	// Unstucks if things do not rez
+	multiTimer(["PRUNE", 0, 5, TRUE]);
 	
 }
 
 
 timerEvent(string id, string data){
-
-
-	// Something has gotten stuck
-	if( id == "FORCE_NEXT" ){
 	
-		qd("Error! An item didn't spawn in a timely fashion. This is usually caused by high lag in the region. Debug:");
-		qd("Main queue: "+mkarr(queue));
-		qd("Flushing assets awaiting desc: "+mkarr(queue_desc));
-		qd("Asset being spawned: "+mkarr(queue_rez));
-		// Clear queue_rez and try again!
-		queue_rez = [];
-		// Try again
-		next();
-		
-	}
-	else if( id == "NXT" )
+	if( id == "PRUNE" )
 		next();
 	
 }
@@ -150,123 +154,98 @@ onEvt(string script, integer evt, list data){
 	}
 }
 
-// returns -1 if the item has already been spawned and should be disregarded
-// FALSE if it was not added
-// TRUE if it was accepted
-int onObjectRez( key id, integer from ){
-	
-	int iid = (int)("0x"+(str)id);
-	if( ~llListFindList(spawns, (list)iid) ){
-		qdb("!! Ignoring already spawned "+llKey2Name(id)+" "+(str)id+ " "+(str)from);
-		return -1;
+sendDesc( key id, integer idx ){
+
+	string data = db4$get(TABLE, idx);
+	if( data == "" ){
+		
+		debugRare("[Desc] Request sent to missing spawn idx: "+(str)idx);
+		return;
+		
 	}
+	data = llJsonSetValue(data, (list)"!", (str)ST_DESC_SENT); 	// Assign state
+	data = llJsonSetValue(data, (list)"i", (str)id);			// Assign a UUID
+	data = llJsonSetValue(data, (list)"_", (str)llGetTime());	// Give it more time
+	db4$replace(TABLE, idx, data);
 	
-	if( 
-		llKey2Name(id) != CURRENT_ASSET || 			// This is not the current asset being rezzed
-		!count(queue_rez) || 						// There is no asset queued
-		~llListFindList(queue_desc, (list)id)		// It's already noted as rezzed
-	){
-		qdb("!! Ignored "+llKey2Name(id)+" "+(str)id + " "+(str)from);
-		return FALSE;
-	}
-	
-	CURRENT_ASSET = "";
-	
-	qdb(">> Accepted "+llKey2Name(id)+" "+(str)id+ " "+(str)from);
-	//llOwnerSay(":: STOR DESC :: "+(str)id+" :: "+llKey2Name(id));
-	// move it from queue_rez to queue_desc
-	
-	queue_desc += [id] + queue_rez;
-	queue_rez = [];
-	return TRUE;
+	// Portal$iniData(targ, data, spawnround, requester, pos)
+	Portal$iniData(
+		id, // target
+		j(data, "d"), 	// Custom data 
+		j(data, "g"), 	// Spawnround
+		j(data, "s"), 	// Sender key
+		j(data, "p")	// Spawn pos
+	);
+	debugCommon("[Desc] Sending to "+llKey2Name(id));
 
 }
 
-#define scheduleNext() multiTimer(["NXT", 0, .1, FALSE])
+int pChan;
 
 default{
 
 	state_entry(){
+	
 		raiseEvent(evt$SCRIPT_INIT, "");
 		// Listens to the prim playerChan, NOT owner
-		llListen(playerChan(llGetKey()), "", "", "");
-	}
-	
-	// An item was spawned. This allows parallel spawning
-	// LL has broken object_rez. Some times it fires minutes after later rezzed items have rezzed and the event raised.
-	// It should not be used
-	/*
-	object_rez( key id ){
-	
-		if( onObjectRez(id, 0) == TRUE )
-			scheduleNext(); // Spawn the next if possible
+		pChan = playerChan(llGetKey());
+		llListen(pChan, "", "", "");
+		db4$drop(TABLE);
+		#ifdef onStateEntry
+		onStateEntry();
+		#endif
 		
 	}
-	*/
 	
-	// The script listens to it's own object key chan
+	// The script listens to its own object key chan
 	// SP is received when a portal is ready to receive a description
 	// DN is received when a portal has received the description
-	listen(integer chan, string name, key id, string message){
+	listen( integer chan, string name, key id, string message ){
 		idOwnerCheck
 		
+		#ifdef onListen
+		onListen( chan, id, message );
+		#endif
+		/*
 		// Sent from an object letting you know it was spawned, but not remoteloaded yet
 		if( message == "PN" ){
-			int spawnNext = onObjectRez(id, 1);		
-			if( ~spawnNext )	// Ignore if -1
-				scheduleNext();
+			
+		}
+		*/
+		
+		if( chan != pChan )
+			return;
+		
+		string start = llGetSubString(message, 0, 1);
+		if( start != "SP" && start != "DN" )
+			return;
+		
+		integer idx = (int)llGetSubString(message, 2, -1);
+		if( llStringLength(message) == 2 ){
+			
+			debugRare("[ERROR] Received a legacy "+message+" from "+name);
+			return;
 			
 		}
 		
 		// Send from a portal requesting a description
-		else if( message == "SP" ){
-		
-			// Object was rezzed and got scripts before object_rez was called
-			int spawnNext = onObjectRez(id, 1);		
-			if( spawnNext == -1 )	// Ignore if -1
-				return;
-				
-			integer pos = llListFindList(queue_desc, (list)id);
+		if( start == "SP" ){
 			
-			
-			// Send the ini data
-			if(~pos){
-				Portal$iniData(id, llList2String(queue_desc, pos+1), llList2String(queue_desc, pos+2), llList2String(queue_desc, pos+3));
-			}
-			// HAX: Send something to shut up the object
-			else{
-				//Portal$iniData(id, "", "", llGetKey());
-				qd("Unknown object "+llKey2Name(id)+" requested spawn data");
-			}
-			
-			if( spawnNext )
-				scheduleNext();
+			sendDesc(id, idx);			
+			next();
 			
 		}
 		
 		// Sent from a portal saying it's done
-		else if( message == "DN" ){
-		
-			// Portals can send DONE immediately if they do not have descriptions. This can happen before object_rez
-			if( onObjectRez(id, 2) == -1 )
-				return;
+		if( start == "DN" ){
 			
-			// Find the ID in the description queue
-			integer pos = llListFindList(queue_desc, [id]);
-			if( ~pos ){
-			
-				spawns += (int)("0x"+(str)id);
-				// Remove it from desc queue
-				qdb(":: DONE :: "+llKey2Name(id)+" :: "+(str)id);
-				queue_desc = llDeleteSubList(queue_desc, pos, pos+QUEUEDESCSTRIDE-1);
-				// Spawn another asset if possible
-				scheduleNext();
-				
-			}
-			else
-				qd("done() was run on an unknown UUID: "+(str)id+" ("+name+")"+"\nqueue_desc was: "+mkarr(queue_desc));
+			// all done!
+			debugCommon("[Desc] Finalized ID "+(str)(idx)+" :: "+name);
+			db4$delete(TABLE, idx);
+			next();
 			
 		}
+		
 	}
 	
 		
@@ -275,7 +254,6 @@ default{
 	
     #include "xobj_core/_LM.lsl"
     /*
-        Included in all these calls:
         METHOD - (int)method
         PARAMS - (var)parameters
         SENDER_SCRIPT - (var)parameters   
@@ -285,39 +263,35 @@ default{
         return;
     }
     
-	if(method$internal){
+	if( method$internal ){
+	
 		// Used primarily for mods to overwrite installed content when installed multiple times
-		if(METHOD == SpawnerMethod$remInventory){
+		if( METHOD == SpawnerMethod$remInventory ){
+			
 			list assets = llJson2List(method_arg(0));
 			list_shift_each(assets, val,
-				if(llGetInventoryType(val) == INVENTORY_OBJECT){
+			
+				if(llGetInventoryType(val) == INVENTORY_OBJECT)
 					llRemoveInventory(val);
-				}
+				
 			)
+			
 		}
+		
 	}
 	
     if(method$byOwner){
 	
-		if(METHOD == 0){
+		if( METHOD == 0 )
 			llResetScript();
-		}
 		
-        else if(METHOD == SpawnerMethod$debug){
-			qd("queue");
+		
+        else if( METHOD == SpawnerMethod$debug ){
 			
-			integer i;
-			for(i=0; i<llGetListLength(queue); i+= QUEUESTRIDE)
-				qd(mkarr(llList2List(queue, i, i+QUEUESTRIDE-1)));
-			
-			qd("queue_rez");
-			for(i=0; i<llGetListLength(queue_rez); i+= 3 )
-				qd(mkarr(llList2List(queue, i, i+2)));
-			
-			qd("queue_desc");
-			for(i=0; i<llGetListLength(queue_desc); i+= QUEUEDESCSTRIDE )
-				qd(mkarr(llList2List(queue, i, i+QUEUEDESCSTRIDE-1)));
-			
+			qd("== Spawn queue ==");
+			db4$each(TABLE, i, data, 
+				llOwnerSay((str)i+". "+data);
+			)
 			
 		}
 		
@@ -332,6 +306,10 @@ default{
 			
 		}
 		
+		#ifdef onOwnerMethod
+			onOwnerMethod(METHOD, id, PARAMS);
+		#endif
+		
     }
 	
 	if( METHOD == SpawnerMethod$spawnThese || METHOD == SpawnerMethod$spawn ){
@@ -342,47 +320,51 @@ default{
 		
 		list data = PARAMS;
 		if( METHOD == SpawnerMethod$spawn )
-			data = [mkarr(PARAMS)];
+			data = (list)mkarr(PARAMS);
 		
 		
 		integer i;
-		for( i=0; i<llGetListLength(data); i++ ){
+		for( ; i < count(data); ++i ){
 		
-			string s = llList2String(data, i);
-			if( llJsonValueType(s, []) == JSON_ARRAY ){
+			list dta = llJson2List(l2s(data, i));
+			string asset = llList2String(dta,0);
+			string out;
+			if( asset == "_CB_" )
+				out = llList2Json(JSON_OBJECT, [
+					"n", asset,		// Name
+					"s", id,		// Sender
+					"c", SENDER_SCRIPT,	// Callback script
+					"m", METHOD,		// Callback method
+					"d", l2s(dta, 1)
+				]);
+			
+			// Have asset in inventory
+			else if( llGetInventoryType(asset) == INVENTORY_OBJECT )
+				out = llList2Json(JSON_OBJECT, [
+					"n", asset,							// Obj name
+					"p", l2s(dta, 1),					// Position
+					"r", l2s(dta, 2),					// Rotation
+					"d", l2s(dta, 3),					// Description
+					"t", l2i(dta, 4),					// Debug
+					//"f", l2i(dta, 5),					// Temp on rez
+					"g", l2s(dta, 6),					// spawn group
+					"s", requester							// sender
+				]);
+			
+			else
+				qd("Inventory missing: "+s);
+			
+			if( out ){
 				
-				list dta = llJson2List(s);
-				string asset = llList2String(dta,0);
-				if( asset == "_CB_" )
-					queue += [
-						asset,
-						id,
-						SENDER_SCRIPT,
-						METHOD,
-						llList2String(dta, 1),
-						0,
-						0,
-						0
-					];
+				out = llJsonSetValue(out, ["_"], (str)llGetTime());
+				db4$insert(TABLE, out);
 				
-				else if( llGetInventoryType(asset) == INVENTORY_OBJECT )
-					queue += [
-						asset,								// Obj name
-						(vector)llList2String(dta, 1),		// Position
-						(rotation)llList2String(dta, 2),	// Rotation
-						llList2String(dta, 3),				// Description
-						llList2Integer(dta, 4),				// Debug
-						llList2Integer(dta, 5),				// Temp
-						llList2String(dta, 6),				// spawnround
-						requester							// sender
-					];
-				
-				else 
-					qd("Inventory missing: "+s);
 			}
+			
 		}
 		
-		scheduleNext();
+		next();
+		
 	}
     
     #define LM_BOTTOM  

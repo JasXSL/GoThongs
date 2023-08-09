@@ -12,6 +12,20 @@ key CURRENT_LEVEL;
 int LOADING;
 key PRELOADED_TEXTURE;
 
+preloadNewTexture(){
+	key texture;
+	
+	int nrEntries = db4$getIndex(gotTable$loadingScreens);
+	int grab = floor(llFrand(nrEntries));
+	texture = db4$get(gotTable$loadingScreens, grab);
+	if( texture ){}
+	else
+		texture= DEFAULT_SCREEN;
+	
+	PRELOADED_TEXTURE = texture;
+	llSetTexture(texture, ALL_SIDES);
+	
+}
 
 toggleLoadingScreen( int visible ){
 	
@@ -28,9 +42,7 @@ toggleLoadingScreen( int visible ){
 		ptSet("LOADED", 20, FALSE);
 		GUI$setOverlay(LINK_ALL_OTHERS, PRELOADED_TEXTURE);
 		
-		
-		PRELOADED_TEXTURE = randElem(TEXTURES);
-		llSetTexture(PRELOADED_TEXTURE, ALL_SIDES);
+		preloadNewTexture();
 		
 		return;
 		
@@ -65,6 +77,10 @@ onEvt(string script, integer evt, list data){
 		
 	}
 	
+	if( script == "got Bridge" && evt == BridgeEvt$loadingScreensChanged )
+		preloadNewTexture();
+		
+	
 }
 
 ptEvt( string id ){
@@ -96,9 +112,7 @@ checkPerms(){
 default{
 
 	state_entry(){
-		PRELOADED_TEXTURE = randElem(TEXTURES);
-		llSetTexture(PRELOADED_TEXTURE, ALL_SIDES);
-		
+		preloadNewTexture();		
 		checkPerms();
 	}
 
@@ -151,7 +165,7 @@ default{
         // Clear old
         Portal$killAll();
         Level$despawn();
-        _portal_spawn_std(level, startPos, ZERO_ROTATION, <0,0,8>, FALSE, FALSE, FALSE);
+        _portal_spawn_std(level, startPos, ZERO_ROTATION, <0,0,8>, FALSE);
 		
     }
 	

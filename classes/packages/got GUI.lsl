@@ -504,7 +504,28 @@ default {
             
 			int n = (int)llGetSubString(name, -1, -1); 
 			str start = llGetSubString(name, 0, 1);
-            if(
+            
+			if(llGetSubString(name, 0, 1) == "FX"){
+			
+				n = (int)llGetSubString(name, 2, -1);
+				setFxPrim(n, nr);
+				
+			}
+			else if(name == "LOADING")P_LOADINGBAR = nr;
+            else if(name == "QUIT")P_QUIT = nr;
+            else if(name == "SPINNER"){
+				P_SPINNER = nr;
+			}
+			else if(name == "PROGRESS")P_PROGRESS = nr;
+			else if(name == "BOSS_HEALTH")P_BOSS_HP = nr;
+			else if(name == "BOSS_PORTRAIT")P_BOSS_PORTRAIT = nr;
+			else if( name == "ARMOR" )
+				P_ARMOR = nr;
+			else if( name == "WCOUNT" )
+				P_SKULL_NR = nr;
+			else if( name == "WSKULL" )
+				P_SKULL = nr;
+			else if(
                 start == "FR" ||  // Targ
                 start == "OP" ||   // Player
 				start == "SP"
@@ -525,24 +546,6 @@ default {
                 BARS = llListReplaceList(BARS, (list)cur, pos, pos);
 				
             }
-			else if(llGetSubString(name, 0, 1) == "FX"){
-			
-				n = (int)llGetSubString(name, 2, -1);
-				setFxPrim(n, nr);
-				
-			}
-			else if(name == "LOADING")P_LOADINGBAR = nr;
-            else if(name == "QUIT")P_QUIT = nr;
-            else if(name == "SPINNER")P_SPINNER = nr;
-			else if(name == "PROGRESS")P_PROGRESS = nr;
-			else if(name == "BOSS_HEALTH")P_BOSS_HP = nr;
-			else if(name == "BOSS_PORTRAIT")P_BOSS_PORTRAIT = nr;
-			else if( name == "ARMOR" )
-				P_ARMOR = nr;
-			else if( name == "WCOUNT" )
-				P_SKULL_NR = nr;
-			else if( name == "WSKULL" )
-				P_SKULL = nr;
 				
 			//else if(name == "SingleFace")singles+= ([PRIM_LINK_TARGET, nr, PRIM_POSITION, <.1,0,0>]);
         ) 
@@ -743,17 +746,20 @@ default {
 		}
 		llSetLinkPrimitiveParamsFast(P_LOADINGBAR, out);
 	}
-	else if(METHOD == GUIMethod$toggleSpinner){
+	else if( METHOD == GUIMethod$toggleSpinner ){
+	
 		integer on = (integer)method_arg(0);
 		string text = method_arg(1);
-		if(!isset(text))text = "Loading...";
+		if( !isset(text) )
+			text = "Loading...";
 		
 		list out = [PRIM_POSITION, ZERO_VECTOR, PRIM_TEXT, "", ZERO_VECTOR, 0];
-		if(on){
+		if(on)
 			out = [PRIM_POSITION, SPINNER_POS, PRIM_TEXT, text, <1,1,1>, 1];
-		}
+
 		llSetLinkTextureAnim(P_SPINNER, ANIM_ON|SMOOTH|LOOP|ROTATE, 0, 0,0, 0,TWO_PI, -10);
 		llSetLinkPrimitiveParamsFast(P_SPINNER, out);
+		
 	}
 	
 	else if( METHOD == GUIMethod$setOverlay ){
