@@ -22,7 +22,8 @@ list CACHE;
 #define difDmgMod() SpellAux$difficultyDamageDoneModifier( hud$status$difficulty() )
 
 // Calculates bonus damage for particular spells
-list SPDM = [1,1,1,1,1];		// [abilt5, abil0, abil1...]
+// Needs to match NUM_SPELLS in _core
+list SPDM = [1,1,1,1,1,1];		// [abilt5, abil0, abil1...]
 
 // FX
 list dtmod = [0,1];		// Damage taken modifier from PASSIVE
@@ -167,6 +168,9 @@ string runMath( string FX, integer index, key targ ){
 		
     ];
 	
+	debugUncommon("IN>>"+FX);
+	debugUncommon("Mods>>" + mkarr(_C));
+	debugUncommon("R: dm="+(str)dm+" cCR="+(str)cCR+" spdmdm="+(str)spdmdm + " bsm="+(str)bsm + " bfdmg="+(str)bfDmg);
 	
     integer i;
     for( i=1; i<llGetListLength(split); ++i ){
@@ -200,7 +204,7 @@ string runMath( string FX, integer index, key targ ){
 		
     }
 
-
+	debugUncommon("Out>>"+implode("", split));
 	_C = [];
 	//qd(implode("", split));
     return implode("", split);
@@ -219,7 +223,7 @@ onEvt(string script, integer evt, list data){
 		str tmpCh = gotTable$spellmanSpellsTemp;
 		str ch = gotTable$bridgeSpells;
 		integer i;
-		for( ; i<5; ++i ){
+		for( ; i < NUM_SPELLS; ++i ){
 			
 			list d = llJson2List(db4$get(tmpCh, i));
 			if(d == [])

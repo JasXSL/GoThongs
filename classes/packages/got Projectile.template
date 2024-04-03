@@ -38,7 +38,7 @@ relies on the following functions and definitions
 	#define HITFX_FLAGS 0
 #endif
 
-#define DeathDebug( text )
+#define DeathDebug( text ) //qd(text)
 //#define DISREGARD_START_POS
 //#define INVERSE		// Animates from end to start
 

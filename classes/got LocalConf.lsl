@@ -27,15 +27,19 @@
 #define LocalConf$grappleEnable(targ, on) runMethod((str)(targ), "got LocalConf", LocalConfMethod$grappleEnable, (list)(on), TNN)
 
 
+// note: these are hardcoded. not all NPCs will raise these events
 #define LocalConfEvt$iniData 1		// Separate from evt$SCRIPT_INIT in that this is raised on demand and contains script custom data
 									// This data will vary based on the object the conf is in
 									// For monster data see got Monster
 #define LocalConfEvt$emulateAttack 2// Emulates an attack for monsters without mesh anims
 #define LocalConfEvt$grappleStart 3	// (key)id Handled by template
 #define LocalConfEvt$grappleEnd 4	// (key)id Handled by template
-#define LocalConfEvt$grappleSuccess 3	// (key)id - LR Failable Grapple ended successfully
-#define LocalConfEvt$grappleFail 4	// (key)id - LR Grapple check failed
+#define LocalConfEvt$grappleSuccess 5	// (key)id - LR Failable Grapple ended successfully
+#define LocalConfEvt$grappleFail 6	// (key)id - LR Grapple check failed
+#define LocalConfEvt$grappleHupHost 7	// (key)clientNPC, (str)pc_anim, (str)npc_anim, (arr)grapple_targs multi NPC grapple started
+#define LocalConfEvt$grappleHupClient 8	// (key)hostNPC, (str)pc_anim, (str)npc_anim, (arr)grapple_targs multi NPC grapple started
 
+#define LocalConfEvt$meta 9				// (str)action, ... - Can be raised by NPCs to let monsterscript & mods have more information. For an example: The portal imp hump spell. These should be noted at the top of the script.
 
 // These can be used in monsters if you want									
 list localConfAnims;
@@ -61,7 +65,7 @@ string localConfIdle;
 	#define hup$task$hostStart "A"		// (str)name, (list)victim_huds - We grappled on or many player
 	#define hup$task$clientAck "B"			// (str)callback - Target accepted sender
 	#define hup$task$hostAck "C"			// (str)name, (key)victim_hud, (str)callback - Send to target, you are clear to begin.
-	#define hup$task$clientStart "D"		// (str)npc_idle_anim, (str)player_idle_anim, (float)sync - Setup the idle animations and begin.
+	#define hup$task$clientStart "D"		// (str)client_idle_anim, (str)pc_idle_anim, (str)host_idle_anim, (float)sync - Setup the idle animations and begin.
 	#define hup$task$clientAnim "E"			// (str)npc_anim, (str)pc_anim - Trigger an active animation on the player and sender.
 	#define hup$task$end "F"				// - Sent by either the target or sender and forces the event to end.
 	

@@ -609,8 +609,6 @@ timerEvent( string id, string data ){
 						llGetPos()-<0,0,9>, 
 						ZERO_ROTATION, 
 						ZERO_VECTOR, 
-						FALSE, 
-						FALSE, 
 						FALSE
 					); 
 					
@@ -973,6 +971,10 @@ default{
 					
 					onHookup(name, TRUE, FALSE);	// Client defined code
 					
+					raiseEvent(LocalConfEvt$grappleHupClient, mkarr((list)
+						HUP_TARG + llList2List(tmp, hupPos+3, hupPos+5) + mkarr(HUP_VICTIMS)
+					));
+					
 				}
 			#endif
 			
@@ -1005,6 +1007,10 @@ default{
 					if( HUP_A_NPC ){
 						objAnimOn(HUP_A_NPC);
 					}
+					
+					raiseEvent(LocalConfEvt$grappleHupHost, mkarr((list)
+						HUP_TARG + HUP_A_PC + HUP_A_NPC + mkarr(GRAPPLE_TARGS)
+					));
 					onHookup("", TRUE, TRUE);
 					
 				}

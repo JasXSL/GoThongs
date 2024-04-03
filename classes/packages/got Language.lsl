@@ -147,8 +147,31 @@ default{
 		
 		Status$outputStats();
 		
+		
+		llListen(fx$REDIR_SPEECH$CH$MUFFLE, "", llGetOwner(), "");
+		
     }
 	
+	listen( int ch, string name, key id, string message ){
+	
+		list base = llParseString2List(message, (list)" ", (list)"?" + "!" + ".");
+        integer i; string out;
+        list replacers = ["mmph", "mm", "mnm", "mnn", "mph", "mmmn"];
+        for(; i < count(base); ++i ){
+            string test = l2s(base, i);
+            if( test == "?" || test == "!" || test == "." )
+                out = trim(out) + test + " ";
+            else
+                out += randElem(replacers)+" ";
+        }
+        out = trim(out);
+        out = llToUpper(llGetSubString(out, 0, 0)) + llDeleteSubString(out, 0, 0);
+		string pre = llGetObjectName();
+		llSetObjectName(" ");
+        llSay(0, "secondlife:///app/agent/"+(str)llGetOwner()+"/about: "+out);
+		llSetObjectName(pre);
+	
+	}
 
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
@@ -165,17 +188,30 @@ default{
     }
     
     if(METHOD == LanguageMethod$text){
+	
         integer lang = (integer)method_arg(0);
         integer field = 1;
-        if(~SPOKEN&lang && lang)field = 2;
+        if( ~SPOKEN&lang && lang )
+			field = 2;
         string text = method_arg(field);
-        key sound = (key)method_arg(3);
-        float vol = (float)method_arg(4);
-        if(sound){
-            if(vol <= 0)vol = 1;
+        key sound = method_arg(3);
+        float vol = l2f(PARAMS, 4);
+		integer flags = l2i(PARAMS, 5);
+		
+		if( flags & Language$flag$BANTER ){
+			if( (int)j(hud$bridge$userData(), BSUD$SETTING_FLAGS)&BSUD$SFLAG_LESS_BANTER )
+				return;
+		}
+		
+        if( sound ){
+            
+			if( vol <= 0 )
+				vol = 1;
             llLinkPlaySound(soundPrim$language, sound, vol, SOUND_PLAY);
+			
         }
         AM$(text);
+		
         
     }
     

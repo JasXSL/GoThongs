@@ -257,6 +257,7 @@ if( var*amount != 0.0 ){ \
 #define Status$addDurability(attacker, amt, spellName, flags, lifeSteal) Status$batchUpdateResources(attacker, SMBUR$buildDurability(amt, spellName, flags, lifeSteal))
 #define Status$addDurabilityTo(target, attacker, amt, spellName, flags, lifeSteal) Status$batchUpdateResourcesTarg(target, attacker, SMBUR$buildDurability(amt, spellName, flags, lifeSteal))
 #define Status$addMana(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildMana(amt, spellName, flags))
+#define Status$addManaTo(target, attacker, amt, spellName, flags) Status$batchUpdateResourcesTarg(target, attacker, SMBUR$buildMana(amt, spellName, flags))
 #define Status$addArousal(attacker,amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildArousal(amt, spellName, flags))
 #define Status$addPain(attacker, amt, spellName, flags) Status$batchUpdateResources(attacker, SMBUR$buildPain(amt, spellName, flags))
 

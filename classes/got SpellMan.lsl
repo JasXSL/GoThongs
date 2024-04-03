@@ -15,7 +15,15 @@
 
 #define SpellManEvt$interrupted 1	// (int)index, f2i(casttime) - Spell has been interrupted
 #define SpellManEvt$cast 2			// f2i((float)casttime), (key)target, (int)spellIndex, (int)spellFlags - Cast started - Not raised on instant cast
-#define SpellManEvt$complete 3 		// (int)spell_index, (key)target, (bool)detrimental, (arr)all_targs, (bool)noWipe, (f2i)casttime - Spell finished casting. Index goes from 0 (rest) to 4 (last)
+#define SpellManEvt$complete 3 		/* Spell finished casting. Index goes from 0 (rest) to 4 (last)
+									0: (int)spell_index, 
+									1: (key)target, 
+									2: (bool)detrimental, 
+									3: (arr)all_targs, 
+									4: (bool)noWipe, 
+									5: (f2i)casttime
+									*/
+									
 #define SpellManEvt$recache 4		// void - Triggers a recache of spell data
 #define SpellManEvt$charges 5		// (int)charges - Spell charges have changed. 4 bit int of charges remaining
 

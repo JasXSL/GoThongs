@@ -73,5 +73,9 @@
 // (52) Written by got Bridge, read by got LevelLoader. Each entry is a UUID
 #define gotTable$loadingScreens db4$20
 
+// (53) Used by got Banter. 
+#define gotTable$banter db4$21
+
+
 #endif
 

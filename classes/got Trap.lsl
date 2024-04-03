@@ -6,6 +6,11 @@
 	#define Trap$fsFlags$attackable 0x2	// Allows the victim to be attackable
 	#define Trap$fsFlags$noAnims 0x4	// Do not animate
 	
+#define Trap$chanSensorSend 1857127 	// Channel that lets you send quick tasks to traps. Messages send JSON arrays [(int)task,(var)data...]
+	#define Trap$chanSensorSend$get 1		// (float)dist - Runs Trap$chanSensorReply$get
+
+#define Trap$chanSensorReply 1857128 	// Reply channel for traps.
+	#define Trap$chanSensorReply$get 1		// void - Reply to Trap$chanSensorSend$get
 	
 #define TrapMethod$end 2			// void - Force end
 #define TrapMethod$useQTE 3			// (int)numTaps/speed, preDelay, buttonDelay, flags - Use a quicktime event. 0 numTaps disables. See got Evts -> Evts$qFlags
@@ -30,6 +35,7 @@
 #define Trap$end(targ) runMethod((str)targ, "got Trap", TrapMethod$end, [], TNN)
 #define Trap$startAnim(targ, anim) runMethod((str)targ, "got Trap", TrapMethod$anim, [anim, TRUE], TNN)
 #define Trap$stopAnim(targ, anim) runMethod((str)targ, "got Trap", TrapMethod$anim, [anim, FALSE], TNN)
+
 
 
 // Index of the INI_DATA raised by localConf event

@@ -46,7 +46,7 @@
 	//#define fx$DEBUG 9							// [(str)message]
 	#define fx$REM_BY_NAME 10					// (str)name, (int)raise_event, (bool)only_by_caster
 	#define fx$REM_THIS 11						// (int)raise_event - Only works within a tick
-	#define fx$THONG_VISUAL 12					// see ThongManMethod$fxVisual
+	#define fx$THONG_VISUAL 12					// (vec)color, (float)glow, (str)preset, (int)dur - see ThongManMethod$fxVisual
 	#define fx$SET_FLAG 13						// (int)flags
 		#define fxf$SET_FLAG db4$13				//p (int)flags & ~unset_flags = 0
 	#define fx$UNSET_FLAG 14					// (int)flags - Overrides fx$SET_FLAG
@@ -112,7 +112,7 @@
 		#define fxf$MANA_REGEN_MULTI db4$15		//p (float)multi=1
 	#define fx$DAMAGE_TAKEN_MULTI 16			// (float)add, (bool)by_caster
 		#define fxf$DAMAGE_TAKEN_MULTI db4$16	//p [0,(float)global,key2int(uuid),(float)uuid_multi...]=[0,1]
-	#define fx$DAMAGE_DONE_MULTI 17				// (float)add, (bool)to_caster
+	#define fx$DAMAGE_DONE_MULTI 17				// (float)add, (bool)to_caster - Also affects healing done
 		#define fxf$DAMAGE_DONE_MULTI db4$17	//p [0,(float)global,key2int(uuid),(float)uuid_multi...]=[0,1] - note: In these functions, 0 always MUST be first
 	#define fx$CASTTIME_MULTI 18				// (float)add
 		#define fxf$CASTTIME_MULTI db4$18		//p (float)multi=1
@@ -120,8 +120,8 @@
 		#define fxf$SPELL_DMG_TAKEN_MOD db4$19	//p [key2int(caster) or 0=global+"_"+(str)spellname, (float)multi]=[]
 	#define fx$ICON 20							// (key)icon, (str)description - Description can use a macro <|s3|> for a value multiplied by stacks. In this case s3 = stacks*3
 	#define fx$INTERRUPT 21						// (bool)force - Force will override fx$F_NO_INTERRUPT
-	#define fx$SPELL_DMG_DONE_MOD 22			// (int)index, (float)add - Index is the index of the spell, 0 is rest and then 1-4 for the others :: Increases efficiency of spells cast by you with this name
-		#define fxf$SPELL_DMG_DONE_MOD db4$22	//p [abil5multi,abil0multi...]=[1,1,1,1,1]
+	#define fx$SPELL_DMG_DONE_MOD 22			// (int)index, (float)add - Index is the index of the spell, 0 is rest and then 1-4 for the others, 5 for weapon :: Increases efficiency of spells cast by you with this name
+		#define fxf$SPELL_DMG_DONE_MOD db4$22	//p [abil5multi,abil0multi...]=[1,1,1,1,1,1]
 	#define fx$FULLREGEN 23						// NULL - Fully restores a player
 	#define fx$DISPEL 24						// (int)detrimental, (int)nr
 	#define fx$COOLDOWN_MULTI 25				// (float)add - Also increases time between attacks in NPCs
@@ -159,11 +159,11 @@
 	#define fx$MOVE_SPEED 44					// (float)add - NPC: Multiplies against normal move speed. PC: Sprint regen multiplier. Lower is slower.
 		#define fxf$MOVE_SPEED db4$44			//p (float)multi=1
 	#define fx$SPELL_MANACOST_MULTI 45			// (int)index, (float)multiply - PC only.
-		#define fxf$SPELL_MANACOST_MULTI db4$45	//p [spell5,spell0,spell1...]=[1,1,1,1,1]
+		#define fxf$SPELL_MANACOST_MULTI db4$45	//p [spell5,spell0,spell1...]=[1,1,1,1,1,1]
 	#define fx$SPELL_CASTTIME_MULTI 46			// (int)index, (float)multiply - PC only.
-		#define fxf$SPELL_CASTTIME_MULTI db4$46	//p [spell5,spell0,spell1...]=[1,1,1,1,1]
+		#define fxf$SPELL_CASTTIME_MULTI db4$46	//p [spell5,spell0,spell1...]=[1,1,1,1,1,1]
 	#define fx$SPELL_COOLDOWN_MULTI 47			// (int)index, (float)multiply - PC only.
-		#define fxf$SPELL_COOLDOWN_MULTI db4$47	//p [spell5,spell0,spell1...]=[1,1,1,1,1]
+		#define fxf$SPELL_COOLDOWN_MULTI db4$47	//p [spell5,spell0,spell1...]=[1,1,1,1,1,1]
 	#define fx$ADD_FX 48						// (arr)wrapper[, (int)targ_flags, (float)range] - Adds a wrapper as a self cast or if flags are set, uses those for targets. Instant only,
 		#define FXAF$SELF 0x1						// Apply FX on victim
 		#define FXAF$CASTER 0x2						// Apply FX on caster
@@ -241,6 +241,9 @@
 		#define FXRMTarg$linkset 0x1				// Runs on victim HUD
 		#define FXRMTarg$owner 0x2					// Runs on victim owner
 	*/
+	#define fx$REDIR_SPEECH 89					// (int)channel - Redirects speech to a channel. Use the constants below to automatically speak as avatar. Only one is active at a time.
+		#define fx$REDIR_SPEECH$CH$MUFFLE 9132		// When using this channel you will make muffled sound effects
+		#define fxf$REDIR_SPEECH db4$89			//p (int)channel=0
 
 // Note: In strided ones (ex [0,1.0]) the second value MUST be seen as a float or searching will screw up.
 #define fx$NO_PASSIVE -0x80000000	// Marks the index as not having a passive
@@ -267,7 +270,7 @@
 	"[]" + /* 19 SPELL_DMG_TAKEN_MOD */ \
 	fx$NO_PASSIVE + /* 20 */ \
 	fx$NO_PASSIVE + /* 21 */ \
-	"[1,1,1,1,1]" + /* 22 SPELL_DMG_DONE_MOD */ \
+	"[1,1,1,1,1,1]" + /* 22 SPELL_DMG_DONE_MOD */ \
 	fx$NO_PASSIVE + /* 23 */ \
 	fx$NO_PASSIVE + /* 24 */ \
 	1.0 + /* 25 COOLDOWN_MULTI */ \
@@ -290,9 +293,9 @@
 	fx$NO_PASSIVE + /* 42 */ \
 	fx$NO_PASSIVE + /* 43 */ \
 	1.0 + /* 44 MOVE_SPEED */ \
-	"[1,1,1,1,1]" + /* 45 SPELL_MANACOST_MULTI */ \
-	"[1,1,1,1,1]" + /* 46 SPELL_CASTTIME_MULTI */ \
-	"[1,1,1,1,1]" + /* 47 SPELL_COOLDOWN_MULTI */ \
+	"[1,1,1,1,1,1]" + /* 45 SPELL_MANACOST_MULTI */ \
+	"[1,1,1,1,1,1]" + /* 46 SPELL_CASTTIME_MULTI */ \
+	"[1,1,1,1,1,1]" + /* 47 SPELL_COOLDOWN_MULTI */ \
 	fx$NO_PASSIVE + /* 48 */ \
 	fx$NO_PASSIVE + /* 49 */ \
 	0 + /* 50 SPELL_HIGHLIGHT */ \
@@ -332,9 +335,9 @@
 	1.0 + /* 84 AROUSAL_REGEN_MULTI */ \
 	1.0 + /* 85 SPRINT_FADE_MULTI */ \
 	1.0 + /* 86 BACKSTAB_MULTI */ \
-	1.0 /* 87 SWIM_SPEED_MULTI */
-	
-
+	1.0 + /* 87 SWIM_SPEED_MULTI */ \
+	fx$NO_PASSIVE + /* 88 REMOVED*/ \
+	0 /* 89 REDIR CHAT */ 
 												
 // conditions
 	// Built in

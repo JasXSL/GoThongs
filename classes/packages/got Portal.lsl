@@ -48,7 +48,7 @@ integer BFL;
 
 string INI_DATA = "";
 string SPAWNROUND;
-integer REZ_PARAM;
+integer REZ_NR;
 int evtChan;
 int REZ_ID;				// Modern mode: Use when communicating with got Spawner.
 int NO_REMOTE;
@@ -178,6 +178,13 @@ timerEvent( string id, string data ){
 		
 	}
 	
+	else if( id == "REREZ" ){
+		integer p = llCeil(llFrand(0xFFFFFFF));
+		llSetRemoteScriptAccessPin(p);
+		Remoteloader$load(cls$name, p, 2, FALSE); // Note: This may be dropped
+		multiTimer([id, 0, 10, FALSE]);
+	} 
+	
 	else if( id == "A" ){
 		debugUncommon("[Ini "+shortUUID()+"] Fetching desc. Rezid "+(str)REZ_ID);
 		fetchDesc();
@@ -216,7 +223,6 @@ attemptPos( vector pos ){
 
 #define isLive() ((llGetStartParameter()&~1) == 2) // 2 or 3 are acceptable
 
-
 default{
 
     on_rez(integer mew){
@@ -225,11 +231,8 @@ default{
 		llRegionSayTo(mySpawner(), playerChan(mySpawner()), "PN");
         if( mew ){
 		
-			integer p = llCeil(llFrand(0xFFFFFFF));
-            llSetRemoteScriptAccessPin(p);
-            multiTimer([]);
+            multiTimer(["REREZ", 0, 0.1, FALSE]);
 			setText((str)mew);
-            Remoteloader$load(cls$name, p, 2, FALSE);
 			return;
 			
         }
@@ -312,7 +315,7 @@ default{
 			debugUncommon("[Ini  "+shortUUID()+"] Requested scripts "+mkarr(required));
 			
 			int startParams = l2i(llGetPrimitiveParams([PRIM_TEXT]), 0) & ~BIT_TEMP;
-			REZ_PARAM = startParams;
+			REZ_NR = startParams;
 			
 			int hasDesc = startParams & BIT_GET_DESC;
 			REZ_ID = startParams&(BIT_DEBUG-1);	// Interger-compressed position in legacy mode (not hasDesc). In desc mode, this is our spawner ID.
@@ -500,7 +503,7 @@ default{
 				(	
 					(
 						llGetInventoryType("got LevelLite") == INVENTORY_NONE || 
-						REZ_PARAM
+						REZ_NR
 					) && 
 					~BFL&BFL_PERSISTENT &&
 					(

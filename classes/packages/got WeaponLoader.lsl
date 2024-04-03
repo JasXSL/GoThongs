@@ -236,7 +236,7 @@ onEvt(string script, integer evt, list data){
 		string tmpChr = gotTable$spellmanSpellsTemp;
 		string chr = gotTable$bridgeSpells;
 		integer i;
-        for( ; i<5; ++i ){
+        for( ; i < 6; ++i ){
             
             list d = llJson2List(db4$get(tmpChr, i));
             if( d == [] )

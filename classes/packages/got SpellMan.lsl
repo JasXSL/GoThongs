@@ -6,7 +6,6 @@
 list CACHE;                     // [(float)mana, (float)cooldown, (int)target_flags, (float)range, (float)casttime, (int)wrapperflags]
 int GCD_FREE;    				// Spells that are freed from global cooldown        
 
-
 #define CSTRIDE 6
 float spellCost( list data, integer index ){
 	float out = llList2Float(data, 0);
@@ -27,6 +26,8 @@ float spellCost( list data, integer index ){
 
 /* Additional macros */
 #define CDSTRIDE 4
+#define COOLDOWNS_DEFAULT [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+
 // Should be sent after or more sets
 #define pushCooldowns() SpellVis$setCooldowns(COOLDOWNS, f2i(llGetTime()))
 // Sets the cooldown of the spell
@@ -38,7 +39,7 @@ float spellCost( list data, integer index ){
 #define getCooldown(index) (i2f(l2i(COOLDOWNS, index*CDSTRIDE))+i2f(l2i(COOLDOWNS, index*CDSTRIDE+1))-llGetTime())
 #define getGlobalCooldown(index) (i2f(l2i(COOLDOWNS, index*CDSTRIDE+2))+i2f(l2i(COOLDOWNS, index*CDSTRIDE+3))-llGetTime())
 //#define pushCooldowns() integer _CD; list _CDS; for(_CD = 0; _CD<count(COOLDOWNS); ++_CD){_CDS+=f2i(l2f(COOLDOWNS, _CD));} SpellVis$setCooldowns(_CDS, llGetTime());
-#define COOLDOWNS_DEFAULT [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+
 list COOLDOWNS = COOLDOWNS_DEFAULT;            // (float)startTime0, (float)endTime0, (float)intcd_startTime, (float)internal_cd, startTime1, endTime1, internal_cd1... - 0 endTime means no cooldown
 #define getGlobalCD() (GCD*cdm)
 
@@ -65,9 +66,9 @@ float ctm = 1;          // Casttime mod
 float mcm = 1;          // Mana cost multiplier
 integer fxflags;		
 	// Index specific
-list sp_mcm = [1,1,1,1,1];	// Mana cost
-list sp_ctm = [1,1,1,1,1];	// Cast time
-list sp_cdm = [1,1,1,1,1];	// Cooldown
+list sp_mcm = [1,1,1,1,1,1];	// Mana cost
+list sp_ctm = [1,1,1,1,1,1];	// Cast time
+list sp_cdm = [1,1,1,1,1,1];	// Cooldown
 
 #define canCastWhileMoving() (fxflags&fx$F_CAST_WHILE_MOVING || SPF&SpellMan$CASTABLE_WHILE_MOVING)
 
@@ -210,6 +211,11 @@ integer castSpell( integer nr ){
     list data = nrToData(nr);
     // Grab spell flags
 	SPF = spellTargets(data);
+	
+	// Trying to cast a spell that does not exist
+	if( !SPF )
+		return -2;
+	
 	int TEAM = hud$status$team();
 
 	// BEFORE QUEUE
@@ -254,9 +260,7 @@ integer castSpell( integer nr ){
         A$(ASpellMan$errPacified);
         return FALSE;
     }
-
-    
-
+	
 	SPELL_TARGS = [];
 	// AoE overrides all other
 	if( SPF & TARG_AOE ){
@@ -422,7 +426,7 @@ integer castSpell( integer nr ){
     if( ~SPF&SpellMan$NO_GCD ){
 	
         integer i;
-        for( i=0; i<5; i++ ){
+        for( i=0; i < NUM_SPELLS; i++ ){
 		
 			// If global cooldown is longer than any active cooldown
 			if( ~GCD_FREE&(1<<i) )
@@ -503,6 +507,7 @@ spellComplete(){
     // Consume mana
     if( cost != 0 )
 		Status$batchUpdateResources("", SMBUR$buildMana(-cost, "", 0));
+	
 	
     // Set cooldown
     if( cooldown ){
@@ -643,6 +648,7 @@ default{
 	
 	// Allow owner for debug
 	if( METHOD == SpellManMethod$rebuildCache && method$byOwner ){
+	
 		CACHE = [];
 		GCD_FREE = 0;
 		COOLDOWNS = COOLDOWNS_DEFAULT;
@@ -658,7 +664,7 @@ default{
 		str tmpCh = gotTable$spellmanSpellsTemp;
 		str ch = gotTable$bridgeSpells;
 		integer i;
-		for( ; i < 5; ++i ){
+		for( ; i < NUM_SPELLS; ++i ){
 			
 			list d = llJson2List(db4$get(tmpCh, i));
 			if(d == [])
@@ -693,7 +699,7 @@ default{
             integer spell = -1;
             if( llGetSubString(dta, 0, 4) == "abil_" )
 				spell = (integer)llGetSubString(dta, 5, -1);
-            if(~spell && spell<5)
+            if( ~spell && spell < NUM_SPELLS )
                 onEvt("#ROOT", evt$TOUCH_START, [spell]);
             
         }
@@ -742,7 +748,7 @@ default{
 			float sec = l2f(PARAMS, 1);
 			integer i;
 			integer ch;
-			for( i=0; i<5; ++i ){
+			for( ; i < NUM_SPELLS; ++i ){
 				
 				if( n&(1<<i) && getCooldown(i) > 0 ){
 					

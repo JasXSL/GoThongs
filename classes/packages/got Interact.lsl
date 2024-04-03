@@ -68,7 +68,10 @@ integer onInteract(key obj, string task, list params, vector pos){
 		
 		list players = additionalAllow+llGetOwner();
 		for(i=0; i<count(players); ++i)
-			runOmniMethodOn(l2s(players, i), "got Level", LevelMethod$playerInteract, (list)obj+hud, TNN);
+			runOmniMethodOn(l2s(players, i), "got Level", LevelMethod$playerInteract, (list)obj + hud, TNN);
+		
+		// Raise the custom trigger event and append the HUD of the interacted target and params
+		raiseEvent(InteractEvt$custom, mkarr((list)obj + hud + params));
 		
     }
     else 
@@ -79,7 +82,7 @@ integer onInteract(key obj, string task, list params, vector pos){
 
 
 string CACHE_TEXT;
-onDesc(key obj, string text){
+onDesc( key obj, string text, int flags ){
 
 
 	// CUSTOM works through additionalAllow
@@ -106,7 +109,7 @@ onDesc(key obj, string text){
         text = "[E] Climb Out";
 		
     }
-    else
+    else if( ~flags & Interact$TASK_DESC$NO_ACTION )
 		text = "[E] "+text;
 	
 	if( text == CACHE_TEXT )
@@ -130,12 +133,8 @@ evt(string script, integer evt, list data){
 		
         else if( evt == RootEvt$players ){
 		
-			ALLOW_ALL_AGENTS = FALSE;
-            additionalAllow = hudGetPlayers();
-            if(llList2Key(additionalAllow, 0) == llGetOwner())
-				additionalAllow = llDeleteSubList(additionalAllow,0,0);
-			else if( l2s(additionalAllow, 0) == "*" )
-				ALLOW_ALL_AGENTS = TRUE;
+			
+            fetchPlayers();
 			
         }
 			
@@ -143,11 +142,23 @@ evt(string script, integer evt, list data){
 	
 }
 
+fetchPlayers(){
+	
+	ALLOW_ALL_AGENTS = FALSE;
+	additionalAllow = hudGetPlayers();
+	if(llList2Key(additionalAllow, 0) == llGetOwner())
+		additionalAllow = llDeleteSubList(additionalAllow,0,0);
+	else if( l2s(additionalAllow, 0) == "*" )
+		ALLOW_ALL_AGENTS = TRUE;
+			
+}
+
 integer preInteract(key obj){
     return TRUE;
 }
 onInit(){
     links_each(nr, name, if(name == "CROSSHAIR"){CROSSHAIR = nr;})	
+	fetchPlayers();
 }
 #include "xobj_core/classes/packages/jas Interact.lsl"
 

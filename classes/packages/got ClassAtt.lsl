@@ -13,9 +13,15 @@ onEvt(string script, integer evt, list data){
 
 timerEvent( string id, string data ){
     
-    if( startsWith(id, "P_") )
+    if( llGetSubString(id, 0,2) == "P_" )
 		raiseEvent(gotClassAttEvt$spellEnd, llGetSubString(id, 2, -1));
     
+}
+
+ini(){
+	key id = prRoot(mySpawner());
+	if( id )
+		llSetObjectDesc("TAG$gothud_"+(string)id);
 }
 
 default{
@@ -27,15 +33,21 @@ default{
         PLAYERS = [(string)llGetOwner()];
         memLim(1.5);
         raiseEvent(evt$SCRIPT_INIT, "");
+		ini();
 		
     }
-        
+    
+	attach(key id ){
+		if( id )
+			ini();
+	}
+	
     timer(){multiTimer([]);}
     
     #include "xobj_core/_LM.lsl"
     if( method$isCallback || !method$byOwner )
         return;
-        
+    
 	if( METHOD == gotClassAttMethod$raiseEvent ){
 		
 		int evt = l2i(PARAMS, 0);
@@ -56,6 +68,7 @@ default{
 			multiTimer(["P_"+l2s(data, 0)]);
 			
 		}
+		
 		
 	}
     #define LM_BOTTOM  

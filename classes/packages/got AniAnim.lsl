@@ -43,11 +43,15 @@ animKit( string base, integer start ){
 
 anim( string name, integer start, integer flags, float duration ){
     
+	int restart = flags & jasAnimHandler$animFlag$restart;
 	//qd(mkarr((list)name + start + flags +duration));
     if( llGetInventoryType(name) == INVENTORY_ANIMATION ){
 	
-        if( start )
+        if( start ){
+			if( restart )
+				objAnimOff(name);
             objAnimOn(name);
+		}
         else
             objAnimOff(name);
 			
@@ -55,8 +59,13 @@ anim( string name, integer start, integer flags, float duration ){
     
 	string ub = name + "_ub";
     if( llGetInventoryType(ub) == INVENTORY_ANIMATION ){
-        if( start )
+        if( start ){
+		
+			if( restart )
+				objAnimOff(ub);
             objAnimOn(ub);
+			
+		}
         else
             objAnimOff(ub);
     }
@@ -232,9 +241,7 @@ default{
 					integer exists = llGetInventoryType(anim) == INVENTORY_ANIMATION;
 					if( exists ){
 						
-						anim(anim, FALSE, flags, duration);
-						if( start )
-							anim(anim, TRUE, flags, duration);
+						anim(anim, start>0, flags, duration);
 							
 					}
 					else if( start && llListFindList(FETCH_REQS, (list)anim) == -1 ){

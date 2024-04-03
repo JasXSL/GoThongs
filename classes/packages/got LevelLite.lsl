@@ -62,6 +62,7 @@ default
 	
     if( METHOD == LevelMethod$load && method$byOwner ){
 	
+		BFL = BFL|BFL_LOADING;
         integer debug = (integer)method_arg(0);
 		string group = method_arg(1);
         raiseEvent(LevelLiteEvt$load, mkarr(([debug, group])));

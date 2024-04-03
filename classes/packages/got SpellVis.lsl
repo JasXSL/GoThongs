@@ -8,7 +8,6 @@ list ABILS_BG = [0,0,0,0,0,0];		// Highlight background
 list ABILS_OL = [0,0,0,0,0,0];
 #define ABIL_BG_SCALE <0.15680, 0.04833, 0.02577>
 
-
 #define ABIL_BORDER_READY_COLOR 
 #define ABIL_BORDER_READY_ALPHA 0.75
 
@@ -124,7 +123,7 @@ onEvt(string script, integer evt, list data){
 		str ch = gotTable$bridgeSpells;
 
         integer i;
-        for( ;  i < 5; ++i ){
+        for( ; i < NUM_SPELLS; ++i ){
             
 			list d = llJson2List(db4$get(tmpCh, i));
 			if(d == [])
@@ -137,9 +136,7 @@ onEvt(string script, integer evt, list data){
             PARTICLE_CACHE += l2f(p, 0);
             PARTICLE_CACHE += llList2List(p, 1, 1);
             PARTICLE_CACHE += l2s(p, 2);
-			
-			//qd(mkarr(d));
-	
+				
             set += [
                 PRIM_LINK_TARGET, llList2Integer(ABILS, i),
                 PRIM_TEXTURE, 1, llList2String(d, BSSAA$texture), <1,1,0>, <0,0,0>,0,
@@ -329,7 +326,7 @@ onSpellEnd(integer index, float casttime){
 updateSpellCharges(){
 	
 	int i; list out;
-	for( i=0; i<6; ++i ){
+	for( ; i < NUM_SPELLS; ++i ){
 		
 		if( getSpellMaxCharges(i) > 1 ){
 
@@ -365,7 +362,7 @@ updateBorders(){
 	
 	list set = [];
 	integer i;
-	for( i=0; i<6; ++i ){
+	for( ; i < NUM_SPELLS; ++i ){
 		
 		int n = ABIL_BORDER_DEFAULT;
 		
@@ -375,7 +372,7 @@ updateBorders(){
 		// Actively casting
 		else if( i == SPELL_CASTED )
 			n = ABIL_BORDER_CASTING;
-		else if( !getSpellCharges(i) || CACHE_MANA < l2f(CACHE_MANA_COST, i)*l2f(manacostMulti, i) )
+		else if( !getSpellCharges(i) || CACHE_MANA < l2f(CACHE_MANA_COST, i)*l2f(manacostMulti, i)*manamod )
 			n = ABIL_BORDER_NO_CHARGES;
 		else if( getSpellCharges(i) < getSpellMaxCharges(i) )
 			n = ABIL_BORDER_RECHARGING;
@@ -435,7 +432,7 @@ setAbilitySpinner( integer abil, float startPercent, float duration, integer rev
         color = <0,0,0>;
         flags = REVERSE;
     }
-
+	
 	//qd("Setting castbar on "+(str)abil+" "+(str)startPercent+" "+(str)duration+" "+(str)reverse);
     float width = .25; float height = 1./32;
 	// Shows the cast/cdbar
@@ -491,7 +488,7 @@ timerEvent(string id, string data){
 	if( id == "GCD" ){
 		
 		int i; list set;
-		for( i=0; i<5; ++i ){
+		for( i; i < NUM_SPELLS; ++i ){
 		
 			if( CACHE_ON_GCD&(1<<i) ){
 			
@@ -556,6 +553,9 @@ default {
             else if(llGetSubString(name, 0, 1) == "BG"){
                 ABILS_BG = llListReplaceList(ABILS_BG, [nr], n, n);
                 llSetLinkTextureAnim(nr, ANIM_ON|LOOP, 0, 4, 8, 0, 0, 30);
+				float sc = 1.0;
+				if( n == 5 )
+					sc = 0.75;
                 out+=([PRIM_LINK_TARGET, nr, PRIM_TEXTURE, 0, "47814d20-b171-43ff-d7b5-c02749508906", <1,1,0>, ZERO_VECTOR, 0, PRIM_SIZE, ABIL_BG_SCALE]);
             }
 			else if( startsWith(name, "aol") ){
@@ -576,7 +576,9 @@ default {
         
         
         // Debug
-		//onEvt("got SpellMan", SpellManEvt$recache, []);
+		#ifdef INI
+			INI
+		#endif
     }
     
     timer(){multiTimer([]);}
@@ -625,7 +627,7 @@ default {
 		list CDS;
         integer i;
 		int CDSTRIDE = 4;
-        for( i=0; i<count(PARAMS); i+=CDSTRIDE ){ // This has to match CDSTRIDE in got SpellMan
+        for( ; i < count(PARAMS); i+=CDSTRIDE ){ // This has to match CDSTRIDE in got SpellMan
         
 			integer index = i/CDSTRIDE;
 			float start = i2f(l2i(PARAMS, i));				// Script time relative to spellMan when cooldown began
@@ -754,7 +756,7 @@ default {
         integer i;  list out;
 		// Hide
         if(!show || STATUS_FLAGS&(StatusFlag$dead|StatusFlag$loading)){
-            for(i=0; i<llGetListLength(ABILS); i++){
+            for( i=0; i < count(ABILS); ++i ){
                 out += [
                     PRIM_LINK_TARGET, llList2Integer(ABILS, i),
                     PRIM_POSITION, ZERO_VECTOR,
@@ -770,17 +772,23 @@ default {
         }
         
         // Show
-        for(i=0; i<llGetListLength(ABILS); i++){
+        for( i=0; i < count(ABILS); ++i ){
 
             vector pos = <0, 0.29586-0.073965-0.14793*(i-1), .31>;
-            if(i == 0)pos = <0,0,.27>;
-            if(i == 5)pos = <0,0,.35>;
-            
+			vector scale = <0.14793, 0.03698, 0.02354>;
+			vector bgscale = <0.15680, 0.04833, 0.02577>;
+            if( i == 0 )
+				pos = <0,0,.27>;
+            if( i == 5 ){
+				pos = <0,-.248,.342>;
+				scale *= 0.75;
+				bgscale *= 0.75;
+            }
+			
             // Check disabled spells here
             integer f = l2i(FX_CACHE, i*FXSTRIDE+fxc$flags);
-            
-            // Spell disabled via flag or does not exist
-            if(f&SpellMan$HIDE || count(FX_CACHE)/FXSTRIDE <= i) // 0x400 = disabled
+            // Spell disabled via flag or does not exist. At least one spell flag is required.
+            if( f&SpellMan$HIDE || !f || count(FX_CACHE)/FXSTRIDE <= i ) // 0x400 = disabled
                 pos = ZERO_VECTOR;
             
             out+= [
@@ -791,11 +799,14 @@ default {
                 PRIM_COLOR, 3, ZERO_VECTOR, 0,
                 PRIM_COLOR, 4, ZERO_VECTOR, 0,
                 PRIM_COLOR, 5, ZERO_VECTOR, 0,
+				PRIM_SIZE, scale,
 				PRIM_LINK_TARGET, llList2Integer(ABILS_BG, i),
                 PRIM_POSITION, pos+<.02,0,0>,
                 PRIM_COLOR, 0, <1,1,1>, 0,
+				PRIM_SIZE, bgscale,
 				PRIM_LINK_TARGET, llList2Integer(ABILS_OL, i),
-				PRIM_POSITION, pos-<.05,0,0>
+				PRIM_POSITION, pos-<.05,0,0>,
+				PRIM_SIZE, scale
 			];
             
         }

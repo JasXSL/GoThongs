@@ -99,7 +99,7 @@ default{
 			text("Initializing, make sure you are wearing the HUD.");
 			integer pin = llFloor(llFrand(0xFFFFFFF));
 			llSetRemoteScriptAccessPin(pin);
-			Remoteloader$load(llGetScriptName(), pin, 1);
+			Remoteloader$load(llGetScriptName(), pin, 1, TRUE);
 			
 		}
 		

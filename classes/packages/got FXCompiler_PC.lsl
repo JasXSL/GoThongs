@@ -13,7 +13,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 
 	list resource_updates; // Updates for HP/Mana etc
 	int fxFlags = (int)fx$getDurEffect(fxf$SET_FLAG); // owner's current FX flags
-;
+
 	// Shared between PC/NPC, defined in got FXCompiler header file
 	dumpFxInstants()
 	
@@ -23,7 +23,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 		t == fx$PAIN ||
 		t == fx$MANA
 	){
-		
+		// These types have a bitfield that allows you to override stacks for this particular FX instead of the package as a whole
 		int f = l2i(fx, 1);
 		int st = stacks;
 		if( f&SMAFlag$NO_STACK_MULTI )
@@ -38,7 +38,10 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 			resource_updates += SMBUR$buildMana(l2f(fx,0)*st, pname, f);
 		}
 	}
-	
+	// ThongMan handled visual for instant effects
+	else if( t == fx$THONG_VISUAL && l2f(fx, 3) > 0 ){
+		ThongMan$fxVisualList(llGetOwner(), fx);
+	}
 	else if( t == fx$CLASS_VIS ){
 		gotClassAtt$spellStart(l2s(fx,0), l2f(fx, 1), l2s(fx, 2));
 	}
@@ -70,11 +73,11 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 	}
 	
 	else if( t == fx$DAMAGE_ARMOR )
-		Status$damageArmor(LINK_ROOT, l2i(fx, 0));
+		Status$damageArmor(LINK_ROOT, (l2i(fx, 0)*stacks));
 
 	else if( t == fx$PUSH ){
 		vector z = llGetVel();
-		vector apply = (vector)l2s(fx, 0)*llGetMass();//-<0,0,z.z>;
+		vector apply = (vector)l2s(fx, 0)*stacks*llGetMass();//-<0,0,z.z>;
 		llApplyImpulse(apply, FALSE);
 	}
 	
@@ -161,7 +164,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 		if( l2f(fx, 0) == 0.0 )
 			RLV$setSprintPercent(LINK_ROOT, 1);
 		else
-			RLV$addSprint(l2f(fx, 0));
+			RLV$addSprint(l2f(fx, 0)*stacks);
 			
 	}
 		
@@ -195,7 +198,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 		if( pos == -1 ){
 		
 			thongVis += pix;
-			ThongMan$fxVisual(fx);
+			ThongMan$fxVisualList(llGetOwner(), fx);
 			
 		}
 		
@@ -280,7 +283,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 					set = llDeleteSubList(_sd, 0, 0);
 			}
 		}
-		ThongMan$fxVisual(set);
+		ThongMan$fxVisualList(llGetOwner(), set);
 		
 	}
 	

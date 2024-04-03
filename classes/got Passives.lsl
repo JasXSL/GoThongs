@@ -60,7 +60,7 @@
 #define FXCUpd$COMBAT_HP_REGEN 38		// (float)multi - Allows HP regen to continue in combat. Default 1 (gets subtracted in got Status)
 
 #define FXCUpd$SPELL_DMG_TAKEN_MOD 39	// *[(str)spellname, (float)multi=1, (bool)byCaster] - Default [] - Compiles to [key2int(caster) or 0=global,(str)spellname, (float)multi]
-#define FXCUpd$SPELL_DMG_DONE_MOD 40	// *[(int)index, (float)multi=1] - Default [1,1,1,1,1] - Compiles to [abil5multi,abil0multi...]
+#define FXCUpd$SPELL_DMG_DONE_MOD 40	// *[(int)index, (float)multi=1] - Default [1,1,1,1,1,1] - Compiles to [abil5multi,abil0multi...]
 
 
 
@@ -73,6 +73,7 @@
 
 #define Passives$FLAG_REM_ON_CLEANUP 0x1				// Removes the passive on cleanup
 #define Passives$FLAG_REM_ON_UNSIT 0x2					// Removes the passive when owner is not sitting
+#define Passives$FLAG_NO_OVERRIDE 0x4					// If a passive with this ID already exists. Then do not add the new one
 
 #define PassivesConst$MAX_PASSIVES 64					// Max passives a player can have
 
@@ -142,7 +143,7 @@ string Passives_buildTrigger(integer targ, string script, integer evt, list args
 #define Passives$PF_ON_COOLDOWN 0x1
 #define Passives$PF_OVERRIDE_PROC_BLOCK 0x2				// Allow proc even if fx$NO_PROCS is set
 
-string Passives_buildProc(list triggers, integer max_targets, float proc_chance, float cooldown, integer flags, string wrapper){
+string Passives_buildProc( list triggers, integer max_targets, float proc_chance, float cooldown, integer flags, string wrapper ){
     return llList2Json(JSON_ARRAY, [
         mkarr(triggers),
         max_targets,

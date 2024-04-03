@@ -23,6 +23,9 @@
 #define Portal$gTask$injectDone "IJD"	// Immediately closes the transfer window, and has the target forget the pin.
 #define Portal$gTask$get "GET"		// Callbacks an ini call to the script sending the GET command.
 
+#define Portal$requestScriptInject(targ, evtChan, numScripts) llRegionSayTo(targ, evtChan, Portal$gTask$inject+(str)(numScripts))
+#define Portal$scriptInjectDone(targ, evtChan) llRegionSayTo(targ, evtChan, Portal$gTask$injectDone)
+
 // Helpful macros to automate
 #define Portal$playerLists \
 	list PLAYERS; \
@@ -109,6 +112,13 @@ _portal_spawn_std(string name, vector pos, rotation rot, vector spawnOffset, int
 	if( debug )
 		in = in|BIT_DEBUG;
 	llRezAtRoot(name, local+spawnOffset, ZERO_VECTOR, rot, in);
+}
+
+_portal_spawn_absolute(string name, vector pos, rotation rot, integer debug){
+	integer in;
+	if( debug )
+		in = in|BIT_DEBUG;
+	llRezAtRoot(name, pos, ZERO_VECTOR, rot, in);
 }
 
 // To be used with new got Spawner. MUST have reqDesc because it gets pos that way.

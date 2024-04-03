@@ -18,6 +18,7 @@
 #define KEEPALIVE_CHAN 393939								// Used in LocalConf NPC template. Tracks temporary spawns.
 #define HOOKUP_CHAN 0xDE1DE1								// Used for combo grapples. See got LocalConf.NPC.template
 
+#define NUM_SPELLS 6 // Num spells that the system should handle
 
 // Converts floats to ints and back with 2 decimal points
 #define i2f(input) (input/100.)
@@ -51,6 +52,16 @@
 #include "xobj_core/libraries/XLS.lsl"
 #include "./lib_sounds.lsl"
 #include "./lib_particles.lsl"
+
+// External
+#include "stag/stag.lsl"
+#include "stag_extensions.lsl"
+
+// Adds an if statement that turns var into the owner if var is attached
+#define hud2owner( var )\
+	if( prAttachPoint(var) ){ var = llGetOwnerKey(var); }
+
+
 
 // Here you can also include xobj headers like:
 #include "xobj_core/classes/jas Supportcube.lsl"
@@ -118,6 +129,7 @@
 #include "./classes/got PISpawner.lsl"
 #include "./classes/got AniAnim.lsl"
 #include "./classes/got AnimeshScene.lsl"
+#include "./classes/got Banter.lsl"
 
 
 // Helper function to run code on all players. Requires players to be stored in a global list named PLAYERS
@@ -181,6 +193,20 @@ else if(script == "got NPCSpells"){
 
 
 */
+
+// Append this to ON_WRAPPER_ADDED to trigger a function callback when a wrapper is added
+// Callback function example: onWrapperAdded( integer pix ){ string table = getFxPackageTableByIndex(pix); string name = db4$fget(table, fxPackage$NAME); }
+#define LM_PRE_ON_WRAPPER_ADDED(callback) \
+	if( nr == TASK_FXC_PARSE ){ \
+        list tasks = llJson2List(s); \
+        int i; \
+        for(; i < count(tasks); i += 2 ){ \
+            integer action = l2i(tasks, i); \
+            if( action&(FXCPARSE$ACTION_ADD|FXCPARSE$ACTION_RUN) ){ \
+                callback(l2i(tasks, i+1)); \
+            } \
+        } \
+    }
 
 
 

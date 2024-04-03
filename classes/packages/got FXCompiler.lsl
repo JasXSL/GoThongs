@@ -245,18 +245,18 @@ default{
 							out = (list)(l2i(cur,0)|(1<<l2i(add,0))); 
 						}
 						// Replace types
-						else if( type == fx$FOV || type == fx$SET_TEAM )
+						else if( type == fx$FOV || type == fx$SET_TEAM || type == fx$REDIR_SPEECH )
 							out = (list)add;
 						// Integer additive types
 						else if( type == fx$HP_ADD || type == fx$MANA_ADD || type == fx$MAX_AROUSAL_ADD || type == fx$MAX_PAIN_ADD )
-							out = (list)(l2i(cur,0)+l2i(add,0));
+							out = (list)(l2i(cur,0)+l2i(add,0)*stacks);
 						// Float additive
 						else if( type == fx$GRAVITY ){
-							out = (list)(l2f(cur, 0)+l2f(add,0));
+							out = (list)(l2f(cur, 0)+l2f(add,0)*stacks);
 						}
 						// Inverse multiplicative types
 						else if( type == fx$DODGE )
-							out = (list)(l2f(cur,0)*(1.0-l2f(add,0)));
+							out = (list)(l2f(cur,0)*(1.0-l2f(add,0)*stacks));
 						// outputs [<casterInt>_<spellName>, (float)multi]
 						else if( type == fx$SPELL_DMG_TAKEN_MOD ){
 							
@@ -265,7 +265,7 @@ default{
 								label = (str)sender;
 							label += "_"+l2s(add, 0); // Add the package name
 							
-							float val = 1.0+l2f(add,1); // Make value multiplicative
+							float val = 1.0+l2f(add,1)*stacks; // Make value multiplicative
 							list c = llJson2List(l2s(cur, 0));
 							int pos = llListFindList(c, (list)label);
 							if( ~pos )
@@ -278,7 +278,7 @@ default{
 						// Global and bycaster modifiers: [0(global),float globalMod,   key2int(uuid),float uuidMod...]
 						else if( type == fx$DAMAGE_DONE_MULTI || type == fx$DAMAGE_TAKEN_MULTI || type == fx$HEALING_TAKEN_MULTI ){
 						
-							float multi = l2f(add, 0);
+							float multi = l2f(add, 0)*stacks;
 							int targ = 0;
 							if( l2i(add, 1) )
 								targ = sender;
@@ -293,12 +293,12 @@ default{
 							out = (list)mkarr(c);
 							
 						}
-						// Spell index modifiers [float abil4,float abil0, float abil1, float abil2, float abil3]
+						// Spell index modifiers [float abil4,float abil0, float abil1, float abil2, float abil3, float abil5]
 						else if( type == fx$SPELL_DMG_DONE_MOD || type == fx$SPELL_MANACOST_MULTI || type == fx$SPELL_CASTTIME_MULTI || type == fx$SPELL_COOLDOWN_MULTI ){
 							
 							list c = llJson2List(l2s(cur, 0));
 							int idx = l2i(add, 0);
-							float val = (l2f(add, 1)+1.0)*l2f(c, idx);
+							float val = (l2f(add, 1)*stacks+1.0)*l2f(c, idx);
 							c = llListReplaceList(c, (list)val, idx, idx);
 							out = (list)mkarr(c);
 							
@@ -307,7 +307,7 @@ default{
 						else{
 							
 							// Multiplicative type
-							out = (list)(l2f(cur,0)*(l2f(add,0)+1.0));
+							out = (list)(l2f(cur,0)*(l2f(add,0)*stacks+1.0));
 							
 						}
 

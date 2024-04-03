@@ -35,7 +35,7 @@ key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
 #define ST_REZZED 1			// We have called llRez on this
 #define ST_DESC_SENT 2		// Awaiting ack from portal
 
-#define CONCURRENCY 5
+#define CONCURRENCY 2
 #define TIMEOUT 180			// 3 min
 
 next(){
@@ -231,6 +231,7 @@ default{
 		// Send from a portal requesting a description
 		if( start == "SP" ){
 			
+			debugCommon("[ReqDesc] Sending desc to "+(str)idx+" ("+llKey2Name(id)+")");
 			sendDesc(id, idx);			
 			next();
 			

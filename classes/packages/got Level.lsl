@@ -344,7 +344,7 @@ default{
 	
 	
 
-	if( method$internal && METHOD == LevelMethod$raiseEvent )
+	if( method$byOwner && METHOD == LevelMethod$raiseEvent )
 		raiseEvent(l2i(PARAMS, 0), mkarr(llDeleteSubList(PARAMS, 0, 0)));
 	
     

@@ -42,6 +42,7 @@
 #define gotPlayerPoserMethod$test 1			// list players, list player_flags, float anim_duration, float anim_min_time, float anim_max_time, int flags, (arr)pos_offsets, (arr)rot_offsets
 
 
+
 #define gotPlayerPoserEvt$animStep 1		// (int)step | An animation step has triggered
 #define gotPlayerPoserEvt$start 2			// void | All players seated
 #define gotPlayerPoserEvt$end 3				// void | The poser is shutting down and deleting itself

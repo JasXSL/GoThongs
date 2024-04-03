@@ -1,11 +1,12 @@
 #ifndef _gotLevelSpawner
 #define _gotLevelSpawner
-
 /*
 
 	This script loads the levels from the HUD
+	It does not spawn the level items
 
 */
+
 #define LevelSpawnerMethod$spawnLevel 1			// (str)level
 #define LevelSpawnerMethod$remInventory 2		// [(arr)objects]
 #define LevelSpawnerMethod$setLoading 3			// void | Sets loading screen on a player

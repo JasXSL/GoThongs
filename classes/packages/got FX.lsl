@@ -574,7 +574,7 @@ default{
 			// Internal commands are always same team
 			if( method$internal )
 				team = TEAM;
-				
+
 			integer flags = llList2Integer(wrapper, 0);		// Wrapper flags
 			if( flags&WF_ENEMY_ONLY && team == TEAM )
 				return;
@@ -633,7 +633,7 @@ default{
 				
 			}
 			else{
-							
+			
 				// The wrapper was accepted, so now we need to scan the packages
 				list successful;	// [(int)nrStacks, (int)package_length]+packageData
 				integer nSuc = 0;	// nr successful

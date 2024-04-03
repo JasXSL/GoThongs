@@ -249,7 +249,34 @@ default{
 		base_anim = base;
 		fetchSubAnims();
 		
+		if( trim(llGetObjectDesc()) == "" || llGetObjectDesc() == "(No Description)" ){
+			
+			llSetObjectDesc("TRAP");
+			if( !llGetStartParameter() )
+				qd("Traps should have TRAP somewhere in their description. Auto setting this for you!");
+			
+		}
+		
+		llListen(Trap$chanSensorSend, "", "", "");
+		
     }
+	
+	listen( integer ch, string name, key id, string message ){
+		key ok = llGetOwnerKey(id);
+		if( llListFindList(PLAYERS, (list)ok) == -1 && ok != llGetOwner() )
+			return;
+			
+		int task = (int)j(message, 0);
+		if( task == Trap$chanSensorSend$get ){
+			
+			float dist = (float)j(message, 2);
+			if( dist > 0 && llVecDist(prPos(id), llGetPos()) > dist )
+				return;
+			llRegionSayTo(id, Trap$chanSensorReply, mkarr((list)Trap$chanSensorReply$get));
+			
+		}
+		
+	}
     
     timer(){multiTimer([]);}
     
@@ -271,6 +298,7 @@ default{
                 BFL = BFL|BFL_TRIGGERED;
 				VICTIM = sitter;
                 raiseEvent(TrapEvent$seated, "[\""+(string)sitter+"\"]");
+				Level$raiseEventRemote(LevelEvt$trapTriggered, (list)llGetKey() + sitter);
 				
 				llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
 				
@@ -286,6 +314,7 @@ default{
 			else if( BFL&BFL_TRIGGERED ){
 				
 				debugCommon("Player unsat");
+				Level$raiseEventRemote(LevelEvt$trapReleased, (list)llGetKey() + VICTIM);
 				Evts$stopQuicktimeEvent(VICTIM);
                 raiseEvent(TrapEvent$unseated, "[\""+(string)VICTIM+"\"]");
 				

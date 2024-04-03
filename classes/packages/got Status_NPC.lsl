@@ -125,6 +125,7 @@ vector groundPoint(){
 
 }
 
+int NAC; // Nr times aggro changed
 ag( key pl, float ag ){
 
     if( BFL&BFL_NOAGGRO || RF&(Monster$RF_FREEZE_AGGRO|Monster$RF_NOAGGRO) )
@@ -217,6 +218,10 @@ ag( key pl, float ag ){
 		}
 		
         raiseEvent(StatusEvt$monster_gotTarget, mkarr([AT]));
+		if( cID != [] && at != "" ){
+			Level$idAggro(l2s(cID, 0), mkarr(llDeleteSubList(cID,0,0)), at, NAC, portalConf$spawnround);
+		}
+		++NAC;
 		
     }
 	

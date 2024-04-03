@@ -16,6 +16,12 @@
 #define gotSoundLib$goblin$attack "b55d7cc0-a37a-4e96-0b53-2773ff7fe5aa"
 #define gotSoundLib$goblin$death "7bceac87-fc92-ce91-8918-80d949c968e8"
 
+#define gotSoundLib$fgoblin$aggro ""
+#define gotSoundLib$fgoblin$aggro_lost ""
+#define gotSoundLib$fgoblin$takehit "[\"10a729dc-a0f6-6f2a-059b-a9be60c1cc07\",\"4dbae43f-5f29-7a16-f173-6261287588b2\",\"e9fa9f1e-012c-b839-a993-7d6205bf97f7\",\"a82f95c5-9763-d2b3-8451-01405d7ed768\"]"
+#define gotSoundLib$fgoblin$attack "[\"acdf0ca2-708f-8211-d22c-2c9b22dca71e\",\"0dfa1b48-0a18-c38c-f80a-36b4f4aa137a\",\"bbe81151-e989-ae5b-fa3b-ec00df3af1f4\"]"
+#define gotSoundLib$fgoblin$death "ed0a85c8-c9ec-16ae-76d0-13780c4827c4"
+
 #define gotSoundLib$splatter$aggro "83417238-ee74-84fa-4d54-e90d6aa4cf88"
 #define gotSoundLib$splatter$takehit "f12d384c-4c15-a34d-3962-964968a32ff3"
 

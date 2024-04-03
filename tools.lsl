@@ -98,9 +98,14 @@ list hudGetHuds(){
 }
 
 
-
-
-
+// Banter helpers
+#define hud2av(var) if( prAttachPoint(var) ){ var = llGetOwnerKey(var); }
+#ifndef ucFirst
+	#define ucFirst(text) (llToUpper(llGetSubString(text, 0, 0)) + llDeleteSubString(text, 0, 0))
+#endif
+#ifndef sLast
+	#define sLast(text) (llGetSubString(text,0,-1-(llOrd(text,-1) == 0x73))+"s")
+#endif
 rotation got_n2r( rotation Q ){
 
 	vector v = llRot2Euler(Q);
@@ -196,6 +201,10 @@ list _split = explode("$", l2s(_data, 1)); \
 integer var = l2i(_split, 9); \
 if(l2i(_data, 0)) \
 	var = l2i(_split, 3);
+	
+#define parseRole(targ, var) \
+list _split = explode("$", (string)llGetObjectDetails(targ, (list)OBJECT_DESC)); \
+var = getRoleFromSex(l2i(_split, 3));
 
 // class role is stored in sex flags using bits 16 & 17
 #define getRoleFromSex( sex ) \
@@ -272,8 +281,8 @@ integer targetIsHumanoid( key targ ){
 	// Attachments always count as humanoid
 	if( l2i(_data, 0) || llGetAgentSize(targ) != ZERO_VECTOR )
 		return TRUE;
-	list _split = explode("$", l2s(_data, 1));
-	if( l2i(_split, 6) & Monster$RF_HUMANOID )
+	list _split = explode("$", l2s(_data, 1)); // Includes the first $ in $M$ so offset by 1
+	if( l2i(_split, 7) & Monster$RF_HUMANOID )
 		return TRUE;
 	return FALSE;
 }

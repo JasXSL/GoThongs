@@ -117,6 +117,7 @@
 		#define BSUD$SFLAG_PVP_SEX 0x2			// Enable player on player sex scenes
 		#define BSUD$SFLAG_BUTT_ANIMS 0x4		// enable breast anims
 		#define BSUD$SFLAG_SWIM_AO 0x8			// Toggle firestorm AO when swimming
+		#define BSUD$SFLAG_LESS_BANTER 0x10		// Blocks messages marked as banter
 	#define BSUD$THONG_CLASS_ID 15				// ID of thong class such as 1 for assassin
 	#define BSUD$THONG_ROLE 16					// Role of thong. Use ROLE_* definition from _core
 	#define BSUD$THONG_SPEC 17					// Thong spec index

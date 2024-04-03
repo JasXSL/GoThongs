@@ -231,7 +231,8 @@ onSeatChange(){
 			vector scale = llGetAgentSize(targ);
 			vector pos = (vector)l2s(POS_OFFSETS, i);
 			rotation rot = (rotation)l2s(ROT_OFFSETS, i);
-			updateSitTarget(targ, pos, rot);
+			if( pos )
+				updateSitTarget(targ, pos, rot);
 			Evt$startQuicktimeEvent(
 				targ,
 				20, // Speed, lower is slower

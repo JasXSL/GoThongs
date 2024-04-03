@@ -23,7 +23,7 @@
 #define LevelMethod$playerInteract 19		// (key)interactee - Sent from the interactor
 #define LevelMethod$potionDropped 20		// (str)name - Potion with PotionsFlag$raise_drop_event has been dropped
 
-#define LevelMethod$raiseEvent 21			// (int)event, (var)param1, (var)param2... - Internal only
+#define LevelMethod$raiseEvent 21			// (int)event, (var)param1, (var)param2... - Owner only
 #define LevelMethod$playerSceneDone 22		// (str)sceneName, (bool)success, (arr)players
 
 
@@ -69,10 +69,16 @@
 #define LevelEvt$potionDropped 16	// (key)HUD, (str)potion - Raised when a player drops a potion with PotionsFlag$raise_drop_event
 #define LevelEvt$playerSceneDone 17	// (str)pose_name, (bool)success, (arr)HUDs - Raised when a PlayerPose scene finished
 
+#define LevelEvt$idAggro 18			// (key)monster, (str)id, (arr)vars, (key)aggro_targ, (int)num_aggro_changes, (str)spawnround - Raised when a monster goes from having no target to having a target. But only if the monster has ID set. aggro_targ is a HUD or NPC. num_aggro_changes will be 0 the first time the monster aggroes a player.
+#define LevelEvt$trapTriggered 19	// (key)player - Raised when a player is seated on a trap
+#define LevelEvt$trapReleased 20	// (key)player - Raised when a player is unseated from a trap
+
 // Level description config: [[(int)task, (var)param1, (var)param2...]...]
 #define LevelDesc$additionalScripts 0			// List of names of scripts to wait for evt$SCRIPT_INIT from
 #define LevelDesc$difficulty 1					// (int)difficulty, (int)isChallenge
 #define LevelDesc$live 2						// void - Present when level is live
+
+#define LevelDesc$custom -1						// var - Custom config items can use -1
 
 
 #define Level$loadDebug(group) runOmniMethod("got Level", LevelMethod$load, (list)1 + (group), TNN)
@@ -83,6 +89,8 @@
 #define Level$despawn() runOmniMethod("got Level", LevelMethod$despawn, [], TNN)
 #define Level$trigger(user, data) runOmniMethod("got Level", LevelMethod$trigger, (list)user + data, TNN)
 #define Level$idEvent(evt, id, data, spawnround) runOmniMethod("got Level", LevelMethod$idEvent, (list)(evt) + (id) + (data) + (spawnround), TNN)
+#define Level$idAggro(id, data, aggro, nac, spawnround) runOmniMethod("got Level", LevelMethod$idEvent, (list)(LevelEvt$idAggro) + (id) + (data) + (aggro) + (nac) + (spawnround), TNN)
+
 //#define Level$loaded(targ, isHUD) runMethod((str)targ, "got Level", LevelMethod$loaded, [isHUD], TNN)
 #define Level$loadPerc(targ, id, perc) runMethod(targ, "got Level", LevelMethod$loadPerc, [id, perc], TNN)
 // ??? These methods require an event listener and a global: if(script == "#ROOT" && evt == RootEvt$level){ROOT_LEVEL = j(data, 0);}
@@ -99,6 +107,8 @@
 #define Level$spawnLive(asset, pos, rot) Level$spawnAsset(a)
 #define Level$spawnLiveTarg(targ, asset, pos, rot) Level$spawnAsset(a)
 #define Level$raiseEvent(evt, args) runMethod((str)LINK_THIS, "got Level", LevelMethod$raiseEvent, [evt]+args, TNN)
+#define Level$raiseEventRemote(evt, args) runOmniMethod("got Level", LevelMethod$raiseEvent, (list)(evt)+args, TNN)
+
 #define Level$playerSceneDone(host, success, players) runOmniMethodOn(host, "got Level", LevelMethod$playerSceneDone, (list)success + players, TNN)
 
 

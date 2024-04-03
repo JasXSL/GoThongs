@@ -7,7 +7,7 @@
 
 list REM_ON_CLEAN;	// names of passives that should be removed on cleanup
 list REM_ON_UNSIT;	// names of passives that should be removed when unsitting
-
+list CACHE;			// cache of names for quick search
 
 
 // Map the fxcompiler values plus FXCUpdPRE (to allow negative) to corresponding values in _lib_fx, or 0 if passive only
@@ -147,14 +147,23 @@ default{
 		integer flags = l2i(PARAMS, 2);
 		//str table = gotTable$passivesInput;
 		list effects = llJson2List(method_arg(1));
+		
+		int pos = llListFindList(CACHE, (list)oName);
+		if( ~pos && flags & Passives$FLAG_NO_OVERRIDE && effects != [] ){
+			return;
+		}
+		
+		if( ~pos )
+			CACHE = llDeleteSubList(CACHE, pos,pos);
 
-		int pos = llListFindList(REM_ON_CLEAN, (list)oName);
+		pos = llListFindList(REM_ON_CLEAN, (list)oName);
 		if( ~pos )
 			REM_ON_CLEAN = llDeleteSubList(REM_ON_CLEAN, pos, pos);
 		pos = llListFindList(REM_ON_UNSIT, (list)oName);
 		if( ~pos )
 			REM_ON_UNSIT = llDeleteSubList(REM_ON_UNSIT, pos, pos);
-				
+		
+		
 		// Remove existing
 		FX$rem(
 			false, // raiseEvent
@@ -175,6 +184,8 @@ default{
 			REM_ON_CLEAN += oName;
 		if( flags & Passives$FLAG_REM_ON_UNSIT )
 			REM_ON_UNSIT += oName;
+			
+		CACHE += oName;
 		
 		debugUncommon("Transpiling "+method_arg(1));
 		list fx;
@@ -185,6 +196,7 @@ default{
 			int type = l2i(effects, i);
 			list val = llList2List(effects, i+1, i+1);
 			int to = l2i(FXCMap, type+3);	// +3 because it starts at -3
+			debugUncommon("Mapping "+(str)type+" to "+(str)val);
 			
 			if( type == FXCUpd$PROC ){
 				

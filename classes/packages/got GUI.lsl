@@ -560,6 +560,9 @@ default {
 		llSetTimerEvent(0.5); // tick status bars
 		//toggle(TRUE);
 		llOwnerSay("@setoverlay=y");
+		#ifdef ONINIT
+			ONINIT
+		#endif
 		//GUI$toggle(TRUE);
     } 
 	

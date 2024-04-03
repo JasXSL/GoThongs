@@ -325,7 +325,7 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 					fmht *= l2f(fmHT, pos*2+1);
 				if( ~(pos = llListFindList(llList2ListStrided(fmHT, 0,-1,2), (list)key2int(atkr))) )
 					fmht *= l2f(fmHT, pos*2+1);
-					
+
 				am*= fmht;
 				
 			}
