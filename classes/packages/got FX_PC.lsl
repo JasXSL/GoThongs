@@ -27,7 +27,7 @@ integer checkCondition(key caster, integer cond, list data, integer flags, integ
 	}
 
 	if( cond == fx$COND_IS_NPC ){
-		if( hud$status$team() == TEAM_PC )
+		if( status$team() == TEAM_PC )
 			return FALSE;
 	}
 	

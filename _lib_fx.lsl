@@ -10,6 +10,7 @@
 */
 
 // * = not implemented yet
+// p = effect is passive
 	// The flags in the top 2 are the SMAFlags defined in got Status
 	// Note: These MUST be positive! And can only range between 0 and 255
 	// Comment below each row (if any) is what it compiles to in the compiled effects table
@@ -234,7 +235,7 @@
 		#define fxf$SPRINT_FADE_MULTI db4$85	//p (float)multi=1
 	#define fx$BACKSTAB_MULTI 86				// (float)multi - Multiplies backstab
 		#define fxf$BACKSTAB_MULTI db4$86		//p (float)multi=1
-	#define fx$SWIM_SPEED_MULTI 87				// (float)multi - Affects swim speed
+	#define fx$SWIM_SPEED_MULTI 87				// (float)multi - Affects swim speed. Greater is faster.
 		#define fxf$SWIM_SPEED_MULTI db4$87		//p (float)multi=1
 	/* Removed because of security issue
 	#define fx$RUN_METHOD 88					// (int)target, (str)script, (int)method, (arr)args, (str)cb - Runs a method.
@@ -244,7 +245,13 @@
 	#define fx$REDIR_SPEECH 89					// (int)channel - Redirects speech to a channel. Use the constants below to automatically speak as avatar. Only one is active at a time.
 		#define fx$REDIR_SPEECH$CH$MUFFLE 9132		// When using this channel you will make muffled sound effects
 		#define fxf$REDIR_SPEECH db4$89			//p (int)channel=0
-
+	#define fx$DAMAGE_TAKEN_FRONT 90			// (float)add
+		#define fxf$DAMAGE_TAKEN_FRONT db4$90	//p (float)multi=1
+	#define fx$DAMAGE_TAKEN_BEHIND 91			// (float)add
+		#define fxf$DAMAGE_TAKEN_BEHIND db4$91	//p (float)multi=1	
+	#define fx$FALL_DMG_HEIGHT 92				// (float)add - Raises or lowers fall height before tripping by a percentage.
+		#define fxf$FALL_DMG_HEIGHT db4$92		//p (float)multi=1
+	
 // Note: In strided ones (ex [0,1.0]) the second value MUST be seen as a float or searching will screw up.
 #define fx$NO_PASSIVE -0x80000000	// Marks the index as not having a passive
 #define fx$DEFAULTS (list)	\
@@ -337,7 +344,10 @@
 	1.0 + /* 86 BACKSTAB_MULTI */ \
 	1.0 + /* 87 SWIM_SPEED_MULTI */ \
 	fx$NO_PASSIVE + /* 88 REMOVED*/ \
-	0 /* 89 REDIR CHAT */ 
+	0 + /* 89 REDIR CHAT */ \
+	1.0 + /* 90 DAMAGE TAKEN FRONT */ \
+	1.0 + /* 91 DAMAGE TAKEN BEHIND */ \
+	1.0 /* 92 FALL DAMAGE HEIGHT */
 												
 // conditions
 	// Built in

@@ -35,7 +35,19 @@ updateFxAttachments(){
 			llGetInventoryType(l2s(FX_ATTACHMENTS, i)) == INVENTORY_OBJECT 
 		){
 			++sets;
-			_portal_spawn_std(l2s(FX_ATTACHMENTS, i), llGetRootPosition()-<0,0,3>, ZERO_ROTATION, <0,0,-3>, FALSE, FALSE, FALSE);
+			_portal_spawn_v3(
+				l2s(FX_ATTACHMENTS, i), 
+				llGetRootPosition()-<0,0,3>, 
+				ZERO_ROTATION, 
+				<0,0,-3>, 
+				FALSE,
+				"_PUNISH_",
+				"", // Sender
+				"", // Desc
+				[
+					REZ_PARAM, 2 // Override default 1 because legacy jas Attached will remote load itself if rez param is 1
+				]	// Custom spawn params
+			);
 		}
 		
 	}
@@ -157,7 +169,7 @@ default {
         if( METHOD == RapeMethod$start && count(PARAMS) > 1 ){
 		
 
-            if( BFL&BFL_RAPE_STARTED || ~hud$status$flags()&StatusFlag$dead )
+            if( BFL&BFL_RAPE_STARTED || ~status$flags() & StatusFlag$dead )
 				return;
             
             BFL = BFL|BFL_RAPE_STARTED;
@@ -178,14 +190,16 @@ default {
                 AnimHandler$anim(llList2String(RAPE_ANIMS, i), TRUE, 0, 0, 0);
 				
 			for( i=0; i<llGetListLength(RAPE_REZZED); i++ )
-				_portal_spawn_std( 
+				_portal_spawn_v3( 
 					llList2String(RAPE_REZZED, i), 
 					pos-<0,0,ascale.z/2>, 
 					ZERO_ROTATION, 
 					ZERO_VECTOR, 
 					FALSE, 
-					FALSE, 
-					TRUE
+					"_PUNISH_",
+					"", // Sender
+					"", // Desc
+					[]	// Custom rez params
 				);
             
             

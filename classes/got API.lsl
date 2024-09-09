@@ -45,7 +45,11 @@
 #define GotAPIMethod$list 0			// Owner only, outputs currently bound APIs in chat
 #define GotAPIMethod$getStats 1		// Gets current effect modifiers (both passive and active in a human readable form)
 #define GotAPIMethod$dumpLSD 2		// Outputs all linkset data into chat
+#define GotAPIMethod$getClassAttTags 3			// void - Forces HUD to send gotClassAttMethod$descMeta
 
+
+
+#define GotAPI$getClassAttTags() runMethod(llGetOwner(), "got API", GotAPIMethod$getClassAttTags, [], TNN)
 
 // output actions
 #define GotAPI$actionIni 1			// void | Sent to everyone
@@ -71,6 +75,7 @@
 #define GotAPI$unbind(targ, recipient) GotAPI$sendCommand(targ, GotAPI$cmdUnbind, [recipient])
 #define GotAPI$unbindThis(targ) GotAPI$unbind(targ, "")
 #define GotAPI$emulateEvent(targ, script, evt, data) GotAPI$sendCommand(targ, GotAPI$cmdEmulateEvent, ([script, evt, mkarr(data)]))
+
 
 #endif
 

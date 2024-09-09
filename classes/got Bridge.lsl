@@ -122,7 +122,7 @@
 	#define BSUD$THONG_ROLE 16					// Role of thong. Use ROLE_* definition from _core
 	#define BSUD$THONG_SPEC 17					// Thong spec index
 	#define BSUD$QTE_POS 18						// int constant where the QTE widget should be drawn
-
+	#define BSUD$THONG_NAME 19
 
 // Not recommended to use if you need multiple values. Grab the array once instead.
 #define Bridge$getUserDataField( field ) j(hud$bridge$userData(), (field))

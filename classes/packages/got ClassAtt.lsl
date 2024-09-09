@@ -18,10 +18,16 @@ timerEvent( string id, string data ){
     
 }
 
-ini(){
+list TAGS;
+
+updateDesc(){
 	key id = prRoot(mySpawner());
 	if( id )
-		llSetObjectDesc("TAG$gothud_"+(string)id);
+		llSetObjectDesc("TAG$gothud_"+(string)id+"$"+llDumpList2String(TAGS, "$"));
+}
+ini(){
+	updateDesc();
+	GotAPI$getClassAttTags();
 }
 
 default{
@@ -48,6 +54,13 @@ default{
     if( method$isCallback || !method$byOwner )
         return;
     
+	if( METHOD == gotClassAttMethod$descMeta ){
+		
+		TAGS = llJson2List(method_arg(0));
+		updateDesc();
+		
+	}
+	
 	if( METHOD == gotClassAttMethod$raiseEvent ){
 		
 		int evt = l2i(PARAMS, 0);
@@ -68,6 +81,7 @@ default{
 			multiTimer(["P_"+l2s(data, 0)]);
 			
 		}
+		
 		
 		
 	}

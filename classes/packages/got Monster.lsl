@@ -121,15 +121,18 @@ integer moveInDir( vector dir ){
 		if( getRF()&Monster$RF_FLYING )	// Flying draws a straight line towards where they want to go, centered at their middlepoint
 			bz = az = hoverHeight;
 
+		
+		list r = (list)0;
 		// If flying, only cast directly to target
-        list r = llCastRay(
-			gpos+<0,0,hAdd()+1>*baseRot, 
-			gpos+dir+<0,0,bz>*baseRot, 
-			[RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]
-		);
+		// If pass walls we ignore this entirely
+        if( ~getRF() & Monster$RF_PASS_WALLS )
+			r = llCastRay(
+				gpos+<0,0,hAdd()+1>*baseRot, 
+				gpos+dir+<0,0,bz>*baseRot, 
+				[RC_REJECT_TYPES, RC_REJECT_PHYSICAL|RC_REJECT_AGENTS, RC_DATA_FLAGS, RC_GET_ROOT_KEY]
+			);
         
 		vector hit = l2v(r, 1);
-		
 		
 		if( 
 			(!flying && l2i(r, -1) <= 0) ||		// Not flying and not found (too steep drop)
@@ -445,6 +448,8 @@ timerEvent( string id, string data ){
 			
 			
 			list ray = llCastRay(ground+<0,0,1+hAdd()>, prPos(chasetarg)+<0,0,.5>, RC_DEFAULT + RC_DATA_FLAGS + RC_GET_ROOT_KEY);
+			if( getRF() & Monster$RF_PASS_WALLS ) // Pass walls grants x-ray vision
+				ray = (list)0;
 			
             // Close enough to attack
 			if( llVecDist(ppos, ground) <= hitbox+crAdd ){
@@ -620,8 +625,7 @@ onEvt(string script, integer evt, list data){
     if( script == "got Portal" && evt == evt$SCRIPT_INIT ){
 	
         rezpos = llGetRootPosition();
-        
-		if( !portalConf$live )
+		if( !Portal$getLive() )
 			return;
         LocalConf$ini();
 		multiTimer(["INI", "", 5, FALSE]);	// Some times localconf fails, I don't know why
@@ -643,7 +647,7 @@ onEvt(string script, integer evt, list data){
 		
 		// Description should be applied first if received from localconf. 
 		// Custom updates sent directly through Monster$updateSettings should be sent after initialization to prevent overwrites
-		string override = portalConf$desc;
+		string override = Portal$getDesc();
 		if( isset(override) ){
 		
 			list dt = llJson2List(override);

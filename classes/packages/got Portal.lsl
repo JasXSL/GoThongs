@@ -19,41 +19,45 @@ integer BFL;
 #define BFL_SCRIPTS_INITIALIZED 1
 #define BFL_GOT_PLAYERS 2
 #define BFL_IS_DEBUG 4
-#define BFL_HAS_DESC 8
+
 #define BFL_INITIALIZED 0x10
 #define BFL_PERSISTENT 0x20
 #define BFL_INJECTING 0x40		// An active inject request is open
 
-#define BFL_INI 11
-//~BFL&BFL_IS_DEBUG && 
-#define checkIni() \
-	if( (BFL&BFL_INI) == BFL_INI && ~BFL&BFL_INITIALIZED ){ \
-		BFL=BFL|BFL_INITIALIZED; \
-		sendPlayers(); \
-		raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); \
-		debugUncommon("Raising script init"); \
-		raiseEvent(PortalEvt$spawner, (str)requester); \
-		raiseEvent(PortalEvt$desc_updated, INI_DATA); \
-		llListen(evtChan, "", "", ""); \
-		llRegionSay(evtChan, Portal$gEvt$ini); \
-		Remoteloader$portalInit( remoted ); \
-	}
+#define BFL_NEED_ACK 0x100		// We need to send an ack to our rezzer
 
-// Fetches desc from spawner
-#define fetchDesc() \
-	llRegionSayTo(spawner, playerChan(spawner), "SP"+(str)REZ_ID)
+#define BFL_INI (BFL_SCRIPTS_INITIALIZED|BFL_GOT_PLAYERS)
+//~BFL&BFL_IS_DEBUG && 
+checkIni(){
+
+	if( (BFL&BFL_INI) == BFL_INI && ~BFL&BFL_INITIALIZED ){
+	
+		BFL=BFL|BFL_INITIALIZED;
+		sendPlayers(); 
+		raiseEvent(evt$SCRIPT_INIT, mkarr(PLAYERS)); 
+		debugUncommon("Raising script init"); 
+		raiseEvent(PortalEvt$spawner, (str)requester);
+		raiseEvent(PortalEvt$desc_updated, INI_DATA); 
+		llListen(evtChan, "", "", ""); 
+		llRegionSay(evtChan, Portal$gEvt$ini); 
+		Remoteloader$portalInit( remoted ); 
+		multiTimer(["POSTQUERY"]);
+		
+	}
+	
+}
+
 	
 #define shortUUID() \
 	llGetSubString((str)llGetKey(), 0, 3)
 
 string INI_DATA = "";
 string SPAWNROUND;
-integer REZ_NR;
 int evtChan;
-int REZ_ID;				// Modern mode: Use when communicating with got Spawner.
 int NO_REMOTE;
 
 onEvt( string script, integer evt, list data ){
+
 
     if( evt == evt$SCRIPT_INIT && required != [] ){
 	
@@ -70,9 +74,9 @@ onEvt( string script, integer evt, list data ){
 			//qd(BFL);
 			debugUncommon("[Ini "+shortUUID()+"] All scripts acquired");
 			BFL = BFL|BFL_SCRIPTS_INITIALIZED;
-			
+			sendAck();
 			debugUncommon(BFL);
-			checkIni() 
+			checkIni();
 			
         }
 		
@@ -113,6 +117,19 @@ injectDone(){
 	handleInjectReq();
 }
 
+// Ack is sent to our spawner when we have loaded all scripts
+sendAck(){
+	
+	if( ~BFL&BFL_NEED_ACK )
+		return;
+	
+	if( !ackListen )
+		ackListen = llListen(SpawnerConst$ACK_CHAN+1, "", mySpawner(), "ACK");
+	llRegionSayTo(mySpawner(), SpawnerConst$ACK_CHAN, "ACK");
+	multiTimer(["ACK", 0, 1, FALSE]);
+
+}
+
 
 integer pin;
 int pqAttempts;
@@ -125,10 +142,9 @@ timerEvent( string id, string data ){
 	else if( id == "INJ" )
 		injectDone();
 		
-		
+	// Tries to make sure that we have been initialized
 	else if( id == "POSTQUERY" ){
 	
-		
 		checkIni();
 		
 		// We have failed
@@ -142,54 +158,53 @@ timerEvent( string id, string data ){
 				
 			}
 			
-			// Description is gone for good because simulator fuckery
-			if( ~BFL&BFL_HAS_DESC ){
-			
-				qd("Fatal error: Sim has dropped spawn data. You may want to restart the level.");
-				return;
-				
-			}
 			// Players can be refetched
 			if( ~BFL&BFL_GOT_PLAYERS )
 				Root$getPlayers("INI");
 				
 			// Scripts can be refetched
-			if( ~BFL&BFL_SCRIPTS_INITIALIZED ){
+			if( ~BFL&BFL_SCRIPTS_INITIALIZED )
+				fetchRequired();
 				
-				integer i; list fromHUD; list fromLevel;
-				for( ; i<count(required); i += 2){
-					
-					if( l2i(required, i) )
-						fromHUD+= l2s(required, i+1);
-					else 
-						fromLevel += l2s(required, i+1);
-						
-				}
-				
-				if( fromHUD )
-					Remoteloader$load(mkarr(fromHUD), pin, 2, NO_REMOTE);
-				if( fromLevel )
-					gotLevelData$getScripts(requester, pin, mkarr(fromLevel));
-				
-			}
 			multiTimer([id, "", 10, FALSE]);
 			
 		}
 		
 	}
 	
+	else if( id == "ACK" )
+		sendAck();
+	
+	// Workaround for SL bad listeners
 	else if( id == "REREZ" ){
+	
 		integer p = llCeil(llFrand(0xFFFFFFF));
 		llSetRemoteScriptAccessPin(p);
 		Remoteloader$load(cls$name, p, 2, FALSE); // Note: This may be dropped
 		multiTimer([id, 0, 10, FALSE]);
+		
 	} 
+
+}
+
+// Fetches required scripts
+fetchRequired(){
 	
-	else if( id == "A" ){
-		debugUncommon("[Ini "+shortUUID()+"] Fetching desc. Rezid "+(str)REZ_ID);
-		fetchDesc();
+	integer i; list fromHUD; list fromLevel;
+	for( ; i<count(required); i += 2){
+		
+		if( l2i(required, i) )
+			fromHUD += l2s(required, i+1);
+		else 
+			fromLevel += l2s(required, i+1);
+			
 	}
 	
+	if( fromHUD )
+		Remoteloader$load(mkarr(fromHUD), pin, 2, NO_REMOTE);
+	if( fromLevel )
+		gotLevelData$getScripts(requester, pin, mkarr(fromLevel));
+
 }
 
 sendPlayers(){
@@ -198,7 +213,7 @@ sendPlayers(){
 	string players = mkarr(PLAYERS);
 	
 	db4$freplace(gotTable$portal, portalRow$players, players);
-	db4$freplace(gotTable$portal, portalRow$huds, players);
+	db4$freplace(gotTable$portal, portalRow$huds, huds);
 	raiseEvent(PortalEvt$playerHUDs, huds);
 	raiseEvent(PortalEvt$players, players);
 	
@@ -221,16 +236,18 @@ attemptPos( vector pos ){
 		llOwnerSay("!SIM ERROR! Unable to position asset. Check build and object entry at "+(str)pos);
 }
 
-#define isLive() ((llGetStartParameter()&~1) == 2) // 2 or 3 are acceptable
+integer LIVE;
+
+#define isLive() LIVE
+
+integer ackListen;
 
 default{
 
     on_rez(integer mew){
 	
-		// Let the spawner know it can rez next
-		llRegionSayTo(mySpawner(), playerChan(mySpawner()), "PN");
         if( mew ){
-		
+			
             multiTimer(["REREZ", 0, 0.1, FALSE]);
 			setText((str)mew);
 			return;
@@ -239,14 +256,13 @@ default{
 		setText("");
 		
     }
+	
+	// we do not reset on rez. This is only run when manually reset or when remoteloaded
     state_entry(){
 	
 		debugCommon("[Ini "+shortUUID()+"] State entry");
 		evtChan = Portal$evtChan(llGetOwner());
-		requester = spawner = mySpawner();
-		// Let the spawner know it can rez next
-		llRegionSayTo(requester, playerChan(requester), "PN");
-		
+		requester = spawner = mySpawner();		
 		
 		PLAYERS = [(string)llGetOwner()];
 		db4$freplace(gotTable$portal, portalRow$players, mkarr(PLAYERS));
@@ -254,19 +270,23 @@ default{
 		
         initiateListen();
 		llListen(AOE_CHAN, "", "", "");
+		
+		
         pin = llCeil(llFrand(0xFFFFFFF));
         llSetRemoteScriptAccessPin(pin);
 		Root$getPlayers("INI");
-				
-        memLim(1.5);
 		
 		if( !llGetStartParameter() )
 			return;
 		
-        if( isLive() ){
-			
-			NO_REMOTE = (llGetStartParameter() == 3);
+		list desc = llJson2List(llGetStartString());
+		LIVE = ((llGetStartParameter()&~1) == 2); // bit 2 marks it as live (this script was fetched from HUD). it does not mean that the monster should attack
 		
+        if( LIVE ){
+			
+			NO_REMOTE = (llGetStartParameter() == 3); // Legacy. Prevents deferred loading.
+		
+			// Find required objects
 			int i;
 			list refresh = PORTAL_SEARCH_OBJECTS;
 			list get_objects;
@@ -283,7 +303,7 @@ default{
 				
 			}
 		
-            // Request
+            // Request scripts that can be updated from HUD
             list check = PORTAL_SEARCH_SCRIPTS;
             for( i = 0; i < count(check); ++i ){
 			
@@ -297,80 +317,149 @@ default{
 			// Required together
 			if( llGetInventoryType("got LevelLite") == INVENTORY_SCRIPT )
 				required+= [1, "got LevelData"];
+				
 			// Status needs NPCInt which offloads it
 			if( llGetInventoryType("got Status") == INVENTORY_SCRIPT )
 				required+= [1, "got NPCInt"];
 			
+
 			
-			check = PORTAL_SEARCH_OBJECTS;
-			for( i = 0; i < count(check); ++i ){
-			
-				str val = l2s(check, i);
-				if( llGetInventoryType(val) != INVENTORY_NONE )
-					llRemoveInventory(val);
-				
-			}
-			
-			Remoteloader$load( mkarr(llList2ListStrided(llDeleteSubList(required, 0, 0), 0, -1, 2)), pin, 2, NO_REMOTE );
 			debugUncommon("[Ini  "+shortUUID()+"] Requested scripts "+mkarr(required));
 			
-			int startParams = l2i(llGetPrimitiveParams([PRIM_TEXT]), 0) & ~BIT_TEMP;
-			REZ_NR = startParams;
 			
-			int hasDesc = startParams & BIT_GET_DESC;
-			REZ_ID = startParams&(BIT_DEBUG-1);	// Interger-compressed position in legacy mode (not hasDesc). In desc mode, this is our spawner ID.
-			debugUncommon("[RezID "+shortUUID()+"] Set to "+(str)REZ_ID);
+			INI_DATA = l2s(desc, 4); // custom spawn desc
+			vector pos = (vector)l2s(desc, 0);
+			SPAWNROUND = l2s(desc, 2);
 			
-			vector pos;
-			// No desc = legacy mode. Extract pos from start param.
-			if( !hasDesc ){
+			// Modern
+			if( desc ){
+			
+				integer spFlags = l2i(desc, 1);
+				if( spFlags & PortalRezFlag$dummy ){
+					BFL = BFL|BFL_IS_DEBUG;
+				}
+				if( spFlags & PortalRezFlag$ack )
+					BFL = BFL|BFL_NEED_ACK;
 				
-				vector p = llGetRootPosition();
-
-				// I can't remember what 1 is for but if it's 0 then it's not a region position
-				if( startParams > 1 )
-					pos = p-vecFloor(p)+int2vec(startParams);
-				// If no position is set then we regard it as debug (got LevelLite relies on this behavior)
-				else 
-					startParams = startParams|BIT_DEBUG;
+				requester = l2s(desc, 3);
 				
-			
-				llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]); // Legacy
-			
-
-				// Checks if pos is actually received
-				if( REZ_ID && pos != ZERO_VECTOR )
+				if( pos )
 					attemptPos(pos);
 				
-				BFL = BFL|BFL_HAS_DESC;
+				string desc = INI_DATA;
+
+				if( desc ){
+				
+					if( BFL&BFL_IS_DEBUG )
+						desc = "$"+desc;
+					
+					llSetObjectDesc(desc);
+					if( llJsonValueType(INI_DATA, []) == JSON_ARRAY ){
+					
+						list ini = llJson2List(INI_DATA);
+						integer i;
+						for( ; i<llGetListLength(ini) && ini != []; ++i ){
+						
+							list v = llJson2List(llList2String(ini, i));
+							string task = llList2String(v, 0);
+							if( task == "SC" || task == "PR" || task == "HSC" ){
+							
+								v = llDeleteSubList(v, 0, 0);
+								// Make sure there's actually an asset
+								if( v ){
+								
+									// Only add to required ini if it's scripts
+									if( task == "SC" || task == "HSC" ){
+									
+										integer n;
+										for( ; n < count(v); ++n ){
+										
+											string val = llList2String(v, n);
+											if( llListFindList(required, [val]) == -1 )
+												required+=[
+													task == "HSC",		// From HUD
+													val					// Name
+												];
+												
+										}
+										
+									}
+									/*
+									if( task == "HSC" )
+										Remoteloader$load(mkarr(v), pin, 2, NO_REMOTE);
+									*/
+									else
+										gotLevelData$getScripts(requester, pin, mkarr(v)); // Requests prims
+									
+									
+								}
+								// Remove this from data that is sent out, since we only need to send monster/status specific stuff
+								ini = llDeleteSubList(ini, i, i);
+								i--;
+								
+							}
+							
+						}
+						
+						INI_DATA = mkarr(ini);
+						
+					}
+					
+				}
+
+			}
+			// Legacy
+			else{
+			
+				int startParams = l2i(llGetPrimitiveParams([PRIM_TEXT]), 0);
+				
+				llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, startParams&BIT_TEMP]); // Legacy
+				startParams = startParams & ~BIT_TEMP;
+				int hasDesc = startParams & BIT_GET_DESC;
+				
+				// legacy positioning
+				if( !hasDesc ){
+				
+					vector p = llGetRootPosition();
+
+					// I can't remember what 1 is for but if it's 0 then it's not a region position
+					if( startParams > 1 )
+						pos = p-vecFloor(p)+int2vec(startParams);
+					// If no position is set then we regard it as debug (got LevelLite relies on this behavior)
+					else 
+						startParams = startParams|BIT_DEBUG;
+
+					
+					// Checks if pos is actually received
+					if( pos != ZERO_VECTOR )
+						attemptPos(pos);
+						
+					if( startParams&BIT_DEBUG )
+						BFL = BFL|BFL_IS_DEBUG;
+						
+				}
 					
 			}
-			// Modern mode. Fetch desc by using REZ_ID as an ID.
-			else{
-				
-				
-				// Needs to fetch data from the spawner
-				fetchDesc();
-				debugUncommon("[Ini "+shortUUID()+"] Fetching desc. Rezid "+(str)REZ_ID);
-				multiTimer(["A", "", 10, TRUE]);	// re-fetching too much might cause problems
-				
-			}
-				
-			debugUncommon("[Ini "+shortUUID()+"] Start params "+(str)startParams);
-			if( startParams&BIT_DEBUG )
-				BFL = BFL|BFL_IS_DEBUG;
-			else
-				multiTimer(["POSTQUERY", "", 10, FALSE]);
-				
 			
+			fetchRequired();
+			//Remoteloader$load( mkarr(llList2ListStrided(llDeleteSubList(required, 0, 0), 0, -1, 2)), pin, 2, NO_REMOTE );
+			
+			// Before LSD we relied on using prim text. These settings are still provided for legacy reasons.
 			// Build the first config
+			integer live = (~BFL&BFL_IS_DEBUG)>0;
 			list text = [
 				pos, 						// Spawn pos
-				((~BFL&BFL_IS_DEBUG)>0), 	// Is live
-				"", 						// Custom desc data
-				""							// Spawnround
+				live, 	// Is live
+				INI_DATA, 					// Custom desc data
+				SPAWNROUND					// Spawnround
 			];
 			setText(mkarr(text));
+			
+			db4$freplace(gotTable$portal, portalRow$desc, INI_DATA);
+			db4$freplace(gotTable$portal, portalRow$pos, (str)pos);
+			db4$freplace(gotTable$portal, portalRow$live, (str)live);
+			db4$freplace(gotTable$portal, portalRow$group, SPAWNROUND);
+			db4$freplace(gotTable$portal, portalRow$spawner, requester);
 			
 			
 			multiTimer(["INI", "", 5, TRUE]);
@@ -383,14 +472,13 @@ default{
 			
         } 
 		
-        if(required == []){
-			
-			
-			llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_TEMP_ON_REZ, FALSE]);
+        if( required == [] ){
             BFL = BFL|BFL_SCRIPTS_INITIALIZED;
-            checkIni()
-			
-        }
+			sendAck();
+		}
+		else
+			multiTimer(["POSTQUERY", 0, 10, TRUE]); // Try to refetch if it fails
+		checkIni();
 		
 		
     }
@@ -400,6 +488,11 @@ default{
     }
     
 	#define LISTEN_LIMIT_FREETEXT \
+	if( chan == SpawnerConst$ACK_CHAN+1 ){ \
+		multiTimer(["ACK"]); \
+		llListenRemove(ackListen); \
+		return; \
+	} \
 	if( \
 		llListFindList(PLAYERS, [(string)llGetOwnerKey(id)]) == -1 && \
 		llList2String(PLAYERS, 0) != "*" && \
@@ -459,7 +552,7 @@ default{
 			//qd("PLAYERS from root: "+mkarr(PLAYERS));
 			multiTimer(["INI"]);
 			BFL = BFL|BFL_GOT_PLAYERS;
-			checkIni()
+			checkIni();
 			
         } 
         return;
@@ -498,12 +591,12 @@ default{
 			sendPlayers();
 			
 		}
-		else if(METHOD == PortalMethod$remove && 
+		else if( METHOD == PortalMethod$remove && 
 			(
 				(	
 					(
 						llGetInventoryType("got LevelLite") == INVENTORY_NONE || 
-						REZ_NR
+						Portal$getLive()
 					) && 
 					~BFL&BFL_PERSISTENT &&
 					(
@@ -526,7 +619,7 @@ default{
 		}
 		
 		else if(METHOD == PortalMethod$removeBySpawner){
-			if(method_arg(0) == requester){
+			if( method_arg(0) == requester ){
 				llDie();
 			}
 		}
@@ -563,104 +656,13 @@ default{
             Remoteloader$load(cls$name, p, 3, TRUE);
 			
 		}
-		
-		else if( METHOD == PortalMethod$iniData && isLive() ){
-			
-			// Always tell the spawner to continue. It may have dropped our ack message so we can send a new one
-			llRegionSayTo(spawner, playerChan(spawner), "DN"+(str)REZ_ID);
-			debugUncommon("[Ini "+shortUUID()+"] Finalizing with rez id "+(str)REZ_ID);
-			//qd("INI with "+mkarr(PARAMS));
-		
-			// Already init but 
-			if( BFL & BFL_HAS_DESC )
-				return;
-				
-			
-			INI_DATA = method_arg(0);
-			SPAWNROUND = method_arg(1);
-			requester = method_arg(2);
-			vector pos = (vector)method_arg(3);
-			
-			if( pos )
-				attemptPos(pos);
-			
-			// Stop asking for description
-			multiTimer(["A"]);
-			
-			string desc = INI_DATA;
-			if( desc != "" ){
-			
-				if( BFL&BFL_IS_DEBUG )
-					desc = "$"+desc;
-				
-				llSetObjectDesc(desc);
-				if( llJsonValueType(INI_DATA, []) == JSON_ARRAY ){
-				
-					list ini = llJson2List(INI_DATA);
-					integer i;
-					for( i=0; i<llGetListLength(ini) && ini != []; ++i ){
-					
-						list v = llJson2List(llList2String(ini, i));
-						string task = llList2String(v, 0);
-						if( task == "SC" || task == "PR" || task == "HSC" ){
-						
-							v = llDeleteSubList(v, 0, 0);
-							// Make sure there's actually an asset
-							if(v != []){
-							
-								// Only add to required ini if it's scripts
-								if( task == "SC" || task == "HSC" ){
-								
-									BFL=BFL&~BFL_SCRIPTS_INITIALIZED;
-									integer n;
-									for( ; n < count(v); ++n ){
-									
-										string val = llList2String(v, n);
-										if( llListFindList(required, [val]) == -1 )
-											required+=[
-												task == "HSC",		// From HUD
-												val					// Name
-											];
-											
-									}
-									
-								}
-								
-								if( task == "HSC" )
-									Remoteloader$load(mkarr(v), pin, 2, NO_REMOTE);
-								else
-									gotLevelData$getScripts(requester, pin, mkarr(v));
-									
-							}
-							// Remove this from data that is sent out, since we only need to send monster/status specific stuff
-							ini = llDeleteSubList(ini, i, i);
-							i--;
-							
-						}
-						
-					}
-					
-					INI_DATA = mkarr(ini);
-					
-				}
-				
-			}
-			BFL = BFL|BFL_HAS_DESC;
-			list get = llJson2List(getText());
-			get = llListReplaceList(get, [INI_DATA], 2, 2);
-			get = llListReplaceList(get, [SPAWNROUND], 3, 3);
-			setText(mkarr(get));
-			
-			
-			checkIni()
-		}
 		else if(METHOD == PortalMethod$debugPlayers){
 			
 			Root$getPlayers("INI");
 			qd(mkarr(PLAYERS));			
 			
 		}
-		else if(METHOD == PortalMethod$removeBySpawnround && method_arg(0) == SPAWNROUND){
+		else if( METHOD == PortalMethod$removeBySpawnround && method_arg(0) == SPAWNROUND ){
 			remove();
 		}
     }

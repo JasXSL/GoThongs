@@ -42,8 +42,10 @@ finishLoad(){
 default
 {
 	state_entry(){
+		
 		memLim(1.5); 
 		raiseEvent(evt$SCRIPT_INIT, "");
+		
 	}
 	
 	timer(){multiTimer([]);}

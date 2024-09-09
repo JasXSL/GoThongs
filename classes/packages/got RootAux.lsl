@@ -28,7 +28,7 @@ key VALIDATE;		// HTTP request to fetch manifest
 // Toggle clothes
 tClt(){
 
-	integer sf = hud$status$flags();
+	integer sf = status$flags();
 	int vis = 0;
 	int fxStripped = FXF&fx$F_SHOW_GENITALS || sf&(StatusFlag$dead|StatusFlag$raped);
 	if( !fxStripped ){
@@ -140,7 +140,7 @@ onEvt(string script, integer evt, list data){
 		str color = l2s(data, 0);
 		integer flags = l2i(data, 1);
 		
-		ThongMan$hit(color);
+		ThongMan$hit(llGetOwner(), color);
 		// Also flags and stuff here
 		if( ~flags&fxhfFlag$NOSOUND ){
 		

@@ -58,7 +58,10 @@ list FXCMap = [
 	fx$QTE_MOD,						// 37
 	fx$COMBAT_HP_REGEN,				// 38
 	fx$SPELL_DMG_TAKEN_MOD,			// 39
-	fx$SPELL_DMG_DONE_MOD			// 40
+	fx$SPELL_DMG_DONE_MOD,			// 40
+	fx$DAMAGE_TAKEN_FRONT,				// 41
+	fx$DAMAGE_TAKEN_BEHIND,				// 42
+	fx$FALL_DMG_HEIGHT				// 43
 ];
 
 

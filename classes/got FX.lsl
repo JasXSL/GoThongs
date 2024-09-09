@@ -238,7 +238,9 @@ string FX_buildCondition(integer cond, list vars){
 #define PACKAGE_MAX_STACKS 8			// 
 #define PACKAGE_TICK 9
 
-string FX_buildPackage( float dur, integer flags, string name, list fxobjs, list conditions, list evts, list tags, integer fxMinConditions, integer stacks, float tick ){
+string FX_buildPackage( 
+	float dur, integer flags, string name, list fxobjs, list conditions, list evts, list tags, integer fxMinConditions, integer stacks, float tick 
+){
     return llList2Json(JSON_ARRAY, [dur, flags, name, llList2Json(JSON_ARRAY, fxobjs),llList2Json(JSON_ARRAY, conditions),llList2Json(JSON_ARRAY, evts), llList2Json(JSON_ARRAY, tags), fxMinConditions, stacks, tick]);
 }
 

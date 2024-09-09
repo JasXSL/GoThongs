@@ -74,7 +74,7 @@ default{
 			
 		}
 		#endif
-
+		
 		if( nr != TASK_FXC_PARSE )
 			return;
 				
@@ -96,12 +96,13 @@ default{
 			int pix = l2i(input, in+1);
 			str table = getFxPackageTableByIndex(pix);
 			
-			int team = hud$status$team();
+			int team = status$team();
 			int stacks = (int)db4$fget(table, fxPackage$STACKS);
 			key caster = db4$fget(table, fxPackage$SENDER);
 			str pname = db4$fget(table, fxPackage$NAME);
 			int pflags = (int)db4$fget(table, fxPackage$FLAGS);
 			list fxs = llJson2List(db4$fget(table, fxPackage$FXOBJS));
+			
 			
 			if( pflags & PF_NO_STACK_MULTIPLY )
 				stacks = 1;

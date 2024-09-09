@@ -17,7 +17,7 @@
 	(float)buttonDelay=0,  	- How long to wait after a successful press to draw the next part. Useful for monster that trigger an animation on success.
 	(int)flags				- See below
 */
-#define Evts$qFlags$LR 0x1				// Instead of having to press 4 buttons, you have to press left right repeatedly to fill a bar
+#define Evts$qFlags$LR 0x1				// Instead of having to press 4 buttons, you have to hold a single button
 #define Evts$qFlags$LR_CAN_FAIL 0x2		// When used with above, the bar starts at 50% and starts fading. Fade rate can be inversely affected by fxMod
 
 	// Callback tasks [(int)task, (var)arg1...]

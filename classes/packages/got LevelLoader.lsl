@@ -123,7 +123,6 @@ default{
 		if( l2s(groups, 0) == "" ){
 			
 			WAITING_HUD = WAITING_LOCAL = [];
-			qd("Live was requested" +mkarr(groups));
 			BFL = BFL|BFL_WAITING_BUFFER|BFL_WAITING_LOAD;
 			multiTimer(["INI", 0, 5, FALSE]);
 			

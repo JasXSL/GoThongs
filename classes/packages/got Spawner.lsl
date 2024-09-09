@@ -9,13 +9,9 @@
 	#define TABLE gotTable$spawner
 #endif
 
-key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
-
-
 // gotTable$spawner is a sequential table containing JSON objects
 /*
 {
-	i : (key)id				- Assigned when "SP" is received
 	n : (str)obj_name		- Name of object we are spawning or "_CB_" if a callback
 	p : (vec)pos 			- Object spawn pos
 	r : (rot)rotation 		- Rotation of object
@@ -23,13 +19,34 @@ key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
 	t : (bool)debug_mode	- Spawn in debug/dummy mode
 	g : (str)spawnround		- Spawn group
 	s : (key)sender			- Sender that requested the spawn
-	[Unused] f : (bool)temp_on_rez	- Should be temp on rez 
-	_ : (float)time 		- llGetTime of when the spawn was requested
+	q : (arr)rez_params		- List of params that is passed to llRezObjectWithParams. You can use everything except REZ_POS, REZ_ROT, REZ_PARAM_STRING 
 	c : (str)callbackScript - Script to send the callback to in _CB_ type
 	m : (int)callbackMethod	- Method to callback to in _CB_ type
-	! : (int)state 			- use ST_*
 }
 */
+
+// Used only when REMOTELOADER_METATABLE is undefined (so from non-HUD)
+// Try to get remoteloader prim from owner. We use that prim to stagger rezzing.
+/*
+key getRemoteloader(){
+
+	// Fetch HUDs from level
+	key hud = l2k(LevelDb$getHuds(), 0);
+	integer num = llList2Integer(llGetObjectDetails(spawner, (list)OBJECT_PRIM_COUNT), 0);
+	integer i = 1;
+	for(; i <= num; ++i ){
+		
+		key k = llGetObjectLinkKey(spawner, i);
+		string name = llKey2Name(k);
+		if( name == "Remote" )
+			return k;
+		
+	}
+	return "";
+	
+}
+*/
+
 
 #define ST_QUEUED 0			// Not rezzed yet
 #define ST_REZZED 1			// We have called llRez on this
@@ -38,107 +55,126 @@ key ROOT_LEVEL;		// ID of level (used to send queue finish callbacks)
 #define CONCURRENCY 2
 #define TIMEOUT 180			// 3 min
 
-next(){
+key wAck; // waiting for ack
+float ackStart;
+string spawnData;
+integer fails;
 
+
+spawn(){
+	
+	str name = j(spawnData, "n");
+	str desc = j(spawnData, "d");
+	ackStart = llGetTime();
+	wAck = "";
+	
+	if( name == "_CB_" ){
+		
+		// This queue is done. Send callback.
+		sendCallback(
+			j(spawnData, "s"), 
+			j(spawnData, "c"), 
+			(int)j(spawnData, "m"), 
+			"", 
+			desc
+		);
+		
+		debugRare("[Queue] Sending queue callback for "+desc);
+		
+	}
+	else{
+		
+		debugUncommon("[Queue] Spawning "+j(spawnData, "n"));
+		wAck = _portal_spawn_v3(
+			name,				// Object name 
+			(vector)j(spawnData, "p"),		// Position
+			(rotation)j(spawnData, "r"),		// Rotation 
+			-<0,0,8>,					// Spawn below by default 
+			(((int)j(spawnData, "t")>0)|PortalRezFlag$ack),			// Debug mode / need ack
+			j(spawnData, "g"),				// spawn group
+			j(spawnData, "s"),				// sender
+			desc,						// desc
+			llJson2List(j(spawnData, "q")) 	// Custom rezparams
+		);
+		
+	}
+	
+	
+}
+
+next(){
+	
+	
+	// This only works for HUDs. And makes sure that we stop if remoteloader gets full.
+	#ifdef REMOTELOADER_METATABLE
+	int rlMeta = Remoteloader$getMetaStatus(REMOTELOADER_METATABLE);
+	if( rlMeta != remoteloaderStatus$NO_QUEUE ){
+		
+		debugUncommon("Waiting for remoteloader");
+		multiTimer(["CONT",0,.25,FALSE]);
+		return;
+		
+	}
+	#endif
+	
+	// We should wait for an ack from the rezzed objects before continuing.
+	if( wAck ){
+	
+		if( llGetTime()-ackStart > 30 ){
+			qd(llKey2Name(wAck) + " failed to spawn in a timely fashion, trying again. SpawnData: "+spawnData);
+			//llDerezObject(wAck); // Todo: Enable when implemented. Remove old object just in case
+			if( ++fails == 4 ){
+				qd("Too many failed attempt, dropping this spawn");
+				wAck = "";
+			}
+			else
+				spawn();
+		}
+		multiTimer(["CONT",0,.25,FALSE]);
+		return;
+		
+	}
+
+	int found;
 	// Loop through table
-	int pre; int found; int rezzed; list rezzable; // Gets the oldest n CONCURRENCY indexes that are on ST_QUEUED
 	db4$each(TABLE, i, data, 
 		
-		str name = j(data, "n");
-		str desc = j(data, "d");
-		
-		if( name == "_CB_" ){
-			
-			// This queue is done. Send callback.
-			if( pre == 0 ){
-				
-				sendCallback(
-					j(data, "s"), 
-					j(data, "c"), 
-					(int)j(data, "m"), 
-					"", 
-					desc
-				);
-				db4$delete(TABLE, i);
-				debugRare("[Queue] "+(str)i+". Sending queue callback for "+desc);
-				
-			}
-				
-			pre = 0;
-			
-		}
-		else{
-			++found; 	// This is a spawn in progress. Also needed on prune failed so callbacks do not get deleted.
-			++pre;		// There is an unfinished spawn before the next callback
-			
-			int st = (int)j(data, "!");
-			// Candidate for rezzing
-			if( st == ST_QUEUED && count(rezzable) < CONCURRENCY )
-				rezzable += i;
-			// Items awaiting finalizing
-			else if( st != ST_QUEUED )
-				++rezzed;
-				
-			float spawned = (float)j(data, "_");
-			if( 
-				(st != ST_QUEUED && llGetTime()-spawned > TIMEOUT) || 	// Timeout hit after attempting to rez it
-				(st == ST_DESC_SENT && llKey2Name(j(data, "i")) == "") 	// Object has been destroyed after sending desc
-			){
-				qd(
-					"[ERROR] Failed to rez "+j(data, "n")+"\n"+
-					"Timeout: "+(str)(llGetTime()-spawned > TIMEOUT) + " "+
-					"Obj in region: "+llKey2Name(j(data, "i")) + "\n" +
-					"Full data: "+data
-				);
-				db4$delete(TABLE, i);
-			}
-			
-		}
-		
+		++found;
+		db4$delete(TABLE, i);
+		spawnData = data;
+		spawn();
+		if( wAck )
+			jump _found; // we tried to spawn something
+
 	)
+	
+	@_found;
 	
 	// Queue is empty so we can reset LSD
 	if( !found ){
 	
 		debugRare("Full queue is complete!");
-		multiTimer(["PRUNE"]);
-		db4$drop(TABLE);
+		dropQueue();
 		return;
 		
 	}
 	
-	debugUncommon("[Queue] Able to spawn "+(str)(CONCURRENCY-rezzed)+" items");
-	// Rez items
-	integer i;
-	for(; i < count(rezzable) && i < CONCURRENCY-rezzed; ++i ){
 	
-		integer idx = l2i(rezzable, i);
-		string data = db4$get(TABLE, idx);
-		data = llJsonSetValue(data, (list)"!", (str)ST_REZZED);
-		data = llJsonSetValue(data, (list)"_", (str)llGetTime()); // Give it more time
-		db4$replace(TABLE, idx, data);
-		
-		debugUncommon("[Queue] Spawning "+j(data, "n"));
-		// int id, string name, rotation rot, vector spawnOffset, integer debug
-		_portal_spawn_new(
-			idx,							// Index of spawn
-			j(data, "n"),				// Object name 
-			(rotation)j(data, "r"),		// Rotation 
-			-<0,0,8>,					// Spawn below by default 
-			(int)j(data, "t")			// Debug mode 
-		);
-		
-	}
-	
-	// Unstucks if things do not rez
-	multiTimer(["PRUNE", 0, 5, TRUE]);
+	multiTimer(["CONT",0,.1,FALSE]); // Prevents blocking and allows things to catch up
 	
 }
 
+dropQueue(){
+	
+	spawnData = "";
+	multiTimer(["CONT"]);
+	db4$drop(TABLE);
+	
+}
 
 timerEvent(string id, string data){
 	
-	if( id == "PRUNE" )
+	if( id == "CONT" )
 		next();
 	
 }
@@ -148,39 +184,15 @@ onEvt(string script, integer evt, list data){
 	#ifdef onEvtCustom
 		onEvtCustom( script, evt, data);
 	#endif
-	// Gets the key of the level.
-	if(script == "#ROOT" && evt == RootEvt$level){
-		ROOT_LEVEL = llList2String(data, 0);
-	}
-}
-
-sendDesc( key id, integer idx ){
-
-	string data = db4$get(TABLE, idx);
-	if( data == "" ){
-		
-		debugRare("[Desc] Request sent to missing spawn idx: "+(str)idx);
-		return;
-		
-	}
-	data = llJsonSetValue(data, (list)"!", (str)ST_DESC_SENT); 	// Assign state
-	data = llJsonSetValue(data, (list)"i", (str)id);			// Assign a UUID
-	data = llJsonSetValue(data, (list)"_", (str)llGetTime());	// Give it more time
-	db4$replace(TABLE, idx, data);
 	
-	// Portal$iniData(targ, data, spawnround, requester, pos)
-	Portal$iniData(
-		id, // target
-		j(data, "d"), 	// Custom data 
-		j(data, "g"), 	// Spawnround
-		j(data, "s"), 	// Sender key
-		j(data, "p")	// Spawn pos
-	);
-	debugCommon("[Desc] Sending to "+llKey2Name(id));
-
+	if( script == "got RootAux" && evt == RootAuxEvt$cleanup && spawnData != "" ){
+		
+		llOwnerSay("Note: Cleanup received. Ending active spawn cycle.");
+		dropQueue();
+		
+	}
+		
 }
-
-int pChan;
 
 default{
 
@@ -188,66 +200,36 @@ default{
 	
 		raiseEvent(evt$SCRIPT_INIT, "");
 		// Listens to the prim playerChan, NOT owner
-		pChan = playerChan(llGetKey());
-		llListen(pChan, "", "", "");
 		db4$drop(TABLE);
 		#ifdef onStateEntry
 		onStateEntry();
 		#endif
 		
+		llListen(SpawnerConst$ACK_CHAN, "", "", "ACK");
+		
 	}
 	
-	// The script listens to its own object key chan
-	// SP is received when a portal is ready to receive a description
-	// DN is received when a portal has received the description
-	listen( integer chan, string name, key id, string message ){
-		idOwnerCheck
-		
-		#ifdef onListen
-		onListen( chan, id, message );
-		#endif
-		/*
-		// Sent from an object letting you know it was spawned, but not remoteloaded yet
-		if( message == "PN" ){
+	// Handles ack from portal
+	listen( integer ch, string name, key id, string message ){
+	
+		if( id == wAck ){
+			
+			debugUncommon("[Queue] Got ack from "+name);
+			wAck = spawnData = "";
+			fails = 0;
+			next(); // continue immediately
 			
 		}
-		*/
-		
-		if( chan != pChan )
-			return;
-		
-		string start = llGetSubString(message, 0, 1);
-		if( start != "SP" && start != "DN" )
-			return;
-		
-		integer idx = (int)llGetSubString(message, 2, -1);
-		if( llStringLength(message) == 2 ){
-			
-			debugRare("[ERROR] Received a legacy "+message+" from "+name);
-			return;
-			
+		else{
+			debugUncommon("[Queue] Got ack from unknown prim "+name);
 		}
 		
-		// Send from a portal requesting a description
-		if( start == "SP" ){
-			
-			debugCommon("[ReqDesc] Sending desc to "+(str)idx+" ("+llKey2Name(id)+")");
-			sendDesc(id, idx);			
-			next();
-			
-		}
+		llRegionSayTo(id, ch+1, message);
 		
-		// Sent from a portal saying it's done
-		if( start == "DN" ){
-			
-			// all done!
-			debugCommon("[Desc] Finalized ID "+(str)(idx)+" :: "+name);
-			db4$delete(TABLE, idx);
-			next();
-			
-		}
 		
 	}
+	
+	
 	
 		
 	timer(){multiTimer([]);}
@@ -281,7 +263,7 @@ default{
 		
 	}
 	
-    if(method$byOwner){
+    if( method$byOwner ){
 	
 		if( METHOD == 0 )
 			llResetScript();
@@ -347,9 +329,9 @@ default{
 					"r", l2s(dta, 2),					// Rotation
 					"d", l2s(dta, 3),					// Description
 					"t", l2i(dta, 4),					// Debug
-					//"f", l2i(dta, 5),					// Temp on rez
 					"g", l2s(dta, 6),					// spawn group
-					"s", requester							// sender
+					"q", l2s(dta, 7),					// Array to pass to llRezObjectWithParams
+					"s", requester						// sender
 				]);
 			
 			else
@@ -357,7 +339,6 @@ default{
 			
 			if( out ){
 				
-				out = llJsonSetValue(out, ["_"], (str)llGetTime());
 				db4$insert(TABLE, out);
 				
 			}

@@ -5,7 +5,7 @@
 #define PotionsMethod$resetCooldown 2	// 
 #define PotionsMethod$remove 3			// (int)allow_drop, (int)force_remove_no_drop
 #define PotionsMethod$use 4				// 
-
+#define PotionsMethod$fallStun 5		// (int)level - Level can be 0 or 1, 1 adding a debuff and stunning for more
 
 #define PotionsFlag$no_drop 0x1			// Don't spawn an item if replaced
 #define PotionsFlag$raise_event 0x2		// Raise event on the current level when potion is consumed
@@ -22,7 +22,7 @@
 #define Potions$resetCooldown(targ) runMethod(targ, "got Potions", PotionsMethod$resetCooldown, [], NORET)
 #define Potions$remove(targ, allow_drop, force_rem) runMethod(targ, "got Potions", PotionsMethod$remove, [allow_drop, force_rem], NORET)
 #define Potions$use(targ) runMethod(targ, "got Potions", PotionsMethod$use, [], NORET)
-
+#define Potions$fallStun(targ, level) runMethod((str)targ, "got Potions", PotionsMethod$fallStun, (list)(level), TNN)
 
 #define PotionName$minorHealing "Pot_mHP"
 #define PotionName$minorMana "Pot_mMP"

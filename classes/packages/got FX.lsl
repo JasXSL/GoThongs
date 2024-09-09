@@ -230,7 +230,7 @@ onEvt( string script, integer evt, list data ){
 			if( maxtargs == 0 )
 				maxtargs = -1;
 
-			int team = hud$status$team();
+			int team = status$team();
 			
 			lastProcs = llJsonSetValue(lastProcs, (list)((str)ei), (str)ts);
 			
@@ -378,7 +378,7 @@ integer preCheck(key sender, list package, integer team){
 	
 	// Tracks how many conditions we have looped through, used to break the loop if the remaining conditions aren't enough to meet min
     integer parsed;
-	integer TEAM = hud$status$team();
+	integer TEAM = status$team();
 	
     // loop through all conditions
 	integer i;
@@ -570,7 +570,7 @@ default{
             list wrapper = llJson2List(method_arg(1));			// Open up the wrapper
 			float range = llList2Float(PARAMS, 2);				// Max range for FX (if >0)
 			integer team = llList2Integer(PARAMS, 3);			// Team defaults to NPC unless set
-			int TEAM = hud$status$team();
+			int TEAM = status$team();
 			// Internal commands are always same team
 			if( method$internal )
 				team = TEAM;
@@ -836,9 +836,9 @@ default{
 					
 				
 				
-					if( send )						
+					if( send ){
 						llMessageLinked(LINK_THIS, TASK_FXC_PARSE, mkarr(send), sender);
-					
+					}
 					
 				}
 			}

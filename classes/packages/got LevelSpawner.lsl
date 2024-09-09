@@ -165,10 +165,19 @@ default{
         // Clear old
         Portal$killAll();
         Level$despawn();
-        _portal_spawn_std(level, startPos, ZERO_ROTATION, <0,0,8>, FALSE);
+        _portal_spawn_v3(
+			level, 
+			startPos, 
+			ZERO_ROTATION, 
+			<0,0,8>, 
+			FALSE,
+			"_LV_",
+			id,
+			"",
+			[]
+		);
 		
     }
-	
 	if( METHOD == LevelSpawnerMethod$setLoading )
 		toggleLoadingScreen(TRUE);
 

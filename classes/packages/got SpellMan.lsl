@@ -216,12 +216,12 @@ integer castSpell( integer nr ){
 	if( !SPF )
 		return -2;
 	
-	int TEAM = hud$status$team();
+	int TEAM = status$team();
 
 	// BEFORE QUEUE
 	// Check if I have enough mana BEFORE allowing a queue
     float cost = spellCost(data, nr);
-    if( cost > hud$status$mana() ){
+    if( cost > status$mana() ){
         A$(ASpellMan$errInsufficientMana);
         return FALSE;
     }
@@ -355,7 +355,7 @@ integer castSpell( integer nr ){
 	
     
 	// If I'm raped or dead
-	integer sf = hud$status$flags();
+	integer sf = status$flags();
     if( sf&StatusFlags$noCast || (SPF&SpellMan$NO_SWIM && sf&StatusFlag$swimming) ){
         A$(ASpellMan$errCantCastNow);
         return FALSE;

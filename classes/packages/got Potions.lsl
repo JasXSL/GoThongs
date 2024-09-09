@@ -49,8 +49,8 @@ dropPotion(){
 	
 	vector pos = llGetRootPosition()+llRot2Left(llGetRot())*.3;
 	rotation rot = llGetRot();
-	if(FLAGS&PotionsFlag$is_in_hud)
-		Spawner$spawnInt(PRIM, pos, rot, "[\"M\"]", FALSE, TRUE, "POTS"); 
+	if( FLAGS & PotionsFlag$is_in_hud)
+		Spawner$spawnInt(PRIM, pos, rot, "[\"M\"]", FALSE, TRUE, "POTS", []); 
 	else if( FLAGS&PotionsFlag$raise_drop_event )
 		Level$potionDropped(PRIM);
 	else
@@ -126,7 +126,7 @@ setCDVisual(float cd){
 	llSetLinkPrimitiveParamsFast(P_POTION, out);
 }
 
-
+list WATER;
 
 default {
 
@@ -217,6 +217,54 @@ default {
 		raiseEvent(PotionsEvt$pickup, NAME);
 		
     }
+	else if( METHOD == PotionsMethod$fallStun ){
+		
+		integer lv = l2i(PARAMS, 0);
+		string package = "[1.5,129,\"_fd\",["+
+            "[7,\"knockdown_faster\",1,1,8],"+
+            "[6,\"<-1,-1,-1>\",129],"+
+            "[13,8]"+
+        "]]";
+        if( lv )
+            package = "[3,129,\"_fd\",["+
+                "[7,\"knockdown_fast\",1,0,8],"+
+                "[6,\"<-1,-1,-1>\",133],"+
+                "[13,1]"+
+            "]],0,"+
+            "[120,1,\"_fdL\",["+
+                "[20,\"63ee136e-74b2-9f17-6ac9-bbde4d847460\",\"Your butt is sore! +50% damage taken from behind!\"],"+
+                "[91,0.5]"+
+            "]]";
+        //AnimHandler$anim(anim, TRUE, 0, 0, jasAnimHandler$animFlag$fast);
+        FX$run("", "[9,0,0,0,"+package+"]");
+        emulateEvent("got Status", StatusEvt$fell, (str)lv);
+        
+        if( lv ){
+            
+            vector gp = llGetPos();
+            vector as = llGetAgentSize(llGetOwner());
+            list ray = llCastRay(gp, gp-<0,0,as.z>, []);
+            if( l2i(ray, -1) == 1 ){
+            
+                
+                WATER = PrimSwimGet$water();
+				
+                vector as = l2v(ray, 1)+<0,0,.05>;
+                float z = PrimswimHelper$pointSubmergedFast(as);
+                if( z == -1 ){
+                    
+                    vector vr = llRot2Euler(llGetRot());
+                    rotation r = llEuler2Rot(<0,0,vr.z>);
+                
+                    llRezAtRoot("Thud", as+<-.1,0,-.1>*r, ZERO_VECTOR, ZERO_ROTATION, 1);
+                    
+                }
+                
+            }
+            
+        }
+		
+	}
 	else if(METHOD == PotionsMethod$resetCooldown){
 		
 		onCooldownFinish();

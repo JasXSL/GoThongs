@@ -24,19 +24,19 @@
 	
 
 // These methods fetch data from db4
-#define hud$status$hp() (float)db4$fget(gotTable$status, gotTable$status$hp)
-#define hud$status$mana() (float)db4$fget(gotTable$status, gotTable$status$mana)
-#define hud$status$arousal() (float)db4$fget(gotTable$status, gotTable$status$arousal)
-#define hud$status$pain() (float)db4$fget(gotTable$status, gotTable$status$pain)
-#define hud$status$maxHP() (float)db4$fget(gotTable$status, gotTable$status$maxHp)
-#define hud$status$maxMana() (float)db4$fget(gotTable$status, gotTable$status$maxMana)
-#define hud$status$maxArousal() (float)db4$fget(gotTable$status, gotTable$status$maxArousal)
-#define hud$status$maxPain() (float)db4$fget(gotTable$status, gotTable$status$maxPain)
-#define hud$status$flags() (int)db4$fget(gotTable$status, gotTable$status$flags)
-#define hud$status$armor() (int)db4$fget(gotTable$status, gotTable$status$armor)
-#define hud$status$team() (int)db4$fget(gotTable$status, gotTable$status$team)
-#define hud$status$difficulty() (int)db4$fget(gotTable$status, gotTable$status$difficulty)
-#define hud$status$genitals() (int)db4$fget(gotTable$status, gotTable$status$genitals)
+#define status$hp() (float)db4$fget(gotTable$status, gotTable$status$hp)
+#define status$mana() (float)db4$fget(gotTable$status, gotTable$status$mana)
+#define status$arousal() (float)db4$fget(gotTable$status, gotTable$status$arousal)
+#define status$pain() (float)db4$fget(gotTable$status, gotTable$status$pain)
+#define status$maxHP() (float)db4$fget(gotTable$status, gotTable$status$maxHp)
+#define status$maxMana() (float)db4$fget(gotTable$status, gotTable$status$maxMana)
+#define status$maxArousal() (float)db4$fget(gotTable$status, gotTable$status$maxArousal)
+#define status$maxPain() (float)db4$fget(gotTable$status, gotTable$status$maxPain)
+#define status$flags() (int)db4$fget(gotTable$status, gotTable$status$flags)
+#define status$armor() (int)db4$fget(gotTable$status, gotTable$status$armor)
+#define status$team() (int)db4$fget(gotTable$status, gotTable$status$team)
+#define status$difficulty() (int)db4$fget(gotTable$status, gotTable$status$difficulty)
+#define status$genitals() (int)db4$fget(gotTable$status, gotTable$status$genitals)
 
 	
 #define StatusMethod$debugOut 0				// void - Outputs into chat: [(int)maxHP, (int)maxMana, (int)maxArousal, (int)maxPain]
@@ -79,7 +79,7 @@
 #define StatusMethod$toggleBossFight 18			// (bool)fight - Received from GUI, toggles boss fight on or off
 #define StatusMethod$setTeam 19					// (int)team - PC/NPC
 
-#define StatusMethod$debug 20				// void - Outputs your resources in human readable format
+//#define StatusMethod$debug 20				// void - Outputs your resources in human readable format
 #define StatusMethod$kill 21				// (str)customRapeName - Kills the player or npc immediately. If customRapeName is supplied, that will be used for rape
 #define StatusMethod$playerSceneDone 22		// void - Player scene was finished
 #define StatusMethod$damageArmor 23			// (int)damage
@@ -172,6 +172,7 @@
 		Status$getArmorVal(armor, Status$armorSlot$ARMS)+ \
 		Status$getArmorVal(armor, Status$armorSlot$BOOTS)+ \
 		Status$getArmorVal(armor, Status$armorSlot$GROIN)
+ #define StatusEvt$fell 18					// (int)level - 0 = short fall, 1 = big fall - Emulated event that is raised by ton Footsteps and hard coded in SL
  
 // Turns off features to make this static like a door or something
 // #define STATUS_IS_STATIC

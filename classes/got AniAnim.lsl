@@ -7,6 +7,9 @@
 
 #define AniAnim$customAnim(targ, anim, start, flags, duration, preventNonHumanoid) \
 	runMethod((str)targ, "got AniAnim", AniAnimMethod$customAnim, (list)(anim)+(start) + (flags) + (duration) + (preventNonHumanoid), TNN)
+#define AniAnim$startCustom(anim) AniAnim$customAnim(LINK_SET, anim, TRUE, 0, 0, FALSE)
+#define AniAnim$stopCustom(anim) AniAnim$customAnim(LINK_SET, anim, FALSE, 0, 0, FALSE)
+
 	
 #define AniAnim$restart(animName) runMethod((string)LINK_SET, "got AniAnim", MaskAnimMethod$start, (list)animName+ true, TNN)
 #define AniAnim$start(animName) runMethod((string)LINK_SET, "got AniAnim", MaskAnimMethod$start, (list)animName, TNN)

@@ -9,13 +9,14 @@
 #define gotTable$root$level db4$2			// UUID of level
 #define gotTable$root$levelIsChallenge db4$3	// 0/1 level is challenge dungeon
 #define gotTable$root$levelIsLive db4$4			// 0/1 level is live
+#define gotTable$root$supportCube db4$5			// uuid of support cube
 
 #define hud$root$targ() db4$fget(gotTable$root, gotTable$root$targ)
 #define hud$root$focus() db4$fget(gotTable$root, gotTable$root$focus)
 #define hud$root$level() db4$fget(gotTable$root, gotTable$root$level)
 #define hud$root$levelIsChallenge() ((int)db4$fget(gotTable$root, gotTable$root$levelIsChallenge))
 #define hud$root$levelIsLive() ((int)db4$fget(gotTable$root, gotTable$root$levelIsLive))
-
+#define hud$root$supportCube() db4$fget(gotTable$root, gotTable$root$supportCube)
 
 #define hud$root$numPlayers() db4$getIndex(gotTable$rootPlayers)
 #define hud$root$numHuds() db4$getIndex(gotTable$rootHuds)
@@ -39,6 +40,7 @@
 #define RootMethod$targetCoop 12				// (key)hud_id - Tries to target a coop player by HUD ID
 #define RootMethod$blockControls 13				// (bool)block - Blocks or unblocks controls. Tied to the prim that sends this command.
 #define RootMethod$raiseLevelEvent 14			// void - Owner only. Forces the HUD to raise a level changed event. Used for addons to instantly get level data.
+
 
 //#define RootEvt$thongKey 1						// Thong key has changed
 #define RootEvt$flags 2							// (int)flags - Flags changed
@@ -73,8 +75,10 @@
 #define Root$forceRefresh(targ, id) runMethod(targ, "#ROOT", RootMethod$refreshTarget, [id], TNN)
 #define Root$getTarget(targ, cb) runMethod(targ, "#ROOT", RootMethod$getTarget, [], cb)
 #define Root$targetCoop(targ, hud) runMethod((str)targ, "#ROOT", RootMethod$targetCoop, (list)hud, TNN)
-#define Root$blockControls(block, cb) runMethod((str)llGetOwner(), "#ROOT", RootMethod$blockControls, (list)block, cb)
+#define Root$blockControls(targ, block, cb) runMethod((str)targ, "#ROOT", RootMethod$blockControls, (list)block, cb)
 #define Root$raiseLevelEvent() runMethod(llGetOwner(), "#ROOT", RootMethod$raiseLevelEvent, [], TNN)
+
+
 
 // This is a custom call that bypasses XOBJ. Send it on AOE_CHAN and it sends back "GHD"+json_array(HUDs) on the same channel
 #define Root$getHUDSLight(targ) llRegionSayTo(targ, AOE_CHAN, "GHD")

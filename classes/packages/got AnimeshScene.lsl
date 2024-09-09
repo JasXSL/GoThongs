@@ -199,7 +199,7 @@ onEvt(string script, integer evt, list data){
     if( script == "got Portal" && evt == evt$SCRIPT_INIT ){
         
 		BFL = BFL&~BFL_LIVE;
-		if( portalConf$live ){
+		if( Portal$getLive() ){
 		
 			PP(0, (list)PRIM_TEMP_ON_REZ + TRUE);
 			BFL = BFL|BFL_LIVE;
@@ -317,7 +317,7 @@ default{
             else if( !NO_DIE ){
 			
                 ptUnset("thr");
-				if( portalConf$live )
+				if( Portal$getLive() )
 					llDie();
 				else{
 					stopAllObjectAnimations()

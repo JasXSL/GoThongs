@@ -4,6 +4,7 @@
 #include "./_tables.lsl"
 #include "./_soundPrims.lsl"
 #include "xobj_core/libraries/lazyPandaLib.lsl"
+#include "./_tags.lsl"
 
 // We're not using tokens because listeners are limited by party
 #define DISREGARD_TOKEN
@@ -72,6 +73,7 @@
 #include "xobj_core/classes/jas Supportcube.lsl"
 #include "xobj_core/classes/jas Climb.lsl"
 #include "xobj_core/classes/jas Primswim.lsl"
+#include "xobj_core/classes/jas PrimswimAux.lsl"
 #include "xobj_core/classes/jas Interact.lsl"
 #include "xobj_core/classes/jas MaskAnim.lsl"
 #include "xobj_core/classes/jas Soundspace.lsl"
@@ -130,6 +132,7 @@
 #include "./classes/got AniAnim.lsl"
 #include "./classes/got AnimeshScene.lsl"
 #include "./classes/got Banter.lsl"
+#include "./classes/got MonsterGrapple.lsl"
 
 
 // Helper function to run code on all players. Requires players to be stored in a global list named PLAYERS

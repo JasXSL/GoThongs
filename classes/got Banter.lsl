@@ -31,6 +31,16 @@
 	#define gotBanter$flag$ONCE 0x1				// Only allow this event script/type once
 #define gotTable$banter$sound db4$7
 
+int _stGotSex( integer s ){
+	return
+		((s&0xF) > 0) |
+		((((s>>sTag$bitoffs$vagina)&0xF) > 0) << 1) |
+		((((s>>sTag$bitoffs$breasts)&0xF) > 0) << 2)
+	;
+}
+
+// Gets JasX sex flags from sTag sex
+#define gotBanter$getJasxSexFlags( targ ) _stGotSex(_stib(targ))
 
 str _bCon( key targ, string text ){
 
@@ -109,7 +119,7 @@ str _bGetCommonJson( key targ, integer ext ){
 	
 	list fetch = (list)"spec" + "subs" + "sex" + "gothud" + "bits";
 	if( ext )
-		fetch += (list)"tail" + "hair" + "bdyfat" + "bdymscl" + "ofit";
+		fetch += (list)"tail" + "hair" + "bdyfat" + "bdymscl" + "ofit" + gotTag$level + gotTag$role + gotTag$className;
 	list all = sTagAv( targ, "", [], 0);
 	all = llListSort(all, 1, TRUE);
 	integer i; string desc; list pack;
@@ -143,7 +153,7 @@ str _bGetCommonJson( key targ, integer ext ){
 #define gotBanter$getCommonExt(targ) _bGetCommonJson(targ, true)
 
 // Copy paste to create variables for you
-#define gotBanter$commonSplit( id, p,v,b,r,t, spec, subs, sex, ofit, tail, hair, bdyfat, bdymscl, hud ) \
+#define gotBanter$commonSplit( id, p,v,b,r,t, spec, subs, sex, ofit, tail, hair, bdyfat, bdymscl, hud, lv, role, class ) \
 	string ofit = gotBanter$getCommonExt(id); \
 	int _bits = (int)j(ofit, "bits"); \
 	int p = sTag$penisSize(_bits); \
@@ -158,6 +168,9 @@ str _bGetCommonJson( key targ, integer ext ){
 	int hair = sTag$sizeToInt(j(ofit, "hair")); \
 	int bdyfat = sTag$sizeToInt(j(ofit, "bdyfat")); \
 	int bdymscl = sTag$sizeToInt(j(ofit, "bdymscl")); \
+	int lv = (int)j(ofit, gotTag$level); \
+	int role = (int)j(ofit, gotTag$role); \
+	string class = j(ofit, gotTag$className); \
 	key hud = j(ofit, "gothud"); \
 	ofit = j(ofit, "ofit");
 	

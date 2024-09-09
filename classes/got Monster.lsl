@@ -64,6 +64,7 @@
 #define Monster$RF_ALWAYS_R 0x10000		// 65536 This monster is always able to trigger sex poses on downed players regardless of invul
 #define Monster$RF_FLANKING 0x20000		// 131072 This monster will try to flank players when not targeted by their aggro
 #define Monster$RF_INF_HP 0x40000		// 262144 Monster cannot lose HP but can do everything else
+#define Monster$RF_PASS_WALLS 0x80000 	// 524288 Monster can pass through walls. You will want to combine this with flying to work correct.
 
 #define Monster$atkFrame "_a"
 

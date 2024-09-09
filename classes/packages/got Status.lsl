@@ -66,6 +66,8 @@ integer GF;	// Genital flags
 // FX
 integer FXF = 0;				// FX flags
 list fmDT;						// [int playerID, float amount] Damage taken modifier. 0 (index 1 for value) is from ALL sources.
+float fmDTF = 1.0;				// Frontal damage taken modifier
+float fmDTB = 1.0;				// Rear damage taken modifier
 float fmMR = 1;					// mana regen
 float fmAT = 1;					// Arousal taken
 float fmPT = 1;					// Pain taken
@@ -292,6 +294,17 @@ aHP( float am, string sn, integer fl, integer re, integer iCnv, key atkr, float 
 					fmdt*
 					difMod()
 				;
+				// Positional damage modifier
+				if( (fmDTF != 1.0 || fmDTB != 1.0) && llKey2Name(atkr) != "" ){
+					
+					prAngX(atkr, ang)
+					ang = llFabs(ang);
+					if( ang < PI_BY_TWO )
+						am *= fmDTF;
+					else
+						am *= fmDTB;
+				
+				}
 				
 			}
 
@@ -984,16 +997,20 @@ default {
 	if( nr == TASK_FX ){ \
         integer pre = FXF; \
 		FXF = (int)fx$getDurEffect(fxf$SET_FLAG); \
+		/* \
 		if( (pre&fx$F_BLURRED) != (FXF&fx$F_BLURRED) ){ \
 			integer divisor = 0; \
 			if( FXF&fx$F_BLURRED ) \
 				divisor = 2; \
 			llOwnerSay("@setdebug_renderresolutiondivisor:"+(string)divisor+"=force"); \
 		}\
+		*/ \
 		if( (pre&fx$F_FORCE_MOUSELOOK) != (FXF&fx$F_FORCE_MOUSELOOK) ){\
 			multiTimer([TIMER_MOUSELOOK, 0, (float)((FXF&fx$F_FORCE_MOUSELOOK)>0)/10, TRUE]); \
 		}\
         fmDT = llJson2List(fx$getDurEffect(fxf$DAMAGE_TAKEN_MULTI)); \
+		fmDTF = (float)fx$getDurEffect(fxf$DAMAGE_TAKEN_FRONT); \
+		fmDTB = (float)fx$getDurEffect(fxf$DAMAGE_TAKEN_BEHIND); \
         fmMR = (float)fx$getDurEffect(fxf$MANA_REGEN_MULTI); \
 		fmPT = (float)fx$getDurEffect(fxf$PAIN_MULTI); \
 		fmAT = (float)fx$getDurEffect(fxf$AROUSAL_MULTI); \
@@ -1066,16 +1083,6 @@ default {
 		
     }
 
-	// Public methods here
-	if(METHOD == StatusMethod$debug && method$byOwner){
-		llOwnerSay(
-			"HP: "+(str)HP+"/"+(str)maxHP()+"\n"+
-			"Mana: "+(str)MANA+"/"+(str)maxMana()+"\n"+
-			"Ars: "+(str)AROUSAL+"/"+(str)maxArousal()+"\n"+
-			"Pain: "+(str)PAIN+"/"+(str)maxPain()
-		);
-	}
-	
 	if( METHOD == StatusMethod$kill && ~SF&StatusFlag$dead ){
 	
 		HP = 0;
@@ -1087,7 +1094,6 @@ default {
 	
 		string attacker = method_arg(0);
 		PARAMS = llDeleteSubList(PARAMS, 0, 0);
-	
 		while(PARAMS){
 		
 			integer type = l2i(PARAMS, 0);

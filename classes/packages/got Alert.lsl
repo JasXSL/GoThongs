@@ -28,7 +28,7 @@ timerEvent(string id, string data){
     }
 }
 
-alert(string text, integer ownerSay, string playSound){
+alert( string text, integer ownerSay, string playSound ){
 	if(BFL&BFL_FADING)
 		ALERTS = [];
 		
@@ -36,18 +36,25 @@ alert(string text, integer ownerSay, string playSound){
 	float vol = 0.25;
 	
 	key s = playSound;
-	if(s)sound = s;
-	else if((int)playSound == 1)sound = "09ba0e73-fcf6-ed22-e1a3-7fc600237711";
-	else if((int)playSound == 2){
+	if( s )
+		sound = s;
+	else if( (int)playSound == 1 )
+		sound = "09ba0e73-fcf6-ed22-e1a3-7fc600237711";
+	else if( (int)playSound == 2 ){
+	
 		text = "🏥 "+text;
 		sound = "0596c6db-cc3e-e3e3-0f3b-b91e63f4e8b4";
 		vol = 1;
 		ALERTS = [];
+		
 	}
+	
 	if( sound )
 		llLinkPlaySound(soundPrim$alert, sound, vol, SOUND_PLAY);
-    if(ownerSay)llOwnerSay(text);
-    ALERTS+=text;
+    if( ownerSay )
+		llOwnerSay(text);
+	
+    ALERTS += stripSlurls(text);
     
 	while(
 		count(ALERTS)>3 || (

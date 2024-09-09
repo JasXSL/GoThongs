@@ -76,6 +76,17 @@
 // (53) Used by got Banter. 
 #define gotTable$banter db4$21
 
+// (54) Used by got MonsterGrapple. Hard coded keys.
+#define gotTable$monsterGrapple db4$22
+
+// (55) Monster grapple hookup settings. Sequential keys.
+#define gotTable$monsterGrappleHup db4$23
+
+// (56) Managed by jas Remoteloader
+#define gotTable$remoteloaderMeta db4$24 
+
+// (57) Managed by got Level
+#define gotTable$level db4$25
 
 #endif
 

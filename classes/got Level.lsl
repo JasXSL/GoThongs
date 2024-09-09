@@ -1,6 +1,13 @@
 #ifndef _gotLevel
 #define _gotLevel
 
+// Table setup for gotTable$level
+#define gotTable$level$players db4$0		// stores an array of all players
+#define gotTable$level$huds db4$1			// stores an array of all huds
+
+#define LevelDb$getPlayers() llJson2List(db4$fget(gotTable$level, gotTable$level$players))
+#define LevelDb$getHuds() llJson2List(db4$fget(gotTable$level, gotTable$level$huds))
+
 #define LevelMethod$update 0		// Updates scripts from HUD
 //#define LevelMethod$loaded 1		// (int)HUD_loaded - 2 = Scripts from HUD loaded, 1 = Monsters, 0 = Assets Whenever the loader has finished
 //#define LevelMethod$died 2			// MOVED to got LevelData

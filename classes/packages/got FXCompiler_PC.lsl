@@ -37,6 +37,7 @@ list thongVis;	// PIX of current effects that include thongMan visuals
 		else if(t == fx$MANA){
 			resource_updates += SMBUR$buildMana(l2f(fx,0)*st, pname, f);
 		}
+		
 	}
 	// ThongMan handled visual for instant effects
 	else if( t == fx$THONG_VISUAL && l2f(fx, 3) > 0 ){

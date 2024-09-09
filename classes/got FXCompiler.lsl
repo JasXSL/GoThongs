@@ -63,11 +63,11 @@
 	
 // LIBRARY
 #ifndef IS_NPC
-	#define spawn Spawner$spawnInt
+	#define FxCompilerSpawn Spawner$spawnInt
 	#define handleSmartHeal() \
 		if( targs&FXAF$SMART_HEAL ){ \
 			\
-			int cTeam = hud$status$team(); \
+			int cTeam = status$team(); \
 			float s = llGetTime(); \
 			list targ; float chp = 1; \
 			db4$each(gotTable$evtsNpcNear, index, row, \
@@ -90,7 +90,7 @@
 				FX$run("", l2s(fx,0)); \
 		}
 #else
-	#define spawn Spawner$spawn
+	#define FxCompilerSpawn Spawner$spawn
 	#define handleSmartHeal()
 #endif
 
@@ -189,17 +189,19 @@
 				l2s(fx,3),  \
 				FALSE,  \
 				TRUE,  \
-				"" \
+				"", \
+				[] \
 			);\
 		else \
-			spawn( \
+			FxCompilerSpawn( \
 				l2s(fx, 0),  \
 				pos+((vector)l2s(fx, 1)*r),  \
 				llEuler2Rot(<0,PI_BY_TWO,0>)*(rotation)l2s(fx,2)*r,  \
 				l2s(fx,3),  \
 				FALSE,  \
 				TRUE,  \
-				"" \
+				"", \
+				[] \
 			);\
 		\
 	}

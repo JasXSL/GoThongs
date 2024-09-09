@@ -8,6 +8,7 @@
 #define USE_EVENTS
 #define IS_NPC
 
+integer LIVE;
 integer BFL = 0; 
 #define BFL_DEAD 0x1
 #define BFL_FRIENDLY 0x2
@@ -88,6 +89,8 @@ float fmCR = 0;			// crit chance
 integer fxTeam = -1;
 // Damage taken modifiers
 list fmDT;
+float fmDTF = 1.0;	// Damage taken from front.
+float fmDTB = 1.0;	// Damage taken from back.
 // Healing taken modifiers
 list fmHT;
 list SDTM;
@@ -101,7 +104,7 @@ list cID;		// Custom ID (str)id, (var)mixed - Used for got Level integration
 #define isFFA() l2s(PLAYERS, 0) == "*"
 
 // Description is $M$(int)team$(int)HP_BITWISE$(int)rAdd(decimeters)$(int)hAdd$(int)status_flags$(int)monster_flags$(int)fx_flags$sex
-#define updateDesc() if(~BFL&BFL_DESC_OVERRIDE){\
+#define updateDesc() if( ~BFL&BFL_DESC_OVERRIDE && LIVE ){\
 	llSetObjectDesc( \
 		"$M$"+ \
 		(str)TEAM+"$"+ \
@@ -219,7 +222,7 @@ ag( key pl, float ag ){
 		
         raiseEvent(StatusEvt$monster_gotTarget, mkarr([AT]));
 		if( cID != [] && at != "" ){
-			Level$idAggro(l2s(cID, 0), mkarr(llDeleteSubList(cID,0,0)), at, NAC, portalConf$spawnround);
+			Level$idAggro(l2s(cID, 0), mkarr(llDeleteSubList(cID,0,0)), at, NAC, Portal$getGroup());
 		}
 		++NAC;
 		
@@ -234,6 +237,7 @@ ag( key pl, float ag ){
 // f = force
 outputStats( integer f ){
 
+
 	
 	// NPC has been ressurected
 	if( HP > 0 && SF&StatusFlag$dead ){
@@ -246,6 +250,8 @@ outputStats( integer f ){
 		AT = "";
 		
 	}
+	
+	db4$freplace(gotTable$status, gotTable$status$flags, SF);
 	
 	// Check team
 	integer t = fxTeam;
@@ -308,14 +314,14 @@ outputStats( integer f ){
 
 // Settings received
 #define onSettings(settings) \
-	list d = llJson2List(portalConf$desc); \
+	list d = llJson2List(Portal$getDesc()); \
 	list_shift_each(d, v, \
 		list dta = llJson2List(v); \
 		if(l2s(dta, 0) == "ID"){ \
 			list cid = cID; \
 			cID = llDeleteSubList(dta, 0, 0); \
 			if((str)cid != (str)cID){ \
-				Level$idEvent(LevelEvt$idSpawned, llList2String(cID, 0), mkarr(llDeleteSubList(cID, 0, 0)), portalConf$spawnround); \
+				Level$idEvent(LevelEvt$idSpawned, llList2String(cID, 0), mkarr(llDeleteSubList(cID, 0, 0)), Portal$getGroup()); \
 			} \
 		} \
 	) \
@@ -386,7 +392,8 @@ outputStats( integer f ){
 #define onEvt(script, evt, data) \
 	if( script == "got Portal" && (evt == evt$SCRIPT_INIT || evt == PortalEvt$players) ){ \
         PLAYERS = data; \
-		if( AR > 0 && portalConf$live ){ \
+		LIVE = Portal$getLive(); \
+		if( AR > 0 && LIVE ){ \
 			ptSet("A", 1, TRUE); \
 		} \
     } \
@@ -591,6 +598,8 @@ default
 			fmDD = llJson2List(fx$getDurEffect(fxf$DAMAGE_DONE_MULTI)); \
 			SDTM = llJson2List(fx$getDurEffect(fxf$SPELL_DMG_TAKEN_MOD)); \
 			fmDT = llJson2List(fx$getDurEffect(fxf$DAMAGE_TAKEN_MULTI)); \
+			fmDTF = (float)fx$getDurEffect(fxf$DAMAGE_TAKEN_FRONT); \
+			fmDTB = (float)fx$getDurEffect(fxf$DAMAGE_TAKEN_BEHIND); \
 			fmHT = llJson2List(fx$getDurEffect(fxf$HEALING_TAKEN_MULTI)); \
 			outputStats(FALSE); \
 		}\
@@ -699,6 +708,20 @@ default
 								fmdt *= l2f(fmDT, pos*2+1);
 									
 							amount*=fmdt;
+							
+							if( (fmDTF != 1.0 || fmDTB != 1.0) && llKey2Name(attacker) != "" ){
+								
+								rotation angle;
+								if( !isAnimesh() )
+									angle = llEuler2Rot(<0,PI_BY_TWO,0>);
+								prAngle(attacker, ang, angle)
+								ang = llFabs(ang);
+								if( ang < PI_BY_TWO )
+									amount *= fmDTF;
+								else
+									amount *= fmDTB;
+							
+							}
 						
 						}
 						
@@ -803,7 +826,7 @@ default
 			runOnPlayers(targ, GUI$toggleBoss(targ, "", FALSE);)
 		}
 		
-		Level$idEvent(LevelEvt$idDied, llList2String(cID, 0), mkarr(llDeleteSubList(cID, 0, 0)), portalConf$spawnround);
+		Level$idEvent(LevelEvt$idDied, llList2String(cID, 0), mkarr(llDeleteSubList(cID, 0, 0)), Portal$getGroup());
 		
 		
 		SF = SF|StatusFlag$dead;
@@ -833,7 +856,8 @@ default
 				list d = llListRandomize(llJson2List(drops), 1);
 				list_shift_each(d, val,
 					if(llFrand(1)<(float)j(val, 1)){ 
-						Spawner$spawn(j(val,0), (groundPoint()+<0,0,.5>), llGetRot(), "[\"M\"]", FALSE, FALSE, "");
+						// obj, pos, rot, desc, debug, _na, spawnround, rezParams
+						Spawner$spawn(j(val,0), (groundPoint()+<0,0,.5>), llGetRot(), "[\"M\"]", FALSE, 0, "", []);
 						d = [];
 					}
 				)
@@ -855,7 +879,8 @@ default
 					if( l2i(ray, -1) == 1 ){
 						
 						vector pos = l2v(ray, 1)+<0,0,.75>;
-						Spawner$spawn("Armor Scraps", pos, 0, "", FALSE, TRUE, "ARMOR");
+						// obj, pos, rot, desc, debug, _na, spawnround, rezParams
+						Spawner$spawn("Armor Scraps", pos, 0, "", FALSE, 0, "ARMOR", []);
 						
 					}
 					

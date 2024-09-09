@@ -9,10 +9,12 @@
 #define got$BREAST_JIGGLES (list)\
 	"breast_double_slap_slower" + \
 	"breast_right_slap" + \
-	"breast_double_slap_long" + \
-	"breast_double_slap_left" + \
 	"breast_left_slap" + \
-	"breast_double_slap"
+	"breast_double_slap" + \
+	"breast_jiggle_fast_20"
+	
+//"breast_double_slap_left" + \
+//"breast_double_slap_long" +
 	
 #define got$BUTT_JIGGLES (list) \
 	"buttslap"+ \
@@ -429,10 +431,46 @@ list getHUDsByRole( int role ){
 }
 
 // Helper for got LocalConf.NPC.template since we need this in the header
-#define seqAnim( anims ) \
-	sI = 0; llRequestPermissions(llGetOwnerKey(l2k(GRAPPLE_TARGS, 0)), PERMISSION_TRIGGER_ANIMATION | PERMISSION_CONTROL_CAMERA); sA = (list)anims
-#define seqCam( locTargList ) /* Requires call to seqAnim inline */ \
-	sC = (list)locTargList
+#define seqAnim( anims ) #error "seqAnim has been removed. Use lazyAnim(key targ, string anim, bool start)"
+#define seqCam( locTargList ) #error "seqCam has been removed. Use lazyCam(key targ, vector pos, vector targ)"
+
+// Quick function that fetches XOBJ data from a prim description using the xobj "$$" syntax
+list xobjDesc( key id, string task ){
+	list desc = explode("$$", prDesc(id));
+	int i = count(desc);
+	while( i-- ){
+		list s = explode("$", l2s(desc, i));
+		if( l2s(s, 0) == task )
+			return llDeleteSubList(s, 0, 0);
+	}
+	return [];
+	
+}
+// Quick function that fetches XOBJ data from a string using the xobj "$$" syntax
+list xobjDescStr( string input, string task ){
+	list desc = explode("$$", input);
+	int i = count(desc);
+	while( i-- ){
+		list s = explode("$", l2s(desc, i));
+		if( l2s(s, 0) == task )
+			return llDeleteSubList(s, 0, 0);
+	}
+	return [];
+	
+}
+
+// Monster description is a JSON array of [[task, arg, arg]...] This fetches args by task
+list jsonDescFetch( list data, string task ){
+	integer i = count(data);
+	while( i-- ){
+		
+		list out = llJson2List(l2s(data, i));
+		if( l2s(out, 0) == task )
+			return llDeleteSubList(out, 0, 0);
+			
+	}
+	return [];
+}
 
 #endif
 

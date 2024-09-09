@@ -19,7 +19,7 @@ list CACHE;
 
 #define nrToIndex(nr) nr*CSTRIDE
 //#define nrToData(nr) llList2List(CACHE, nr*CSTRIDE, nr*CSTRIDE+CSTRIDE-1)
-#define difDmgMod() SpellAux$difficultyDamageDoneModifier( hud$status$difficulty() )
+#define difDmgMod() SpellAux$difficultyDamageDoneModifier( status$difficulty() )
 
 // Calculates bonus damage for particular spells
 // Needs to match NUM_SPELLS in _core
@@ -70,14 +70,14 @@ string runMath( string FX, integer index, key targ ){
 	FX = implode((str)((int)("0x"+(str)llGetOwner())), explode("$soI$", FX));
 	
 	// 
-	float cAR = hud$status$arousal();
-	float cPP = hud$status$pain();
-	float cMHP = hud$status$maxHP();
-	float cHP = hud$status$hp();
-	float cMP = hud$status$mana();
-	float cMMP = hud$status$maxMana();
-	float cArmor = hud$status$armor();
-	integer TEAM = hud$status$team();
+	float cAR = status$arousal();
+	float cPP = status$pain();
+	float cMHP = status$maxHP();
+	float cHP = status$hp();
+	float cMP = status$mana();
+	float cMMP = status$maxMana();
+	float cArmor = status$armor();
+	integer TEAM = status$team();
 	
 	// The character before gets removed, so use $$M$ if the math is not a whole string like "$MATH$algebra"
     list split = llParseString2List(FX, ["$MATH$","$M$"], []);
@@ -144,6 +144,8 @@ string runMath( string FX, integer index, key targ ){
 		"mpp", cMP/cMMP,
 		
 		"dtm", l2f(dtmod, 1),
+		
+		// Todo: Add luck modifier
 		
 		// Max HP
 		"mhp", cMHP,
@@ -323,7 +325,7 @@ rollCrit( int allow, int spell ){
 
 applyWrapper( string wrapper, int index, list SPELL_TARGS, float range ){
 
-	integer TEAM = hud$status$team();
+	integer TEAM = status$team();
 	
 	// Handle AOE
 	if( (string)SPELL_TARGS == "AOE" ){

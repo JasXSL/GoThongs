@@ -256,24 +256,29 @@ default
 	}
 
 	if( METHOD == gotLevelDataMethod$difficulty && method$byOwner ){
-	
+		
 		DIFFICULTY = l2i(PARAMS, 0);
 		CHALLENGE = l2i(PARAMS, 1);
 		list desc = llJson2List(llGetObjectDesc());
-		if(llJsonValueType(llGetObjectDesc(), []) != JSON_ARRAY)
+		if( llJsonValueType(llGetObjectDesc(), []) != JSON_ARRAY )
 			desc = [];
+			
+		list replace;
 		integer i;
-		for(i=0; i<count(desc) && desc != []; ++i){
+		for( ; i < count(desc) && desc != []; ++i ){
+		
 			list dta = llJson2List(l2s(desc,i));
-			if(l2i(dta, 0) == LevelDesc$difficulty){
-				desc = llDeleteSubList(desc, i, i);
-				--i;
+			integer l = l2i(dta, 0);
+			if( l != LevelDesc$difficulty && l != LevelDesc$live ){
+				replace += l2s(desc, i);
 			}
+			
 		}
+		desc = replace;
 		desc += mkarr((list)LevelDesc$difficulty + DIFFICULTY + CHALLENGE);
 		
 		if( Level$isLive() )
-			desc+= mkarr((list)LevelDesc$live);
+			desc += mkarr((list)LevelDesc$live);
 		
 		llSetObjectDesc(mkarr(desc));
 		Level$raiseEvent(LevelEvt$difficulty, ([DIFFICULTY, CHALLENGE]));
@@ -310,16 +315,62 @@ default
 	
         integer pin = l2i(PARAMS, 0);
         list scripts = llJson2List(method_arg(1));
-        list_shift_each(scripts, v, 
+		
+		list match; // Items that match the pattern
+		
+		
+		
+		
+		
+		integer i = count(scripts);
+		while( i-- ){
+			
+			string v = l2s(scripts, i);
+			integer found;
+			integer inv = llGetInventoryNumber(INVENTORY_ALL);
+			while( inv-- ){
+				
+				string asset = llGetInventoryName(INVENTORY_ALL, inv);
+				if( 
+					(
+						v == asset || 
+						(
+							llGetSubString(v, -1, -1) == "*" && llGetSubString(asset, 0, llStringLength(v)-2)+"*" == v
+						)
+					) &&
+					llListFindList(match, (list)asset) == -1
+				){
+					match += asset;
+					found = TRUE;
+				}
+								
+			}
+			if( !found )
+				llOwnerSay("Asset not found in level "+v);
+			
+		}
+		
+		i = count(match);
+		while( i-- ){
+			string v = l2s(match, i);
+		
+			// Scripts must be remoteloaded
             if( llGetInventoryType(v) == INVENTORY_SCRIPT ){
-                slave++;
-                if(slave>9)slave=1;
+			
+                ++slave;
+                if(slave>9)
+					slave=1;
                 // Remote load
                 llMessageLinked(LINK_THIS, slave, llList2Json(JSON_ARRAY, [id, v, pin, 2]), "rm_slave");
+				
             }
-            else if(llGetInventoryType(v) != INVENTORY_NONE) llGiveInventory(id, v);
-			else llOwnerSay("Trying to load script '"+v+"', but not in level");
-        )
+            else if( llGetInventoryType(v) != INVENTORY_NONE ){
+			
+				llGiveInventory(id, v);
+				
+			}
+        
+		}
 		
     }
     

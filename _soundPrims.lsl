@@ -12,5 +12,5 @@
 #define soundPrim$language 8		// got Language
 #define soundPrim$spellMan 9		// got SpellMan
 #define soundPrim$interrupt 10		// got SpellMan
-
+#define soundPrim$climb 11			// jas Climb
 

@@ -6,12 +6,10 @@
 
 integer BFL;
 #define BFL_RECENT_CACHE 0x1
-#define BFL_QTE_PRESSED 0x2 // QTE button pressed
+#define BFL_QTE_PRESSED 0x2 			// Normal: Cooldown active after pressing button. LR: Not used. Uses QTE_LR_BUTTONS instead
 #define BFL_TEXTURES_SENT 0x4			// Block sending more textures
 #define BFL_TEXTURES_SCHEDULED 0x8		// Textures should be sent when cooldown expires
-#define BFL_LR 0x10						// We're currently pressing left right
 
-#define CARPAL_PROTECTION 0.5			// Adds a max cap on how fast you can press
 #define SENSE_RANGE 15					// Max range of space to target/vicinity checker
 
 integer TEAM = TEAM_PC;
@@ -46,7 +44,7 @@ onEvt( string script, integer evt, list data ){
 	
 		if( evt == RootEvt$targ )
 			cache_targ = l2s(data, 0);
-		else if( evt == evt$BUTTON_PRESS && QTE_STAGES > 0 ){
+		else if( (evt == evt$BUTTON_PRESS || evt == evt$BUTTON_RELEASE) && QTE_STAGES > 0 ){
 			
 			list map = [
 				CONTROL_UP|CONTROL_FWD,
@@ -55,19 +53,23 @@ onEvt( string script, integer evt, list data ){
 				CONTROL_RIGHT|CONTROL_ROT_RIGHT
 			];
 			
+			int btn = l2i(data, 0);
 			integer i;
 			for(; i<count(map); ++i ){
 			
-				if( l2i(map, i)&l2i(data, 0) ){
-					qteButtonTouched(i);
-					return;
+				if( l2i(map, i) & btn  ){
+					
+					qteButtonTouched(i, evt == evt$BUTTON_PRESS);
+					if( ~QTE_FLAGS & Evts$qFlags$LR ) // LR must let you hit multiple 
+						return;
+						
 				}
 				
 			}
 			
 		}
 		
-		else if(evt == evt$TOUCH_START && QTE_STAGES > 0 && l2i(data, 0) == P_BUTTONS){
+		else if( (evt == evt$TOUCH_START || evt == evt$TOUCH_END) && QTE_STAGES > 0 && l2i(data, 0) == P_BUTTONS){
 
 			integer face = l2i(data, 2);
 			integer pos = llListFindList(QTE_KEYMAP+QTE_BORDERMAP, [face]);
@@ -76,7 +78,7 @@ onEvt( string script, integer evt, list data ){
 			if(pos > 3)
 				pos -= 4;
 			
-			qteButtonTouched(pos);
+			qteButtonTouched(pos, evt == evt$TOUCH_START);
 		}
 		
 	}
@@ -134,29 +136,30 @@ integer QTE_FLAGS;	// See the header files. These are Evts$qFlags
 integer QTE_LR_FLASH;
 float QTE_LR_PERC = 0.5;
 float QTE_DELTA;	// Used for LR to get around lag
+int QTE_LR_BUTTONS;		// bitwise using QTE_KEY as offset, may have 2-3 buttons to hold at once
+int QTE_LR_HELD;		// held buttons in QTE. Corresponds to the bitwise values in above
 
-qteButtonTouched( integer button ){
+qteButtonTouched( integer button, integer pressed ){
+	
+	//qd((str)button + " " + (str)(BFL&BFL_QTE_PRESSED) + " " + (str)QTE_KEY);
 	
 	if( BFL&BFL_QTE_PRESSED )
 		return;
 		
 	integer success = (button == QTE_KEY);
 	
-	// Handle LR
+	// LR handled separately
 	if( QTE_FLAGS & Evts$qFlags$LR ){
 		
-		if( success ){
-			
-			if( QTE_KEY == QTE_KEY_LEFT )
-				QTE_KEY = QTE_KEY_RIGHT;
-			else
-				QTE_KEY = QTE_KEY_LEFT;
-			BFL = BFL|BFL_LR;	// Mark that we are pressing
-			ptSet("lrPress", CARPAL_PROTECTION, FALSE);
-			
-		}
+		integer b = 1 << button;
+		if( pressed )
+			QTE_LR_HELD = QTE_LR_HELD | b;
+		else
+			QTE_LR_HELD = QTE_LR_HELD & ~b;
 		return;
 	}
+	else if( !pressed )
+		return;
 	
 	// Normal
 	
@@ -206,7 +209,7 @@ toggleQTE(integer on, integer instant){
 		return;
 	}
 	
-	BFL = BFL &~ (BFL_QTE_PRESSED|BFL_LR);
+	BFL = BFL &~ BFL_QTE_PRESSED;
 	
 	llSetLinkPrimitiveParamsFast(P_BUTTONS, [PRIM_SIZE, ZERO_VECTOR]);
 	float time = 0.1;
@@ -332,19 +335,42 @@ ptEvt( string id ){
 		BFL = BFL&~BFL_QTE_PRESSED;
 		
 	}
-	// Stops the carpal tunnel protection
-	else if( id == "lrPress" ){
-		BFL = BFL&~BFL_LR;
-	}
 	// Flash left / right buttons on LR event
 	else if( id == "lrTick" ){
 	
 		float amount = (float)QTE_STAGES/100;
 		if( amount <= 0 )
 			amount = 0.3;
+	
+		list out = [PRIM_LINK_TARGET, P_BAR, PRIM_TEXTURE, 2, GUI$BAR_TEXTURE, <.5,1,1>, <.25-.5*QTE_LR_PERC, 0, 0>, 0];
+	
+		vector scale = <0.21188, 0.14059, 0.13547>;
+		integer i; int hasIncorrect;
+		++QTE_LR_FLASH;
+		out += [PRIM_LINK_TARGET, P_BUTTONS, PRIM_POSITION, getWidgetPos(), PRIM_SIZE, scale];
+		for( ; i < 4; ++i ){
+		
+			integer b = 1<<i;
+			int req = QTE_LR_BUTTONS & b; 
+			vector color = ZERO_VECTOR;
+			if( req ){
+				color = <1,1,.5>;
+				if( QTE_LR_FLASH & 1 )
+					color.z = 0.75;
+				if( QTE_LR_HELD&b )
+					color = <.75,1,.75>;
+			}
+			else if( QTE_LR_HELD & b ){
+				color = <1,.5,.5>;
+				hasIncorrect = true;
+			}
+			
+			out+= [PRIM_COLOR, l2i(QTE_BORDERMAP, i), color, 1];
+			
+		}
 			
 		// Currently pressing
-		if( BFL&BFL_LR ){
+		if( QTE_LR_BUTTONS == QTE_LR_HELD ){
 		
 			// Divide by fx
 			float f = fxMod;
@@ -357,7 +383,10 @@ ptEvt( string id ){
 				
 		}else{
 			// Fade speed is always half speed
-			amount = -amount/2;			
+			amount = -amount/2;
+			if( hasIncorrect )
+				amount *= 1.5;
+				
 		}
 		
 		float time = llGetTime();
@@ -368,35 +397,25 @@ ptEvt( string id ){
 		if( QTE_LR_PERC < 0 )
 			QTE_LR_PERC = 0;
 			
-		list out = [PRIM_LINK_TARGET, P_BAR, PRIM_TEXTURE, 2, GUI$BAR_TEXTURE, <.5,1,1>, <.25-.5*QTE_LR_PERC, 0, 0>, 0];
-	
+		
 		// Check if fail
 		if( QTE_FLAGS & Evts$qFlags$LR_CAN_FAIL && QTE_LR_PERC <= 0 ){
+			
 			onQteEnd(FALSE);
 			toggleQTE(FALSE, FALSE);
 			return;
+			
 		}
 		else if( QTE_LR_PERC >= 1 ){
+			
 			onQteEnd(TRUE);
 			toggleQTE(FALSE, FALSE);	// Finished
 			return;
-		}
-	
-		vector scale = <0.21188, 0.14059, 0.13547>;
-		integer i;
-		++QTE_LR_FLASH;
-		out += [PRIM_LINK_TARGET, P_BUTTONS, PRIM_POSITION, getWidgetPos(), PRIM_SIZE, scale];
-		for(i=0; i<4; ++i){
-		
-			vector color = ZERO_VECTOR;
-			if( (i == 1 && !(QTE_LR_FLASH%2)) || (i == 3 && QTE_LR_FLASH%2) ){
-				color = <.5,1,.5>;
-				llSetLinkTextureAnim(P_BUTTONS, ANIM_ON|LOOP|PING_PONG, l2i(QTE_BORDERMAP, i), 16,2, 0,0, 120);
-			}
-			out+= [PRIM_COLOR, l2i(QTE_BORDERMAP, i), color, 1];
 			
 		}
+	
 		
+		llSetLinkTextureAnim(P_BUTTONS, 0, ALL_SIDES, 16,2, 0,0, 120);
 		PP(0, out);
 		
 	}
@@ -741,15 +760,20 @@ default{
 	
 	if( METHOD == EvtsMethod$startQuicktimeEvent ){
 	
-		debugCommon("Start received: "+mkarr(PARAMS)+" from "+SENDER_SCRIPT)
+		debugCommon("Start received: "+mkarr(PARAMS)+" from "+SENDER_SCRIPT+" "+llKey2Name(id))
 		QTE_STAGES = l2i(PARAMS, 0);
 		QTE_DELAY = l2f(PARAMS, 2);
 		QTE_FLAGS = l2i(PARAMS, 3);
-		
+		QTE_LR_HELD = QTE_LR_BUTTONS = 0;
 		// fxMod is handled in the ticker for LR
-		if( ~QTE_FLAGS & Evts$qFlags$LR )
+		if( ~QTE_FLAGS & Evts$qFlags$LR ){
 			QTE_STAGES = floor(l2i(PARAMS, 0)*fxMod);
-		
+		}
+		// Pick 2 buttons to hold
+		else{
+			list viable = llListRandomize([0,1,2,3], 1);
+			QTE_LR_BUTTONS = (1<<l2i(viable,0)) | (1<<l2i(viable,1));
+		}
 		if( QTE_STAGES < 1 && l2i(PARAMS, 0) > 0 )
 			QTE_STAGES = 1;
 		

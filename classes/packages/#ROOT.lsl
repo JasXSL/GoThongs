@@ -41,7 +41,7 @@ list CBLCK;	// Control-blocking prims
 
 // Timer to handle double clicks and click hold
 timerEvent(string id, string data){
-
+	/*
     if( llGetSubString(id, 0, 1) == "H_" ){
 	
         integer d = (integer)data;
@@ -50,7 +50,8 @@ timerEvent(string id, string data){
         multiTimer([id, d, 1, FALSE]);
 		
     }
-    else if(id == "T"){
+	*/
+    if(id == "T"){
 	
 		if( llKey2Name(TARG) == "" && TARG != "" )
 			setTarget("", "", TRUE, 0);
@@ -76,7 +77,7 @@ timerEvent(string id, string data){
 	
 		raiseEvent(evt$SCRIPT_INIT, "");
 		setTarget("", "", TRUE, 0);
-		RLV$clearCamera((string)LINK_THIS);
+		RLV$clearCamera(LINK_THIS);
 		Level$bind(llGetOwner());
 		sendHUDs();
 		setFocus(llGetKey());	// make sure that GUI knows we are targeting ourselves
@@ -113,7 +114,9 @@ timerEvent(string id, string data){
 		refreshTarget(); \
 	} \
 	else if(script == "got Bridge" && evt == BridgeEvt$partyIcons) \
-		PLAYER_TEXTURES = data;
+		PLAYER_TEXTURES = data; \
+	else if( script == "jas RLV" && evt == RLVevt$supportcubeSpawn ) \
+		db4$freplace(gotTable$root, gotTable$root$supportCube, l2s(data, 0))
 
 
 setFocus( key id ){
@@ -276,9 +279,7 @@ default{
 "🗓 secondlife:///app/group/6ff2300b-8199-518b-c5be-5be5d864fe1f/about SL Group!\n"+
 "️🔑 [https://goo.gl/TQftHT CC BY-NC-SA 4.0 License]\n"+
 "🖊 [https://goo.gl/nBVmME GitHub]\n"+
-"🌐 [https://t.ly/Ov4V Wiki]\n"+
-"🐙 [https://goo.gl/67PfR7 JasX Patreon]  "+
-"🐼 [https://goo.gl/dtjvSf Toonie Patreon]";
+"🌐 [https://t.ly/Ov4V Wiki]";
 
 		if( l2i(llGetObjectDetails(llGetOwner(), (list)OBJECT_ATTACHED_SLOTS_AVAILABLE), 0) < 5  )
 			text += "\n\n  ⚠️ YOU HAVE TOO MANY ATTACHMENTS ⚠️\nThis may cause errors";
@@ -428,8 +429,10 @@ default{
 		
             pressStart = llGetTime();
             raiseEvent(evt$BUTTON_PRESS, (string)le);
+			/*
+			Double tap no longer supported
             if( llGetTime()-lastclick < .5 ){
-			
+				
                 raiseEvent(evt$BUTTON_DOUBLE_PRESS, (string)(level&edge&lcb));
                 lcb = 0;
 				
@@ -439,7 +442,8 @@ default{
                 lcb = (level&edge);
 				
             }
-            
+			*/
+            /* Skip the held event
             integer i;
             for( ; i < 32; ++i ){
                 
@@ -448,26 +452,28 @@ default{
 					multiTimer(["H_"+(string)pow, 0, 1, TRUE]);
 				
             }
-			
+			*/
         }
         
         if( lne ){
 		
             raiseEvent(evt$BUTTON_RELEASE, llList2Json(JSON_ARRAY, [lne,(llGetTime()-pressStart)]));
+			/*
             integer i;
-            for( ; i<32; ++i ){
+            for( ; i < 32; ++i ){
 			
                 integer pow = 1<<i;
                 if( ~level&edge&pow )
 					multiTimer(["H_"+(string)pow]);
 					
             }
-			
+			*/
         } 
 		
-		if( (le || lne) && root != id )
-			llRegionSayTo(root, RootConst$chanQuickControl, (str)le+"$"+(str)lne);
-		
+		if( le || lne ){
+			string text = (str)le+"$"+(str)lne;
+			llRegionSayTo(root, RootConst$chanQuickControl, text);
+		}
     }
     
     run_time_permissions(integer perms){
@@ -564,26 +570,14 @@ default{
         }
     }
     
+	
     // ByOwner means the method was run by the owner of the prim
     if(method$byOwner){
 	
 		if( METHOD == RootMethod$reset )
 			llResetScript();
 			
-			
-		else if( METHOD == RootMethod$blockControls ){
-			
-			integer block = l2i(PARAMS, 0);
-			integer pos = llListFindList(CBLCK, (list)id);
-			if( pos == -1 && block )
-				CBLCK += id;
-			else if( ~pos && !block )
-				CBLCK = llDeleteSubList(CBLCK, pos, pos);
-			controls();
-			
-		}
-			
-			
+
 		else if( METHOD == RootMethod$manageAdditionalPlayer ){
 		
 			integer rem = llList2Integer(PARAMS, 1);
@@ -625,8 +619,20 @@ default{
 		}
 			
     }
-    
-    if(METHOD == RootMethod$getPlayers){
+	
+    if( METHOD == RootMethod$blockControls ){
+			
+		integer block = l2i(PARAMS, 0);
+		integer pos = llListFindList(CBLCK, (list)id);
+		if( pos == -1 && block )
+			CBLCK += id;
+		else if( ~pos && !block )
+			CBLCK = llDeleteSubList(CBLCK, pos, pos);
+		controls();
+		
+	}
+	
+    else if(METHOD == RootMethod$getPlayers){
 		
 		string players = mkarr(getPlayers());
 		string huds = mkarr(llListReplaceList(COOP_HUDS, [llGetKey()], 0, 0));

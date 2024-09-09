@@ -52,7 +52,7 @@ integer onInteract(key obj, string task, list params, vector pos){
 		
     }
 	else if( task == "CLEAR_CAM" )
-		RLV$clearCamera((str)LINK_ROOT);
+		RLV$clearCamera(LINK_ROOT);
 	
     else if( task == "CUSTOM" ){
         
@@ -102,7 +102,7 @@ onDesc( key obj, string text, int flags ){
 		}
 		
 	}
-    
+	    
     if( obj == "_PRIMSWIM_CLIMB_" ){
         
 		obj = llGetKey();
@@ -115,9 +115,18 @@ onDesc( key obj, string text, int flags ){
 	if( text == CACHE_TEXT )
 		return;
 	
-    if( obj )
-        llSetLinkPrimitiveParamsFast(CROSSHAIR, [PRIM_SIZE, <0.05, 0.05, 0.05>, PRIM_TEXT, text, <1,1,1>, 1, PRIM_ROT_LOCAL, llEuler2Rot(<0,-PI_BY_TWO,0>)]);
-    
+	
+    if( obj ){
+		float alpha = 1.0;
+		if( flags & Interact$TASK_DESC$NO_CROSSHAIR )
+			alpha = 0;
+        llSetLinkPrimitiveParamsFast(CROSSHAIR, [
+			PRIM_SIZE, <0.05, 0.05, 0.05>, 
+			PRIM_TEXT, text, <1,1,1>, 1, 
+			PRIM_ROT_LOCAL, llEuler2Rot(<0,-PI_BY_TWO,0>),
+			PRIM_COLOR, 0, ONE_VECTOR, alpha
+		]);
+    }
     else
         llSetLinkPrimitiveParamsFast(CROSSHAIR, [PRIM_SIZE, ZERO_VECTOR, PRIM_TEXT, "", ZERO_VECTOR, 0, PRIM_ROT_LOCAL, ZERO_ROTATION]);
 	

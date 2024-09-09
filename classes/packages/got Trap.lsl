@@ -287,7 +287,7 @@ default{
 			key sitter = getSitter();
             if( sitter ){
 			
-				if( llListFindList(PLAYERS, [(str)sitter]) == -1 && portalConf$live ){
+				if( llListFindList(PLAYERS, [(str)sitter]) == -1 && Portal$getLive() ){
 				
 					debugCommon("Unsat because not a proper player")
 					llUnSit(sitter);

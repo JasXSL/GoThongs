@@ -210,13 +210,13 @@ default{
             
 			if( debug )
 				llOwnerSay("Spawning local asset: "+asset);
-			Spawner$spawnInt(asset, pos, rot, description, debug, FALSE, spawnround);
+			Spawner$spawnInt(asset, pos, rot, description, debug, FALSE, spawnround, []);
 			
         }else{
             
 			if( debug )
 				llOwnerSay("Item '"+asset+"' not found in level. Loading from HUD.");
-            Spawner$spawn(asset, pos, rot, description, debug, FALSE, spawnround);
+            Spawner$spawn(asset, pos, rot, description, debug, FALSE, spawnround, []);
 			
         }
 		
@@ -246,7 +246,8 @@ default{
 				llList2String(asset, 4), 
 				!live, 
 				false, 
-				""
+				"",
+				[]
 			);
 			
 		}
@@ -260,7 +261,8 @@ default{
 				llList2String(asset, 4), 
 				!live, 
 				false, 
-				""
+				"",
+				[]
 			);
 			
 		}

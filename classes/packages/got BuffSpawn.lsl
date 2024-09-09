@@ -22,18 +22,20 @@ default{
 	
 		
         CHAN = BuffSpawnChan(llGetOwner());
-        llRegionSayTo(mySpawner(), CHAN, "SPN");
-		
 		memLim(1.5);
-        llListen(CHAN, "", "", "");
         raiseEvent(evt$SCRIPT_INIT, "");
 		
-    }
-    
-    listen(integer chan, string name, key id, string message){
-        idOwnerCheck
-        
-        list conf = llJson2List(message);
+		// Same list type as got Portal
+		list data = llJson2List(llGetStartString());
+		if( data == [] )
+			return;
+		TARG = l2s(data, PORTALDESC_SPAWNER);	
+		if( TARG == "" || TARG == NULL_KEY )
+			TARG = llGetOwner();
+		if( prAttachPoint(TARG) )
+			TARG = llGetOwnerKey(TARG);
+			
+		list conf = llJson2List(l2s(data, PORTALDESC_DESC));
 		
 		while(conf){
 		
@@ -41,9 +43,7 @@ default{
 			string v = l2s(conf, 1);
 			conf = llDeleteSubList(conf, 0, 1);
 			
-			if(k == BuffSpawnConf$targ)
-				TARG = v;
-			else if(k == BuffSpawnConf$pos)
+			if(k == BuffSpawnConf$pos)
 				CONF_POS = (vector)v;
 			else if(k == BuffSpawnConf$rot)
 				CONF_ROT = (rotation)v;
@@ -55,14 +55,12 @@ default{
 				
 		}
 		
-		if(TARG  == "" || TARG == NULL_KEY)
-			TARG = llGetOwner();
 			
 		raiseEvent(BuffSpawnEvt$target, TARG);
 		llSetTimerEvent(.1);
-        
+
     }
-	
+
 	timer(){
 		
 		if( llKey2Name(TARG) == "" )

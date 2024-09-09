@@ -7,7 +7,7 @@
 
 list PLAYERS = [];
 list PLAYERS_COMPLETED;
-list PLAYERS_HUDS;	 // Should match PLAYERS
+list PLAYER_HUDS;	 // Should match PLAYERS
 
 integer START_PARAM;
 
@@ -121,6 +121,22 @@ timerEvent(string id, string data){
 
 }
 
+saveHuds(){
+	
+	string out = mkarr(PLAYER_HUDS);
+	db4$freplace(gotTable$level, gotTable$level$huds, out);
+	raiseEvent(LevelEvt$playerHUDs, out);
+
+}
+
+savePlayers(){
+	
+	string out = mkarr(PLAYERS);
+	db4$freplace(gotTable$level, gotTable$level$players, out);
+	raiseEvent(LevelEvt$players, out);
+	
+}
+
 
 default{
 
@@ -137,25 +153,33 @@ default{
     state_entry(){
 		
 		// resetAllOthers();
-		
+
 		initiateListen();
 		PLAYERS = [(string)llGetOwner()];
+		savePlayers();
+		saveHuds();
 		
 		// Rez param
 		START_PARAM = llList2Integer(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TEXT]), 0);
+		
+		list data = llJson2List(llGetStartString());
 		
 		// On remoteload
 		if( llGetStartParameter() == 2 ){
 						
 			vector p = llGetRootPosition();
-			vector pos = p-vecFloor(p)+int2vec(START_PARAM);
+			vector pos = (vector)l2s(data, PORTALDESC_POS);
 			
+			// No idea what the purpose of this is
+			/*
 			if( START_PARAM == 1 )
 				pos = ZERO_VECTOR;
-
-			if( START_PARAM&(BIT_DEBUG-1) )
-				llSetRegionPos(pos);
+			*/
 			
+			if( pos ){
+
+				llSetRegionPos(pos);
+			}
 			list refresh = ["Trigger", "TriggerSensor"];
 			while(llGetListLength(refresh)){
 			
@@ -307,6 +331,8 @@ default{
 		){
             
 			PLAYERS = PARAMS;
+			savePlayers();
+			
 			if( llList2Key(PLAYERS, 0) ){
 				
 				// prevents recursion
@@ -315,9 +341,7 @@ default{
 					
 				BFL = BFL|BFL_AUTOLOADED;
 				
-				list pnames = [];
-				raiseEvent(LevelEvt$players, mkarr(PARAMS));
-				
+				list pnames = [];				
 				runOnPlayers(targ,
 					
 					string n = llGetDisplayName(targ);
@@ -355,9 +379,9 @@ default{
     if(METHOD == LevelMethod$trigger)
         return raiseEvent(LevelEvt$trigger, mkarr(([method_arg(0), id, method_arg(1)])));   
     
-    if(METHOD == LevelMethod$idEvent)
-        return raiseEvent(method_arg(0), mkarr(([id, method_arg(1), method_arg(2), method_arg(3)])));
-    
+    if(METHOD == LevelMethod$idEvent){
+        return raiseEvent(method_arg(0), mkarr((list)id + llDeleteSubList(PARAMS, 0, 0)));
+    }
 	if( METHOD == LevelMethod$getObjectives )
 		return raiseEvent(LevelEvt$fetchObjectives, mkarr([llGetOwnerKey(id)]));
 	
@@ -378,11 +402,12 @@ default{
 	
 		PLAYERS = [];
 		integer i;
-		for( i=0; i<count(PARAMS); ++i )
+		for( ; i < count(PARAMS); ++i )
 			PLAYERS += (str)llGetOwnerKey(l2k(PARAMS, i));
 		
-		raiseEvent(LevelEvt$playerHUDs, mkarr(PARAMS));
-		raiseEvent(LevelEvt$players, mkarr(PLAYERS));
+		PLAYER_HUDS = PARAMS;
+		savePlayers();
+		saveHuds();
 		
 	}
 
@@ -396,8 +421,9 @@ default{
 	if(METHOD == LevelMethod$potionDropped)
 		raiseEvent(LevelEvt$potionDropped, mkarr(([id, method_arg(0)])));
 
-    if(METHOD == LevelMethod$despawn && method$byOwner && START_PARAM != 0)
+    if( METHOD == LevelMethod$despawn && method$byOwner && START_PARAM != 0 ){
         llDie();
+	}
     
 	if(METHOD == LevelMethod$update && method$byOwner){
 	

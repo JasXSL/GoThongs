@@ -62,7 +62,9 @@
 #define FXCUpd$SPELL_DMG_TAKEN_MOD 39	// *[(str)spellname, (float)multi=1, (bool)byCaster] - Default [] - Compiles to [key2int(caster) or 0=global,(str)spellname, (float)multi]
 #define FXCUpd$SPELL_DMG_DONE_MOD 40	// *[(int)index, (float)multi=1] - Default [1,1,1,1,1,1] - Compiles to [abil5multi,abil0multi...]
 
-
+#define FXCUpd$DAMAGE_TAKEN_FRONT 41		// (float)multi - Default 1
+#define FXCUpd$DAMAGE_TAKEN_BEHIND 42		// (float)multi - Default 1
+#define FXCUpd$FALL_DMG_HEIGHT 43			// (float)multi - Default 1
 
 
 

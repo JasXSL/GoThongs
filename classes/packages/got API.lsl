@@ -5,6 +5,25 @@
 integer chan;
 list bindings;			// (key)targ, (int)chan
 
+sendClassAttTags(){
+	list tags;
+	
+	string data = hud$bridge$thongData();
+	tags += [
+		gotTag$level+"_"+j(data, BSS$LEVEL)
+	];
+	data = hud$bridge$userData();
+	tags += [
+		gotTag$gold+"_"+j(data, BSUD$GOLD), // measured in copper
+		gotTag$difficulty+"_"+j(data, BSUD$DIFFICULTY),
+		gotTag$class+"_"+j(data, BSUD$THONG_CLASS_ID),
+		gotTag$role+"_"+j(data, BSUD$THONG_ROLE),
+		gotTag$className+"_"+j(data, BSUD$THONG_NAME)
+	];
+	
+	gotClassAtt$descMeta(tags);
+}
+
 onEvt(string script, integer evt, list data){
 
 	if( bindings ){
@@ -18,6 +37,10 @@ onEvt(string script, integer evt, list data){
 		for( ; i < count(bindings); i += 2 )
 			llRegionSayTo(llList2Key(bindings, i), llList2Integer(bindings, i+1), msg);
 			
+	}
+	
+	if( script == "got Bridge" && (evt == BridgeEvt$userDataChanged || evt == BridgeEvt$data_change) ){
+		sendClassAttTags();
 	}
 
 }
@@ -66,6 +89,7 @@ default{
 		llListen(chan, "", "", "");
 		llRegionSay(chan, GotAPI$buildAction(GotAPI$actionIni, []));
 		multiTimer(["P", "", 10, TRUE]);
+		
     }
 	
 	timer(){multiTimer([]);}
@@ -122,6 +146,11 @@ default{
 	
     // This is the standard linkmessages
     #include "xobj_core/_LM.lsl" 
+	
+	if( method$byOwner && METHOD == GotAPIMethod$getClassAttTags ){
+		sendClassAttTags();
+	}
+	
     if( METHOD == GotAPIMethod$getStats ){
 		
 		list descs = fx$FLAG_DESCS;
@@ -166,7 +195,7 @@ default{
 			(str)llRound(dmdm*100)+"% Damage & Healing done "+mkarr(arrDmdm)+"\n"+
 			durFxPercStr(fxf$HEALING_DONE_MULTI)+"% Healing done\n"+
 			(str)(((float)fx$getDurEffect(fxf$CRIT_ADD)-1.0)*100)+"% Crit chance\n"+
-			durFxPercStr(fxf$BACKSTAB_MULTI)+"% Damage done from  behind\n"+
+			durFxPercStr(fxf$BACKSTAB_MULTI)+"% Damage done from behind\n"+
 			fx$getDurEffect(fxf$SPELL_DMG_DONE_MOD)+" abil dmg done\n"
 		);
 		
@@ -184,6 +213,8 @@ default{
 		llOwnerSay("DEFENSES >\n"+
 			(str)(100-durFxPerc(fxf$DODGE))+"% Dodge\n"+	// Dodge is inverse
 			(str)llRound(dmtm*100)+"% Damage Taken "+mkarr(arrDmtm)+"\n"+
+			durFxPercStr(fxf$DAMAGE_TAKEN_FRONT)+"% Damage Taken from front\n"+
+			durFxPercStr(fxf$DAMAGE_TAKEN_BEHIND)+"% Damage Taken from behind\n"+
 			(str)llRound(100*herm)+"% Healing received "+mkarr(arrHetm)+"\n"+
 			durFxPercStr(fxf$HP_ARMOR_DMG_MULTI)+"% HP to armor damage multiplier\n"+
 			durFxPercStr(fxf$ARMOR_DMG_MULTI)+"% Global armor damage multiplier\n"+
