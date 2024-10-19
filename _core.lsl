@@ -55,7 +55,7 @@
 #include "./lib_particles.lsl"
 
 // External
-#include "stag/stag.lsl"
+#include "sTag/stag.lsl"
 #include "stag_extensions.lsl"
 
 // Adds an if statement that turns var into the owner if var is attached
