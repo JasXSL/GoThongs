@@ -138,6 +138,23 @@ ag( key pl, float ag ){
 
     if( pl ){
 	
+		// Pl should NEVER be a player. It MUST be their HUD
+		if( llGetAgentSize(pl) ){
+			
+			integer pos = llListFindList(PLAYERS, [(str)pl]);
+			if( pos == -1 )
+				return; // Unable to find this player, ignore them.
+			pl = l2k(PLAYER_HUDS, pos);
+			if( pl == "" )
+				return;
+			
+		}
+		
+		// Prevent aggro same team
+		parseTeam(pl, team)
+		if( team == TEAM )
+			return;
+	
         integer pre = count(AG);
         integer pos = llListFindList(AG, [pl]);
         key top; integer i;
@@ -202,9 +219,10 @@ ag( key pl, float ag ){
     if( at != AT ){ 
 	
         AT = at;
+		
         if( at == "" && daSnd != "" )
             llTriggerSound(daSnd, 1);
-		else if( at != "" ){
+		else if( at ){
 		
 			if( ~RF&Monster$RF_NO_TARGET ) 
 				Root$targetMe(at, icon, FALSE, TEAM);
@@ -577,8 +595,9 @@ default
 			){
 			
 				list ray = llCastRay(root+<0,0,1+hAdd()>, ppos+<0,0,1>, RC_DEFAULT);
-				if( llList2Integer(ray, -1) == 0 )
+				if( llList2Integer(ray, -1) == 0 ){
 					Status$get(k, "aggro");
+				}
 
 			}
 			

@@ -64,7 +64,7 @@
 #define PortalMethod$reinit 1				// NULL - refetches all scripts
 #define PortalMethod$remove 2				// (bool)force - Deletes object. got LevelLite in a non live prim and persistent objects will ignore this unless force is TRUE
 #define PortalMethod$save 3					// NULL - Auto callbacks
-//#define PortalMethod$iniData 4				// (str)data, (str)spawnround, (key)requester, (vec)pos - Sets config data
+#define PortalMethod$iniData 4				// (str)data, (str)spawnround, (key)requester, (vec)pos - Sets config data. Legacy method. Data is passed on rez now.
 #define PortalMethod$debugPlayers 5			// void - Says the loaded PLAYERS to the owner
 #define PortalMethod$removeBySpawnround 6	// spawnround - Removes any item with a specific spawnround
 #define PortalMethod$removeBySpawner 7		// (key)spawner - Removes any portal object spawned by spawner
@@ -85,7 +85,7 @@
 #define Portal$killAll() runOmniMethod("got Portal", PortalMethod$remove, [], TNN)
 // overrides all persistence
 #define Portal$nukeAll() runOmniMethod("got Portal", PortalMethod$remove, [TRUE], TNN)
-//#define Portal$iniData(targ, data, spawnround, requester, pos) runMethod(targ, "got Portal", PortalMethod$iniData, [data, spawnround, requester, pos], TNN)
+#define Portal$iniData(targ, data, spawnround, requester, pos) runMethod(targ, "got Portal", PortalMethod$iniData, [data, spawnround, requester, pos], TNN)
 #define Portal$removeBySpawnround(spawnround) runOmniMethod("got Portal", PortalMethod$removeBySpawnround, [spawnround], TNN)
 #define Portal$removeSpawnedByThis() runOmniMethod("got Portal", PortalMethod$removeBySpawner, [llGetKey()], TNN)
 #define Portal$kill(targ) runMethod((str)targ, "got Portal", PortalMethod$remove, [], TNN)

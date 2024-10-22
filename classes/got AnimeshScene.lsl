@@ -18,7 +18,7 @@
 #define gotAnimeshSceneMethod$killByName 3					// (str)name - Kills by name
 #define gotAnimeshSceneMethod$trigger 4						// int visuals - 1 = particles, 2 = sound - Trigger default particles or sounds (splat)
 #define gotAnimeshSceneMethod$stop 5						// Force stops the scene and unsits the target without deleting the object
-#define gotAnimeshSceneMethod$seat 6						// Used for debugging
+#define gotAnimeshSceneMethod$seat 6						// Used for debugging, force seats the player
 
 #define gotAnimeshSceneEvt$thrust 1					// void - Raised when a thrust starts
 #define gotAnimeshSceneEvt$start 2					// void - Raised when starting

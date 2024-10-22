@@ -165,7 +165,7 @@ default{
         // Clear old
         Portal$killAll();
         Level$despawn();
-        _portal_spawn_v3(
+        key att = _portal_spawn_v3(
 			level, 
 			startPos, 
 			ZERO_ROTATION, 
@@ -176,6 +176,10 @@ default{
 			"",
 			[]
 		);
+		if( att == "" ){
+			llOwnerSay("Level failed to rez at target position. Move to a large clear area and try again.");
+			startPos = ZERO_VECTOR;
+		}
 		
     }
 	if( METHOD == LevelSpawnerMethod$setLoading )

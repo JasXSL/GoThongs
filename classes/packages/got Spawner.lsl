@@ -305,7 +305,6 @@ default{
 		if( METHOD == SpawnerMethod$spawn )
 			data = (list)mkarr(PARAMS);
 		
-		
 		integer i;
 		for( ; i < count(data); ++i ){
 		
@@ -335,7 +334,7 @@ default{
 				]);
 			
 			else
-				qd("Inventory missing: "+s);
+				qd("Inventory missing: "+asset);
 			
 			if( out ){
 				

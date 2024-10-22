@@ -338,7 +338,6 @@ default{
 				llStopAnimation(anim);
 			)
 			
-			qd(ANIM);
 			objAnimOff(ANIM+"_a");
 			objAnimOn(ANIM+"_a");
             if( ANIM )
